@@ -1,0 +1,72 @@
+Tab alignment is a simpler type of alignment in \TeX{}.
+
+{\hsize = 1.7 in \settabs 2 \columns
+%         ^-- 1.7 inches  ^--two columns
+\+aaaa&AAAA\cr
+\+bbb&BBBBB\cr
+\+ccccc&CC\cr}
+
+Use a template instead of numbers to specify the tab environment:
+{\settabs\+aaaaaaaaaaaaaaaaaaaaaa\quad&AAAA\cr
+%        ^^-- this row is served as a template which is not printed.
+\+aaa&AAAA\cr
+\+bbbb&BBBB\cr
+\+cc&CCC\cr
+}
+
+Use {\tt $\backslash$halign} to define a template
+
+\tabskip=2pc                    %2pc of glue between columns
+\halign{
+\hfil # \hfil &\hfil # \hfil&I also have \quad # \hfil \cr%the templateA
+&&\it Table\cr                                %one group per cell
+ \noalign{\kern 5pt}
+ % \noalign{\kern 2pt} to insert vertical mode materials between 2 rows(extra
+ % space)
+ \it AAAA & BBBBBB& \it CCCC\cr
+  \noalign{\kern 2pt}
+  aaaaa& bbbb & ccc \cr
+  aa& bbbbbb & cccccc\cr
+  aaa& bb & ccc\cr
+}
+
+Use {\tt $\backslash$valign} to define a template
+
+{\hsize=0.6in \parindent=0pt
+% use \struct to give rows a common baseline, so that they aligns correctly
+\valign{#\strut&#\strut&#\strut \cr %the templateA
+ \it AAAA & BBBBBB& \it CCCC\cr
+  aaaaa& bbbb & ccc \cr
+  aa& bbbbbb & cccccc\cr
+  aaa& bb\cr
+}}
+
+
+% Use kern
+Use {\tt $\backslash$kern} to change the distances between items
+
+11 \quad 1\kern1pt 1 \quad 1\kern-0.75pt1
+% Use no \noalign to create vertical kern
+
+AAAAAAAAAAAAAAAAAAAAA
+
+AAAAAAAAAAAAAAAAAAAA
+
+AAAAAAAAAAAAAAAAAAAAA
+
+{\bf \tenrm Use macro}
+
+\def\got#1 f #2 {Got #1 from #2 .\par}
+
+\got apple f {apple tree}
+\got pokemon f Phd
+
+% Use macro to define macro
+\def\makevar#1{\def\var##1{$$#1 = ##1$$}}
+\makevar{x}
+\var{2}
+
+\makevar{y}
+\var{4}
+
+\bye

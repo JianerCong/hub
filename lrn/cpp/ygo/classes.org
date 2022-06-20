@@ -1,0 +1,138 @@
+** Timing
+ The base of all timing. It is the timing that quick-magic can be invoked.
+*** card_inv
+**** spc_inv (special card invoke)  
+***** mgc_inv
+***** trp_inv
+**** mst_inv
+*** card_move (virtual)
+Any event that makes the card move.
+field
+:field:
+- from [place]
+- to [place]
+- card [card]
+:END:
+**** summon 
+:field:
+type [summon_type]
+:END:
+
+**** draw
+**** other
+
+*** phase_chg
+
+
+** place2
+*** place
+place on the field that can place one or more cards.
+:f:
++ owner [player]
++ is_empty() [bool] {virtual}
+:END:
+**** sig_place
+:f:
++ card [card]
++ owner [player]
+:END:
+a field that can hold a single card. It is initialized when the game starts.
+Can be
+|mt(magic/trap)|ms(monster)|p(pendulum)|
+**** mul_place
+a field that can hold many cards.
+Can be
+|gv|deck|hand|ban(banished)|
+:f:
+# number of cards
++ int size()
++ bool is_empty()
+  
+
++ Add and drop card methods. It's your responsibility to check the index.  
+  # drop the ith card from top. Negative i means counting from the bottom. So (i=0)
+  # is the top of the pile (e.g. deck), and (i=1) is the second card from the
+  # top, and (i = -1) is the bottom card.
+  -  card* drop_card(int i)
+  # Add the card to the location specified by i following the same rule as the
+  # ~drop_card~
+  -  add_card(card * c, int i)
+:END:
+** dual_disk
+:f:
++ const int NUMBER_OF_CARDS = 3
+  # The enum that describes the area on the dual disk, these values are used as
+  # parameters when taking and placing card on the dual disk.
++ enum dual_disk_place{mt, ms, p, gv, hand, ban, deck};
+  # Place the card c on the dual disk in the location specified by the location
+  # (p, loc). we have the following table
+| value of p | meaning of loc                              | range loc lov             |
+|------------+---------------------------------------------+---------------------------|
+| mt         | 2 : the second mt_zone                      | [0,1,...,NUMBER_OF_CARDS] |
+| ms         | ^^                                          | ^^                        |
+| p          | 0 :left p-zone, else right                  | any                       |
+| gv\ban     | ignored                                     | ignored                   |
+| hand       | 0: rgtmost, 1: second-rgt, .. , -1: lftmost | N                         |
+| deck       | 0: top, 1: second-top, ..., -1: bottom      | N                         |
+  # IDEA: When placing card on a sig_place, throw card_already_exist exception.
++ place_card_to(card c, dual_disk_place p, int loc);
+
+  # Check whether the dual_disk location specified by (p, loc) is empty. Useful
+  # when trying to place card on the dual_disk.
++ bool is_empty(dual_disk_place p, int loc)
+
+:END:
+
+** card
+*** mst_card
+    Monster card
+:f:
+struct fig {atk, def}
+  fig* orig_fig;          
+  fig* curr_fig;
+:END:
+*** mgt_card
+Magic/trap card. The mgt_type is a union of ~mag_type~ and ~trp_type~ 
+:f:
+enum mag_type {nor,cnt,eqp,qck,fld,rit};
+enum trp_type {nor,cnt,ctr};
+union mgt_type {mag_type, trap_type};
+bool is_magic();
+:END:
+
+** player
+
+** summon_type [enum]
+*** norm (< 0)
+**** nor -1
+**** adv -2
+**** dbl -3
+*** spec (> 0)
+**** fus 1
+**** syn 2
+**** xyz 3
+**** pend 4
+**** dirt 5
+
+* TO-Do
+**** DONE Write the union for the type
+**** DONE Add the ~text~  and ~id~ field for the card
+ :f:
+ string name;
+ string text = "";
+ int id = 0;
+ :END:
+**** TODO Add card show() methods which reports the text as well.
+**** TODO Write the constructor for the mgt_card
+But I realize that it might be more reasonable to initialize a card via a card
+ID. such as
+#+BEGIN_SRC c++
+card c = get_card_from_id("12345678");
+#+END_SRC
+
+It might also be helpful if we got an external database runing showing
+| name    |       id | text       |
+|---------+----------+------------|
+| Kulibal | 12345678 | Dark demon |
+***** TODO Learn Postgres?
+Use JSON for now.

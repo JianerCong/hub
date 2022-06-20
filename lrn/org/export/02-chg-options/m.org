@@ -1,0 +1,80 @@
+#+AUTHOR: Jianer Cong
+#+TITLE: My report
+#+LATEX_COMPILER: pdflatex
+#+LATEX_CLASS: myclass
+#+LATEX_CLASS_OPTIONS: [red]
+# Use \documentclass[red]{myclass}
+#+LATEX_HEADER: \input{myheader.tex}
+
+
+
+# In-buffer configration has the form '#+<key>:<value>'
+* Intro
+This is a simple org file without any meaning. Below is a simple list, which
+just contains some random item that you should not spend any time and energy on:
+
+1. I am not a simple item.
+2. Me neither.
+3. No you both are.
+
+The following is a useless table. I can refer to the Table [[My_Table]].
+
+#+NAME: My_Table
+#+CAPTION: This is the caption for the next table (or link)
+| Col1   | Col2   |
+|--------+--------|
+| cell11 | cell21 |
+| cell12 | cell22 |
+
+Following is a quote:
+
+    I do not believe in motivational quote.
+
+Following is a source code:
+
+#+begin_src csharp
+int a = 1;
+#+end_src
+
+And a figure, the name is Figure [[fig:pysduck]].
+
+#+CAPTION: This is a pysduck
+#+NAME:   fig:pysduck
+[[./pysduck.jpeg]]
+
+
+To see different font, we have ~curly braces~, *bold faced* , _underlined_ and
+math like this \(x + y = 1\)
+* More settings
+** How to change class
+To use another documentclass, set the following options
+#+begin_src txt
+#+LATEX_CLASS: myclass
+#+LATEX_CLASS_OPTIONS: red
+# Use \documentclass[red]{myclass}
+#+end_src
+But before you set the value, you might wanna tell org how to use this class. In
+particular, how the sections should be input. Therefore you should first push
+these info into the following variable:
+#+begin_src emacs-lisp
+  org-latex-classes                       ;(("article" ...) ("report" ...) ("book" ...))
+#+end_src
+To teach org about your ~myclass.cls~, do something like:
+#+begin_src emacs-lisp
+  (setq x (car org-latex-classes))        ;get what org knows about 'article'
+  ;; tell the org to treat `myclass' just like `article'
+  (setf (car x) "myclass" (car (cdr x)) "\\documentclass{myclass}")
+  (add-to-list 'org-latex-classes x)
+#+end_src
+* Quoted LaTeX Code
+There're many ways to insert LaTeX code such as @@latex: \tikz \fill[orange]
+(1ex,1ex) circle (1ex); @@, Or things like
+#+BEGIN_EXPORT latex
+\tikz \draw[thick, rounded corners=8pt]
+(0,0) -- (0,2) -- (1,3.25) -- (2,2) -- (2,0) -- (0,2) -- (2,2) -- (0,0) -- (2,0);
+#+END_EXPORT
+Or something like 
+#+LATEX: \emph{I am in \LaTeX{}.}
+Now I am in ~org~.
+* Conclusion
+Yep, that's all.

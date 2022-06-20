@@ -1,0 +1,36 @@
+
+# Enter column view: C-c C-x C-c (Search backward for the fist :COLUMNS: spec)
+# when the point at the row of column view: q to quit 
+# S-M-LEFT (org-columns-delete) S-M-RIGHT (org-columns-new)
+# e to edit; n/p next/previous allowed value
+* report                                                                     :hi:
+  :PROPERTIES:
+  :COLUMNS:  %25ITEM %25WORDS(Words){+} %OWNER(Owner)
+  :Owner_ALL: "Me" "Sagaki Yuya" "Jack"
+  :END:
+** intro                                                                     :oh:
+   :PROPERTIES:
+   :OWNER:    Jack
+   :END:
+*** intro1
+   :PROPERTIES:
+   :WORDS:    500
+   :OWNER:    Jack
+   :END:
+*** intro2
+   :PROPERTIES:
+   :WORDS:    100
+   :Owner:    Sagaki Yuya
+   :END:
+** body
+   :PROPERTIES:
+   :Words: 400
+   :Owner:    Me
+   :END:
+** conclu
+   :PROPERTIES:
+   :Words: 500
+   :Owner:    Jack
+   :END:
+
+   # Use a dynamic block to capture the column view (7.5.3)

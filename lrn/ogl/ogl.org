@@ -1,0 +1,15 @@
+* Rasterisation Overview
+** Clip Space Transformation
+The _clipspace_ and the _clip coordinates_ (X,Y,Z,W[the extents of clipspace for
+this vertex.]).
+
+_Normalized device coordinates_ : all (X,Y,Z) in [-1,1]
+** Window Transformation
+From _Normalized device coordinates_ to _window coordinates_ (relative to the
+window that the OpenGL is running within.).
+
+Still (X,Y,Z) => (right, up, away). Still float numbers, so no lost in precision
+yet. 
+*** Limits
+Z in [0,1(farthest)]
+bottom-left is (0,0)

@@ -1,0 +1,42 @@
+** build org
+*** The Makefile
+#+begin_src bash
+  make help
+  make helpall
+#+end_src
+*** How to build org to your build-from-source emacs
+#+begin_src bash
+  # Now I am in the org-mode source dir
+  cp mk/default.mk local.mk
+  # Make change to local.mk and set (prefix=/usr/local/share) which contains your
+  # home-built emacs folder.
+  emacs local.mk
+  # then install
+  make install
+#+end_src
+** Manual Ref
+*** Basic Markup
+You can make words ‘*bold*’, ‘/italic/’, ‘_underlined_’, ‘=verbatim=’ and
+‘~code~’, and, if you must, ‘+strike-through+’. Text in the code and verbatim
+string is not processed for Org specific syntax; it is exported verbatim.
+
+/One may expect this whole sentence to be italicized, but the
+following ~user/?variable~ contains =/= character, which effectively
+stops emphasis there./
+*** Edit Block
+#+begin_src emacs-lisp
+  org-structure-template-alist            ;(("a" . "export ascii") ("c" .
+                                          ;"center") ("C" . "comment") ("e" .
+                                          ;"example") ("E" . "export") ("h" .
+                                          ;"export html") ("l" . "export latex")
+                                          ;("q" . "quote") ("s" . "src") ("v" .
+                                          ;"verse"))
+  (require 'org-tempo)                    ;org-tempo
+  org-tempo-keywords-alist                ;(("L" . "latex") ("H" . "html") ("A" .
+                                          ;"ascii") ("i" . "index"))
+#+end_src
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

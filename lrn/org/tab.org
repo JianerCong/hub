@@ -1,0 +1,143 @@
+** Basic
+TAB(Next field) RET(next row) and C-c C-c to realign the table
+
+| a | b | c |
+|---+---+---|
+|   |   |   |
+|   |   |   |
+
+Even faster would be to type ‘|Name|Phone|Age’ followed by C-c RET. 
+
+S-TAB (Previous field). Edit just after move in to the cell first removes the
+values in the cell.
+| a  | b  | c  |
+|----+----+----|
+| bi | hi | bb |
+| hi | bi | b  |
+| pj | jo | jo |
+
+#+BEGIN_SRC emacs-lisp
+  org-table-auto-blank-field              ;t
+#+END_SRC
+
+** Create table from region
+C-c /
+#+BEGIN_SRC R
+  if (every_row_has_at_least_one_tab() || C-u C-u){
+    parse_as_TAB_deliminated()
+  }else if(every_row_has_at_least_one_comma() || C-u){
+    parse_as_CSV()
+  }else if(C-u C-u C-u){
+    r = prompt_for_diliminator_regex()
+    parse_deliminated_by(r)
+  }else {
+    parse_as_whitespace_deliminated()
+  }
+#+END_SRC
+** More keys
+C-c SPC : delete field value at point
+M-a | M-e : beg|end of field
+M-Left | M-Right : Move col left|right
+M-S-Left | M-S-Right : Add|Remove Column
+M-up | M-down : Move row up/down
+M-S-up : remove this row
+M-S-down : add new row
+# S-up | S-down: cell up|down
+C-c - : Insert hline below
+C-c RET : Insert hline below and move
+
+** Sort line
+C-c ^ : Sort the lines, the point indicates which column to use, the range is
+determined by the hlines (insert with C-c -). 
+C-u C-c ^ : Sort lines case-sensitively.
+
+** Region
+C-c C-x M-w : Copy the table region
+C-c C-x C-w : Cut the table region
+C-c C-x C-y (org-table-paste-rectangle)
+
+| a | b | c |
+|---+---+---|
+| 1 |   |   |
+| 3 |   |   |
+| 6 | 7 | 8 |
+
+| a | b | c |
+|---+---+---|
+| 2 | 2 | 0 |
+| 4 | 5 | 0 |
+| 0 | 0 | 0 |
+
+*** Wrap Region
+M-RET
+| a          | b | c |
+|------------+---+---|
+| aaaaaaaaa  |   |   |
+#         ^^ M-RET here split the row
+| aaaaaaaaaa |   |   |
+
+** Calculate
+C-c + : sum the column or rectangle if exist.(can be inserted with C-y).
+
+| a | b |
+|---+---|
+| 1 |   |
+| 2 |   |
+| 3 |   |
+| 4 |   |
+
+** Autofill
+S-RET : Copy down
+#+BEGIN_SRC R
+  if (current_field_is_empty()){
+    copy_from_first_non_empty_field_above()
+  }else{
+    ## current field is not empty
+    if (org-table-copy-increment || ! C-u){
+      next_row_val <- try_increment(this_val)
+    }else{
+      next_row_val <- this_val
+    }
+  }
+
+#+END_SRC
+
+| a | b  |
+|---+----|
+| 1 | s1 |
+| 2 | s2 |
+| 3 | s2 |
+| 4 | s2 |
+** Edit field
+C-c ` : Edit the field (Useful for long col)
+C-u C-c ` : Make the field visible
+* Import/Export table
+M-x org-table-import: Read csv or tab-deliminated data files
+M-x org-table-export: Write csv or tab-deliminated data files
+#+BEGIN_SRC emacs-lisp
+  org-table-export-default-format         ;"orgtbl-to-tsv"
+#+END_SRC
+* Alignment
+  To set the width of a column, one field anywhere in the column may contain
+just the string ‘<N>’ where N specifies the width as a number of characters.
+
+C-u C-c `:  expand the field.
+C-c C-c : Align the column.
+| A | B | C              |
+|---+---+----------------|
+|   |   | cccccccccccccc |
+|   |   | ccccc          |
+|   |   | c              |
+|   |   | <6>            |
+|   |   |                |
+* "Freeze header line?"
+M-x org-table-header-line-mode
+Or set this:
+#+BEGIN_SRC emacs-lisp
+  org-table-header-line-p
+#+END_SRC
+* Transpose table
+M-x org-table-transpose-table-at-point
+| 1 | 3 |
+| 2 | 4 |
+

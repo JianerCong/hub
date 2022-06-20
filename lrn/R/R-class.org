@@ -1,0 +1,495 @@
+** S3 class
+*** which class?
+#+begin_src R
+library(sloop) #for ftype()
+
+f <- factor(c("a", "b", "c"))
+
+typeof(f)
+                                        #> [1] "integer"
+attributes(f)
+                                        #> $levels
+                                        #> [1] "a" "b" "c"
+                                        #> $class
+                                        #> [1] "factor"
+unclass(f)
+                                        #> [1] 1 2 3
+                                        #> attr(,"levels")
+                                        #> [1] "a" "b" "c"
+ftype(print)
+                                        #> [1] "S3"      "generic"
+
+
+ftype(str)
+                                        #> [1] "S3"      "generic"
+ftype(unclass)
+                                        #> [1] "primitive"
+print(f)
+                                        #> [1] a b c
+                                        #> Levels: a b c
+
+                                        # stripping class reverts to integer behaviour
+print(unclass(f))
+                                        #> [1] 1 2 3
+                                        #> attr(,"levels")
+                                        #> [1] "a" "b" "c"
+
+                                        #+end_src
+*** get the underlying structure with str
+   #+begin_src R
+   time <- strptime(c("2017-01-01", "2020-05-04 03:21"), "%Y-%m-%d")
+## str is generic and can be masked
+str(time)
+                                        #>  POSIXlt[1:2], format: "2017-01-01" "2020-05-04"
+## Unclass to get the internal structure
+str(unclass(time))
+                                        #> List of 9
+                                        #>  $ sec  : num [1:2] 0 0
+                                        #>  $ min  : int [1:2] 0 0
+                                        #>  $ hour : int [1:2] 0 0
+                                        #>  $ mday : int [1:2] 1 4
+                                        #>  $ mon  : int [1:2] 0 4
+                                        #>  $ year : int [1:2] 117 120
+                                        #>  $ wday : int [1:2] 0 1
+                                        #>  $ yday : int [1:2] 0 124
+                                        #>  $ isdst: int [1:2] 0 0
+                                        #>  - attr(*, "tzone")= chr "UTC"
+
+                                        #+end_src
+*** which generics am I calling ?
+   #+begin_src R
+   s3_dispatch(print(f))
+#> => print.factor
+#>  * print.default
+#+end_src
+*** Identify the type of generics
+Generally, you can identify a method by the presence of . in the function name,
+but there are a number of important functions in base R that were written before
+S3, and hence use . to join words. If you’re unsure, check with sloop::ftype():
+    #+begin_src R
+      ## The t(transpose) function for test
+      ftype(t.test)
+      #> [1] "S3"      "generic"
+
+      ## The t(transpose) function for dataframe
+      ftype(t.data.frame)
+      #> [1] "S3"     "method"
+#+end_src
+*** Get the definition of a generic methods (hidden in the package)
+#+begin_src R
+weighted.mean.Date
+#> Error in eval(expr, envir, enclos): object 'weighted.mean.Date' not found
+
+s3_get_method(weighted.mean.Date)
+#> function (x, w, ...) 
+#> .Date(weighted.mean(unclass(x), w, ...))
+#> <bytecode: 0x7f9682f700b8>
+#> <environment: namespace:stats>
+#+end_src
+*** Make classes
+#+begin_src R
+                                        # Create and assign class in one step
+x <- structure(list(), class = "my_class")
+
+                                        # Create, then set class
+x <- list()
+class(x) <- "my_class"
+class(x)
+                                        #> [1] "my_class"
+inherits(x, "my_class")
+                                        #> [1] TRUE
+inherits(x, "your_class")
+                                        #> [1] FALSE
+
+                                        #+end_src
+**** Constructor
+#+begin_src R
+new_Date <- function(x = double()) {
+  stopifnot(is.double(x))
+  structure(x, class = "Date")
+}
+
+new_Date(c(-1, 0, 1))
+                                        #> [1] "1969-12-31" "1970-01-01" "1970-01-02"
+
+                                        #+end_src
+**** Time difference
+#+begin_src R
+new_difftime <- function(x = double(), units = "secs") {
+  stopifnot(is.double(x))
+  units <- match.arg(units, c("secs", "mins", "hours", "days", "weeks"))
+
+  structure(x,
+    class = "difftime",
+    units = units
+  )
+}
+
+new_difftime(c(1, 10, 3600), "secs")
+#> Time differences in secs
+#> [1]    1   10 3600
+new_difftime(52, "weeks")
+#> Time difference of 52 weeks
+#+end_src
+**** Validator
+#+begin_src R
+  new_factor <- function(x = integer(), levels = character()) {
+    stopifnot(is.integer(x))
+    stopifnot(is.character(levels))
+
+    structure(
+      x,
+      levels = levels,
+      class = "factor"
+    )
+  }
+
+  new_factor(1:5, "a")
+                                          #> Error in as.character.factor(x): malformed factor
+  new_factor(0:1, "a")
+                                          #> Error in as.character.factor(x): malformed factor
+  validate_factor <- function(x) {
+    values <- unclass(x)
+    levels <- attr(x, "levels")
+
+    if (!all(!is.na(values) & values > 0)) {
+      stop(
+        "All `x` values must be non-missing and greater than zero",
+        call. = FALSE
+      )
+    }
+
+    if (length(levels) < max(values)) {
+      stop(
+        "There must be at least as many `levels` as possible values in `x`",
+        call. = FALSE
+      )
+    }
+
+    x
+  }
+
+  validate_factor(new_factor(1:5, "a"))
+                                          #> Error: There must be at least as many `levels` as possible values in `x`
+  validate_factor(new_factor(0:1, "a"))
+                                          #> Error: All `x` values must be non-missing and greater than zero
+#+end_src
+**** Helps: (around constructor)
+***** help coerces
+#+begin_src R
+
+new_difftime(1:10)
+                                        #> Error in new_difftime(1:10): is.double(x) is not TRUE
+difftime <- function(x = double(), units = "secs") {
+  x <- as.double(x)
+  new_difftime(x, units = units)
+}
+
+difftime(1:10)
+                                        #> Time differences in secs
+                                        #>  [1]  1  2  3  4  5  6  7  8  9 10
+
+                                        #+end_src
+***** help calculate default
+#+begin_src R
+factor <- function(x = character(), levels = unique(x)) {
+  ind <- match(x, levels)
+  validate_factor(new_factor(ind, levels))
+}
+
+factor(c("a", "a", "b"))
+#> [1] a a b
+#> Levels: a b
+#+end_src
+***** Excercise
+****** Α df constructor
+ Write a constructor for data.frame objects.
+#+begin_src R
+
+new_data.frame <- function(...){
+  args <- list(...)
+  a1 <- args[[1]]
+  l <- length (a1)
+  for (a in args){
+    l2 <- length(a)
+    if (l2 != l){
+      stop(cat("Inconsistant length: ",l2,"and",l," "), .call=FALSE)
+    }
+  }
+  do.call(data.frame,args)
+}
+
+df <- new_data.frame(x=c(1,2),y=c(3,4))
+new_data.frame(x=c(1,2), y=3)
+
+#+end_src
+****** What base type is a data frame built on?
+       typeof(df) ⇒ list
+****** What about the names?
+      #+begin_src R
+     names(df) 
+      #+end_src
+
+** R6
+*** Special methods
+**** init
+#+begin_src R
+  Person <- R6Class("Person", list(
+                                name = NULL,
+                                age = NA,
+                                initialize = function(name, age = NA) {
+                                  stopifnot(is.character(name), length(name) == 1)
+                                  stopifnot(is.numeric(age), length(age) == 1)
+
+                                  self$name <- name
+                                  self$age <- age
+                                }
+                              ))
+
+  hadley <- Person$new("Hadley", age = "thirty-eight")
+                                          #> Error in initialize(...): is.numeric(age) is not TRUE
+
+  hadley <- Person$new("Hadley", age = 38)
+#+end_src
+**** print
+#+begin_src R
+  Person <- R6Class("Person", list(
+                                name = NULL,
+                                age = NA,
+                                initialize = function(name, age = NA) {
+                                  self$name <- name
+                                  self$age <- age
+                                },
+                                print = function(...) {
+                                  cat("Person: \n")
+                                  cat("  Name: ", self$name, "\n", sep = "")
+                                  cat("  Age:  ", self$age, "\n", sep = "")
+                                  invisible(self)
+                                }
+                              ))
+
+  hadley2 <- Person$new("Hadley")
+  hadley2
+                                          #> Person: 
+                                          #>   Name: Hadley
+                                          #>   Age:  NA
+#+end_src
+*** Add methods after creation
+#+begin_src R
+  Accumulator <- R6Class("Accumulator")
+  Accumulator$set("public", "sum", 0)
+  Accumulator$set("public", "add", function(x = 1) {
+    self$sum <- self$sum + x 
+    invisible(self)
+  })
+#+end_src
+*** Inheritance
+#+begin_src R
+  AccumulatorChatty <- R6Class("AccumulatorChatty", 
+                               inherit = Accumulator,
+                               public = list(
+                                 add = function(x = 1) {
+                                   cat("Adding ", x, "\n", sep = "")
+                                   super$add(x = x)
+                                 }
+                               )
+                               )
+
+  x2 <- AccumulatorChatty$new()
+  x2$add(10)$add(1)$sum
+                                          #> Adding 10
+                                          #> Adding 1
+                                          #> [1] 11
+#+end_src
+*** See the class content
+#+begin_src R
+  class(hadley2)
+                                          #> [1] "Person" "R6"
+  names(hadley2)
+                                          #> [1] ".__enclos_env__" "age"             "name"            "clone"
+                                          #> [5] "print"           "initialize"
+#+end_src
+*** Excercise
+**** A deck
+Create an R6 class that represents a shuffled deck of cards. You should be able
+to draw cards from the deck with ~$draw(n)~, and return all cards to the deck
+and reshuffle with ~$reshuffle()~. Use the following code to make a vector of
+cards.
+#+begin_src R
+  suit <- c("♠", "♥", "♦", "♣")
+  value <- c("A", 2:10, "J", "Q", "K")
+  cards <-
+    paste0(rep(value, 4), suit)
+#+end_src
+
+And
+#+begin_src R
+  go <- function() source('hi.R')
+  Deck <- R6::R6Class("Deck")
+
+  ## data
+  Deck$set("public",
+           "cards",
+           NA
+           )
+
+  Deck$set("public",
+           "initialize",
+           function() {
+             value <- c("A", 2:10, "J", "Q", "K")
+             suit <- c("♠", "♥", "♦", "♣")
+             self$cards <-
+               paste0(rep(value, 4), suit)
+           })
+
+  Deck$set("public",
+           "draw",
+           function(n){
+             l <- length(self$cards)
+             if (n > l){
+               stop(gettextf("Only %d cards left. Cannot draw %d cards",
+                             l, n))
+             }
+             cr <- self$cards
+             out <- sample(cr,n)
+             self$cards <- cr[!(cr %in% out)] # cr \ out
+             out
+           })
+
+  Deck$set("public",
+           "reshuffle",
+           function(){
+             value <- c("A", 2:10, "J", "Q", "K")
+             suit <- c("♠", "♥", "♦", "♣")
+             self$cards <-
+               paste0(rep(value, 4), suit)
+           })
+
+#+end_src
+*** private
+#+begin_src R
+Person <- R6Class("Person", 
+  public = list(
+    initialize = function(name, age = NA) {
+      private$name <- name
+      private$age <- age
+    },
+    print = function(...) {
+      cat("Person: \n")
+      cat("  Name: ", private$name, "\n", sep = "")
+      cat("  Age:  ", private$age, "\n", sep = "")
+    }
+  ),
+  private = list(
+    age = NA,
+    name = NULL
+  )
+)
+
+hadley3 <- Person$new("Hadley")
+hadley3
+#> Person: 
+#>   Name: Hadley
+#>   Age:  NA
+hadley3$name
+#> NULL
+#+end_src
+*** active field
+#+begin_src R
+Rando <- R6::R6Class("Rando", active = list(
+  random = function(value) {
+    if (missing(value)) {
+      runif(1)  
+    } else {
+      stop("Can't set `$random`", call. = FALSE)
+    }
+  }
+))
+x <- Rando$new()
+x$random
+#> [1] 0.0808
+x$random
+#> [1] 0.834
+x$random
+#> [1] 0.601
+#+end_src
+*** private + active
+#+begin_src R
+Person <- R6Class("Person", 
+  private = list(
+    .age = NA,
+    .name = NULL
+  ),
+  active = list(
+    age = function(value) {
+      if (missing(value)) {
+        private$.age
+      } else {
+        stop("`$age` is read only", call. = FALSE)
+      }
+    },
+    name = function(value) {
+      if (missing(value)) {
+        private$.name
+      } else {
+        stopifnot(is.character(value), length(value) == 1)
+        private$.name <- value
+        self
+      }
+    }
+  ),
+  public = list(
+    initialize = function(name, age = NA) {
+      private$.name <- name
+      private$.age <- age
+    }
+  )
+)
+
+hadley4 <- Person$new("Hadley", age = 38)
+hadley4$name
+#> [1] "Hadley"
+hadley4$name <- 10
+#> Error in (function (value) : is.character(value) is not TRUE
+hadley4$age <- 20
+#> Error: `$age` is read only
+#+end_src
+*** Excercise
+Create a class with a write-only ~$password~ field. It should have
+~$check_password(password)~ method that returns ~TRUE~ or ~FALSE~, but there
+should be no way to view the complete password.
+#+begin_src R
+go <- function() source('hi.R')
+
+pswd <- R6::R6Class("pswd",
+                    private = list(.password = NA),
+                    public = list(
+                      initialize = function(p) {
+                        private$.password <- p
+                      },
+                      check_password = function(p){
+                        return(private$.password == p)
+                      }
+                    ),
+                    active = list(
+                      password = function(value) {
+                        if (missing(value)) {
+                          stop("`$password` is write only", call. = FALSE)
+                        } else {
+                          private$.password <- value
+                        }
+                      })
+                    )
+
+p <- pwsd$new(123)
+p$check_password(123) #TRUE
+p$check_password(1234) #FLASE
+
+p$password <- 456
+p$check_password(1234)
+
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "R"
+# End:

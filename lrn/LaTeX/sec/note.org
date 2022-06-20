@@ -1,0 +1,28 @@
+* Signature
+#+begin_src latex
+\titleformat{<command>}[<shape>]
+{<format>}{<label>}{<sep>}{<before-code>}[<after-code>]
+#+end_src
+
+<command> can be part, \chapter, \section, \subsection, \subsubsection,
+\paragraph or \subparagraph.
+
+<shape> is sectioning paragraph shape; possible values are: hang, block,
+display, runin, leftmargin, rightmargin, drop, wrap and frame.
+
+<format> is the format to be applied to the title, label, and text; for example
+\normalfont\Large\bfseries
+
+<label> specify sectioning label.
+
+<sep> is the horizontal separation between label and title body and it must be a
+length and not be empty.
+# 1.2      a section
+#    <----> This distance
+
+#+begin_src latex
+ \titlespacing{<command>}{<left>}{<before-sep>}{<after-sep>}
+ #+end_src
+<left> increases the left margin.
+<before-sep> is the vertical space before the title.
+<after-sep> is the separation between title and non-sectioning text.

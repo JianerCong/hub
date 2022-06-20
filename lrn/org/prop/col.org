@@ -1,0 +1,69 @@
+
+#+COLUMNS: %25ITEM %TAGS %PRIORITY %TODO
+A ‘COLUMNS’ property within a property drawer before first headline will apply
+to the entire file.
+* Customize Column format
+** Top node for columns view
+   :PROPERTIES:
+   :COLUMNS: %25ITEM %TAGS %PRIORITY %TODO
+   #         ^^^^^^^-- Each of them is a column attribute
+   :END:
+   
+* Column attribute syntex
+%[WIDTH]PROPERTY[(TITLE)][{SUMMARY-TYPE}] 
+
+Where The summary type. If specified, the column values for parent nodes are
+computed from the children.
+
+Supported summary types are:
+‘+’	Sum numbers in this column.
+‘+;%.1f’	Like ‘+’, but format result with ‘%.1f’.
+‘$’	Currency, short for ‘+;%.2f’.
+‘min’	Smallest number in column.
+‘max’	Largest number.
+‘mean’	Arithmetic mean of numbers.
+‘X’	Checkbox status, ‘[X]’ if all children are ‘[X]’.
+‘X/’	Checkbox status, ‘[n/m]’.
+‘X%’	Checkbox status, ‘[n%]’.
+‘:’	Sum times, HH:MM, plain numbers are minutes.
+‘:min’	Smallest time value in column.
+‘:max’	Largest time value.
+‘:mean’	Arithmetic mean of time values.
+‘@min’	Minimum age56 (in days/hours/mins/seconds).
+‘@max’	Maximum age (in days/hours/mins/seconds).
+‘@mean’	Arithmetic mean of ages (in days/hours/mins/seconds).
+‘est+’	Add low-high estimates.
+Or define your own with org-columns-summary-types
+
+
+* report
+  :PROPERTIES:
+  :COLUMN: %25ITEM %TAGS %25Words{+}
+  :END:
+The first column, ‘%25ITEM’, means the first 25 characters of the item itself,
+i.e., of the headline. 
+
+You probably always should start the column definition
+with the ‘ITEM’ specifier.
+
+The following is an example:
+The list of name means the allowable values
+#+BEGIN_SRC org
+  :COLUMNS:  %25ITEM %9Approved(Approved?){X} %Owner %11Status \
+                     %10Time_Estimate{:} %CLOCKSUM %CLOCKSUM_T
+  :Owner_ALL:    Tammy Mark Karl Lisa Don
+  :Status_ALL:   "In progress" "Not started yet" "Finished" ""
+  :Approved_ALL: "[ ]" "[X]"
+#+END_SRC
+** intro
+   :PROPERTIES:
+   :Words: 300
+   :END:
+** body
+   :PROPERTIES:
+   :Words: 400
+   :END:
+** conclu
+   :PROPERTIES:
+   :Words: 500
+   :END:

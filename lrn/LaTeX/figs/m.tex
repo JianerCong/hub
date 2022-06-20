@@ -1,0 +1,111 @@
+% Use xelatex
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\title{My First Photo doc}
+\author{Jianer Cong}
+\date{\today}
+% for Japanese
+\usepackage{xeCJK}
+\usepackage{graphicx}
+% setup path
+\graphicspath{ {images/} }
+% for inline figures
+\usepackage{wrapfig}
+% package for rightcaption
+\usepackage[rightcaption]{sidecap}
+
+\begin{document}
+\maketitle
+\listoffigures
+\newpage{}
+
+PSYDUCK uses a mysterious power. When it does so, this POKéMON generates brain
+waves that are supposedly only seen in sleepers. This discovery spurred
+controversy among scholars.
+
+If it uses its mysterious power, PSYDUCK can’t remember having done so. It
+apparently can’t form a memory of such an event because it goes into an altered
+state that is much like deep sleep. When headaches stimulate its brain cells,
+which are usually inactive, it can use a mysterious power. This Pokémon is
+troubled by constant headaches. The more pain it’s in, the more powerful its
+psychokinesis becomes.It has been found that its brain cells are 10 times more
+active when Psyduck is experiencing a headache. See figure\ref{fig:psy}.
+
+\begin{SCfigure}[0.5][h]
+  \includegraphics[width=0.6\textwidth]{psyduck.jpeg}
+  \caption{Always tormented by headaches. It uses psychic powers, but it is not
+    known if it intends to do so.}\label{fig:psy}
+\end{SCfigure}
+
+See my figure in figure \ref{fig:n} on page \pageref{fig:n}, this is the first
+file I included from \verb|METAPOST|.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\textwidth]{n-latex-labs.eps}
+  \caption{My First mpost input}\label{fig:n}
+\end{figure}
+
+\newpage{}
+Slowpoke (Japanese: ヤドン Yadon) is a dual-type Water/Psychic Pokémon
+introduced in Generation I.
+
+It evolves into Slowbro starting at level 37 or Slowking when traded while
+holding a King's Rock.
+
+In Galar, Slowpoke has a pure Psychic-type regional form, introduced in Pokémon
+Sword and Shield's 1.1.0 patch. It evolves into Galarian Slowbro when exposed to
+a Galarica Cuff or Galarian Slowking when exposed to a Galarica Wreath.
+
+\begin{wrapfigure}{r}{0.25\textwidth} %this figure will be at the right
+  \centering
+  \includegraphics[width=0.25\textwidth]{slowpoke.png}
+\end{wrapfigure}
+
+Slowpoke is a pink Pokémon that resembles a cross between a salamander and a
+hippopotamus. It has vacant eyes that never seem focused, curled ears, and a
+rounded, tan muzzle. It has four legs, each of which ends in a single white
+claw. Its long, tapering tail has a white tip. This tail drips a sweet, sappy
+substance that is attractive to many species of fish. Slowpoke uses the tail as
+a fishing lure. The tail often breaks off, but it will grow back. In Alola, its
+tail is often dried and used in home-cooked stews.
+
+\begin{wrapfigure}{l}{0.25\textwidth}
+  \centering
+  \includegraphics[width=0.25\textwidth]{slowpoke.png}
+\end{wrapfigure}
+Slowpoke has a notoriously dim intellect and often forgets what it was doing. It
+takes a long time to respond to outside stimuli. For example, it can take up to
+five seconds to process pain and can take an entire day to notice when its tail
+has been bitten. Slowpoke is commonly found at the water's edge. In some places,
+it is believed that Slowpoke's yawn causes rain. This Pokémon is worshiped in
+those areas.
+
+In Galar, Slowpoke's appearance is a result of particles being built from eating
+Galarica seeds. The main difference is that it has gained yellow coloration on
+its forehead and tail. Unlike its counterpart, its tail is always down and said
+to have a spicy taste.
+
+Galarian Slowpoke are known to relax on seashores and riverbanks without a care
+in the world. Occasionally, it will get a very sharp look in its eyes as if it
+is about to think of something tremendous. However, Slowpoke will quickly forget
+and return to its normal expression. It is believed that its behavior is a
+result of Galarica particles affecting its brain.
+\end{document}
+
+% LaTeX units and legths
+% Abbreviation 	Definition
+% pt 	A point, is the default length unit. About 0.3515mm
+% mm 	a millimetre
+% cm 	a centimetre
+% in 	an inch
+% ex 	the height of an x in the current font
+% em 	the width of an m in the current font
+% \columnsep 	distance between columns
+% \columnwidth 	width of the column
+% \linewidth 	width of the line in the current environment
+% \paperwidth 	width of the page
+% \paperheight 	height of the page
+% \textwidth 	width of the text
+% \textheight 	height of the text
+% \unitlength 	units of length in the picture environment. 

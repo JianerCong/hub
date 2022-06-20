@@ -1,0 +1,80 @@
+
+** org
+*** visibility
+**** Initial visibility?
+Adding one of the following lines anywhere in the buffer:
+#+BEGIN_SRC org
+#+STARTUP: overview
+#+STARTUP: content
+#+STARTUP: showall
+#+STARTUP: show2levels
+#+STARTUP: show3levels
+#+STARTUP: show4levels
+#+STARTUP: show5levels
+#+STARTUP: showeverything
+#+END_SRC
+*** sparse tree (trees that are ...)
+C-c / 
+M-g n or M-g M-n (next-error)
+M-g p or M-g M-p (previous-error)
+**** frequently used search string
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-custom-commands
+      '(("f" occur-tree "FIXME")))
+#+END_SRC
+*** headline motions
+**** C-c C-
+f | b | n | p | u |  j
+
+*** ToDo
+**** basic
+C-c C-t
+,-> (unmarked) -> TODO -> DONE --.
+'--------------------------------'
+
+S-M-RET (org-insert-todo-heading)
+M-x org-agenda t (org-todo-list)
+C-c / t (org-show-todo-tree)
+**** customized todo state (other than TODO-DONE)
+Add these lines
+#+BEGIN_SRC org
+#+TODO: TODO FEEDBACK VERIFY | DONE CANCELED
+#+END_SRC
+*** hyperlink
+    Use 
+#+BEGIN_SRC org
+[[LINK][DESCRIPTION]]
+#+END_SRC
+[[https://orgmode.org]]
+** Escape them
+1. all '[' and ']'
+2. '\' before ']' and '['
+3. '\' at the end of the link
+** open link
+| C-c C-o | Go to Link |
+| C-c &   | Go back    |
+** internal link
+   # go to the heading who has property CUSTOM_ID=my-id
+   [[#my-id]]
+   
+   # go to this heading:
+   [[*My Heading]]
+   
+   # go to my table
+[[My Table][Click me to go to My Table]]
+
+# go to a "dedicated target"
+[[HERE]]
+   
+#+NAME: My Table
+| a | b |
+|---+---|
+| c | d |
+
+I am <<HERE>> a dedicated target.
+
+*** My CUSTOM_ID is my-id
+   :PROPERTIES:
+   :CUSTOM_ID: my-id
+   :END:
+*** My Heading

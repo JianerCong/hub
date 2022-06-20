@@ -1,0 +1,769 @@
+# -*- org-what-lang-is-for: "latex"; -*-
+** tikz
+*** name a coordinate
+#+begin_src latex
+\coordinate (content) at (90:3cm);
+\coordinate (structure) at (210:3cm);
+\coordinate (form) at (-30:3cm);
+#+end_src
+*** my macros
+#+BEGIN_SRC latex
+\newcommand\uptodown[2][]{\draw(#1.south)..controls + (0,-.5cm) and + (0,.5cm).. (#2.north);}
+\newcommand\sdown[2][]{\draw(#1.south)--(#2.north);} %Straight down
+\def\myem{\Large \bf}
+#+END_SRC
+*** aligned equations in a node
+#+BEGIN_SRC latex
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{amsmath}
+\begin{document}
+\begin{tikzpicture}[every node/.style={rectangle,draw}]
+  \node {Example:}
+  child {node {%
+      $\begin{aligned}
+        a &= bx + c\\
+        a+b &= d +1
+      \end{aligned}$}};
+\end{tikzpicture}
+\end{document}
+#+END_SRC
+*** multiple lines
+#+BEGIN_SRC latex
+\documentclass{article}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.multipart}
+
+\begin{document}
+
+\begin{tikzpicture}[every text node part/.style={align=center}]
+  \node (test) [rectangle, draw] {this node \\ has \\ four \\lines};
+\end{tikzpicture}
+\end{document}
+#+END_SRC
+*** name a style
+#+BEGIN_SRC latex
+  \begin{scope}[text width=2cm]
+    \tikzstyle{my_c} = [rectangle, text width=4cm] %create a style
+
+    \matrix[matrix anchor=gt_seis_f.north,
+    draw=none,
+    below right of=spec_a,
+    column sep=2cm
+    ]{
+      \node[my_c] (gt_seis_f) {%
+        Calc seismic force $F_b$ (a.k.a Base shear)
+
+        $F_b = S_d(T_1) \times m \times \lambda$
+      }; &
+      \node (flr_m) {The mass of each floor $\{m_1 \cdots m_n\}$};&
+      \node (flr_z) {The level of each floor $\{z_1 \cdots z_n\}$};&
+      \node[my_c] (ck_high) {Verify that
+        $T_2 < 2$s and $T_1 \le 4T_C$, so that
+        higher order effects can be ignored.
+      };\\
+    };
+  \end{scope}
+#+END_SRC
+** minipage
+*** basic
+#+BEGIN_SRC latex
+% Basic use of minipage environment
+\documentclass{article}
+
+\begin{document}
+
+Look at this text,
+\begin{minipage}{3cm}
+  This text is processed in paragraph mode, and then becomes an indivisible \TeX{} box.
+\end{minipage}
+how strange!
+\end{document}
+
+#+END_SRC
+*** add indent
+#+BEGIN_SRC latex
+% Indentation in minipages
+\documentclass{article}
+
+\begin{document}
+
+Look at this text,
+\begin{minipage}{3cm}
+  \setlength{\parindent}{2em}
+  This text is processed in paragraph mode, and then becomes an indivisible \TeX{} box.
+\end{minipage}
+how strange!
+\end{document}
+
+\end{document}
+#+END_SRC
+*** left/center/right
+#+BEGIN_SRC latex
+% Indentation in minipages
+\documentclass{article}
+\usepackage{ragged2e}
+
+\begin{document}
+
+Look at this text,
+\begin{minipage}{3cm}
+  \begin{FlushLeft}
+    I am left
+  \end{FlushLeft}
+  I am also left
+  \begin{Center}
+    I am center
+  \end{Center}
+  \begin{FlushRight}
+    I am right
+  \end{FlushRight}
+\end{minipage}
+how strange!
+\end{document}
+
+#+END_SRC
+
+*** vertical alignment
+#+BEGIN_SRC latex
+% Vertical alignmemnt of minipage content
+\documentclass{article}
+
+% Change page layout
+\usepackage[margin=2cm]{geometry}
+
+% t and b align the top and bottom line of the parbox with the text line,
+% respectively.
+
+\begin{document}
+
+This is
+\begin{minipage}[b]{2.5cm}
+  \textbf{A paragraph aligned at the bottom.}
+\end{minipage}
+and this is
+\begin{minipage}{2.5cm}
+  \textbf{A paragraph aligned at the centre.}
+\end{minipage}
+and the last one is 
+\begin{minipage}[t]{2.5cm}
+  \textbf{A paragraph aligned at the top.}
+\end{minipage}
+
+\end{document}
+
+#+END_SRC
+
+*** sizing the box
+#+BEGIN_SRC latex
+% Set vertical positioning of LaTeX minipage
+\documentclass{article}
+
+\begin{document}
+
+This text is
+\raisebox{-2cm}                 %-2cm below baseline
+{
+  \begin{minipage}{5cm}         %5cm wide
+    \textit{way below}
+  \end{minipage}
+} the base line of text
+
+\end{document}
+#+END_SRC
+
+*** where to put the contents (general syntex)
+    #+BEGIN_SRC latex
+    \documentclass{article}
+
+\begin{document}
+
+% \begin{minipage}[position][height][inner-pos]{width}
+
+Where \texttt{height} is the height of minipage, and \texttt{inner-pos} controls
+where the contents is placed  inside the box. It can be:
+\begin{itemize}
+\item \texttt{t} to \textbf{place the contents at the top}
+\item \texttt{c} to \textbf{place the contents at the center}
+\item \texttt{b} to \textbf{place the contents at the bottom}
+\item \texttt{s} to \textbf{stretch the contents vertically}
+  
+\end{itemize}
+
+Don’t go down the stairs!\hspace{3em}
+\begin{minipage}[c][3ex][t]{2em}
+  stair
+\end{minipage}
+\begin{minipage}[c][3ex][c]{2em}
+  stair
+\end{minipage}
+\begin{minipage}[c][3ex][b]{2em}
+  stair
+\end{minipage}
+
+\end{document}
+    #+END_SRC
+** counter
+*** read and increment the counter
+    #+BEGIN_SRC latex
+    % Insert figure with caption in minipage 
+\documentclass{article}
+
+
+\begin{document}
+
+\section{One section}
+Hi
+\section{Another section}
+This is a dummy section with no purpose whatsoever but to contain text. 
+This section has assigned the number \thesection.
+
+\stepcounter{equation}          %increment the counter
+\begin{equation}
+  \label{1stequation}
+  \int_{0}^{\infty} \frac{x}{\sin(x)}
+\end{equation}
+
+\end{document}
+    #+END_SRC
+*** get
+#+BEGIN_SRC latex
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\newcounter{example}[section]   %define a counter (renewed at each section)
+% define an env
+% use \refstepcounter to increment it , so that we can \ref and \label it
+% use \theexample to access the counter
+\newenvironment{example}[1][]{\refstepcounter{example}\par\medskip
+  \textbf{Example~\theexample. #1} \rmfamily}{\medskip}
+
+\begin{document}
+This document will present...
+
+\begin{example}\label{hi}
+  This is the first example. The counter will be reset at each section.
+\end{example}
+
+Above is the example~\ref{hi}.
+It can also be
+
+example~\roman{example}
+example~\arabic{example}
+example~\Roman{example}
+example~\Alph{example}
+example~\alph{example}
+example~\fnsymbol{example}
+
+Use \texttt{$\backslash$value\{example\}} to access it in a numeric expression as in
+
+\texttt{$\backslash$setcounter\{section\}\{$\backslash$value\{subsection\}\}}
+
+Below is a second example
+
+\begin{example}
+  And here's another numbered example.
+\end{example}
+
+\section{Another section}
+This is a dummy section with no purpose whatsoever but to contain text. 
+This section has assigned the number \thesection.
+
+\stepcounter{equation}
+\begin{equation}
+  \label{1stequation}
+  \int_{0}^{\infty} \frac{x}{\sin(x)}
+\end{equation}
+
+\begin{example}
+  This is the first example in this section. 
+\end{example}
+
+\end{document}
+#+END_SRC
+*** How label works
+Well, \label is defined in the LaTeX kernel as
+
+#+begin_src latex
+\def\label#1{\@bsphack
+  \protected@write\@auxout{}%
+         {\string\newlabel{#1}{{\@currentlabel}{\thepage}}}%
+  \@esphack}
+  #+end_src
+Note that (despite all the other things going on), it writes to the .aux file something that looks like this:
+#+begin_src latex
+\newlabel{<label>}{{<currentlabel>}{<page>}}
+#+end_src
+where <label> is what supply in the form \label{<label>} and <currentlabel> is
+the current value of ~\@currentlabel~ - a macro that is usually updated whenever
+you call ~\refstepcounter{<cntr>}~.
+
+So, if \@currentlabel is not up-to-date according to the reference you're after,
+then you'll obtain an incorrect reference. Most notably this happens when you
+place a \label before \caption, since \caption increases some counter (figure or
+table counter, say). <page> is the page on which the reference occurs within the
+document and has the value of \thepage at that time - this could be anything set
+out in the definition of \thepage, just for clarity.
+** fonts
+*** xelatex
+#+BEGIN_SRC latex
+\documentclass[12pt]{article}
+\usepackage{fontspec}
+
+%-----------------------------------------------------------------------
+\setromanfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont[Color={0019D4}]{Courier New}
+%-----------------------------------------------------------------------
+
+\title{Sample font document}
+\author{Overleaf}
+\date{\today}
+\begin{document}
+    
+\maketitle
+     
+This an \textit{example} of document compiled with the  
+\textbf{XeLaTeX} compiler. If you have to write some code you can 
+use the \texttt{verbatim} environment:
+
+    \begin{verbatim}
+    Usually this environment is used to display code, 
+    so here's a simple C program.
+
+    #include <stdio.h>
+    #define NUMYAYS 10
+      
+    int main()
+    {
+        int i;   
+        for (i = 0; i <= NUMYAYS; i++) 
+        {
+            printf("Yay! Overleaf is Awesome!\n");
+        }
+        return 0;
+    }
+    \end{verbatim}
+    {\sffamily This is a sample text in \textbf{Sans Serif Font Typeface}}
+       
+\end{document}
+#+END_SRC
+*** setup fonts mannually from folder & input files
+#+BEGIN_SRC latex
+  \documentclass{article}
+  \usepackage{minted}
+
+  \usepackage{fontspec}
+  \setmonofont{Cascadia}[
+  Path=/usr/share/fonts/truetype/Cascadia_Code/,
+  Scale=0.85,
+  Extension = .ttf,
+  UprightFont=*Code,              %find CascadiaCode.ttf
+  BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+  ItalicFont=*CodeItalic,
+  BoldItalicFont=*CodePLItalic
+  ]
+
+  \begin{document}
+  \inputminted{c}{hi.c}
+  you can specify options
+  \inputminted[linenos=true,bgcolor=gray!30]{c}{hi.c}
+  \end{document}
+#+END_SRC
+** color
+*** basic
+#+BEGIN_SRC latex
+\documentclass{article}
+\usepackage{xcolor}
+\begin{document}
+This example shows some instances of using the \texttt{xcolor} package 
+to change the colour of elements in \LaTeX.
+
+\begin{itemize}
+  \color{blue}
+\item First item
+\item Second item
+\end{itemize}
+
+\noindent
+{\color{red} \rule{\linewidth}{0.5mm}}
+\end{document}
+#+END_SRC
+*** the colors  in dvipsnames
+#+BEGIN_SRC latex
+  \documentclass{article}
+  \usepackage[dvipsnames]{xcolor}
+  \begin{document}
+  This example shows how to use the \texttt{xcolor} package 
+  to change the colour of \LaTeX{} page elements.
+
+  \newcommand{\myshow}[1]{\color{#1} #1}
+
+  We can do
+  {\myshow{Aquamarine}}
+  {\myshow{Bittersweet}}
+  {\myshow{BrickRed}}
+  {\myshow{Cerulean}}
+  {\myshow{ForestGreen}}
+  {\myshow{Mahogany}}
+  {\myshow{Maroon}}
+  {\myshow{MidnightBlue}}
+  {\myshow{NavyBlue}}
+  {\myshow{Plum}}
+  {\myshow{Rhodamine}}
+  {\myshow{SeaGreen}}
+  {\myshow{TealBlue}}
+  {\myshow{Thistle}}
+  {\myshow{Turquoise}}
+  {\myshow{VioletRed}}
+  {\myshow{WildStrawberry}}
+
+  \begin{itemize}
+    \color{ForestGreen}
+  \item First item
+  \item Second item
+  \end{itemize}
+
+  \noindent
+  {\color{RubineRed} \rule{\linewidth}{0.5mm}}
+
+  The background colour of text can also be \textcolor{red}{easily} set. For 
+  instance, you can change use an \colorbox{BurntOrange}{orange background} and then continue typing.
+  \end{document}
+#+END_SRC
+**** error, option clash when specifying the [dvipsnames] for xcolor
+A: Maybe that the document class (e.g. the standalone class) already loaded the xcolor with no
+options. Therefor do the following to the document class declaration 
+#+BEGIN_SRC latex
+  \documentclass[border=0.2cm,dvipsnames]{standalone}
+#+END_SRC
+So it should be something like
+#+BEGIN_SRC latex
+  \documentclass[border=0.2cm,dvipsnames]{standalone}
+  \title{force}
+  \author{Jianer Cong}
+  \usepackage{tikz}
+  \usepackage{amsmath}
+  \usetikzlibrary{shapes} % ellispe node shape
+  \usetikzlibrary{shapes.multipart} % ellispe node shape
+  \usetikzlibrary{arrows.meta}    %-o arrow head
+  \usetikzlibrary{arrows}
+
+
+  % no need since it's loaded
+  % \usepackage{xcolor}
+  \newcommand{\cola}[1][]{\textcolor{Aquamarine} #1}
+  \newcommand{\colb}[1][]{\textcolor{Maroon} #1}
+  \newcommand{\colc}[1][]{\textcolor{Thestle} #1}
+
+  \begin{document}
+  \input{d3}
+  \end{document}
+#+END_SRC
+*** my color
+#+BEGIN_SRC latex
+\documentclass{article}
+\usepackage[dvipsnames]{xcolor}
+
+\definecolor{mypink1}{rgb}{0.858, 0.188, 0.478}
+\definecolor{mypink2}{RGB}{219, 48, 122}
+\definecolor{mypink3}{cmyk}{0, 0.7808, 0.4429, 0.1412}
+\definecolor{mygray}{gray}{0.6}
+
+\begin{document}
+User-defined colours with different colour models:
+
+\begin{enumerate}
+\item \textcolor{mypink1}{Pink with rgb}
+\item \textcolor{mypink2}{Pink with RGB}
+\item \textcolor{mypink3}{Pink with cmyk}
+\item \textcolor{mygray}{Gray with gray}
+\end{enumerate}
+\end{document}
+#+END_SRC
+
+** minted
+*** minimal
+#+BEGIN_SRC latex
+  \documentclass{article}
+  \usepackage{minted}
+  \begin{document}
+  \begin{minted}{c}
+    int main() {
+      printf("hello, world");
+      return 0;
+    }
+  \end{minted}
+  \end{document}
+  % run with
+  % $ xelatex -shell-escape hi.tex 
+#+END_SRC
+*** use different styles
+**** check styles
+#+BEGIN_SRC bash
+pygmentize -L styles
+#+END_SRC
+**** use styles
+#+BEGIN_SRC latex
+\usemintedstyle{vs}
+\usemintedstyle[csharp]{vs}
+#+END_SRC
+*** supported langs
+#+BEGIN_SRC bash
+pygmentize -L lexers
+#+END_SRC
+*** math in comments
+#+BEGIN_SRC latex
+
+\documentclass{article}
+\usepackage{minted}
+\begin{document}
+\begin{minted}[mathescape]{python}
+  # Returns $\sum_{i=1}^{n}i$
+  def sum_from_one_to(n):
+  r = range(1, n + 1)
+  return sum(r)
+\end{minted}
+\end{document}
+#+END_SRC
+*** set properties at global/lang levels
+#+begin_src latex
+\documentclass{article}
+\usepackage{minted}
+\setminted{linenos}             %all lang has ling numbers
+\setminted[c++]{linenos=false,bgcolor=gray!40}             %except for c++
+\setmintedinline{linenos=false,bgcolor=gray!20}                        %all inline code has these
+\begin{document}
+Python \mint{python}| l = [2*x for x in [1,2,3]]|
+The codes:
+\begin{minted}{python}
+  def f(n):
+  return 2*n
+\end{minted}
+
+R \mint{r}| l <- map_dbl(c(1,2,3), function(x){2*x})|
+The codes:
+\begin{minted}{r}
+  f <- function(n){2*n}
+\end{minted}
+C++
+\begin{minted}{c++}
+  double f(double n){
+    return 2*n;
+  }
+\end{minted}
+\end{document}
+#+end_src
+*** caption and label
+#+begin_src latex
+\documentclass{article}
+\usepackage[newfloat]{minted}
+\usepackage{caption}
+
+\newenvironment{code}{\captionsetup{type=listing}}{}
+\SetupFloatingEnvironment{listing}{name=Source Code}
+
+\begin{document}
+% Caption on top
+\begin{code}
+  \captionof{listing}{My C-Code}\label{code:c-code}
+  \begin{minted}{c}
+    int main() {
+      printf("bye, world");
+      return 0;
+    }
+  \end{minted}
+\end{code}
+Below is Source Code~\ref{code:c-code}.  
+% Caption on bottom
+Below is Source Code~\ref{code:cc-code}.  
+\begin{code}
+  \begin{minted}{c}
+    int main() {
+      printf("bye, world");
+      return 0;
+    }
+  \end{minted}
+  \captionof{listing}{My C-Code}\label{code:cc-code}
+\end{code}
+% Counter used
+Now \texttt{\\thelisting} counter is \thelisting. %⇒ 2
+
+\end{document}
+#+end_src
+
+** amsthrm
+*** newtheorem
+#+begin_src latex
+  \newtheorem{lem}{Lemma}
+  %%          ^^^^^^^ Environment name
+  %%                   ^^^^^^^ Label
+  %%  do \begin{lem} ... \end{lem}
+  \newtheorem*{jl}{Jianer's Lemma}
+  %% do \begin{jl} ... \end{jl}
+  
+#+end_src
+*** numbering
+By default, each therom-like dose independent numbering:
+Theorem 1, Theorem 2, Lemma 1, Theorem 3, Lemma 2.
+If you want to increase the lemma counter as theorem
+do the following when declaring new environment
+#+begin_src latex
+  \newtheorem{thm}{Theorem}
+  \newtheorem{lem}[thm]{Lemma}
+  %%              ^^^^ the optional arg2 makes lem share counter with thm
+
+#+end_src
+*** numbering with section
+Make things like Proposition 2.1 , Proposition 2.2
+#+begin_src latex
+  \newtheorem{prop}{Proposition}[section]
+  %% The last arg ask to reset the counter prop when section is changed
+#+end_src
+*** styles
+| style-name | desc   |
+|------------+--------|
+| plain      | italic |
+| definition | roman  |
+| remark     | roman  |
+Use the following to change therom styles
+#+begin_src latex
+  \theoremstyle{plain}
+  \newtheorem{thm1}{Theorem1}
+  \newtheorem{thm2}{Theorem2}
+
+
+  \theoremstyle{definition}
+  \newtheorem{thm3}{Theorem3}
+  \newtheorem{thm4}{Theorem4}
+
+
+  \theoremstyle{remark}
+  \newtheorem{thm5}{Theorem5}
+  \newtheorem{thm6}{Theorem6}
+#+end_src
+*** proof
+#+begin_src latex
+  \begin{proof}
+    ...
+  \end{proof}
+
+  Change the heading texts:
+  \begin{proof}[My Proof]
+    ...
+  \end{proof}
+
+  Use the following to redefine the \qed symbol:
+  \renewcommand{\qedsymbol}{\blacksquare}
+
+  If the last part of proof is a list or equation, use a \texttt{qedhere}
+
+  \begin{proof}
+    \begin{equation}
+      1 = 1 \qedhere
+      %% Tip1: amsthrm should be loaded after ams math
+      %% tip2: if qedhere failed, try \mbox{\qedhere}
+    \end{equation}
+  \end{proof}
+#+end_src
+** amsmath
+*** suppress the equation number of a particular line
+You can suppress the number on any particular line by putting \notag
+before the end of that line; \notag should not be used outside a display environ-
+ment as it will mess up the numbering.
+*** write your own tag
+You can also override a number with a tag of your own using \tag{⟨label ⟩},
+where ⟨label ⟩ means arbitrary text such as $*$ or ii used to “number” the
+equation. A tag can reference a different tagged display by use of
+\tag{\ref{⟨label ⟩}⟨modifier ⟩} where ⟨modifier ⟩ is optional. If you are using
+hyperref, use \ref*; use of the starred form of \ref prevents a reference to a
+modified tag containing a nested link from linking to the original display.
+*** dots
+By using the semantically oriented commands
+• \dotsc for “dots with commas”
+• \dotsb for “dots with binary operators/relations”
+• \dotsm for “multiplication dots”
+• \dotsi for “dots with integrals”
+• \dotso for “other dots” (none of the above)
+instead of \ldots and \cdots, 
+#+begin_src latex
+Then we have the series $A_1, A_2,
+\dotsc$, the regional sum $A_1
++A_2 +\dotsb $, the orthogonal
+product $A_1 A_2 \dotsm $, and
+the infinite integral
+\[\int_{A_1}\int_{A_2}\dotsi\]
+#+end_src
+*** The \text command (better mbox)
+The main use of the command \text is for words or phrases in a display. It
+is very similar to the LATEX command \mbox in its effects, but has a couple
+of advantages. If you want a word or phrase of text in a subscript, you can
+type ..._{\textrm{word or phrase}}, which is slightly easier than the \mbox
+equivalent: ..._{\mbox{\rmfamily\scriptsize word or phrase}}.
+
+Note that the standard \textrm command will use the amsmath \text definition,
+but ensure the \rmfamily font is used,
+#+begin_src latex
+  f_{[x_{i-1},x_i]} \text{ is monotonic,}
+  \quad i = 1,\dots,c+1
+
+  \partial_s f(x) = \frac{\partial}{\partial x_0} f(x)\quad
+\text{for $x= x_0 + I x_1$.}
+#+end_src
+** cleveref
+#+begin_src latex
+\documentclass{article}
+\title{Try cleveref}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+\author{Jianer Cong}
+\date{\today}
+
+\usepackage{lipsum}
+\usepackage{amsmath}
+\usepackage{cleveref}
+\begin{document}
+\maketitle
+
+
+\section{Intro}\label{sec:s1}
+Section 2 is \cref{sec:s2} on \cpageref{sec:s1}.
+Equation 1 is \cref{eq:e1}. The \texttt{align} has \cref{eq:e2,eq:e3}
+
+In page 18 of the manual of cleveref, one finds the following warning:
+\begin{quote}
+  cleveref will not work properly with the standard LaTeX eqnarray en-
+  vironment. There is no intention to x this. The eqnarray environment is poorly
+  implemented, making it difficult to get it to work properly with cleveref.
+  You're better using the amsmath replacements in any case, such as gather,
+  align, multline and split, which do work properly with cleveref. (See
+  http://www.tug.org/pracjourn/2006-4/madsen/)
+\end{quote}
+
+You should avoid the eqnarray environment.
+
+\lipsum[10]
+
+\begin{equation}\label{eq:e1}
+  1 + 1 = 2
+\end{equation}
+
+\begin{align}
+  1 + 1 &= 2 \label{eq:e2} \\
+  1 + 3 &= 3 \label{eq:e3}
+\end{align}
+
+
+\section{section 2}\label{sec:s2}
+\lipsum[2]
+
+\end{document}
+
+#+end_src

@@ -1,0 +1,5 @@
+* Pages
+~C-q C-l~ to insert a control-L which marks a page boundary.
+~C-x l~ count the lines in this page
+~C-x [~ and ~C-x ]~ goes to next/previous page 
+~C-x C-p~ Mark page

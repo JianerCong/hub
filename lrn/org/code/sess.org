@@ -1,0 +1,38 @@
+** Use the session args
+
+#+BEGIN_SRC emacs-lisp :session mySession
+(setq x 2)
+#+END_SRC
+
+#+RESULTS:
+: 2
+
+
+#+BEGIN_SRC emacs-lisp :session mySession
+(+ 1 x)
+#+END_SRC
+
+#+RESULTS:
+: 3
+
+** Use a session within this subtree
+   :PROPERTIES:
+   :header-args: :session MySession
+   :END:
+   
+
+#+BEGIN_SRC emacs-lisp
+(setq x 2)
+#+END_SRC
+
+#+RESULTS:
+: 2
+
+
+#+BEGIN_SRC emacs-lisp
+(+ 1 x)
+#+END_SRC
+
+#+RESULTS:
+: 3
+

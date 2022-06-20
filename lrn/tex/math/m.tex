@@ -1,0 +1,73 @@
+For a spherical triangle with sides $a$, $b$, and $c$, and opposite angles $\alpha$, $\beta$, and $\gamma$, we have:
+$$\cos \alpha = -\cos \beta \cos \gamma + \sin \beta \sin \gamma
+\cos \beta \cos \gamma \cos \alpha \quad \hbox{(Law of cosine)}$$
+and:
+$$\tan {\alpha \over 2} = \sqrt{
+{- \cos \sigma \cdot \cos(\sigma - \alpha)} \over
+{\cos (\sigma - \beta) \cdot \cos (\sigma - \gamma)}
+}, \quad
+\hbox{where $\sigma = {1 \over 2}(a+b+c)$}$$
+
+We also have $$\sin x = {{e^{ix}-e^{-ix}}\over 2i}$$
+and:
+$$\int _0 ^\infty {{\sin ax \sin bx}\over{x^2}}\,dx$$
+
+\noindent The number of combinations ${}_nC_r$ of $n$ things taken $r$ at a time is:
+$$C(n,r) = {}_nC_r = {n \choose r} =
+{{n(n-1) \cdots (n-r+1)} \over {r(r-1) \cdots (1)}} =
+{{n!} \over {r!(n-r)!}}
+$$
+
+\noindent
+The value of the determinant $D$ of order $n$:
+$$D = \left | \matrix{a_{11}&a_{12}&\ldots&a_{1n}\cr
+a_{21}&a_{22}&\ldots&a_{2n}\cr
+\vdots&\vdots&\ddots&\vdots\cr
+a_{n1}&a_{n2}&\ldots&a_{nn}\cr}
+\right | $$
+is defined as the sum of $n!$ terms:
+$$\sum \> (\pm)\>a_{1i}a_{2j}\ldots a_{nk}$$
+% the \> produces a medium space.
+where $i$ and $j$ , \dots, ~$k$\/ take all
+possible values between $1$ and $n$, and the sign
+of the product is $+$ if the sequence $i$ and $j$
+, \dots, ~$k$\/ is an even permutation and $-$
+otherwise. Moreover:
+$$Q(\xi) = \lambda_1 y_1^2 \sum_{i=2}^n\sum_{j=2}^n y_i b_{ij} y_j,
+\qquad B = \Vert b_{ij} \Vert = B'$$
+
+The absolute value of $X$ , $|x|$, is defined by:
+$$|x| = \cases{x,&if $x \ge 0$;\cr
+-x , & otherwise.\cr}$$
+Now for some numbered equations,
+It is the case that for $k \ge 0$:
+$$x^{k^2}=\overbrace{x\>x\>\cdots\>x}^{2k\ \rm times}
+\eqno (1)$$
+
+Here's an example that shows some spacing
+controls, with a number on the left:
+$$[u]\![v][w]\,[x]\>[y]\;[z]\leqno(2a)$$
+The amount of spaces between the items in brackets
+gradually increases from left to right. (We've
+made the space between the first two items be {\it less\/}
+than the natual space.)
+It is sometimes the case that $$\leqalignno{
+u'_1 + tu''_2 &= u'_2 + tu''_1&(2b)\cr
+\hat\imath & \ne \hat \jmath&(2c)\cr
+\vec {\vphantom{b}a} & \approx \vec b\cr
+}$$
+% the \vphantom is an invisible rule as tall as a 'b'
+The result is of order $O(n \log\log n)$. Thus
+$$\sum_{i=1}^n x_i i= x_1 + x_2 + \cdots + x_n
+= {\rm Sum}(x_1,x_2,\ldots,x_n). \eqno(3)$$
+
+$$dx\,dy = r\,dr\,d\theta\!.\eqno(4)$$
+The set of all $q$ such that $q\le0$ is written as:
+$$\{\,q\mid q\le0\, \}$$
+Thus
+$$\forall x \exists y \; P(x,y)\Rightarrow
+\exists x \exists y\; P(x,y)$$
+where
+$$P(x,y) \buildrel \rm def \over \equiv
+\hbox {\rm any predicate in $x$ and $y$} . $$
+\bye

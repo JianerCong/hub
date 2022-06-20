@@ -1,0 +1,60 @@
+C-c , : set priority
+S-up/down : change priority
+* TODO [#A] f1
+  
+Use folloing the change the default priority range
+#+BEGIN_SRC org
+#+PRIORITIES: A B C D
+#+END_SRC
+
+
+* Subtask
+
+  # Add [/] or [%] at the end
+** TODO Battle Phase [2/3]
+*** DONE a1
+*** DONE a2
+*** TODO a3 [66%]
+**** DONE a3-1
+**** TODO a3-2
+**** DONE a3-3
+
+     
+How to count the children's children
+
+** TODO Battle Phase [3/5]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   # add this line ^^^^^^^^^^^
+   :END:
+*** DONE a1
+*** a2
+*** TODO a3 [66%]
+**** DONE a3-1
+**** TODO a3-2
+**** DONE a3-3
+
+** How to use Checkboxes
+   C-c  C-c : Toggle checker box
+   C-c C-x C-b ^ 
+*** f1 [0/1]
+    - [-] f1-1
+      - [ ] f1-1-1
+      - [X] f1-1-2
+        
+
+C-c C-x o Toggle the order property. So that these steps should be done
+one-by-one in order.
+C-c # Use this to refresh (Use this when you
+deleted an entry)
+C-u C-c u  Update entire file
+* TODO Organize party [2/4]
+  :PROPERTIES:
+  :ORDERED:  t
+  :END:
+  - [X] call people [2/2]
+    - [X] Sarah
+    - [X] Sam
+  - [X] order food
+  - [ ] think about what music to play
+  - [ ] talk to the neighbors

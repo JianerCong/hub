@@ -1,0 +1,683 @@
+* lang
+** 3. vectors
+*** 3.5 lists
+**** ~list()~ and ~c()~
+#+begin_src R
+  l4 <- list(list(1, 2), c(3, 4))
+  l5 <- c(list(1, 2), c(3, 4))
+  str(l4)
+  #> List of 2
+  #>  $ :List of 2
+  #>   ..$ : num 1
+  #>   ..$ : num 2
+  #>  $ : num [1:2] 3 4
+  str(l5)
+  #> List of 4
+  #>  $ : num 1
+  #>  $ : num 2
+  #>  $ : num 3
+  #>  $ : num 4
+#+end_src
+**** ~as.list()~ and ~unlist()~
+#+begin_src R
+  list(1:3)
+                                          #> [[1]]
+                                          #> [1] 1 2 3
+  as.list(1:3)
+                                          #> [[1]]
+                                          #> [1] 1
+                                          #> 
+                                          #> [[2]]
+                                          #> [1] 2
+                                          #> 
+                                          #> [[3]]
+                                          #> [1] 3
+  ## this is not well-documented
+  unlist(l)
+#+end_src
+**** matrices and array
+#+begin_src R
+l <- list(1:3, "a", TRUE, 1.0)
+dim(l) <- c(2, 2)
+l
+#>      [,1]      [,2]
+#> [1,] Integer,3 TRUE
+#> [2,] "a"       1
+
+l[[1, 1]]
+#> [1] 1 2 3
+#+end_src
+*** 3.6 data frames and tibbles
+A data frame is a named list of vectors with attributes for (column) ~names~,
+~row.names~, and its ~class~, ~data.frame~:
+#+begin_src R
+df1 <- data.frame(x = 1:3, y = letters[1:3])
+typeof(df1)
+#> [1] "list"
+
+attributes(df1)
+#> $names
+#> [1] "x" "y"
+#> 
+#> $class
+#> [1] "data.frame"
+#> 
+#> $row.names
+#> [1] 1 2 3
+#+end_src
+tibbles
+#+begin_src R
+library(tibble)
+
+df2 <- tibble(x = 1:3, y = letters[1:3])
+typeof(df2)
+#> [1] "list"
+
+attributes(df2)
+#> $names
+#> [1] "x" "y"
+#> 
+#> $row.names
+#> [1] 1 2 3
+#> 
+#> $class
+#> [1] "tbl_df"     "tbl"        "data.frame"
+#+end_src
+*** transpose a dataframe
+#+begin_src R
+  l <- data.frame(x=1:2, y=3:4)
+  a <- t(l)
+  colnames(a) <- c("a","b")
+  tibble::as_tibble(a)
+#+end_src
+** 4. subsettings
+*** 4.2 selecting multiple elements
+**** 4.2.1 Atomic vectors
+6 ways to subset a vector
+***** Positive integers
+#+begin_src R
+x[c(3, 1)]
+#> [1] 3.3 2.1
+x[order(x)]
+#> [1] 2.1 3.3 4.2 5.4
+
+# Duplicate indices will duplicate values
+x[c(1, 1)]
+#> [1] 2.1 2.1
+
+# Real numbers are silently truncated to integers
+x[c(2.1, 2.9)]
+#> [1] 4.2 4.2
+#+end_src
+***** Negative integers
+#+begin_src R
+x[-c(3, 1)]
+#> [1] 4.2 5.4
+#+end_src
+***** Logical vectors
+#+begin_src R
+  x[c(TRUE, TRUE, FALSE, FALSE)]
+  #> [1] 2.1 4.2
+  x[x > 3]
+  #> [1] 4.2 3.3 5.4
+
+  ## Recycling rules
+  x[c(TRUE, FALSE)]
+                                          #> [1] 2.1 3.3
+                                          # Equivalent to
+  x[c(TRUE, FALSE, TRUE, FALSE)]
+                                          #> [1] 2.1 3.3
+
+  ## missing value create missing output
+  x[c(TRUE, TRUE, NA, FALSE)]
+                                          #> [1] 2.1 4.2  NA
+#+end_src
+***** Nothing
+Useful in dataframe and matrix
+#+begin_src R
+x[]
+#> [1] 2.1 4.2 3.3 5.4
+#+end_src
+***** 0
+return the zero-length vector
+#+begin_src R
+x[0]
+#> numeric(0)
+#+end_src
+***** character vector
+#+begin_src R
+(y <- setNames(x, letters[1:4]))
+#>   a   b   c   d 
+#> 2.1 4.2 3.3 5.4
+y[c("d", "c", "a")]
+#>   d   c   a 
+#> 5.4 3.3 2.1
+
+# Like integer indices, you can repeat indices
+y[c("a", "a", "a")]
+#>   a   a   a 
+#> 2.1 2.1 2.1
+
+# When subsetting with [, names are always matched exactly
+z <- c(abc = 1, def = 2)
+z[c("a", "d")]
+#> <NA> <NA> 
+#>   NA   NA
+#+end_src
+Warning: avoid using factor to subset, as it uses the underlying integral value.
+#+begin_src R
+y[factor("b")]
+#>   a 
+#> 2.1
+#+end_src
+**** 4.2.3 Matrices and arrays
+#+begin_src R
+a <- matrix(1:9, nrow = 3)
+colnames(a) <- c("A", "B", "C")
+a[1:2, ]
+#>      A B C
+#> [1,] 1 4 7
+#> [2,] 2 5 8
+a[c(TRUE, FALSE, TRUE), c("B", "A")]
+#>      B A
+#> [1,] 4 1
+#> [2,] 6 3
+a[0, -2]
+#>      A C
+#+end_src
+By default, [ simplifies the results to the lowest possible dimensionality. For
+example, both of the following expressions return 1D vectors.
+#+begin_src R
+a[1, ]
+#> A B C 
+#> 1 4 7
+a[1, 1]
+#> A 
+#> 1
+#+end_src
+You can subset array as if they are 1D array.
+#+begin_src R
+vals <- outer(1:5, 1:5, FUN = "paste", sep = ",")
+vals
+#>      [,1]  [,2]  [,3]  [,4]  [,5] 
+#> [1,] "1,1" "1,2" "1,3" "1,4" "1,5"
+#> [2,] "2,1" "2,2" "2,3" "2,4" "2,5"
+#> [3,] "3,1" "3,2" "3,3" "3,4" "3,5"
+#> [4,] "4,1" "4,2" "4,3" "4,4" "4,5"
+#> [5,] "5,1" "5,2" "5,3" "5,4" "5,5"
+
+vals[c(4, 15)]
+#> [1] "4,1" "5,3"
+#+end_src
+Use higher-dimensional data structure to subset.
+#+begin_src R
+select <- matrix(ncol = 2, byrow = TRUE, c(
+  1, 1,
+  3, 1,
+  2, 4
+))
+vals[select]
+#> [1] "1,1" "3,1" "2,4"
+#+end_src
+**** 4.2.4 Data frames and tibbles
+#+begin_src R
+  df <- data.frame(x = 1:3, y = 3:1, z = letters[1:3])
+
+  ## all rows such that x==2
+  df[df$x == 2, ]
+  #>   x y z
+  #> 2 2 2 b
+
+  ## 1st and 3rd rows
+  df[c(1, 3), ]
+  #>   x y z
+  #> 1 1 3 a
+  #> 3 3 1 c
+
+  # There are two ways to select columns from a data frame
+  # Like a list
+  df[c("x", "z")]
+  #>   x z
+  #> 1 1 a
+  #> 2 2 b
+  #> 3 3 c
+  # Like a matrix
+  df[, c("x", "z")]
+  #>   x z
+  #> 1 1 a
+  #> 2 2 b
+  #> 3 3 c
+
+  # There's an important difference if you select a single 
+  # column: matrix subsetting simplifies by default, list 
+  # subsetting does not.
+  str(df["x"])
+  #> 'data.frame':    3 obs. of  1 variable:
+  #>  $ x: int  1 2 3
+  str(df[, "x"])
+  #>  int [1:3] 1 2 3
+
+  ## But subsetting tibble always gives you tibble
+  df <- tibble::tibble(x = 1:3, y = 3:1, z = letters[1:3])
+
+  str(df["x"])
+                                          #> tibble [3 × 1] (S3: tbl_df/tbl/data.frame)
+                                          #>  $ x: int [1:3] 1 2 3
+  str(df[, "x"])
+                                          #> tibble [3 × 1] (S3: tbl_df/tbl/data.frame)
+                                          #>  $ x: int [1:3] 1 2 3
+#+end_src
+**** 4.2.5 Perserving dimensionality
+***** matrix
+#+begin_src R
+a <- matrix(1:4, nrow = 2)
+str(a[1, ])
+#>  int [1:2] 1 3
+
+str(a[1, , drop = FALSE])
+#>  int [1, 1:2] 1 3
+#+end_src
+***** data.frame
+#+begin_src R
+df <- data.frame(a = 1:2, b = 1:2)
+str(df[, "a"])
+#>  int [1:2] 1 2
+
+str(df[, "a", drop = FALSE])
+#> 'data.frame':    2 obs. of  1 variable:
+#>  $ a: int  1 2
+#+end_src
+*** 4.3 Selecting a single element
+**** the dangerous partial match
+#+begin_src R
+  x <- list(abc = 1)
+  x$a
+                                          #> [1] 1
+  x[["a"]]
+                                          #> NULL
+  options(warnPartialMatchDollar = TRUE)
+  x$a
+                                          #> Warning in x$a: partial match of 'a' to 'abc'
+                                          #> [1] 1
+#+end_src
+*** 4.4 Subsetting and assignment
+**** atomic vector
+#+begin_src R
+x <- 1:5
+x[c(1, 2)] <- c(101, 102)
+x
+#> [1] 101 102   3   4   5
+#+end_src
+**** with lists
+#+begin_src R
+  ## Assign NULL to remove element
+  x <- list(a = 1, b = 2)
+  x[["b"]] <- NULL
+  str(x)
+                                          #> List of 1
+                                          #>  $ a: num 1
+
+  ## Use list(NULL) to add a normal element
+  y <- list(a = 1, b = 2)
+  y["b"] <- list(NULL)
+  str(y)
+                                          #> List of 2
+                                          #>  $ a: num 1
+                                          #>  $ b: NULL
+#+end_src
+*** 4.5 Application
+**** Lookup table
+#+begin_src R
+  x <- c("m", "f", "u", "f", "f", "m", "m")
+  lookup <- c(m = "Male", f = "Female", u = NA)
+  lookup[x]
+  #>        m        f        u        f        f        m        m 
+  #>   "Male" "Female"       NA "Female" "Female"   "Male"   "Male"
+
+  ## Use unname() to remove the names
+  unname(lookup[x])
+                                          #> [1] "Male" "Female" NA "Female"
+                                          #> "Female" "Male" "Male"
+#+end_src
+**** Matching and merging by hand
+#+begin_src R
+  grades <- c(1, 2, 2, 3, 1)
+
+  info <- data.frame(
+    grade = 3:1,
+    desc = c("Excellent", "Good", "Poor"),
+    fail = c(F, F, T)
+  )
+  ## match to find the the position of grade in info$grade
+  id <- match(grades, info$grade)
+  id
+                                          #> [1] 3 2 2 1 3
+  info[id, ]
+                                          #>     grade      desc  fail
+                                          #> 3       1      Poor  TRUE
+                                          #> 2       2      Good FALSE
+                                          #> 2.1     2      Good FALSE
+                                          #> 1       3 Excellent FALSE
+                                          #> 3.1     1      Poor  TRUE
+#+end_src
+**** Random ~samples~ and ~bootstraps~
+Just use ~sample(n)~ to generate a random permutation of 1:n, and then use the
+results to subset the values.
+#+begin_src R
+df <- data.frame(x = c(1, 2, 3, 1, 2), y = 5:1, z = letters[1:5])
+
+# Randomly reorder
+df[sample(nrow(df)), ]
+#>   x y z
+#> 5 2 1 e
+#> 3 3 3 c
+#> 4 1 2 d
+#> 1 1 5 a
+#> 2 2 4 b
+
+# Select 3 random rows
+df[sample(nrow(df), 3), ]
+#>   x y z
+#> 4 1 2 d
+#> 2 2 4 b
+#> 1 1 5 a
+
+# Select 6 bootstrap replicates
+df[sample(nrow(df), 6, replace = TRUE), ]
+#>     x y z
+#> 5   2 1 e
+#> 5.1 2 1 e
+#> 5.2 2 1 e
+#> 2   2 4 b
+#> 3   3 3 c
+#> 3.1 3 3 c
+#+end_src
+**** ordering
+#+begin_src R
+  x <- c("b", "c", "a")
+  order(x)
+                                          #> [1] 3 1 2
+  x[order(x)]
+                                          #> [1] "a" "b" "c"
+
+
+                                          # Randomly reorder df
+  df2 <- df[sample(nrow(df)), 3:1]
+  df2
+                                          #>   z y x
+                                          #> 5 e 1 2
+                                          #> 1 a 5 1
+                                          #> 4 d 2 1
+                                          #> 2 b 4 2
+                                          #> 3 c 3 3
+
+  df2[order(df2$x), ]
+                                          #>   z y x
+                                          #> 1 a 5 1
+                                          #> 4 d 2 1
+                                          #> 5 e 1 2
+                                          #> 2 b 4 2
+                                          #> 3 c 3 3
+  df2[, order(names(df2))]
+                                          #>   x y z
+                                          #> 5 2 1 e
+                                          #> 1 1 5 a
+                                          #> 4 1 2 d
+                                          #> 2 2 4 b
+                                          #> 3 3 3 c
+#+end_src
+
+** Function
+*** The three components
+  #+begin_src R
+  f02 <- function(x, y) {
+  # A comment
+  x + y
+}
+
+formals(f02)
+#> $x
+#> 
+#> 
+#> $y
+
+body(f02)
+#> {
+#>     x + y
+#> }
+environment(f02)
+#+end_src
+*** ... (dot-dot-dot)
+**** to_list
+#+begin_src R
+  i01 <- function(y, z) {
+    list(y = y, z = z)
+  }
+
+  i02 <- function(x, ...) {
+    i01(...)
+  }
+
+  str(i02(x = 1, y = 2, z = 3))
+  #> List of 2
+  #>  $ y: num 2
+  #>  $ z: num 3
+  i04 <- function(...) {
+    list(...)
+  }
+
+  str(i04(a = 1, b = 2))
+                                          #> List of 2
+                                          #>  $ a: num 1
+                                          #>  $ b: num 2
+#+end_src
+
+** Env
+*** Three differences from lists
+1. Every name must be unique
+2. Names in environment not ordered
+3. Every environment has a parent
+4. Not copied when modified
+*** Env basic
+**** make
+#+begin_src R
+  library(rlang)
+
+  e1 <- env(a = FALSE, b="a",c=2.3)
+  e1$d <- e1 #env can contain itself
+  env_print(e1)
+  env_names(e1)
+
+  identical(global_env(), current_env())
+  ##use environment() when without rlang
+
+
+#+end_src
+**** parent
+#+begin_src R
+  ## Nameless argument is the parent
+  e2a <- env(d=4,e=5)
+  e2b <- env(e2a,a=1,b=2,c=3)
+
+  e2c <- env(empty_env(),d=4,e=5)
+  e2d <- env(e2c, a=1,b=2,c=3)
+  env_parents(e2b)
+
+  ## See all parents
+  env_parents(e2b, last=empty_env())
+
+  #+end_src
+**** super assignment
+1. Never create a variable in the current environment. It modifies an existing
+variable found in a parent env.
+2. It creates var in *global environment* when not found.
+#+begin_src R
+  x <- 0
+  f <- function(){
+    x <<- 1
+  }
+  f()
+  x #1
+  #+end_src
+**** get and set
+#+begin_src R
+  e3 <- env(x=1,y=2)
+  e3$x #1
+  e3$z <- 3
+  e3[["z"]] #3
+
+  ## When binding does't exist
+  e3$xyz #⇒ NULL
+  env_get(e3, "xyz") #error when not found
+  env_get(e3, "a", default= NA) #NA when not found
+#+end_src
+**** set name by string
+#+begin_src R
+  env_poke(e3, "a", 100)
+  e3$a #⇒ 100
+#+end_src
+**** set multiple values at once, is bound?, unbind
+#+begin_src R
+  env_bind(e3,a=10,b=20)
+  env_names(e3)
+  env_has(e3,"a") #⇒ TRUE
+  env_unbind(e3,"a")
+  env_has(e3,"a") #⇒ FALSE
+#+end_src
+**** ~where()~ is the variable
+#+begin_src R
+  where("yyy")
+  x <- 5
+  where("x")
+  where("mean")
+#+end_src
+**** env of a function
+***** Watch the defining ~env()~
+#+begin_src R
+  y <- 1
+  f <- function(x) x + y
+  fn_env(f) #⇒ Global-env
+
+  ## Define function in an env
+  e <- env()
+  e$g <- function() 1
+#+end_src
+***** Capture the function environment: return the env explicitly
+The function environment is usually gone when the function return. Return the
+environment explicitly to capture the environment.
+#+begin_src R
+  h2 <- function(x){
+    a <- x * 2
+    current_env()
+  }
+  e <- h2(x=10)
+#+end_src
+***** Capture the function environment: closure
+#+begin_src R
+  plus <- function(x){
+    function(y) x + y
+  }
+
+  plus_one <- plus(1)
+#+end_src
+*** What is the parent of the global environment?
+#+begin_src R
+  library(rlang)
+  env_parents(global_env(),
+              last = empty_env() #Use this to show all
+              )
+#+end_src
+*** What is the only environment that doesn’t have a parent?
+~empty_env()~
+*** Excercise
+**** 7.2.7.2
+Create an environment as illustrated by this picture.
+#+begin_src R
+  e1 <- env()
+  e1$loop <- e1
+#+end_src
+**** 7.2.7.3
+Create a pair of environments as illustrated by this picture.
+#+begin_src R
+  e1 <- env(empty_env())
+  e2 <- env(empty_env())
+  e1$loop <- e2
+  e2$loop <- e1
+#+end_src
+**** 7.3.7.5
+Create a version of ~env_poke()~ that will only bind new names, never re-bind
+old names. Some programming languages only do this, and are known as single
+assignment languages.
+#+begin_src R
+  my_env_poke <- function(e,s,v){
+    ## set the name s in e to v. Never create new names.
+    if (!env_has(e,s)){
+      env_poke(e,s,v)
+    }else{
+      ## throw error: s dosn't exist
+    }
+  }
+#+end_src
+**** 7.3.1
+Modify ~where()~ to return all environments that contain a binding for name.
+Carefully think through what type of object the function will need to return.
+#+begin_src R
+  my_where <- function(n , env = caller_env()) {
+    library(rlang)
+    r = c()
+    while (!identical(env, empty_env())) {
+      if (env_has(env,n)) {
+        # success case: append data
+        r = c(r, env)
+      }
+      # inspect parent
+      env <- env_parent(env)
+    }
+    # base case
+    r
+  }
+#+end_src
+** Command lines
+*** call shell command inside R
+#+begin_src R
+  system2(command = "ls")
+  system2(command = "rm",
+          args    = c("-r", "examples"))
+  system2(command = "echo", 
+          args    = c("Great Truth"), 
+          stdout  = "release.txt")
+  system2(command = "diff", 
+          args    = c("imports_olsrr.txt", "imports_blorr.txt"),  
+          stdout  = TRUE)
+#+end_src
+*** R and Rscript
+#+begin_src bash
+  # Eval an expression and enter R
+  R -e "head(mtcars); tail(mtcars)"
+  # Eval an expression without entering R
+  Rscript -e "head(mtcars)"
+  # Eval a script
+  Rscript analysis.R
+#+end_src
+*** show system info
+uname 	Print details about the current machine and the operating system running on it
+uname -mp 	Hardware related information; machine & processor
+uname -srv 	Software related information; operating system, release number and version
+uname -n 	Nodename of the system
+uname -a 	Print all available information system 
+*** display memory info 
+free
+*** display disk info
+df
+* Misc
+** Streams
+*** suppress warning
+#+begin_src R
+  options(warn=-1) #suppress warning
+  sf_elem <- st_sf(tb_elem_ex,geometry=sfc_elem) %>% as_tibble
+  options(warn=0) #turn it back
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "R"
+# End:

@@ -1,0 +1,30 @@
+* Get on Ubuntu 20.04
+ #+begin_src bash
+   # Add source
+   wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+   sudo dpkg -i packages-microsoft-prod.deb
+   rm packages-microsoft-prod.deb
+
+   # Install
+   sudo apt-get update; \
+       sudo apt-get install -y apt-transport-https && \
+           sudo apt-get update && \
+           sudo apt-get install -y dotnet-sdk-5.0
+ #+end_src
+* Compile
+dotnet new Console -n MyFirstProgram
+dotnet run MyFirstProgram
+* dotnet
+** new
+   #+begin_src powershell
+     dotnet new -l                   #list all available templates (e.g. console)
+     dotnet new console -n Hi             #New a console app
+   #+end_src
+** add package
+1. dotnet add package Newtonsoft.Json
+2. done (check the .csproj file)
+** add reference
+#+BEGIN_SRC bash
+  dotnet add reference ../testing3/testing3.csproj
+  # add the testing3.csproj into the project file of current dir
+#+END_SRC

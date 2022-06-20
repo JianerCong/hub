@@ -1,0 +1,15 @@
+#! /bin/bash
+
+# A local variables list starts with a line containing the string ‘Local
+# Variables:’, and ends with a line containing the string ‘End:’. In between
+# come the variable names and values, one set per line, like this:
+
+
+
+# Do you notice that I am in shell-mode even the file name ends with txt.
+echo "bash ash sh h"
+
+#  This list should be at eh end of the file in the last PAGE
+#  Local Variables:
+#  mode: shell-script
+#  End:

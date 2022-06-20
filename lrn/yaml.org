@@ -1,0 +1,30 @@
+** examples
+*** sequence of scalers
+#+begin_src yaml
+- Mark McGwire
+- Sammy Sosa
+- Ken Griffey
+  #+end_src
+*** scaler to scaler
+#+begin_src yaml
+hr:  65    # Home runs
+avg: 0.278 # Batting average
+rbi: 147   # Runs Batted In
+#+end_src
+*** scalers to sequence
+#+begin_src yaml
+american:
+- Boston Red Sox
+- Detroit Tigers
+- New York Yankees
+national:
+- New York Mets
+- Chicago Cubs
+- Atlanta Braves
+  #+end_src
+* End
+
+
+# Local Variables:
+# org-what-lang-is-for: "yaml"
+# End:

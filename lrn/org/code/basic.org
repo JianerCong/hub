@@ -1,0 +1,104 @@
+* Basic code structure
+#+NAME: <name>
+#+BEGIN_SRC <language> <switches> <header arguments>
+  <body>
+#+END_SRC
+
+This is an inline code block src_<python>{print("hello")}.
+** Components
+1. Name :: a name makes a code block "callable"
+** Header arguments
+*** Default args
+#+begin_src emacs-lisp
+    org-babel-default-header-args           ;((:session . "none") (:results .
+                                            ;"replace") (:exports . "code") (:cache
+                                            ;. "no") (:noweb . "no") (:hlines .
+                                            ;"no") (:tangle . "no"))
+                                          
+  ;; Set noweb <- yes
+  (setq org-babel-default-header-args
+        (cons '(:noweb . "yes")
+              (assq-delete-all :noweb org-babel-default-header-args)))
+#+end_src
+*** Set header for a language or all language
+**** To make all R code stays in the same session:
+#+PROPERTY: header-args:R  :session *R*
+
+**** To set glocal header args: 
+#+PROPERTY: header-args    :results value
+*** Set header for a subtree
+**** Codes in me are cached
+     :PROPERTIES:
+     :header-args: :cache yes
+     :END:
+* Eval
+** basic
+Use C-c C-c to evaluate
+
+#+NAME: f1
+#+begin_src emacs-lisp :results value
+(+ 2 2)
+#+end_src
+
+#+RESULTS: f1
+: 4
+
+** functional mode
+   By default, org returns the last statement 
+#+begin_src emacs-lisp :results value
+(print "hi")
+4
+#+end_src
+
+#+RESULTS:
+: 4
+
+** scripting mode
+You can let org capture all outputs to stdout. (Note that single values like 3
+are not captured)
+
+
+#+begin_src R :results output
+2
+cat("Hiya")
+#+end_src
+
+#+RESULTS:
+: [1] 2
+
+** call function by hand
+If we C-c C-c the follwing, we call a named function
+#+call: square(x=3)
+
+#+RESULTS:
+: 9
+
+#+name: square
+#+header: :var x=0
+#+begin_src emacs-lisp
+(* x x)
+#+end_src
+
+** How to stop Org from asking when evaluating ?
+
+#+BEGIN_SRC emacs-lisp
+  ;;Use  (custom-set-variables '(org-confirm-babel-evaluate nil))
+  1
+#+END_SRC
+
+#+RESULTS:
+: 1
+* Exporting
+The ‘exports’ header argument is to specify if that part of the Org file is
+exported to, say, HTML or LaTeX formats.
+
+** Is the code body exported ? is theh results exported?
++ ‘code’ :: The default. The body of code is included into the exported file.
+  Example: ‘:exports code’.
++ ‘results’ :: The results of evaluation of the code is included in the exported
+  file. Example: ‘:exports results’.
++ ‘both’ :: Both the code and results of evaluation are included in the exported
+  file. Example: ‘:exports both’.
++ ‘none’ :: Neither the code nor the results of evaluation is included in the
+  exported file. Whether the code is evaluated at all depends on other options.
+  Example: ‘:exports none’.

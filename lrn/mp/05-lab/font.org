@@ -1,0 +1,36 @@
+* TrueType 
+** the most common file format
+** both printer and screen info in onefile
+** the blue TT symbol (.ttf)
+** TrueType Collection (.ttc) 
+*** multiple .ttf in a single file (chinese/japanese)
+** MS + Apple
+* PostScripts
+** Adobe
+* OpenType Fonts
+** Adobe + MS
+** Screen + printer-info in one file 
+** Either postscript (.OTF) or TrueType (.TTF)
+** Cross-platform 
+** OVer 65,000 in one font
+** Std (ASCII) vs Pro
+** Smaller size
+* dfonts--datafork TrueType font
+  Developed by apple for its System 10.
+** The two file info
+Before System 10 , Mac files has file info in two places: 
+*** the resource fork
+contains graphical-info and meta-info. e.g. file icon.
+*** the data fork
+contains the content of file. e.g. the texts in a document.
+** Why Apple did it? 
+Apple did it, since the underlying Unix of System 10 dosen's support resource
+fork and data fork.
+** Have same TT icon as TrueType fonts. But not cross-platform
+   But they work in Mac OS 10 only. But convertible to cross-platform fonts.
+** Becoming less common.
+* Web Safe Fonts
+E.g. Arial, Courier, Times New Roman,Georgia, Verdana, Comic Sans
+** Automatically downloaded for the web page
+e.g. the @font-face CSS method. 
+* SVG font

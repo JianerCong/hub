@@ -1,0 +1,9 @@
+
+The ~magic comments~ in a file declares the following defun as autoloaded.
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun f () 1)
+#+END_SRC
+Then calls to ~(update-file-autoloads)~ or ~(update-directory-autoloads)~ will
+*process* the magic comments in this file (or all files in the directory) and
+generate a ~loadsdefs.el~, which contains the ~(autoload)~ statements. 

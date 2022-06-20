@@ -1,0 +1,154 @@
+#+AUTHOR: Jianer
+#+TITLE: More listing options
+#+LATEX_COMPILER: xelatex
+#+LATEX_HEADER: \input{myheader}
+
+* Source Code
+** Set up
+*** Turn on minted output
+First we include a magic emacs-lisp block that configures some variables for us
+when exporting (e.g. turning on minted output and etc). However, we can hide the
+code block by setting XXX. This means that "Run the configuration here when
+exporting, but don't let the reader know this."
+
+This source block header works: ~#+begin_src emacs-lisp :exports results
+:results silent~.
+#+begin_src emacs-lisp :exports results :results silent
+  ;; I am automatically evaluated on export.
+  ;; Also remember to \usepackage{minted} and compile with -shell-escape
+
+  (setq org-latex-listings 'minted)
+  ;; You may also wanna set minted options globally with \setminted{linenos, frame=lines}
+  (setq org-latex-minted-options
+        '(("frame" "lines")
+          ;; ("fontsize" "\\scriptsize")
+          ("linenos" "")))
+
+  ;; \usepackage{tcolorbox}
+  ;; \tcbuselibrary{minted}
+  ;; \tcbset{listing engine=minted}
+  ;; \usepackage[dvipsnames]{xcolor}
+
+  ;; To get the color Aquamarine, NavyBlue
+  (setq org-latex-custom-lang-environments
+        '(
+          (python "\\begin{tcblisting}{
+    title=\\refstepcounter{listing}Listing~\\thelisting \\quad \\emph{\\fixorgcaption %c} \\label{%l},
+  fonttitle=\\bfseries,
+  minted language=python,
+  listing only,
+  colback=gray!20,
+  colframe=NavyBlue!80!black
+    }%s\\end{tcblisting}"
+                  )
+          ))
+  
+  ;; The commandline to compile the pdf
+  (setq org-latex-to-pdf-process
+        '("make")
+        )
+
+#+end_src
+
+So following should be our first code
+#+begin_src emacs-lisp
+  (message "Bye world")
+#+end_src
+
+** Play with line number
+In the following we play with line number within Org. Use the flag ~-r~ to
+enable line reference.
+#+BEGIN_SRC emacs-lisp -n 20 -r
+  ;; This exports with line number 20.
+  (message "This is line 21") (ref:l21)
+#+END_SRC
+So the above line is line [[(l21)]] and below is line [[(l32)]] .
+#+BEGIN_SRC emacs-lisp +n 10 -r
+  ;; This is listed as line 31.
+  (message "This is line 32") (ref:l32)
+#+END_SRC
+
+Note that to change the line in ~minted~, you should play specially with the
+~minted~ options.
+
+#+ATTR_LATEX: :options firstnumber=41
+#+BEGIN_SRC emacs-lisp -n 41 -r
+  ;; This exports with line number 41.
+  (message "This is line 42") (ref:l42)
+#+END_SRC
+So the above message line is line [[(l42)]] and the below message line is line [[(l52)]].
+
+#+ATTR_LATEX: :options firstnumber=51
+#+BEGIN_SRC emacs-lisp +n 9 -r
+  ;; This is listed as line 51.
+  (message "This is line 52") (ref:l52)
+#+END_SRC
+
+Following is our example that numbers and refers to the lines. There's no LaTeX
+black magic. Org simply replace the line number before exporting.
+#+BEGIN_SRC emacs-lisp -n -r
+  (save-excursion                 (ref:sc)
+                                  (goto-char (point-min))      (ref:jump)
+#+END_SRC
+In line [[(sc)]] we remember the current position. [[(jump)][Line (jump)]] jumps to point-min.
+
+** Noweb: listing incremental code
+By using ~noweb~ options, we can reuse the code defined early. For example, if
+we have
+#+NAME: initialization
+#+BEGIN_SRC emacs-lisp
+  (setq sentence "I am first.")
+#+END_SRC
+And then the using ~:noweb yes~ we can get:
+#+BEGIN_SRC emacs-lisp :noweb yes
+  <<initialization>>
+  (reverse sentence)
+#+END_SRC
+
+** Custom export env
+See @@latex:\mintinline{common-lisp}|(describe-vairable
+'org-latex-custom-lang-environment)| @@ .In particular, we can the following
+special characters:
+
++ ~%s~ for the formatted source
++ ~%c~ for the caption
++ ~%f~ for the float attribute
++ ~%l~ for an appropriate label
++ ~%o~ for the LaTeX attributes
+
+However, from what Jianer noticed, ~%c~ seems to expand to macro
+~(((<CAPTION>)))~ in the final TeX document. Therefore, a special macro seems to
+be needed in TeX, which is shown below:
+#+begin_src latex
+% Fix the org caption export: replace (((hi))) with hi
+\def\fixorgcaption (((#1))){#1}
+#+end_src
+Then we can configure our export as following:
+#+begin_src emacs-lisp
+  ;; \usepackage{tcolorbox}
+  ;; \tcbuselibrary{minted}
+  ;; \tcbset{listing engine=minted}
+  ;; \usepackage[dvipsnames]{xcolor}
+  ;; To get the color Aquamarine, NavyBlue
+  (setq org-latex-custom-lang-environments
+        '(
+          (python "\\begin{tcblisting}{
+    title=\\refstepcounter{listing}Listing~\\thelisting \\quad \\emph{\\fixorgcaption %c} \\label{%l},
+  fonttitle=\\bfseries,
+  minted language=python,
+  listing only,
+  colback=gray!20,
+  colframe=NavyBlue!20!black
+    }%s\\end{tcblisting}"
+                  )
+          ))
+#+end_src
+
+So we got Listing [[mypy]] :
+#+NAME: mypy
+#+CAPTION:a python caption
+#+begin_src python
+  print('Bye world')
+#+end_src
+* Conclusion
+Yep, that's all.

@@ -1,0 +1,218 @@
+* Emac
+** regex
+*** basic
+ .        any character (but newline)
+  *        previous character or group, repeated 0 or more time
+  +        previous character or group, repeated 1 or more time
+  ?        previous character or group, repeated 0 or 1 time
+  ^        start of line
+  $        end of line
+  [...]    any character between brackets
+  [^..]    any character not in the brackets
+  [a-z]    any character between a and z
+  \        prevents interpretation of following special char
+  \|       or
+  \w       word constituent
+  \b       word boundary
+  \sc      character with c syntax (e.g. \s- for whitespace char)
+  \( \)    start/end of group
+  \&lt; \&gt;    start/end of word (faulty rendering: backslash + less-than and backslash + greater-than)
+  \_< \_>  start/end of symbol
+  \` \'    start/end of buffer/string
+  \1       string matched by the first group
+  \n       string matched by the nth group
+  \{3\}    previous character or group, repeated 3 times
+  \{3,\}   previous character or group, repeated 3 or more times
+  \{3,6\}  previous character or group, repeated 3 to 6 times
+  \=       match succeeds if it is located at point
+*** group
+  \ca      ascii character
+  \Ca      non-ascii character (newline included)
+  \cl      latin character
+  \cg      greek character
+  [:digit:]  a digit, same as [0-9]
+  [:alpha:]  a letter (an alphabetic character)
+  [:alnum:]  a letter or a digit (an alphanumeric character)
+  [:upper:]  a letter in uppercase
+  [:lower:]  a letter in lowercase
+  [:graph:]  a visible character
+  [:print:]  a visible character plus the space character
+  [:space:]  a whitespace character, as defined by the syntax table, but typically
+             [ \t\r\n\v\f ], which includes the newline character
+  [:blank:]  a space or tab character
+  [:xdigit:] an hexadecimal digit
+  [:cntrl:]  a control character
+  [:ascii:]  an ascii character
+  [:nonascii:]  any non ascii character
+*** syntex class
+  \s-   whitespace character        \s/   character quote character
+  \sw   word constituent            \s$   paired delimiter
+  \s_   symbol constituent          \s'   expression prefix
+  \s.   punctuation character       \s<   comment starter
+  \s(   open delimiter character    \s>   comment ender
+  \s)   close delimiter character   \s!   generic comment delimiter
+  \s"   string quote character      \s|   generic string delimiter
+  \s\   escape character
+
+** emoji
+Add _emoji_ to your dotspacemacs-configuration-layers.
+Before we go, do :
+#+BEGIN_SRC bash
+apt-get install ttf-ancient-fonts
+#+END_SRC
+** lv feature not found
+(package-reinstall lv)
+** evil
+*** keys
+^n : paste previous
+
+Key	Action	Followed by
+a	enter insertion mode after current character	text, ESC
+b	back word
+c	change command	cursor motion command
+d	delete command	cursor motion command
+e	end of word
+f	find character after cursor in current line	character to find
+h	move left one character
+i	enter insertion mode before current character	text, ESC
+j	move down one line
+k	move up one line
+l	move right one character
+m	mark current line and position	mark character tag (a-z)
+n	repeat last search
+o	open line below and enter insertion mode	text, ESC
+p	put buffer after cursor
+q	Macro
+r	replace single character at cursor	replacement character expected
+s	substitute single character with new text	text, ESC
+t	same as "f" but cursor moves to just before found character	character to find
+u	undo
+v	UNBOUND
+w	move foreward one word
+x	delete single character
+y	yank command	cursor motion command
+z	position current line	CR = top; "." = center; "-"=bottom
+A	enter insertion mode after end of line	text, ESC
+B	move back one Word
+C	change to end of line	text, ESC
+D	delete to end of line
+E	move to end of Word
+F	backwards version of "f"	character to find
+G	goto line number prefixed, or goto end if none
+H	home cursor - goto first line on screen
+I	enter insertion mode before first non-whitespace character	text, ESC
+J	join current line with next line
+K	UNBOUND
+L	goto last line on screen
+M	goto middle line on screen
+N	repeat last search, but in opposite direction of original search
+O	open line above and enter insertion mode	text, ESC
+P	put buffer before cursor
+Q	leave visual mode (go into "ex" mode)
+R	replace mode - replaces through end of current line, then inserts	text, ESC
+S	substitute entire line - deletes line, enters insertion mode	text, ESC
+T	backwards version of "t"	character to find
+U	restores line to state when cursor was moved into it
+V	UNBOUND
+W	foreward Word
+X	delete backwards single character
+Y	yank entire line
+Z	first half of quick save-and-exit	"Z"
+0	move to column zero
+1-9	numeric precursor to other commands	[additional numbers (0-9)] command
+ 	(SPACE) move right one character
+!	shell command filter	cursor motion command, shell command
+@	vi eval	buffer name (a-z)
+#	UNBOUND
+$	move to end of line
+%	match nearest [],(),{} on line, to its match (same line or others)
+^	move to first non-whitespace character of line
+&	repeat last ex substitution (":s ...") not including modifiers
+*	UNBOUND
+(	move to previous sentence
+)	move to next sentence
+\	UNBOUND
+|	move to column zero
+-	move to first non-whitespace of previous line
+_	similar to "^" but uses numeric prefix oddly
+=	UNBOUND
++	move to first non-whitespace of next line
+[	move to previous "{...}" section	"["
+]	move to next "{...}" section	"]"
+{	move to previous blank-line separated section	"{"
+}	move to next blank-line separated section	"}"
+;	repeat last "f", "F", "t", or "T" command
+'	move to marked line, first non-whitespace	character tag (a-z)
+`	move to marked line, memorized column	character tag (a-z)
+:	ex-submode	ex command
+"	access numbered buffer; load or access lettered buffer	1-9,a-z
+~	reverse case of current character and move cursor forward
+,	reverse direction of last "f", "F", "t", or "T" command
+.	repeat last text-changing command
+/	search forward	search string, ESC or CR
+<	unindent command	cursor motion command
+>	indent command	cursor motion command
+?	search backward	search string, ESC or CR
+^B	back (up) one screen
+^D	down half screen
+^E	scroll text up (cursor doesn't move unless it has to)
+^F	foreward (down) one screen
+^I	(TAB) UNBOUND
+^J	line down
+^M	(CR) move to first non-whitespace of next line
+^T	go to the file/code you were editing before the last tag jump
+^U	up half screen
+^Y	scroll text down (cursor doesn't move unless it has to)
+^Z	suspend program
+^[	(ESC) cancel started command; otherwise UNBOUND
+^\	leave visual mode (go into "ex" mode)
+^]	use word at cursor to lookup function in tags file, edit that file/code
+^^	switch file buffer
+*** vars
+#+BEGIN_SRC emacs-lisp
+  evil-overriding-maps                    ;nil
+  evil-intercept-maps                     ;nil
+#+END_SRC
+
+** input method?
+C-\ toggle
+
+** folding mode
+*** how to add a new language ?
+In the folding.el file
+find the lines similar to :
+#+begin_src emacs-lisp
+(folding-add-to-marks-list 'csharp-mode "// {{{" "// }}}" nil t)
+#+end_src
+and add that. Don't know why it only works if I add it in the folding.el but not
+in my .init file. 
+** White space
+ | Desc                      | Key           |
+ |---------------------------+---------------|
+ | Just one space            | M-space       |
+ | Join words                | M-\           |
+ | Indent region by 3 space  | C-u 3 C-x TAB |
+ | Indent region by -3 space | C-- 3 C-x TAB |
+** outline mode
+*** outline minor mode
+** ispell
+*** change language
+M-x ispell-change-dictionary
+** kbd macros
+
+F3
+
+    In a keyboard macro definition, insert the keyboard macro counter value in the buffer (kmacro-start-macro-or-insert-counter). 
+C-x C-k C-i
+
+    Insert the keyboard macro counter value in the buffer (kmacro-insert-counter). 
+C-x C-k C-c
+
+    Set the keyboard macro counter (kmacro-set-counter). 
+C-x C-k C-a
+
+    Add the prefix arg to the keyboard macro counter (kmacro-add-counter). 
+C-x C-k C-f
+
+    Specify the format for inserting the keyboard macro counter (kmacro-set-format). 
+

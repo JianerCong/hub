@@ -1,0 +1,239 @@
+** Expression and eval
+*** basic quote and eval
+#+begin_src R
+  library(lobstr)
+
+  z <- rlang::expr(y <- x * 10)
+  x <- 4
+  eval(z) #⇒ 40
+
+  ast(f(x, "y",1))
+
+  x <- 10
+  eval(expr(x)) #⇒ 10
+  y <- 2
+  eval(expr(x+y)) #⇒ 12
+  eval(expr(x+y), env(x=1000)) #1002
+
+  ## Don't forget to quote
+  eval(print(x+1), env(x=1000)) #⇒ 11
+  eval(expr(print(x+1)), env(x=1000)) #1001
+
+#+end_src
+*** infix function
+Below two are the same
+#+begin_src R
+  ast(y <- x * 10)
+  expr(`<-`(y,`*`(x,10)))
+#+end_src
+*** Constant
+Eval constant is still constant.
+Quote constant is still constant.
+#+begin_src R
+  identical(expr(TRUE), TRUE)
+  identical(expr(1), 1)
+  identical(expr(2L), 2L)
+  identical(expr("x"), "x")
+#+end_src
+*** Symbol
+#+begin_src R
+  expr(x)  #symbol x
+  sym("x") #symbol x
+  is.symbol(expr(x)) #TRUE
+  rlang::as_string(expr(x)) #"x"
+  str(expr(x))       #symbol x
+#+end_src
+*** Application: my show
+#+begin_src R
+library(rlang)
+
+f <- function(x){
+  e <- enexpr(x) #e is an expression object
+  cat(as_string(e),'\t:',eval(e),'\n')
+}
+
+a <- 2
+f(a)
+
+#+end_src
+*** Quasiquotation
+**** paste and cement
+#+begin_src R
+  cement <- function(...) {
+    args <- ensyms(...)
+    paste(purrr::map(args, as_string), collapse = " ")
+  }
+
+  cement(Good, morning, Hadley)
+  #> [1] "Good morning Hadley"
+  cement(Good, afternoon, Alice)
+  #> [1] "Good afternoon Alice"
+
+  name <- "Hadley"
+  time <- "morning"
+
+  paste("Good", time, name)
+                                          #> [1] "Good morning Hadley"
+  cement(Good, time, name)
+                                          #> [1] "Good time name"
+  ## unquote
+  cement(Good, !!time, !!name)
+                                          #> [1] "Good morning Hadley"
+
+  paste("Good", time, name)
+  cement(Good, !!time, !!name)
+#+end_src
+**** capturing expression in function: ~expr~,  ~enexpr~, ~enexprs~
+#+begin_src R
+f2 <- function(x) enexpr(x)
+f2(a + b + c)
+#> a + b + c
+#+end_src
+To capture all arguments in ..., use enexprs().
+#+begin_src R
+f <- function(...) enexprs(...)
+f(x = 1, y = 10 * z)
+#> $x
+#> [1] 1
+#> 
+#> $y
+#> 10 * z
+#+end_src
+Make list with ~exprs~
+#+begin_src R
+exprs(x = x ^ 2, y = y ^ 3, z = z ^ 4)
+# shorthand for
+# list(x = expr(x ^ 2), y = expr(y ^ 3), z = expr(z ^ 4))
+#+end_src
+*** Calls
+#+begin_src R
+  ast(read.table("hi.csv",row.names=FALSE))
+  x <- expr(read.table("hi.csv",row.names=FALSE))
+  typeof(x)
+  is.call(x) #TRUE
+
+  ## The first element is the function
+  x[[1]] #'read.table
+  is.symbol(x[[1]]) #TRUE
+
+  ## The remainder are args.
+  as.list(x[-1])
+  x[[2]]
+  x$row.names #FALSE
+  ## number of args
+  length(x) - 1
+  ## Expand to full args names
+  call_standardise(x)
+
+  ## Calls can be modified the same way as lists
+  x$header <- TRUE
+  x
+
+  ## In R, you can quote function name
+  sum(c(1,2)) #⇒ 3
+  "sum"(c(1,2)) #⇒ 3
+#+end_src
+*** Local
+#+begin_src R
+  rm(x,y)
+  hi <- local({
+    x <- 10
+    y <- 200
+    x + y
+  })
+  hi #⇒ 210
+  x  #not found
+#+end_src
+*** Quosures: expr + env
+**** make
+#+begin_src R
+  hi <- function(x) enquo(x)
+  hi(a+b) #expr: ^a+b, env: global
+#+end_src
+**** evaluating in an environment
+#+begin_src R
+  q1 <- new_quosure(expr(x+y),
+                    env(x=1,y=10)
+                    )
+  eval_tidy(q1) #⇒ 11
+#+end_src
+**** working with ... : we got one quosure for each arg
+#+begin_src R
+  f <- function(...){
+    x <- 1
+    g(..., f=x)
+  }
+
+  g <- function(...){
+    enquos(...)
+    ## return a list of quosure
+  }
+
+  x <- 0
+  qs <- f(global=x)
+
+  map_dbl(qs, eval_tidy)
+  ## $global, $f
+  ## 0      , 1
+#+end_src
+**** Quosures are formula
+#+begin_src R
+  f <- ~runif(3)
+  str(f)
+
+  q4 <- new_quosure(expr(x+y+z))
+
+  ## "quosure", "formula"
+  class(q4)
+  is_call(q4) #TRUE
+  q4[[1]]     #`~
+  q4[[2]]     #x+y+z
+
+  attr(q4,".Environment") #<R_GlobalEnv>
+  get_expr(q4)            #⇒ x+y+z
+  get_env(q4)             #⇒ R_global_env
+#+end_src
+**** Nested quosures
+#+begin_src R
+  q2 <- new_quosure(expr(x), env(x=1))
+  q3 <- new_quosure(expr(x), env(x=10))
+  x <- expr(!!q2, !!q3)
+  ## use !! to eval sth in a quoted expression.
+  ## like the following in in lisp:
+  ## `(a ,(+ 1 1) b)                        ;(a 2 b)
+
+  eval_tidy(x) #⇒ 11
+  eval_print(x) #⇒ (^x) + (^x)
+#+end_src
+*** Data mask
+**** basic
+#+begin_src R
+  q1 <- new_quosure(expr(x * y), env(x=100))
+  df <- data.frame(y=1:5)
+  eval_tidy(q1,df) #[100, ..., 1000]
+#+end_src
+**** with: use eval tidy to implement ~with~
+#+begin_src R
+  with2 <- function(data, expr){
+    expr <- enquo(expr)
+    eval_tidy(expr,data)
+  }
+  x <- 100
+  with2(df, x*y) #[100,200,...,1000]
+#+end_src
+**** use ~eval~ to implement ~with~
+#+begin_src R
+  with3 <- function(data, expr){
+    expr <- substitute(expr)
+    eval(expr, data, caller_env())
+  }
+#+end_src
+**** explicitly refers to var in ~data~ or in ~env~
+#+begin_src R
+  x <- 1
+  df <- data.frame(x=2)
+  with2(df, .data$x) #⇒ 2
+  with2(df, .env$x) #⇒ 1
+  with2(df, .data$y) #⇒ Error
+  with2(df, .data[["x"]]) #⇒ 2
+#+end_src

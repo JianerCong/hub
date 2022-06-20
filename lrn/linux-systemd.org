@@ -1,0 +1,137 @@
+** systemd.unit
+*** systemd-escape
+#+begin_src bash
+  systemd-escape a/b/c            # a-b-c
+  systemd-escape hi               # hi
+#+end_src
+*** theory: unit file load path
+When the variable $SYSTEMD_UNIT_PATH is set, the contents of this
+variable overrides the unit load path. If $SYSTEMD_UNIT_PATH ends
+with an empty component (":"), the usual unit load path will be
+appended to the contents of the variable.
+**** load path when running in system mode ~--system~
+#+begin_src bash
+  # system unit created by the admin
+  ls /etc/systemd/system
+  # runtime unit
+  ls /run/systemd/system
+  # generated unit with medium priority
+  ls /run/systemd/generator
+  # system unit installed by the admin
+  ls /usr/local/lib/systemd/system
+  # system unit installed by the distribution package manager
+  ls /lib/systemd/system
+#+end_src
+**** load path when running in user mode ~--user~
+#+begin_src bash
+  # if $XDG_CONFIG_HOME is set: user configuration is loaded from
+  ls $XDG_CONFIG_HOME/systemd/user
+  # otherwise (if $XDG_CONFIG_HOME is not set), they are loaded from:
+  ls $HOME/.config/systemd/user
+
+  # User unit created by the admin
+  ls /etc/systemd/user
+  # default.target.wants  sockets.target.wants
+
+  # Units of packages that have been installed in the home dir ($XDG_DATA_HOME)
+  # if $XDG_CONFIG_HOME is set: user configuration is loaded from
+  ls $XDG_DATA_HOME/systemd/user
+  # otherwise (if $XDG_CONFIG_HOME is not set), they are loaded from:
+  ls $HOME/.local/share/systemd/user
+
+  ls /usr/lib/systemd/user
+  # 1000 lines...
+#+end_src
+*** in practice: show me the path with one cmd
+#+begin_src bash
+  systemd-analyze --user unit-paths
+#+end_src
+*** Example
+**** Example 1. Allowing units to be enabled
+The following snippet (highlighted) allows a unit (e.g.  foo.service)
+to be enabled via systemctl enable:
+#+begin_src bash
+  [Unit]
+  Description=Foo
+
+  [Service]
+  ExecStart=/usr/sbin/foo-daemon
+
+  [Install]
+  WantedBy=multi-user.target
+
+#+end_src
+After running systemctl enable, a symlink
+/etc/systemd/system/multi-user.target.wants/foo.service linking to the actual
+unit will be created. It tells systemd to pull in the unit when starting
+multi-user.target. The inverse systemctl disable will remove that symlink again.
+**** Example 2. Overriding vendor settings
+See the end of:
+#+begin_src bash
+man systemd.unit
+#+end_src
+** systemctl
+*** List services
+#+begin_src bash
+  systemctl list-units --type=service #or systemctl --type=service
+  systemctl list-units --type=service --state=active
+  systemctl list-units --type=service --state=running 
+#+end_src
+*** What ports are listened ?
+#+begin_src bash
+  netstat -ltup
+  netstat -ltupn                  # show numeric port
+#+end_src
+ -l : listening ports
+ -t : tcp
+ -u : udp
+ -p : show application name
+** Add my service
+in /etc/systemd/system/myserver.service (should not by symlink)
+#+begin_src systemd
+[Unit]
+Description=My Http Service
+
+[Service]
+ExecStart=/home/me/myserver
+
+[Install]
+WantedBy=multi-user.target
+#+end_src
+Where myserver is compiled from
+#+begin_src go
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func hello(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("Got request from ", req.RemoteAddr)
+	fmt.Fprintf(w, "Hello from Jianer's server\n")
+}
+
+// func headers(w http.ResponseWriter, req *http.Request) {
+
+// 	for name, headers := range req.Header {
+// 		for _, h := range headers {
+// 			fmt.Fprintf(w, "%v: %v\n", name, h)
+// 		}
+// 	}
+// }
+
+func main() {
+	port := ":443"
+	fmt.Println("My Server started on port", port)
+	http.HandleFunc("/",hello)
+	// http.HandleFunc("/headers",headers)
+	http.ListenAndServe(port, nil)
+}
+
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

@@ -1,0 +1,133 @@
+* The sister lib of ncurses
+1. panel
+2. form
+3. menu
+* Hello World
+#+BEGIN_SRC c
+#include <ncurses.h>
+
+int main()
+{	
+	initscr();			/* Start curses mode 		  */
+	printw("Bye World");	/* Print Hello World		  */
+	refresh();			/* Print it on to the real screen */
+	getch();			/* Wait for user input */
+	endwin();			/* End curses mode		  */
+
+	return 0;
+}
+
+#+END_SRC
+** What's the name of the screen created?
+stdscr
+** Why ~refresh~ exists?
+performance
+* Init
+** disable line-buffering
+*** difference between ~raw()~ and ~cbreak()~?
+Both disable line buffering, but with ~raw()~, you can handle Ctrl+Z and Ctrl+C.
+** disable echo
+~noecho()~ switches off echoing while using ~getch()~.
+** enable F1 and arrow-key
+~keypad(stdscr, TRUE)~
+** ask for input char, return ERR when timeout
+~halfdelay()~
+** Example : get a char and insert it in bold.
+#+BEGIN_SRC c
+#include <ncurses.h>
+
+int main()
+{	int ch;
+
+	initscr();			/* Start curses mode 		*/
+	raw();				/* Line buffering disabled	*/
+	keypad(stdscr, TRUE);		/* We get F1, F2 etc..		*/
+	noecho();			/* Don't echo() while we do getch */
+
+  printw("Type any character to see it in bold\n");
+	ch = getch();			/* If raw() hadn't been called
+                     * we have to press enter before it
+                     * gets to the program 		*/
+	if(ch == KEY_F(1))		/* Without keypad enabled this will */
+		printw("F1 Key pressed");/*  not get to us either	*/
+  /* Without noecho() some ugly escape
+   * charachters might have been printed
+   * on screen			*/
+	else
+    {	printw("The pressed key is ");
+      attron(A_BOLD);
+      printw("%c", ch);
+      attroff(A_BOLD);
+    }
+	refresh();			/* Print it on to the real screen */
+  getch();			/* Wait for user input */
+	endwin();			/* End curses mode		  */
+
+	return 0;
+}
+
+#+END_SRC
+* Output functions
+** ~addchr()~ and friends 
+Usage: put a char and move the current cursor location.
+*** 2 ways to asign char with attributes
+    1. "Or"ing the char and the attributes MACRO as in
+#+BEGIN_SRC c
+    addch(ch | A_BOLD | A_UNDERLINE);
+#+END_SRC
+    2. Use ~attrset(),attron(),attroff()~ to turn on, off attributes.
+*** Find special char available
+Find ~ASC_~ macro in ~ncursor.h~
+** move cursor
+#+BEGIN_SRC c
+  move(row,col);    /* moves the cursor to rowth row and colth column */
+  addch(ch);
+  /* above two are equivalent to */
+  mvaddch(row,col,ch);
+#+END_SRC
+Use ~waddch~ to add char in a given window.
+Similarly, use ~mvwaddch()~ to add char in a given position of a window.
+** print string
+   Use [ ~printw()~ | ~mvprintw()~ ] to print string at [point | some point] 
+   Similarly, we got ~wprintw()~ and ~mvwprintw()~.
+   Use ~vwprintw()~ to accept variable number of arguments. (See ~vprintf~)
+
+   ~addstr()~ call ~addch()~ for each char in a string. 
+   ~addnstr()~ is similar, but puts at most n char. (put all if n < 0) 
+** Example: get maximum column and row num, then puts words
+#+BEGIN_SRC c
+  #include <ncurses.h>			/* ncurses.h includes stdio.h */  
+  #include <string.h> 
+ 
+  int main()
+  {
+    char mesg[]="Ladies and Gantlemen 🐸";		/* message to be appeared on the screen */
+    int row,col;				/* to store the number of rows and *
+                         ,* the number of colums of the screen */
+    initscr();				/* start the curses mode */
+
+    /* getmaxyx() is a macro, so we don't need to pass pointer. */
+    getmaxyx(stdscr,row,col);		/* get the number of rows and columns */
+    mvprintw(row/2,(col-strlen(mesg))/2,"%s",mesg);
+    /* print the message at the center of the screen */
+    mvprintw(row-2,0,"This screen has %d rows and %d columns\n",row,col);
+    printw("Try resizing your window(if possible) and then run this program again");
+    refresh();
+    getch();
+    endwin();
+
+    return 0;
+  }
+#+END_SRC
+
+* Window
+** Each function has a "window" counter part if you got multiple windows
+#+BEGIN_SRC c
+    printw(string);        /* Print on stdscr at present cursor position */
+    mvprintw(y, x, string);/* Move to (y, x) then print string     */
+    wprintw(win, string);  /* Print on window win at present cursor position */
+                           /* in the window */
+    mvwprintw(win, y, x, string);   /* Move to (y, x) relative to window */
+                                    /* co-ordinates and then print         */
+
+#+END_SRC

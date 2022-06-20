@@ -1,0 +1,264 @@
+* Collections
+** The namespaces
+| Namespace                      | Contains                                     |
+|--------------------------------+----------------------------------------------|
+| System.Collections             | Nongeneric collection classes and interfaces |
+| System.Collections.Specialized | Strongly typed nongeneric collection classes |
+| System.Collections.Generic     | Generic collection classes and interfaces    |
+| System.Collections.ObjectModel | Proxies and bases for custom collections     |
+| System.Collections.Concurrent  | Thread-safe collections (see Chapter 23)     |
+** IEnumerable and IEnumerator
+*** definition
+#+begin_src csharp
+  public interface IEnumerator
+  {
+    bool MoveNext();              // called before getting the first
+    object Current { get; }
+    void Reset();                 // [deprecated]
+  }
+
+  public interface IEnumerable
+  {
+      IEnumerator GetEnumerator();
+  }
+#+end_src
+*** examples
+**** Use the interface explicitly
+#+begin_src csharp
+using System.Collections;
+using System;
+
+
+string s = "Hello";
+
+// Because string implements IEnumerable, we can call GetEnumerator():
+IEnumerator rator = s.GetEnumerator();
+
+while (rator.MoveNext())
+{
+    char c = (char) rator.Current;
+    Console.Write (c + ".");
+}
+
+// Output:  H.e.l.l.o.
+
+#+end_src
+**** Use a foreach
+#+begin_src csharp
+using System.Collections;
+using System;
+
+string s = "Hello";      // The String class implements IEnumerable
+
+foreach (char c in s)
+    Console.Write (c + ".");
+
+// Output:  H.e.l.l.o.
+
+#+end_src
+** IEnumerable<T> and IEnumerator<T>
+*** definition
+#+begin_src csharp
+public interface IEnumerator<T> : IEnumerator, IDisposable
+{
+  T Current { get; }
+}
+
+public interface IEnumerable<T> : IEnumerable
+{
+  IEnumerator<T> GetEnumerator();
+}
+#+end_src
+*** Examples
+Array automatically inplements IEnumerable<T>
+#+begin_src csharp
+using System.Collections;
+using System;
+
+int[] d = {1,2,3};
+foreach (int i in d)
+    Console.Write ("<- {0}", i);
+
+// Output:  <- 1<- 2<- 3
+
+#+end_src
+** IEnumerable<T> and IDisposable
+IEnumerator<T> inherits from IDisposable.
+So 
+#+begin_src csharp
+foreach (var element in somethingEnumerable) { ... }
+#+end_src
+is somewhat translated into
+#+begin_src csharp
+using (var rator = somethingEnumerable.GetEnumerator())
+  while (rator.MoveNext())
+  {
+    var element = rator.Current;
+    ...
+  }
+#+end_src
+*** when to use the non-generics IEnumerable ?
+Example: count the objects in an array *recursively*
+#+begin_src csharp
+using System.Collections;
+using System;
+
+object[] d = new object[3];
+d[0] = 1;
+d[1] = "hi";
+d[2] = new int[3] {1,2,3};
+
+foreach (object i in d)
+    Console.Write (" <- {0}", i);
+// Output: <- 1 <- hi <- System.Int32[]
+
+Console.WriteLine($"\n{Count(d)} Elements in d");
+// Output: 6 Elements in d
+
+static int Count (IEnumerable e)
+{
+    int count = 0;
+    foreach (object element in e)
+    {
+        var subCollection = element as IEnumerable;
+        if (subCollection != null)
+            count += Count (subCollection);
+        else
+            count++;
+    }
+    return count;
+}
+
+#+end_src
+** Implement the IEnumerable
+*** Three ways
+    You must provide an enumerator by
+1. returning the enumerator of an enumerable you hold.
+2. Via an ~iterator~ using ~yield return~
+3. Instantiating your own ~IEnumerator/IEnumerator<T>~ implementation
+
+Or you can
+4. subclass an existing collection ~collection<T>~
+
+*** the magic ~yield return~
+#+begin_src csharp
+using System.Collections;
+using System;
+
+MyCollection m = new MyCollection();
+
+foreach (int i in m){
+    Console.WriteLine("I got an i = {0}", i);
+}
+
+public class MyCollection : IEnumerable
+{
+    int[] data = { 1, 2, 3 };
+
+    public IEnumerator GetEnumerator()
+    {
+        foreach (int i in data){
+            Console.WriteLine("Give you an i = {0}",i);
+            yield return i;
+        }
+    }
+}
+
+// Output :
+/*
+  Give you an i = 1
+  I got an i = 1
+  Give you an i = 2
+  I got an i = 2
+  Give you an i = 3
+  I got an i = 3
+ */
+
+#+end_src
+
+** List<T>
+*** Properties
+    Capacity;Count;Item[int32];
+*** Methods
+    Clear();Contains(T);Add(T);AddRange(IEnumerable<T>);
+*** basic
+#+begin_src csharp
+using System;
+using System.Collections.Generic;
+
+var l = new List<int>();
+for (int i = 0; i < 3; i++)
+    l.Add(i);
+show(l);
+
+void show(List<int> l){
+    Console.Write("List of size {0}: ", l.Count);
+    foreach (int i in l){
+        Console.Write("\t {0}", i);
+    }
+    Console.Write('\n');
+}
+/*
+  List of size 3:          0       1       2
+*/
+
+#+end_src
+*** Get and set elements
+#+begin_src csharp
+List<string> dinosaurs = new List<string>();
+
+Console.WriteLine("\nCapacity: {0}", dinosaurs.Capacity);
+
+dinosaurs.Add("Tyrannosaurus");
+dinosaurs.Add("Amargasaurus");
+dinosaurs.Add("Mamenchisaurus");
+dinosaurs.Add("Deinonychus");
+dinosaurs.Add("Compsognathus");
+// Shows accessing the list using the Item property.
+Console.WriteLine("\ndinosaurs[3]: {0}", dinosaurs[3]);
+#+end_src
+*** list and delegate
+    #+begin_src csharp
+ using System;
+ using System.Collections.Generic;
+
+ var l = new List<ToBeTest>();
+ l.Add(f);
+ l.Add(g);
+ l.Add(z);
+ Apply(l);
+
+ void Apply(List<ToBeTest> l){
+     var t = new tester();
+     foreach (var f in l){
+         f(ref t);
+     }
+ }
+
+ void f(ref tester t){
+     t.log("f is called");
+ }
+
+ void z(ref tester t){
+     t.log("z is called");
+ }
+
+
+ void g(ref tester t){
+     t.log("g is called");
+ }
+
+ class tester{
+     public void log(string s){
+         Console.WriteLine(s);
+     }
+ }
+
+ delegate void ToBeTest(ref tester t);
+ /*
+   f is called
+   g is called
+   z is called
+ */
+
+    #+end_src

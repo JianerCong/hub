@@ -1,0 +1,400 @@
+** Basic
+*** basic
+#+begin_src python
+class FirstClass: # Define a class object
+    def setdata(self, value): # Define class's methods
+        self.data = value # self is the instance
+    def display(self):
+        print(self.data) # self.data: per instance
+
+x = FirstClass() # Make two instances
+y = FirstClass() # Each is a new namespace
+x.setdata("King Arthur") # Call methods: self is x
+y.setdata(3.14159) # Runs: FirstClass.setdata(y, 3.14159)
+x.display() # self.data differs in each instance
+# King Arthur
+y.display() # Runs: FirstClass.display(y)
+# 3.14159
+
+x.data = "New value" # Can get/set attributes
+x.display() # Outside the class too
+# New value
+x.anothername = "spam" # Can set new attributes here too!
+
+#+end_src
+*** inheritance
+#+begin_src python
+  class FirstClass: # Define a class object
+      def setdata(self, value): # Define class's methods
+          self.data = value # self is the instance
+      def display(self):
+          print(self.data) # self.data: per instance
+
+  class SecondClass(FirstClass): # Inherits setdata
+      def display(self): # Changes display
+          print('Current value = "%s"' % self.data)
+
+  z = SecondClass()
+  z.setdata(42) # Finds setdata in FirstClass
+  z.display() # Finds overridden method in SecondClass
+  # Current value = "42"
+
+#+end_src
+
+#+RESULTS:
+: None
+
+*** classes are attributes in modules
+#+begin_src python
+  from modulename import FirstClass # Copy name into my scope
+  class SecondClass(FirstClass): # Use class name directly
+      def display(self): ...
+#+end_src
+Or equivently
+#+begin_src python
+  import modulename # Access the whole module
+  class SecondClass(modulename.FirstClass): # Qualify to reference
+      def display(self): ...
+#+end_src
+*** Overload built-in operator
+#+begin_src python
+class FirstClass: # Define a class object
+    def setdata(self, value): # Define class's methods
+        self.data = value # self is the instance
+    def display(self):
+        print(self.data) # self.data: per instance
+
+class SecondClass(FirstClass): # Inherits setdata
+    def display(self): # Changes display
+        print('Current value = "%s"' % self.data)
+
+class ThirdClass(SecondClass): # Inherit from SecondClass
+    def __init__(self, value): # On "ThirdClass(value)"
+        self.data = value
+    def __add__(self, other): # On "self + other"
+        return ThirdClass(self.data + other)
+    def __str__(self): # On "print(self)", "str()"
+        return '[ThirdClass: %s]' % self.data
+    def mul(self, other): # In-place change: named
+        self.data *= other
+
+a = ThirdClass('abc') # __init__ called
+a.display() # Inherited method called
+#Current value = "abc"
+print(a) # __str__: returns display string
+# [ThirdClass: abc]
+b = a + 'xyz' # __add__: makes a new instance
+b.display() # b has all ThirdClass methods
+# Current value = "abcxyz"
+print(b) # __str__: returns display string
+# [ThirdClass: abcxyz]
+a.mul(3) # mul: changes instance in place
+print(a)
+# [ThirdClass: abcabcabc]
+
+#+end_src
+*** Add class attributes later
+#+begin_src python
+class rec: pass # Empty namespace object
+
+rec.name = 'Bob' # Just objects with attributes
+rec.age = 40
+print(rec.name) # Like a C struct or a record
+# Bob
+
+x = rec() # Instances inherit class names
+y = rec()
+x.name, y.name # name is stored on the class only
+('Bob', 'Bob')
+
+x.name = 'Sue' # But assignment changes x only
+rec.name, x.name, y.name
+# ('Bob', 'Sue', 'Bob')
+
+# See the attributes
+list(rec.__dict__.keys())
+# ['age', '__module__', '__qualname__', '__weakref__', 'name', '__dict__', '__doc__']
+list(name for name in rec.__dict__ if not name.startswith('__'))
+# ['age', 'name']
+list(x.__dict__.keys())
+# ['name']
+list(y.__dict__.keys()) # list() not required in Python 2.X
+# []
+
+x.name, x.__dict__['name'] # Attributes present here are dict keys
+# ('Sue', 'Sue')
+
+x.age # But attribute fetch checks classes too
+# 40
+x.__dict__['age'] # Indexing dict does not do inheritance
+# KeyError: 'age'
+
+# See class
+x.__class__ # Instance to class link
+# <class '__main__.rec'>
+
+# See base
+rec.__bases__ # Class to superclasses link, () in 2.X
+# (<class 'object'>,)
+
+# Add methods to class later ------------------------------------
+def uppername(obj):
+    return obj.name.upper() # Still needs a self argument (obj)
+uppername(x) # Call as a simple function
+# 'SUE'
+
+
+rec.method = uppername # Now it's a class's method!
+x.method() # Run method to process x
+# 'SUE'
+y.method() # Same, but pass y to self
+# 'BOB'
+rec.method(x) # Can call through instance or class
+# 'SUE
+
+#+end_src
+** A Person class + Manager subclass
+*** Step 1-4: Making instance, behaviour method, operator method
+#+begin_src python
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self):
+        return self.name.split()[-1]
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent))
+    def __repr__(self): # Added method
+        return '[Person: %s, %s]' % (self.name, self.pay) # String to print
+
+class Manager(Person):
+    def giveRaise(self, percent, bonus=.10):
+        Person.giveRaise(self, percent + bonus) # Good: augment original
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob)
+    print(sue)
+    print(bob.lastName(), sue.lastName())
+    sue.giveRaise(.10)
+    print(sue)
+    tom = Manager('Tom Jones', 'mgr', 50000) # Make a Manager: __init__
+    tom.giveRaise(.10) # Runs custom version
+    print(tom.lastName()) # Runs inherited method
+    print(tom) # Runs inherited __repr__
+
+    # polymorphism
+    print('--All three--')
+    for obj in (bob, sue, tom): # Process objects generically
+        obj.giveRaise(.10) # Run this object's giveRaise
+        print(obj) # Run the common __repr__
+
+#the __repr__ method is often used to provide
+#an as-code low-level display of an object when present, and __str__ is reserved for more
+#user-friendly informational displays like ours here
+
+#+end_src
+**** Inherit, Customize and extend for subclass
+#+begin_src python
+  class Person:
+      def lastName(self): ...
+      def giveRaise(self): ...
+      def __repr__(self): ...
+  class Manager(Person): # Inherit
+      def giveRaise(self, ...): ... # Customize
+      def someThingElse(self, ...): ... # Extend
+
+  tom = Manager()
+  tom.lastName() # Inherited verbatim
+  tom.giveRaise() # Customized version
+  tom.someThingElse() # Extension here
+  print(tom) # Inherited overload method
+#+end_src
+*** Step 5: Customize the Constructor
+#+begin_src python
+# File person.py
+# Add customization of constructor in a subclass
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self):
+        return self.name.split()[-1]
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent))
+    def __repr__(self):
+        return '[Person: %s, %s]' % (self.name, self.pay)
+
+class Manager(Person):
+    def __init__(self, name, pay): # Redefine constructor
+        Person.__init__(self, name, 'mgr', pay) # Run original with 'mgr'
+    def giveRaise(self, percent, bonus=.10):
+        Person.giveRaise(self, percent + bonus)
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob)
+    print(sue)
+    print(bob.lastName(), sue.lastName())
+    sue.giveRaise(.10)
+    print(sue)
+    tom = Manager('Tom Jones', 50000) # Job name not needed:
+    tom.giveRaise(.10) # Implied/set by class
+    print(tom.lastName())
+    print(tom)
+
+    #+end_src
+*** Step 6: Watch the class metadata
+#+begin_src python
+# File person.py
+# Add customization of constructor in a subclass
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self):
+        return self.name.split()[-1]
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent))
+    def __repr__(self):
+        return '[Person: %s, %s]' % (self.name, self.pay)
+
+class Manager(Person):
+    def __init__(self, name, pay): # Redefine constructor
+        Person.__init__(self, name, 'mgr', pay) # Run original with 'mgr'
+    def giveRaise(self, percent, bonus=.10):
+        Person.giveRaise(self, percent + bonus)
+
+bob = Person('Bob Smith')
+bob # Show bob's __repr__ (not __str__)
+
+print(bob) # Ditto: print => __str__ or __repr__
+
+bob.__class__ # Show bob's class and its name
+
+bob.__class__.__name__
+
+list(bob.__dict__.keys()) # Attributes are really dict keys
+#['pay', 'job', 'name'] # Use list to force list in 3.X
+
+for key in bob.__dict__:
+    print(key, '=>', bob.__dict__[key]) # Index manually
+
+for key in bob.__dict__:
+    print(key, '=>', getattr(bob, key)) # obj.attr, but attr is a var
+    #+end_src
+**** An attribute display base class
+#+begin_src python
+# File classtools.py (new)
+"Assorted class utilities and tools"
+
+class AttrDisplay:
+    """
+    Provides an inheritable display overload method that shows
+    instances with their class names and a name=value pair for
+    each attribute stored on the instance itself (but not attrs
+    inherited from its classes). Can be mixed into any class,
+    and will work on any instance.
+    """
+    def gatherAttrs(self):
+        attrs = []
+        for key in sorted(self.__dict__):
+            attrs.append('%s=%s' % (key, getattr(self, key)))
+        return ', '.join(attrs)
+    def __repr__(self):
+        return '[%s: %s]' % (self.__class__.__name__, self.gatherAttrs())
+
+
+if __name__ == '__main__':
+    class TopTest(AttrDisplay):
+        count = 0
+        def __init__(self):
+            self.attr1 = TopTest.count
+            self.attr2 = TopTest.count+1
+            TopTest.count += 2
+    class SubTest(TopTest):
+        pass
+    X, Y = TopTest(), SubTest() # Make two instances
+    print(X) # Show all instance attrs
+    print(Y) # Show lowest class name
+
+
+    #+end_src
+**** Instance vs Class attribute
+#+begin_src python
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self):
+        return self.name.split()[-1]
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent))
+    def __repr__(self): # Added method
+        return '[Person: %s, %s]' % (self.name, self.pay) # String to print
+bob = Person('Bob Smith')
+list(bob.__dict__.keys()) # the instance attributes
+
+len(dir(bob)) # 31 (plus the class attributes)
+
+list(name for name in dir(bob) if not name.startswith('__')) 
+#all attributes that don't start with __
+#+end_src
+**** Final person.py
+-> person.py
+*** Step 7: Save and read python obj
+**** Save
+#+begin_src python
+#File makedb.py: store Person objects on a shelve database
+from person import Person, Manager # Load our classes
+bob = Person('Bob Smith') # Re-create objects to be stored
+sue = Person('Sue Jones', job='dev', pay=100000)
+tom = Manager('Tom Jones', 50000)
+
+import shelve
+db = shelve.open('persondb') # Filename where objects are stored
+for obj in (bob, sue, tom): # Use object's name attr as key
+    db[obj.name] = obj # Store object on shelve by key
+db.close() # Close after making changes
+
+
+import glob # ls files
+glob.glob("person*")
+#+end_src
+**** Read
+#+begin_src python
+import shelve
+db = shelve.open('persondb')
+len(db)
+
+list(db.keys())
+
+db['Bob Smith']
+
+for key in sorted(db):
+    print(key,'=>',db[key])
+    #+end_src
+**** Update
+#+begin_src python
+  # File updatedb.py: update Person object on database
+  import shelve
+  db = shelve.open('persondb') # Reopen shelve with same filename
+  for key in sorted(db): # Iterate to display database objects
+      print(key, '\t=>', db[key]) # Prints with custom format
+  sue = db['Sue Jones'] # Index by key to fetch
+  sue.giveRaise(.10) # Update in memory using class's method
+  db['Sue Jones'] = sue # Assign to key to update in shelve
+  db.close() # Close after making changes
+#+end_src
+** 29 Class Coding Details
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "python"
+# End:

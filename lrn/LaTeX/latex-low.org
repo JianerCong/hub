@@ -1,0 +1,168 @@
+** def
+#+BEGIN_SRC latex
+
+        \def\hiya#1#2{Oh hiya hiya #1 and #2}
+        \newcommand\Hiya[2][bill]{Oh hiya hiya #1 and #2 , }
+
+        \hiya{Johd}{Brff}
+        \Hiya{Brff}
+        \Hiya[Johd]{Brff}
+#+END_SRC
+*** newcommand
+#+BEGIN_SRC latex
+  % no argument
+  \newcommand{\R}{\mathbb{R}}
+
+  % 1 arguments
+  The set of real numbers are usually represented 
+  by a blackboard bold capital r: \( \R \).
+
+  \newcommand{\bb}[1]{\mathbb{#1}}
+
+  Other numerical systems have similar notations. 
+  The complex numbers \( \bb{C} \), the rational 
+  numbers \( \bb{Q} \) and the integer numbers \( \bb{Z} \).
+
+
+#+END_SRC
+*** optional arguments
+#+BEGIN_SRC latex
+  \newcommand{\plusbinomial}[3][2]{(#2 + #3)^#1}
+  % take 3 args, and first args default to ``2''
+
+  To save some time when writing too many expressions 
+  with exponents is by defining a new command to make simpler:
+
+  \[ \plusbinomial{x}{y} \]
+
+  And even the exponent can be changed
+
+  \[ \plusbinomial[4]{y}{y} \]
+#+END_SRC
+*** renewcommand
+#+BEGIN_SRC latex
+\renewcommand{\S}{\mathbb{S}}
+
+The Riemann sphere (the complex numbers plus $\infty$) is 
+sometimes represented by \( \S \)
+#+END_SRC
+** newenvironment
+*** synopsis
+#+begin_src latex
+{ \newenvironment{myEnvironmentName}
+  [ <optional # of arguments, from 1 to 9> ]
+  { <replacement text for each occurrence of \begin{myEnvironmentName}> }
+  { <replacement text for each occurrence of \end{myEnvironmentName}> }}
+  #+end_src
+*** example
+#+begin_src latex
+\newenvironment{myHeartEnv}
+  {\color{purple}{\heartsuit}\kern-2.5pt\color{green}{\heartsuit}}
+  {\text{ forever}}
+
+\begin{myHeartEnv}
+\end{myHeartEnv}
+#+end_src
+** for loop
+#+BEGIN_SRC latex
+
+  \makeatletter
+  \@for\sun:={rising,setting}\do{The sun is \sun.}
+  \makeatother
+  % sun is rising. sun is setting.
+#+END_SRC
+
+** class and pkg
+*** What are the format?
+class file : .cls
+package : .sty
+*** class
+**** General structure
+1. Identification::the file declares itself as a class written with the LaTeX2ε
+   syntax.
+2. Prelimirary_declaration::list dependencies
+3. Options::declares and processes the options
+4. Main Body
+**** Identification
+The two must-have commands:
+#+begin_src latex
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesClass{myclass}[2014/08/16 Example LaTeX class]
+#+end_src
+**** Prelimirary_declaration
+#+begin_src latex
+  \newcommand{\headlinecolor}{\normalcolor}
+  \RequirePackage{xcolor}         %same as \usepackage but can appear before \documentclass
+  \definecolor{slcolor}{HTML}{882B21}
+#+end_src
+**** Options
+#+begin_src latex
+  \DeclareOption{onecolumn}{\OptionNotUsed} %\OptionNotUsed means ignore this
+                                  %option if the user tries to set the column
+                                  %number to 1 
+
+  % \DeclareOption{<option-name>}{<code-to-be-executed-when-the-option-is-on>}
+  \DeclareOption{green}{\renewcommand{\headlinecolor}{\color{green}}}
+  \DeclareOption{red}{\renewcommand{\headlinecolor}{\color{slcolor}}}
+  \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
+  % \Declareoption*{} handles every option not explicitly defined.
+  \ProcessOptions\relax
+  \LoadClass[twocolumn]{article}  %Use this article as base
+#+end_src
+
+ ~\PassOptionsToClass{}{}.~ Passes the option inside the first pair of braces to
+ the document class set inside the second pair of braces. In the example, all
+ unknown options will be passed to the article document class.
+ 
+~\CurrentOption~ stores the name of the class option being handled at a
+determined moment.
+**** Main Body
+#+begin_src latex
+  \renewcommand{\maketitle}{%
+      \twocolumn[%
+          \fontsize{50}{60}\fontfamily{phv}\fontseries{b}%
+          \fontshape{sl}\selectfont\headlinecolor
+          \@title
+          \medskip
+          ]%
+  }
+
+  \renewcommand{\section}{%
+      \@startsection
+      {section}{1}{0pt}{-1.5ex plus -1ex minus -.2ex}%
+      {1ex plus .2ex}{\large\sffamily\slshape\headlinecolor}%
+  }
+
+  % All class should define the following four
+  \renewcommand{\normalsize}{\fontsize{9}{10}\selectfont}
+  \setlength{\textwidth}{17.5cm}
+  \setlength{\textheight}{22cm}
+  \setcounter{secnumdepth}{0}
+#+end_src
+** math
+*** calculate int + int -> int
+#+begin_src latex
+\documentclass{article}
+\title{test}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+  }
+  \author{Jianer Cong}
+  \date{\today}
+  \usepackage{pgfmath}
+  \begin{document}
+  \pgfmathparse{1+1}
+  \def\myget#1.#2{#1}         %get the value before decimal
+  % \def\v{ \myget({\pgfmathresult)} }
+  Result: \pgfmathresult{}, Int result:
+  % \myget1.2
+  \expandafter\myget\pgfmathresult{}
+  \end{document}
+  #+end_src
+
+# Local Variables:
+# org-what-lang-is-for: "latex"
+# End:

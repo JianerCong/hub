@@ -1,0 +1,1045 @@
+** Basic
+*** view the tables
+#+begin_src sql
+      SHOW databases;
+      SHOW tables;
+      -- Describe the table
+      DESC df;
+    #+end_src
+*** basic and character set
+ #+begin_src csharp
+ SELECT now();
+ SHOW character set;
+ CREATE DATABASE mydb CHARACTER SET latin1;
+ #+end_src
+*** data type
+**** text
+ | Text type  |      bytes |
+ |------------+------------|
+ | tinytext   |        225 |
+ | text       |      65535 |
+ | mediumtext |    1677745 |
+ | long text  | 4294967295 |
+**** int
+ | Int type  | Unsigned Range (0~?) |
+ |-----------+----------------------|
+ | tinyint   |                  255 |
+ | smallint  |                65535 |
+ | mediumint |              1677745 |
+ | int       |           4294967295 |
+ | bigint    |             2^64 - 1 |
+**** float
+ | flout type  | Range                 | Example                                                 |
+ |-------------+-----------------------+---------------------------------------------------------|
+ | float(p,s)  | ±3.4e38 ~ ±1.1e-38    |                                                         |
+ | double(p,s) | ±1.79e308 ~ ±2.22e308 | double(total number of digit,digit after decimal point) |
+**** time
+ | Type        | Default format                                  | Example                 |
+ |-------------+-------------------------------------------------+-------------------------|
+ | date        | YYYY-MM-DD                                      | 2000-02-11              |
+ | datetime    | YYYY-MM-DD-HIHI:MI:SS                           | 2000-12-30 00:00:00.001 |
+ | datetime(2) | same as datetime but only save to 100th of secs | 1970-01-01 00:00:00.01  |
+ | timestamp   | YYYY-MM-DD HI:MI:SS                             | 1970-01-01 00:00:00.01  |
+ | year        | YYYY                                            | 1901                    |
+ | time        | HHH:MI:SS                                       | -838:59:5.21            |
+**** enum
+    #+begin_src sql
+      -- Method 1: eye_color CHAR(2) CHECK (eye_color IN ('BR','BL','GR'))
+      -- Method 2: eye_color ENUM('BR','BL','GR')
+      CREATE TABLE person
+        (person_id SMALLINT UNSIGNED,
+        fname VARCHAR(20),
+        lname VARCHAR(20),
+        eye_color ENUM('BR','BL','GR'),
+        birth_date DATE,
+        street VARCHAR(30),
+        city VARCHAR(20),
+        state VARCHAR(20),
+        country VARCHAR(20),
+        postal_code VARCHAR(20),
+        CONSTRAINT pk_person PRIMARY KEY (person_id)
+        );
+
+    #+end_src
+** HandsOn
+*** Start with table
+**** Add the keys
+#+begin_src sql
+    CREATE TABLE  myCustomer(Customer_id SMALLINT UNSIGNED AUTO_INCREMENT,
+                         Name varchar(20),
+                         CONSTRAINT pCustomer_id PRIMARY KEY (Customer_id)
+);
+INSERT INTO myCustomer(Name) VALUES
+('John Smith'),
+('Kathy Jones'),
+('Greg Oliver')
+;
+SELECT  * FROM myCustomer;
+desc myCustomer;
+
+
+CREATE TABLE  myPayment(
+  Payment_id SMALLINT UNSIGNED AUTO_INCREMENT,
+  Customer_id SMALLINT UNSIGNED,
+                         Amount double,
+                         CONSTRAINT pPayment_id PRIMARY KEY (Payment_id),
+                         CONSTRAINT fCustomer_id FOREIGN KEY (Customer_id) REFERENCES myCustomer (Customer_id)
+);
+INSERT INTO myPayment(Customer_id, Amount) VALUES
+(1,8.99),
+(3,4.99),
+(1,7.99)
+;
+SELECT  * FROM myPayment;
+desc myPayment;
+
+DROP TABLE  myPayment;
+/*
+  Drop this first as it refers to myCustomer
+  */
+DROP TABLE  myCustomer;
+
+#+end_src
+*** Update the table
+    #+begin_src sql
+      UPDATE person SET birth_date = str_to_date('Dec-21-1980', '%b-%d-%Y');
+    #+end_src
+| Time type |                Value |
+|-----------+----------------------|
+| %a        |              Sun,Mon |
+| %b        |              Jan,Feb |
+| %c        |                0..12 |
+| %d        |                00.31 |
+| %f        |       000000..999999 |
+| %H        |               00..23 |
+| %h        |               01..12 |
+| %i        |               00..59 |
+| %j        |              001.366 |
+| %M        |    January..December |
+| %m        |    <Numerical month> |
+| %p        |               AM, PM |
+| %s        |               00..59 |
+| %W        |               Sunday |
+| %Y        |                 2000 |
+| %w        | 0=Sunday, 6=Saturday |
+*** 3. Query Primer Excercise
+#+begin_src sql
+    /*
+  Get the actor id, first name, and last name for all actors. Sort by first
+   name and then by last name.
+ */
+
+SELECT actor_id ,first_name, last_name
+  FROM actor ORDER BY first_name, last_name ;
+
+/*
+  Get the actor id, first name, and last name for all actors whose last name is 'WILLIAMS' for 'DAVIS'
+ */
+SELECT actor_id, first_name,last_name FROM  actor
+ WHERE last_name = 'WILLIAMS' OR last_name = 'DAVIS';
+
+/*
+  Write a query against the `rental` table that returns the IDs of the
+  customers who rented a film on July 5,2005. (Use the rental_date column and use the `date()` function to ignore the time component ).
+  Include a single row for each distinct customer ID.
+ */
+SELECT DISTINCT rental_id FROM rental WHERE str_to_date('2005-7-05','%Y-%c-%d');
+
+/*
+  Fill the blanks
+  */
+SELECT c.email,r.return_date
+  FROM  customer c
+        INNER JOIN rental r
+            ON c.customer_id = r.customer_id
+ WHERE date(r.rental_date) = '2005-06-14'
+ ORDER BY r.return_date desc, c.email;
+
+ #+end_src
+*** 4. Filter rows
+    #+begin_src sql
+    /*
+  Get all rows from the `payment` table where the amount is either
+  1.98, 7.98, 9.98
+  */
+SELECT  * FROM payment WHERE amount IN (1.98,7.98,9.98);
+
+/* Find all customers whose last name contains an A in the second position and a
+W anywhere after the A */
+SELECT  last_name FROM customer WHERE last_name LIKE '_A%W%';
+
+
+#+end_src
+*** 5. Querying multiple tables
+    #+begin_src sql
+    /*
+  Fill the blank
+ */
+SELECT  c.first_name, c.last_name, a.address, t.city
+  FROM customer c
+       INNER JOIN address a
+           ON c.address_id = a.address_id
+       INNER JOIN city t
+           ON a.city_id = t.city_id
+ WHERE a.district = 'California';
+
+/*
+  return the title of every film in which an actor with the first name JOHN appeared.
+  */
+SELECT  f.title, a.first_name, a.last_name
+  FROM film f
+       INNER JOIN film_actor fa
+           ON fa.film_id = f.film_id
+       INNER JOIN actor a
+           ON a.actor_id = fa.actor_id
+                    WHERE a.first_name LIKE '%JOHN%';
+
+/*
+  return the addresses that are in the same city.
+  */
+SELECT  a1.address AS address1, a2.address AS address2, c1.city AS city1, c2.city AS city2
+  FROM address a1
+       JOIN address a2
+       INNER JOIN city c1
+           ON c1.city_id = a1.city_id
+       INNER JOIN city c2
+           ON c2.city_id = a2.city_id
+ WHERE (a1.city_id = a2.city_id) AND (a1.address <> a2.address);
+
+ #+end_src
+*** 6. Working with set
+    #+begin_src sql
+    /*
+  Find the first and last names of all actors and customers whose last name starts with L.
+  And sort by last name.
+ */
+SELECT  c.first_name AS fname, c.last_name AS lname
+  FROM customer c
+ WHERE c.last_name LIKE 'L%'
+ UNION
+SELECT a.first_name, a.last_name
+  FROM actor a
+ WHERE a.last_name LIKE 'L%'
+       ORDER BY lname;
+
+       #+end_src
+*** 7. Data Generation, Manipulation, and Conversion
+#+begin_src sql
+/*
+  Find the 17-25 substring of
+  "Please find the substring in this string"
+   123456789012345678901234567890
+  */
+SELECT  substring('Please find the substring in this string', 17,25-17+1);
+
+/*
+  for -25.76823, find
+  _ the absolute value
+  _ the sign
+  _ rounded to nearest hundredth
+ */
+CREATE TABLE  temp(x double);
+INSERT INTO temp (x) VALUES (-25.76823);
+SELECT  abs(x), sign(x), round(x,2) FROM temp;
+DROP TABLE  temp;
+
+/*
+  return the current month
+  */
+SELECT  extract(MONTH FROM now()); --⇒ 12
+SELECT  monthname(now());          --⇒ December
+
+#+end_src
+*** 8. Grouping and Aggregates
+   #+begin_src sql
+   /*
+  Count the number of rows in the payment table
+  */
+SELECT  count(*) FROM payment;
+
+/*
+  Count the number of payments made by each customer, and show the sum
+  */
+SELECT  count(*), c.first_name, c.last_name, sum(p.amount)
+  FROM payment p
+       INNER JOIN customer c ON c.customer_id = p.customer_id
+                    GROUP BY p.customer_id;
+/*
+  Modify the previous one, show only customers who has made more than 40 payments
+  */
+
+SELECT  count(*), c.first_name, c.last_name, sum(p.amount)
+  FROM payment p
+       INNER JOIN customer c ON c.customer_id = p.customer_id
+ GROUP BY p.customer_id
+          HAVING count(*) > 40;
+
+
+          #+end_src
+*** 9. Subqueries 
+**** IN and NOT IN
+#+begin_src sql
+/*
+  Select all city in Mexico and Canada (without joining)
+  */
+SELECT  city_id, city
+  FROM city
+ WHERE country_id IN
+       (SELECT  country_id
+          FROM country
+         WHERE country IN ('Canada', 'Mexico')
+       );
+
+/*
+  Select all cities that are not in Canada and Maxico
+  */
+
+SELECT  city_id, city
+  FROM city
+ WHERE country_id IN
+       (SELECT  country_id
+          FROM country
+         WHERE country NOT IN ('Canada', 'Mexico')
+       );
+
+       #+end_src
+**** Excersice 9-1, 9-2
+#+begin_src sql
+/*
+  Use a filter condition with a noncorrelated subquery against the category
+  table to find all action files.
+ */
+
+-- Without sub-queries
+SELECT  f.title nam, c.name cat
+  FROM film f
+       INNER JOIN film_category f2 ON f.film_id = f2.film_id
+       INNER JOIN category c ON f2.category_id = c.category_id
+                    WHERE c.name = 'Action';
+
+-- With subquery
+SELECT  f.title nam, f2.category_id
+  FROM film f
+       INNER JOIN film_category f2 ON f.film_id = f2.film_id
+ WHERE f2.category_id =
+       (SELECT c.category_id
+          FROM category c
+                 WHERE c.name = 'Action'
+       );
+
+-- With subquery 2
+SELECT  f.title nam
+  FROM film f
+ WHERE f.film_id  IN
+       (SELECT f2.film_id
+          FROM film_category f2
+               INNER JOIN category c
+                   ON f2.category_id = c.category_id
+         WHERE c.name = 'Action'
+       );
+
+-- With correlated subquery
+SELECT  f.title nam
+  FROM film f
+ WHERE 'Action' =
+       (SELECT c.name
+          FROM category c
+               INNER JOIN film_category f2
+                   ON f2.category_id = c.category_id
+         WHERE f.film_id = f2.film_id
+       );
+
+#+end_src
+**** Excersice 9-3: Categorize it
+#+begin_src sql
+/*
+  Join the following query to a subquery against the film_actor table to show
+  the level of each actor
+
+  SELECT 'Hollywood Star' level, 30 min_roles, 99999 max_roles
+  UNION ALL
+  SELECT 'Prolific Actor' level, 20 min_roles, 29 max_roles
+  UNION ALL
+  SELECT 'Newcomer' level, 1 min_roles, 19 max_roles
+  */
+
+-- First of all we need to get the number of roles for each actor
+SELECT  t1.fname, t1.film_count, grp.level
+  FROM
+  -- The table showing the sum of film of each actor
+    (SELECT  a.first_name fname, a.actor_id aid, count(*) film_count
+               FROM actor a
+                 INNER JOIN film_actor fac ON fac.actor_id = a.actor_id
+                              GROUP BY a.actor_id
+    ) t1
+    INNER JOIN
+  -- The category table
+    (
+      SELECT 'Hollywood Star' level, 30 min_roles, 99999 max_roles
+       UNION ALL
+      SELECT 'Prolific Actor' level, 20 min_roles, 29 max_roles
+       UNION ALL
+      SELECT 'Newcomer' level, 1 min_roles, 19 max_roles
+      ) grp
+        ON t1.film_count BETWEEN grp.min_roles AND grp.max_roles
+      ORDER BY t1.film_count
+      ;
+
+
+#+end_src
+*** 10. Joins revisited
+**** Using left joins
+    Start with folloing two tables. Return the customer names along with their
+    total payments
+| Customer_id | Name  |
+|-------------+-------|
+|           1 | John  |
+|           2 | Kathy |
+|           3 | Greg  |
+
+| Payment_id | Customer_id | Amount |
+|------------+-------------+--------|
+|          1 |           1 |   8.99 |
+|          2 |           3 |   4.99 |
+|          3 |           1 | 7.99   |
+#+begin_src sql
+SELECT c.Name name,
+       CASE
+       WHEN (sum(p.Amount) IS NOT NULL) THEN sum(p.Amount)
+       ELSE
+          0
+       END total_payment
+  FROM myCustomer c
+       LEFT OUTER JOIN
+       myPayment p
+           ON c.Customer_id = p.Customer_id
+ GROUP BY c.Name
+          ;
+
+          #+end_src
+**** Repeat above with right joins
+#+begin_src sql
+SELECT c.Name name,
+       CASE
+       WHEN (sum(p.Amount) IS NOT NULL) THEN sum(p.Amount)
+       ELSE
+          0
+       END total_payment
+  FROM myPayment p
+       RIGHT OUTER JOIN
+       myCustomer c
+           ON c.Customer_id = p.Customer_id
+ GROUP BY c.Name
+          ;
+
+          #+end_src
+**** Use of cross joing
+     Device a query to generate the set {1,2,...,100}
+    #+begin_src sql
+    CREATE TABLE  myNumbers(y int);
+INSERT INTO myNumbers (y) VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
+SELECT  * FROM myNumbers;
+
+SELECT m.y + m2.y * 10 + 1 AS val
+  FROM myNumbers m CROSS JOIN myNumbers m2
+                                ORDER BY val;
+
+DROP TABLE  myNumbers;
+
+#+end_src
+*** 11. Conditional Logic
+**** Group values
+    #+begin_src sql
+    /*
+  Simplify the following queries
+  SELECT name,
+  CASE name
+  WHEN 'English' THEN 'latin1'
+  WHEN 'Italian' THEN 'latin1'
+  WHEN 'French' THEN 'latin1'
+  WHEN 'German' THEN 'latin1'
+  WHEN 'Japanese' THEN 'utf8'
+  WHEN 'Mandarin' THEN 'utf8'
+  ELSE 'Unknown'
+  END character_set
+  FROM language;
+  */
+
+SELECT name,
+       CASE
+       WHEN name IN ('English','Italian','French','German') THEN 'latin1'
+       WHEN name IN ('Japanese', 'Mandarin') THEN 'utf8'
+       ELSE 'Unknown'
+       END character_set
+          FROM language;
+
+
+          #+end_src
+**** Pivot table
+    #+begin_src sql
+    /*
+
+  Rewrite the following query so that the result set contains a single row with
+  five columns (one for each string). Name the five columns G,PG,PG_13,R and NC_17
+
+  SELECT  rating, count(*)
+  FROM film GROUP BY rating;
+ */
+
+-- The idea is
+SELECT
+  sum(
+    -- isG
+    CASE rating WHEN 'G' THEN 1 ELSE 0 END) G,
+    sum(CASE rating WHEN 'PG' THEN 1 ELSE 0 END) PG,
+  sum(CASE rating WHEN 'PG-13' THEN 1 ELSE 0 END) PG_13,
+  sum(CASE rating WHEN 'R' THEN 1 ELSE 0 END) R,
+  sum(CASE rating WHEN 'NC-17' THEN 1 ELSE 0 END) NC_17
+    FROM film
+    ;
+
+    #+end_src
+*** 12. Transaction 
+**** turn off autocommit in MySQL
+     Do this everytime you log in. So you can ROLLBACK after you have done
+     something bad.
+     #+begin_src sql
+SET AUTOCOMMIT=0
+     #+end_src
+**** The schema statement
+     Schema statement such as
+     + create table
+     + add columns
+     + alter table
+**** Storage Engines for MySQL
+     | Name   | Transactional | Desc                                 |
+     |--------+---------------+--------------------------------------|
+     | MyISAM | No            | employing table locking              |
+     | MEMORY | No            | used for in-memory tables            |
+     | CSV    | Yes           | stores data in comma-separated files |
+     | InnoDB | Yes           | employing row-level locking          |
+
+     Two specialty engine
+     | Merge   | make multiple identical MyISAM tables appear as a single table (a.k.a. table partitioning) |
+     | Archive | store large amounts of unindexed data, mainly for archival purposes                        |
+**** GET and SET the storage engine
+#+begin_src sql
+  SHOW TABLE STATUS LIKE 'customer' \G
+  ALTER TABLE customer ENGINE=INNODB;
+#+end_src
+**** Example
+#+begin_src sql
+CREATE TABLE  df(id double);
+
+START TRANSACTION;
+
+INSERT INTO df(id) VALUES  (1);
+SELECT  'Row 1 inserted' msg;
+
+SAVEPOINT p1;
+
+SELECT  'Try inserting 2/0' msg;
+INSERT INTO df(id) VALUES  (2/0);
+
+ROLLBACK TO SAVEPOINT p1;
+COMMIT;
+
+SELECT  'Final table' msg;
+SELECT  * FROM df;              --id: 1
+DROP TABLE  df;
+
+#+end_src
+**** Excercise: transaction
+Generate a unit of work to transfer $50 from account 123 to account 789. You
+will need to insert two rows into the ~transaction~ table and update two rows in
+the ~account~ table. Use the following table definitions/data.
+
+Account
+| account_id | avail_balance | last_activity_date  |
+|------------+---------------+---------------------|
+|        123 |           500 | 2019-07-10 20:53:27 |
+|        789 |            75 | 2019-06-22 15:18:35 |
+
+Transaction
+| txn_id |   txn_date | account_id | txn_type_cd | amount |
+|--------+------------+------------+-------------+--------|
+|   1001 | 2019-05-15 |        123 | C           |    500 |
+|   1002 | 2019-06-01 |        789 | C           |     75 |
+for txn_type: C ⇒  creadit(addition), D ⇒ debit (subtraction)
+
+#+begin_src sql
+CREATE TABLE  Account(
+  account_id smallint UNSIGNED,
+  avail_balance smallint UNSIGNED,
+  last_activity_date timestamp,
+  CONSTRAINT account_id_p PRIMARY KEY (account_id)
+  );
+
+INSERT INTO Account (account_id, avail_balance, last_activity_date)
+VALUES (123,500,'2019-07-10 20:53:27'),
+       (789,75,'2019-06-22 15:18:35');
+
+SELECT  * FROM Account;
+
+SELECT  'Creating transaction table' msg;
+CREATE TABLE  Transaction(
+  txn_id smallint UNSIGNED AUTO_INCREMENT,
+  txn_date date,
+  account_id smallint UNSIGNED,
+  txn_type_cd ENUM('C','D'),
+  amount smallint UNSIGNED,
+  CONSTRAINT txn_id_p PRIMARY KEY (txn_id),
+  CONSTRAINT account_id_f FOREIGN KEY (account_id) REFERENCES Account (account_id)
+  );
+
+SELECT  'Inserting into transaction table' msg;
+INSERT INTO Transaction(txn_id,txn_date,account_id, txn_type_cd, amount)
+VALUES (1001,'2019-05-15',123,'C',500),
+       (1002,'2019-06-01',789,'C',75)
+       ;
+SELECT  * FROM Transaction;
+
+SELECT  'Start Transaction' msg;
+START TRANSACTION;
+UPDATE  Account SET  last_activity_date = current_timestamp(),
+                     avail_balance = avail_balance + 50
+                     WHERE account_id = 789;
+
+UPDATE  Account SET  last_activity_date = current_timestamp(),
+                     avail_balance = avail_balance - 50 WHERE account_id = 123;
+INSERT INTO Transaction(txn_date,account_id, txn_type_cd, amount)
+VALUES (current_date(), 123, 'D', 50),
+       (current_date(), 789, 'C', 50);
+COMMIT;
+SELECT  'New tables:' msg;
+SELECT  * FROM Account;
+SELECT  * FROM Transaction;
+
+DROP TABLE Transaction;
+DROP TABLE Account;
+
+#+end_src
+*** 13. Indexes And Constraints
+**** Index
+    #+begin_src sql
+      SHOW INDEX FROM customer \G;               --show index
+      ALTER TABLE customer DROP INDEX idx_email; --drop index
+      ALTER TABLE customer ADD UNIQUE idx_email (email); --add unique index
+
+      ALTER TABLE customer ADD INDEX idx_full_name (last_name, first_name); --add multicolumn index
+
+      -- What algorithms did the server use?
+      EXPLAIN
+        SELECT customer_id, first_name, last_name
+        FROM customer
+        WHERE first_name LIKE 'S%' AND last_name LIKE 'P%' \G;
+    #+end_src
+**** Constraints  
+***** Constraint Type
+      1. Primary key
+      2. Foreign key (only available for InnoDB)
+      3. Unique 
+      4. Check
+***** Create constraint at the begining
+     #+begin_src sql
+       CREATE TABLE customer (
+         customer_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+         store_id TINYINT UNSIGNED NOT NULL,
+         address_id SMALLINT UNSIGNED NOT NULL,
+         PRIMARY KEY (customer_id),
+         KEY idx_fk_store_id (store_id),
+         KEY idx_fk_address_id (address_id),
+         KEY idx_last_name (last_name),
+         CONSTRAINT fk_customer_address FOREIGN KEY (address_id) 
+         REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+         CONSTRAINT fk_customer_store FOREIGN KEY (store_id) 
+         REFERENCES store (store_id) ON DELETE RESTRICT ON UPDATE CASCADE
+       )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+#+end_src
+***** Create constraint afterwards
+     #+begin_src sql
+       ALTER TABLE customer
+         ADD CONSTRAINT fk_customer_address FOREIGN KEY (address_id)
+         REFERENCES address (address_id)
+         ON DELETE RESTRICT            --Error if I am deleted in the parent table
+                                       -- So I won't be an orphan
+         ON UPDATE CASCADE;            --Change mw if the parent changed.
+#+end_src
+***** Options to prevent orphan
+     #+begin_src sql
+on delete restrict
+on delete cascade
+on delete set null
+on update restrict
+on update cascade
+on update set null
+#+end_src
+**** Excercise: Constraints
+    Generate an alter table statement for the rental table so that an error will
+    be raised if a row having a value found in the rental.customer_id column is
+    deleted from the customer table.
+#+begin_src sql
+ALTER TABLE rental
+  ADD CONSTRAINT fk_customer_id FOREIGN KEY (customer_id)
+  REFERENCES customer (customer_id)
+  ON DELETE RESTRICT;
+#+end_src
+**** Excercise: Index
+Generate a multicolumn index on the payment table that could be used by both of
+the following queries:
+#+begin_src sql
+SELECT customer_id, payment_date, amount
+FROM payment
+WHERE payment_date > cast('2019-12-31 23:59:59' as datetime);
+
+SELECT customer_id, payment_date, amount
+FROM payment
+​WHERE payment_date > cast('2019-12-31 23:59:59' as datetime)
+  AND amount < 5;
+#+end_src
+Answer:
+#+begin_src sql
+ALTER TABLE payment
+  ADD INDEX idx_payment_date_and_amount
+  (payment_date, amount);
+
+EXPLAIN
+  SELECT customer_id, payment_date, amount
+  FROM payment
+  WHERE payment_date > cast('2019-12-31 23:59:59' as datetime) \G;
+
+EXPLAIN SELECT customer_id, payment_date, amount
+  FROM payment
+  ​WHERE payment_date > cast('2019-12-31 23:59:59' as datetime)
+  AND amount < 5;
+
+ALTER TABLE payment DROP INDEX idx_payment_date_and_amount;
+
+#+end_src
+*** 14. Views
+**** Q1 Joined table view
+     Create a view definition that can be used by the following query to generate the given results:
+   #+begin_src sql
+  SELECT title, category_name, first_name, last_name
+  FROM film_ctgry_actor
+  WHERE last_name = 'FAWCETT'; 
+  #+end_src
+  Anwser:
+#+begin_src sql
+CREATE VIEW film_ctgry_actor
+  AS
+  SELECT f.title,
+         a.last_name,
+         a.first_name,
+         c.name AS category_name
+    FROM film f
+         INNER JOIN film_actor AS fa    ON f.film_id = fa.film_id
+         INNER JOIN actor AS a          ON fa.actor_id = a.actor_id
+         INNER JOIN film_category AS fc ON f.film_id = fc.film_id
+         INNER JOIN category AS c       ON fc.category_id = c.category_id;
+
+SELECT title, category_name, first_name, last_name
+  FROM film_ctgry_actor
+ WHERE last_name = 'FAWCETT';
+
+DROP VIEW film_ctgry_actor;
+
+#+end_src
+**** Q2 report view
+     The film rental company manager would like to have a report that includes
+     the name of every country, along with the total payments for all customers
+     who live in each country. Generate a view definition that queries the
+     country table and uses a scalar subquery to calculate a value for a column
+     named tot_payments.
+#+begin_src sql
+CREATE VIEW country_payment
+  AS
+  SELECT
+    (SELECT  sum(p.amount)
+       FROM payment p
+            INNER JOIN customer c ON p.customer_id = c.customer_id
+            INNER JOIN address a ON a.address_id = c.address_id
+            INNER JOIN city cit ON cit.city_id = a.city_id
+      WHERE cit.country_id = cou.country_id
+    ) tot_payment,
+    country
+    FROM country cou
+           ORDER BY tot_payment desc
+           ;
+SELECT  * FROM country_payment;
+DROP VIEW country_payment;
+
+#+end_src
+*** 15. Metadata
+**** Generate statement
+#+begin_src sql
+SELECT 'CREATE TABLE category (' create_table_statement
+ UNION ALL
+SELECT cols.txt
+  FROM
+    (SELECT concat('  ',column_name, ' ', column_type,
+                   CASE
+                   WHEN is_nullable = 'NO' THEN ' not null'
+                   ELSE ''
+                   END,
+                   CASE
+                   WHEN extra IS NOT NULL AND extra LIKE 'DEFAULT_GENERATED%'
+                   THEN concat(' DEFAULT ',column_default,substr(extra,18))
+                   WHEN extra IS NOT NULL THEN concat(' ', extra)
+                   ELSE ''
+                   END,
+                   ',') txt
+       FROM information_schema.columns
+      WHERE table_schema = 'sakila' AND table_name = 'category'
+      ORDER BY ordinal_position)
+      cols
+ UNION ALL
+SELECT ')';
+
+#+end_src
+**** Generate statement by joining a list of cols
+#+begin_src sql
+SELECT  concat('SELECT ',
+               concat_ws(',', cols.col1,
+                         cols.col2,
+                         cols.col3,
+                         cols.col4,
+                         cols.col5
+               ),
+               ' FROM customer WHERE customer_id = ?'
+) INTO @qry
+  FROM (
+    SELECT
+      max(CASE WHEN ordinal_position = 1 THEN column_name ELSE NULL END) col1,
+      max(CASE WHEN ordinal_position = 2 THEN column_name ELSE NULL END) col2,
+      max(CASE WHEN ordinal_position = 3 THEN column_name ELSE NULL END) col3,
+      max(CASE WHEN ordinal_position = 4 THEN column_name ELSE NULL END) col4,
+      max(CASE WHEN ordinal_position = 5 THEN column_name ELSE NULL END) col5
+      FROM information_schema.columns
+     WHERE table_schema = 'sakila' AND table_name = 'customer'
+     GROUP BY table_name
+  )cols;
+
+SELECT @qry;
+
+#+end_src
+**** Excercise 1: list indexes
+Write a query that lists all indexes in Salika and also the table names.
+#+begin_src sql
+SELECT index_name, column_name, table_name
+  FROM information_schema.statistics
+ WHERE table_schema = 'sakila' 
+ ORDER BY 1, 3;
+
+ #+end_src
+**** Excercise 2: Generated query
+Write a query that generates output that can be used to create all of the
+indexes on the sakila.customer table. Output should be like
+#+begin_src sql
+"ALTER TABLE <table_name> ADD INDEX <index_name> (<column_list>)"
+#+end_src
+#+begin_src sql
+SELECT concat_ws(',', cols.col1, cols.col2, cols.col3)
+  INTO @col_list
+  FROM (
+    SELECT
+      max(CASE WHEN ordinal_position = 1 THEN column_name ELSE NULL END) col1,
+      max(CASE WHEN ordinal_position = 2 THEN column_name ELSE NULL END) col2,
+      max(CASE WHEN ordinal_position = 3 THEN column_name ELSE NULL END) col3
+      FROM information_schema.columns
+     WHERE table_schema = 'sakila' AND table_name = 'category'
+     GROUP BY table_name
+  ) cols;
+SELECT  @col_list;
+
+
+
+SELECT  concat('ALTER TABLE ',
+               ' ',
+               ' ADD INDEX ',
+               '<index>',
+               '(', (SELECT  @col_list), ');'
+) statement;
+
+#+end_src
+*** 16. Analytic Function
+**** The data used
+#+begin_src sql
+    CREATE TABLE Sales_Fact(year_no smallint UNSIGNED,
+                        month_no tinyint UNSIGNED,
+                        tot_sales int
+);
+INSERT INTO Sales_Fact(year_no, month_no, tot_sales)
+VALUES
+  ( 2019 , 1 , 19228 ),
+  ( 2019 , 2 , 18554 ),
+  ( 2019 , 3 , 17325 ),
+  ( 2019 , 4 , 13221 ),
+  ( 2019 , 5 , 9964  ),
+  ( 2019 , 6 , 12658 ),
+  ( 2019 , 7 , 14233 ),
+  ( 2019 , 8 , 17342 ),
+  ( 2019 , 9 , 16853 ),
+  ( 2019 , 10, 17121 ),
+  ( 2019 , 11, 19095 ),
+  ( 2019 , 12, 21436 ),
+  ( 2020 , 1 , 20347 ),
+  ( 2020 , 2 , 17434 ),
+  ( 2020 , 3 , 16225 ),
+  ( 2020 , 4 , 13853 ),
+  ( 2020 , 5 , 14589 ),
+  ( 2020 , 6 , 13248 ),
+  ( 2020 , 7 , 8728  ),
+  ( 2020 , 8 , 9378  ),
+  ( 2020 , 9 , 11467 ),
+  ( 2020 , 10, 13842 ),
+  ( 2020 , 11, 15742 ),
+  ( 2020 , 12, 18636 );
+
+\. hi.sql
+
+SELECT * FROM Sales_Fact;
+DROP TABLE Sales_Fact;
+
+#+end_src
+**** Excercise 1: Ranking
+    Write a query that retrivess every row from Sales_Fact, and add a col to
+    generate a ranking based on the ~tot_sales~ column values. The highest value
+    should recieve a ranking of 1, and the lowest a ranking of 24.
+
+   #+begin_src sql
+   SELECT  year_no, month_no, tot_sales,
+  -- Do one of the following three will do
+        row_number() over (order by tot_sales desc) row_number_rnk,
+        rank() over (order by tot_sales desc) rank_rnk,
+        dense_rank() over (order by tot_sales desc) dense_rank_rnk
+  FROM Sales_Fact
+          ;
+
+          #+end_src
+**** Excercise 2:Grouped ranking
+     Generate two sets of rankings from 1 to 12, one for each year
+    #+begin_src sql
+    SELECT  year_no, month_no, tot_sales,
+  -- Do one of the following three will do
+        rank() over ( partition by year_no
+          order by tot_sales desc) rank_rnk
+  FROM Sales_Fact
+          ;
+
+          #+end_src
+**** Excercise 3: Lag
+     Write a query that retrives all 2020 data, and include a column that will
+     contain the ~tot_sales~ value from the previous month.
+#+begin_src sql
+SELECT t.year_no, t.month_no, t.tot_sales, t.tot_sales_prev
+  FROM
+    (SELECT  tot_sales, year_no, month_no,
+             lag(tot_sales, 1)
+               over (order by year_no)
+               tot_sales_prev
+               FROM Sales_Fact
+    ) t
+      WHERE year_no = 2020
+    ;
+
+    #+end_src
+** My config
+*** Install variables
+Windows
+| Var                  |     Val |
+|----------------------+---------|
+| Port                 |    3306 |
+| X Protocol Port      |   33060 |
+| root pswd            |  516826 |
+| Windows Service Name | MySQL80 |
+*** Start and stop services
+    #+begin_src powershell
+      gsv "*SQL*"
+      # Do it in admin shell
+      Stop-Service -Name "MySQL80"
+    #+end_src
+*** Enter the sql shell
+    #+begin_src powershell
+mysqlsh
+    #+end_src
+** MySQL shell
+*** Common Commands
+#+begin_src pwsh
+\q
+\h
+\
+\s
+\py
+\js
+\sql
+\connect | \c
+\reconnect | \disconnect
+\u | \use
+\source | \.
+\warnings | \W
+\nowarnings | \w
+\edit | \e
+\pager | \P
+\system | \i
+#+end_src
+*** Connect
+**** Connect after started
+    #+begin_src sql
+      \c root@localhost:3306;
+      \c --mysqlx root@localhost:33060;
+        \reconnect;
+      \disconnect;
+      \status;
+    #+end_src
+In JS
+#+begin_src javascript
+  shell.connect('mysqlx://me@localhost:33060')
+  shell.connect({
+      scheme:'mysqlx',
+      user:'user',
+      host:'localhost',
+      port:33060
+  })
+#+end_src
+**** Connect when starting
+*** History
+    #+begin_src sql
+      \history;
+      \history delete;
+      \history save;
+      \history delete 1-5;
+      \history delete;
+      \history delete 2-;             --2 to last
+      \history delete -5;             --last 5
+      \history clear;
+    #+end_src
+*** Edit
+    # Edit in text editor
+    C-x C-e
+**** Change the default editor
+    Set the variable "EDITOR" to
+#+begin_src powershell
+    "C:\Program Files (x86)\Emacs\i686\bin\emacs.exe"
+#+end_src
+*** Status
+#+begin_src sql
+  session;
+  shell.status();
+  \status;
+
+#+end_src
+*** Command Line options for mysqlsh
+    #+begin_src powershell
+      # Enter the shell and connect to the schema sakila using the X-portocol, with sql as the active language
+      mysqlsh --mysqlx --user root --host localhost --schema=sakila --sql --port 33060
+    #+end_src
+** Hadoop
+The three components
+1. Hadoop Distributed File System (HDFS)::cross-server file management
+2. MapReduce::Break the big task into concurrent small tasks
+3. Yarn::Job scheduler for HDFS
+* Last
+# Local Variables:
+# org-what-lang-is-for: "sql"
+# End:

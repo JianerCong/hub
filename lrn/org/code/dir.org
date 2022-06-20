@@ -1,0 +1,37 @@
+** The default eval dir
+is the current buffer dir
+#+BEGIN_SRC emacs-lisp
+(directory-files ".")
+#+END_SRC
+
+#+RESULTS:
+| . | .#dir.org | .. | basic.org | chain.org | dir.org | sess.org |
+
+** A :dir header argument makes it different
+#+BEGIN_SRC emacs-lisp :dir ~/work
+(directory-files ".")
+#+END_SRC
+
+#+RESULTS:
+| . | .. | .git | adv-str | ide | ses | todo.org |
+
+** Dir and session
+   Nope, they are independent.
+# ~:dir~ can give a session a starting directory, but after that, org dose
+# change dir within the session.
+
+#+BEGIN_SRC emacs-lisp :dir "~/work" :session MySession
+(directory-files ".")
+#+END_SRC
+
+#+RESULTS:
+| . | .. | .git | adv-str | ide | ses | todo.org |
+
+
+#+BEGIN_SRC emacs-lisp :session MySession
+(directory-files ".")
+#+END_SRC
+
+
+#+RESULTS:
+| . | .. | basic.org | chain.org | dir.org | sess.org |

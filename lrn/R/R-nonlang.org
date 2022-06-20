@@ -1,0 +1,74 @@
+** Install and config R
+*** Install R on ubuntu
+ #+BEGIN_SRC bash
+ # update indices
+ apt update -qq
+ # install two helper packages we need
+ apt install --no-install-recommends software-properties-common dirmngr
+ # add the signing key (by Michael Rutter) for these repos
+ # To verify key, run gpg --show-keys /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc 
+ # Fingerprint: 298A3A825C0D65DFD57CBB651716619E084DAB9
+ wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+ # add the R 4.0 repo from CRAN -- adjust 'focal' to 'groovy' or 'bionic' as needed
+ add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+ #+END_SRC
+*** Install R on debian
+#+begin_src bash
+  apt-get update
+  apt-cache search "^r-.*" | sort
+  apt-cache search "^r-cran-.*" | sort # 
+  apt-get install r-base r-base-dev libatlas3-base
+#+end_src
+*** Add the latest repo so that we can install packages in Ubuntu
+ #+BEGIN_SRC bash
+ sudo add-apt-repository ppa:c2d4u.team/c2d4u4.0+
+ sudo apt install --no-install-recommands r-cran-tidyverse
+ #+END_SRC
+*** Install package from tuna
+ #+BEGIN_SRC R
+ options("repos" = c(CRAN="https://mirrors.tuna.tsinghua.edu.cn/CRAN/"))
+ #+END_SRC
+**** imager
+ #+BEGIN_SRC bash
+   sudo apt-get install libfftw3-dev libx11-dev libtiff-dev libxml2-dev libxml2
+   sudo apt-get install build-essential libapack libblas lib-cairo2-dev libxt-dev
+   sudo R
+ #+END_SRC
+
+ #+BEGIN_SRC R
+ install.packages("imager")
+ #+END_SRC
+*** Check library
+ find /usr -name "Intrinsic.h" -print
+*** build from source
+*** pre-install
+    #+begin_src bash
+      sudo apt-get install libxt-dev
+      # Download pcre2: Pearl common regex
+      cd ~/Downloads
+      wget https://github.com/PhilipHazel/pcre2/releases/download/pcre2-10.39/pcre2-10.39.tar.gz
+      tar - zxvf pcre2-10.39.tar.gz
+      cd pcre2-10.39
+      ./configure
+      make -j 24
+      sudo make install
+
+      cd R-4-1-2
+      sudo ./configure
+      sudo make
+      sudo make install
+    #+end_src
+** Manage package
+*** Can no longer use R-3.5 package on R-4.1.2
+#+begin_src R
+  update.packages(ask = FALSE)
+  ## Install the latest package even if an older one exists
+  install.packages('cli')
+#+end_src
+** Use rcpp on Windows
+[[https://cran.r-project.org/bin/windows/Rtools/rtools40.html]]
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "R"
+# End:

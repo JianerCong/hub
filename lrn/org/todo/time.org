@@ -1,0 +1,14 @@
+# -*- org-log-done: (quote time); -*-
+Use above option    ^^^^^^^^^^^^ to log when it is closed.
+Set (setq org-log-done 'note) if you also want a note.
+* DONE t1
+  CLOSED: [2021-10-04 一 15:20]
+
+* The in-buffer setting is
+#+BEGIN_SRC org
+#+STARTUP: logdone
+and 
+#+STARTUP: lognotedone
+#+END_SRC
+
+You can also automatically log when the state got changed. See 5.3.2

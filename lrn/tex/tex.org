@@ -1,0 +1,20 @@
+** get and set var using \csname
+#+begin_src plain-tex
+\def\MyPattern#1{My Random Prefix and #1}
+\def\MySet#1#2{\expandafter\def%
+\csname\MyPattern{#1}\endcsname%
+{#2}
+}
+\def\MyGet#1{\csname\MyPattern{#1}\endcsname}
+
+\MySet{x}{1} \MySet{y}{hi}
+x is \MyGet{x}, y is \MyGet{y}
+% ⇒ x is 1, y is hi
+\bye
+
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "plain-tex"
+# End:

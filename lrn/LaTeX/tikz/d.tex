@@ -1,0 +1,76 @@
+\begin{tikzpicture}
+  \draw[step=1cm,style=help lines] (0,0) grid (10cm,10cm);
+  \begin{scope}
+    \draw (0,0) circle (1);
+  \end{scope}
+
+  \begin{scope}[x=.5cm]         %squeeze the x axis
+    \draw (0,0) circle (1);
+  \end{scope}
+
+  
+  \begin{scope}[xshift=2cm]     %shift the x axis
+    \draw (0,0) circle (1);
+  \end{scope}
+
+  
+  \begin{scope}[xshift=4cm]     %shift the x axis
+    \fill[fill=red]
+    (0,0) node{n1}
+    -- (1,1) node[ellipse,draw] {n---------2}
+    -- (0,2) node[circle,fill=red!20] {n3};
+  \end{scope}
+
+  
+  \begin{scope}[yshift=4cm,shape=ellipse]     %all nodes are ellipse
+    \tikzstyle{every node}=[draw]             %Equivalent to add [draw] to all nodes
+    \fill[fill=yellow!20]
+    (0,0) node{n1}
+    -- (1,1) node{n---------2}
+    -- (0,2) node{n3};
+  \end{scope}
+
+  
+\end{tikzpicture}
+
+A flow diagram
+
+\begin{tikzpicture}
+  \draw[style=help lines] (0,-5) grid (20,5);
+  \begin{scope}[node distance=2cm]
+
+    \tikzstyle{every node}=[draw, rectangle,text centered]
+
+    \node (0,0) (pick_ep)[text width=2cm] {Pick $\epsilon$ from 0 - 0.0035};
+
+    \node (ep) [circle,right of=pick_ep] {$\epsilon$};
+
+    \node at ([yshift=-2.5cm] ep.west) (find_dc) [%
+    right,                                        % anchor=west
+    text width=4cm,
+    text justified,
+    node distance=2.5cm] {%
+      Find $d_c$
+      
+      {\small 1. Assume a $d_c$;
+
+        2. Calculate the net force $f$ from $d_c$ and
+        $\epsilon$;
+
+        3. If $f$ is (approximately) zero: done; Else: Assume a new
+        $d_c$ and go to step 2;}
+    };
+
+    \node (dc) [circle, below of find_dc] {$d_c$};
+
+
+    % {{{ Draw lines
+
+    \begin{scope}[thick, ->]
+      \draw (ep) -- (ep |- find_dc.north);
+    \end{scope}
+
+    % }}}
+    
+  \end{scope}
+\end{tikzpicture}

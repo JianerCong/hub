@@ -1,0 +1,105 @@
+#+LATEX: \begin{mybox}
+** Python Testing with pytest
+#+LATEX: \tcblower{}
+https://learning.oreilly.com/library/view/python-testing-with/9781680509427/f_0012.xhtml
+#+LATEX: \end{mybox}\begin{myitems}
++ 7.5 Writing a Test Strategy
++ 8.1 Understanding pytest Configuration Files
++ 8.2 Saving Settings and Flags in ~pytest.ini~
++ 8.3 Using ~tox.ini~, ~pyproject.toml~, or ~setup.cfg~ in place of ~pytest.init~
++ 8.4 Determining a Root Directory and Config File
++ 8.5 Sharing Local Fixtures and Hook Functions with ~conftest.py~
++ 8.6 Avoiding Test File Name Collision
++ 9.1 Using ~coverage.py~ with ~pytest-cov~
++ 9.2 Generating HTML Reports
++ 9.3 Excluding Code from Coverage
++ 9.4 Running Coverage on Tests
++ 9.5 Running Coverage on Directory
++ 9.6 Running on a Single File
++ 10.1 Isolating the Command-Line interface
++ 10.2 Testing with Typer
++ 10.3 Mocking an Attribute
++ 10.4 Mocking a Class and Methods
++ 10.5 Keeping Mock and Implementation in Sync with ~Autospec~
++ 10.6 Making Sure Functions Are Called Correctly
++ 10.7 Creating Error Conditions
++ 10.8 Testing at Multiple Layers to Avoid Mocking
++ 10.9 Using Plugins to Assist Mocking
+
+#+LATEX: \end{myitems}\begin{mybox}
+** Docker in Action
+#+LATEX: \tcblower{}
+https://learning.oreilly.com/library/view/docker-in-action/9781617294761/kindle_split_013.html
+#+LATEX: \end{mybox}\begin{myitems}
++ 1.1 What is Docker
+  + 1.1.1 ~"Hello, World"~
+  + 1.1.2 Containers
+  + 1.1.3 Containers are not virtualization
+  + 1.1.4 Running software in containers for isolation
+  + 1.1.5 Shipping containers
++ 1.2 What problems does Docker solve?
+  + 1.2.1 Getting organized
+  + 1.2.2 Improving portability
+  + 1.2.3 Protecting your computer
++ 1.3 Why is Docker important
++ 1.4 Where and when to use Docker
++ 1.5 Docker in the larger ecosystem
++ 1.6 Getting help with the Docker command line
+
+#+LATEX: \end{myitems}\begin{mybox}
+** Introduction to HTML
+#+LATEX: \tcblower{}
+https://developer.mozilla.org/en-US/docs/Learn/HTML/Introduction_to_HTML
+#+LATEX: \end{mybox}\begin{myitems}
++ 1.4 Creating hyperlinks
+  + 1.4.1 What is a hyperlink?
+  + 1.4.2 Anatomy of a link
+  + 1.4.3 A quick primer on URLs and paths
+  + 1.4.4 Link best practices
+  + 1.4.5 E-mail links
++ 1.5 Advanced text formatting
+  + 1.5.1 Description lists
+  + 1.5.2 Quotations
+  + 1.5.3 Abbreviations
+  + 1.5.4 Marking up contact details
+  + 1.5.5 Superscript and subscript
+  + 1.5.6 Representing computer code
+  + 1.5.7 Marking up times and dates
++ 1.6 Document and website structure
+  + 1.6.1 Basic sections of a document
+  + 1.6.2 HTML for structuring content
+  + 1.6.3 HTML layout elements in more detail
+  + 1.6.4 Planning a simple website
++ 1.7 Debugging HTML
++ 1.8 Assessment: Marking up a letter
++ 1.9 Assessment: Structuring a page of content
++ 2.1 Multimedia and embedding overview
++ 2.2 Images in HTML
+
+#+LATEX: \end{myitems}\begin{mybox}
+** AWS Essential Training for Developers 
+#+LATEX: \tcblower{}
+https://www.linkedin.com/learning/aws-essential-training-for-developers
+#+LATEX: \end{mybox}\begin{myitems}
++ 9.1 What is DevOps?
++ 9.2 CI/CD with AWS
++ 9.3 Infrastructureas code with AWS
++ 9.4 Monitoring with CloudWatch
++ 10.1 AWS Shield and firewalls with WAF
++ 10.2 Inspector, GuardDuty, and Macie
++ 10.3 CloudTrail and Security Hub
+
+#+LATEX: \end{myitems}
+
+除此之外，还有在leetcode(https://leetcode.com)刷题。
+
+* Old
+#+LATEX: \begin{mybox}
+** Django Tutorial
+#+LATEX: \tcblower{}
+https://docs.djangoproject.com/en/4.0/intro/tutorial01/
+#+LATEX: \end{mybox}\begin{myitems}
++ 3.1 Overview
++ 3.2 Writing more views
+#+LATEX: \end{myitems}
+* Pending

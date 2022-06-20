@@ -1,0 +1,26 @@
+** Get-Service
+#+begin_src powershell
+  gsv "s*" | Sort-Object Status
+  gsv "wmi*"
+  "WinRM" | gsv
+
+  # Get services that  includes network in the FullName
+  gsv -DisplayName "*network*"
+  gsv -Name "win*" -Exclude "WinRM"
+  gsv | Where-Object {$_.Status -eq "Running"}
+  gsv | Get-Member
+
+  # List the dependent objects
+  gsv | Where-Object {$_.DependentServices} |
+    Format-List -Property Name, DependentServices,@{
+        Label = "NoOfDependentServices";
+        Expression = {$_.DependentServices.Count}
+    }
+
+  # Get the dependent services
+  gsv "WinRM" -RequiredServices
+  #+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "powershell"
+# End:

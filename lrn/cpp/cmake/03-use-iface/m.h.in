@@ -1,0 +1,3 @@
+#define hi_VERSION_MAJOR @hi_VERSION_MAJOR@
+#define hi_VERSION_MINOR @hi_VERSION_MINOR@
+#cmakedefine USE_MYLIB

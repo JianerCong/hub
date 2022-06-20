@@ -1,0 +1,1842 @@
+* Lang
+** Types and Basic
+*** int
+ #+begin_src csharp
+   var decimalLiteral = 42;        //decimal
+   var hexLiteral = 0x2A;          // hex == &H2A in VB
+   var binaryLiteral = 0b_0010_1010; // binary
+ #+end_src
+
+*** Chr
+#+begin_src csharp
+  Console.WriteLine (System.Char.ToUpper ('c'));    // C
+  Console.WriteLine (char.IsWhiteSpace ('\t'));     // True
+  // The following is false in Turkish locale
+  char.ToUpper ('i') == 'I';
+  // Use
+  Console.WriteLine (char.ToUpperInvariant ('i'));    // I
+
+#+end_src
+| IsLetter                |
+| LowerCaseLetter         |
+| TitleCaseLetter         |
+| ModifierLetter          |
+| OtherLetter             |
+| IsUpper                 |
+| IsLower                 |
+| IsDigit                 |
+| IsLetterOrDigit         |
+| IsNumber                |
+| LetterNumber            |
+| OtherNumber             |
+| IsSeparator             |
+| ParagraphSeparator      |
+| IsWhiteSpace            |
+| ParagraphSeparator      |
+| IsPunctuation           |
+| ConnectorPunctuation    |
+| InitialQuotePunctuation |
+| FinalQuotePunctuation   |
+| IsSymbol                |
+| ModifierSymbol          |
+| OtherSymbol             |
+| IsControl               |
+*** String
+**** basic
+#+begin_src csharp
+  string s1 = "Hello";
+  string s2 = "First Line\r\nSecond Line";
+  string s3 = @"\\server\fileshare\helloworld.cs";
+
+  // Char and String
+  char[] ca = "Hello".ToCharArray();
+  string s = new string (ca);              // s = "Hello"
+  string empty = "";
+
+  // Empty String
+  Console.WriteLine (empty == "");              // True
+  Console.WriteLine (empty == string.Empty);    // True
+  Console.WriteLine (empty.Length == 0);        // True
+
+  // Null String
+  string nullString = null;
+  Console.WriteLine (nullString == null);        // True
+  Console.WriteLine (nullString == "");          // False
+  Console.WriteLine (nullString.Length == 0);    // NullReferenceException
+
+  // Index into string
+  string str  = "abcde";
+  char letter = str[1];        // letter == 'b'
+  foreach (char c in "123") Console.Write (c + ",");    // 1,2,3,
+
+  // Search in string
+  Console.WriteLine ("quick brown fox".EndsWith ("fox"));      // True
+  Console.WriteLine ("quick brown fox".Contains ("brown"));    // True
+  "abcdef".StartsWith ("aBc", StringComparison.InvariantCultureIgnoreCase);
+
+  // strchar
+  Console.WriteLine ("abcde".IndexOf ("cd"));   // 2
+  // search substring start from 6;
+  Console.WriteLine ("abcde abcde".IndexOf ("CD", 6,
+                                            StringComparison.CurrentCultureIgnoreCase));    // 8
+  // Use LastIndexOf to search from end
+
+
+  // Search any of the substring
+  Console.Write ("ab,cd ef".IndexOfAny (new char[] {' ', ','} ));       // 2
+  Console.Write ("pas5w0rd".IndexOfAny ("0123456789".ToCharArray() ));  // 3
+  // See also LastIndexOfAny                                                    
+
+#+end_src
+**** Manipulate String
+#+begin_src csharp
+  string left3 = "12345".Substring (0, 3);     // left3 = "123";
+  string mid3  = "12345".Substring (1, 3);     // mid3 = "234";
+  string end3  = "12345".Substring (2);        // end3 = "345"; To the end
+
+  string s1 = "helloworld".Insert (5, ", ");    // s1 = "hello, world"
+  string s2 = s1.Remove (5, 2);                 // s2 = "helloworld";
+
+  Console.WriteLine ("12345".PadLeft (9, '*'));  // ****12345
+  Console.WriteLine ("12345".PadLeft (9));       //     12345
+
+  Console.WriteLine ("  abc \t\r\n ".Trim().Length);   // 3
+  Console.WriteLine ("  abc \t\r\n ".TrimStart().Length);   // 8
+  Console.WriteLine ("  abc \t\r\n ".TrimEnd().Length);   // 6
+
+  // Split
+  string[] words = "The quick brown fox".Split();
+  foreach (string word in words)
+      Console.Write (word + "|");   
+  // Join
+  string[] words = "The quick brown fox".Split();
+  string together = string.Join (" ", words);      // The quick brown fox
+
+  // Concat
+  string sentence     = string.Concat ("The", " quick", " brown", " fox");
+  string sameSentence = "The" + " quick" + " brown" + " fox";
+#+end_src
+***** split on more than one type of delimitor
+     #+begin_src csharp
+       string s = "You win some. You lose some.";
+
+       string[] subs = s.Split(' ', '.');
+
+       foreach (var sub in subs)
+       {
+           Console.WriteLine($"Substring: {sub}");
+       }
+
+       // This example produces the following output:
+       //
+       // Substring: You
+       // Substring: win
+       // Substring: some
+       // Substring:
+       // Substring: You
+       // Substring: lose
+       // Substring: some
+       // Substring:
+
+       // To remove the empty substring. Use the RemoveEmptyEntries Options
+
+       string s = "You win some. You lose some.";
+       char[] separators = new char[] { ' ', '.' };
+
+       string[] subs = s.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+
+       foreach (var sub in subs)
+       {
+           Console.WriteLine($"Substring: {sub}");
+       }
+
+       // This example produces the following output:
+       //
+       // Substring: You
+       // Substring: win
+       // Substring: some
+       // Substring: You
+       // Substring: lose
+       // Substring: some
+     #+end_src
+***** split into 2 strings
+     #+begin_src csharp
+       using System;
+
+       string s = "a\nb\nc\nd\n";
+       string[] ss = s.Split('\n',2);
+       foreach (var i in ss){
+           Console.WriteLine("+ String:");
+           Console.WriteLine(i);
+       }
+       // + String:
+       // a
+       // + String:
+       // b
+       // c
+       // d
+     #+end_src
+***** Use substring to extract info
+     #+begin_src csharp
+       string [] info = {
+           "Name: Felica Walker",
+           "Title: Mz.",
+           "Age: 47",
+           "Location: Paris",
+           "Gender: F"};
+       int found = 0;
+
+       Console.WriteLine("The initial values in the array are:");
+       foreach (string s in info)
+           Console.WriteLine(s);
+
+       // The example displays the following output:
+       //       The initial values in the array are:
+       //       Name: Felica Walker
+       //       Title: Mz.
+       //       Age: 47
+       //       Location: Paris
+       //       Gender: F
+       //
+
+       Console.WriteLine("\nWe want to retrieve only the key information. That is:");
+       foreach (string s in info)
+       {
+           found = s.IndexOf(": ");
+           Console.WriteLine("   {0}", s.Substring(found + 2));
+       }
+
+       //       We want to retrieve only the key information. That is:
+       //          Felica Walker
+       //          Mz.
+       //          47
+       //          Paris
+       //          F
+     #+end_src
+**** Format
+Each number in curly braces is called a format item. The number corresponds to
+the argument position and is optionally followed by:
+1. A comma and a minimum width to apply
+2. A colon and a format string
+#+begin_src csharp
+  string composite = "It's {0} degrees in {1} on this {2} morning";
+  string s = string.Format (composite, 35, "Perth", DateTime.Now.DayOfWeek);
+  // s == "It's 35 degrees in Perth on this Friday morning"
+  string s = $"It's hot this {DateTime.Now.DayOfWeek} morning";
+
+  Console.WriteLine (string.Format (composite, "Mary", 500));
+  Console.WriteLine (string.Format (composite, "Elizabeth", 20000));
+  // Use the toString()
+  string s = "Name=" + "Mary".PadRight (20) +
+      " Credit Limit=" + 500.ToString ("C").PadLeft (15);
+#+end_src
+**** Comparison
+#+begin_src csharp
+  string s = "hi";
+  string s2 = "hi";
+  Console.WriteLine($"Is s == s2: {s==s2}");
+  Console.WriteLine (string.Equals ("foo", "FOO",
+                                    StringComparison.OrdinalIgnoreCase));   // True
+
+  Console.WriteLine ("ṻ" == "ǖ");                            // False
+
+  Console.WriteLine (string.Equals ("ṻ", "ǖ",
+                                    StringComparison.CurrentCulture));      // ?
+
+  // public enum StringComparison
+  // {
+  //     CurrentCulture,               // Case-sensitive
+  //     CurrentCultureIgnoreCase,
+  //     InvariantCulture,             // Case-sensitive
+  //     InvariantCultureIgnoreCase,
+  //     Ordinal,                      // Case-sensitive
+  //     OrdinalIgnoreCase
+  // }
+
+  Console.WriteLine ("Boston".CompareTo ("Austin"));    // 1
+  Console.WriteLine ("Boston".CompareTo ("Boston"));    // 0
+  Console.WriteLine ("Boston".CompareTo ("Chicago"));   // -1
+  Console.WriteLine ("ṻ".CompareTo ("ǖ"));              // 0
+  Console.WriteLine ("foo".CompareTo ("FOO"));          // -1
+
+  // Case insensitive
+  Console.WriteLine (string.Compare ("foo", "FOO", true));   // 0
+#+end_src
+*** Format
+**** Format Provider
+   We have
+ #+begin_src csharp
+public interface IFormattable
+{
+  string ToString (string format, IFormatProvider formatProvider);
+}
+ #+end_src
+
+#+begin_src csharp
+  NumberFormatInfo f = new NumberFormatInfo();
+  f.CurrencySymbol = "$$";
+  Console.WriteLine (3.ToString ("C", f));          // $$ 3.00
+  //    The format string of money^  ^--the format provider
+
+  // Use default formatProvider:
+  Console.WriteLine (10.3.ToString ("C", null));  // $10.30
+
+  Console.WriteLine (10.3.ToString ("C"));     // $10.30
+  Console.WriteLine (10.3.ToString ("F4"));    // 10.3000 (Fix to 4 D.P.)
+
+  // You ca also use CultureInfo inplace of formatProvider
+  CultureInfo uk = CultureInfo.GetCultureInfo ("en-GB");
+  Console.WriteLine (3.ToString ("C", uk));      // £3.00
+
+  // Datetime
+  DateTime dt = new DateTime (2000, 1, 2);
+  CultureInfo iv = CultureInfo.InvariantCulture;
+  Console.WriteLine (dt.ToString (iv));            // 01/02/2000 00:00:00
+  // format by day:
+  Console.WriteLine (dt.ToString ("d", iv));       // 01/02/2000
+#+end_src
+
+***** Number format info
+#+begin_src csharp
+  NumberFormatInfo f = new NumberFormatInfo ();
+  f.NumberGroupSeparator = " ";
+  Console.WriteLine (12345.6789.ToString ("N3", f));   // 12 345.679
+
+  // You can get a NumberFormatInfo by Cloning one
+  NumberFormatInfo f = (NumberFormatInfo)
+      CultureInfo.CurrentCulture.NumberFormat.Clone();
+#+end_src
+**** sprintf
+   #+begin_src csharp
+     string composite = "Credit={0:C}";
+     Console.WriteLine (string.Format (composite, 500));   // Credit=$500.00
+     Console.WriteLine ("Credit={0:C}", 500);   // Credit=$500.00
+
+   #+end_src
+**** control spacing
+#+begin_src csharp
+int[] years = { 2013, 2014, 2015 };
+     int[] population = { 1025632, 1105967, 1148203 };
+     var sb = new System.Text.StringBuilder();
+     sb.Append(String.Format("{0,6} {1,15}\n\n", "Year", "Population"));
+     for (int index = 0; index < years.Length; index++)
+        sb.Append(String.Format("{0,6} {1,15:N0}\n", years[index], population[index]));
+
+     Console.WriteLine(sb);
+
+     // Result:
+     //      Year      Population
+     //
+     //      2013       1,025,632
+     //      2014       1,105,967
+     //      2015       1,148,203
+     #+end_src
+***** my example (set width in expression-embeded string)
+#+begin_src csharp
+using System;
+using MathNet.Numerics.Interpolation;
+
+const string S_RED    ="\x1b[31m";
+const string S_GREEN  ="\x1b[32m";
+// const string S_YELLOW ="\x1b[33m";
+// const string S_BLUE   ="\x1b[34m";
+// const string S_MAGENTA="\x1b[35m";
+// const string S_CYAN   ="\x1b[36m";
+const string S_NOR    ="\x1b[0m";
+
+double[] x = new double[] {0,1,2};
+double[] y = new double[] {0,1,0};
+LinearSpline l = LinearSpline.Interpolate(x,y);
+ExpectEqual(l.Interpolate(0.5),0.5);
+ExpectEqual(l.Interpolate(0.8),0.8);
+ExpectEqual(l.Interpolate(1.2),0.8);
+ExpectEqual(l.Interpolate(2),0);
+
+void ExpectEqual(double a, double b){
+    Console.Write($"Should be {b,5}, it's {a,5}:  ");
+    string s = (a==b)? S_GREEN + "Okay" : S_RED + "Not Okay";
+    Console.WriteLine(s+S_NOR);
+}
+
+
+
+#+end_src
+**** alignment
+#+begin_src csharp
+int[] years = { 2013, 2014, 2015 };
+int[] population = { 1025632, 1105967, 1148203 };
+String s = String.Format("{0,-10} {1,-10}\n\n", "Year", "Population");
+for(int index = 0; index < years.Length; index++)
+   s += String.Format("{0,-10} {1,-10:N0}\n",
+                      years[index], population[index]);
+Console.WriteLine($"\n{s}");
+// Result:
+//    Year       Population
+//
+//    2013       1,025,632
+//    2014       1,105,967
+//    2015       1,148,203
+#+end_src
+**** Standard Flags
+| <2>         | <5>                                                | <3>                |         <4> | <5>                                                                     |
+| G or g      | General                                    | "1.2345, ""G"""    |      1.2345 | Switches to exponential notation for small or large numbers.            |
+|             |                                                    | "0.00001, ""G"""   |    1.00E-05 | G3 limits precision to three digits in total (before + after point).    |
+|             |                                                    | "0.00001, ""g"""   |    1.00E-05 |                                                                         |
+|             |                                                    | "1.2345, ""G3"""   |        1.23 |                                                                         |
+|             |                                                    | "12345, ""G3"""    |    1.23E+04 |                                                                         |
+| F           | Fixed point                                        | "2345.678, ""F2""" |     2345.68 | F2 rounds to two decimal places.                                        |
+|             |                                                    | "2345.6, ""F2"""   |      2345.6 |                                                                         |
+| N           | Fixed point with group separator (Numeric) | "2345.678, ""N2""" |    2,345.68 | As above, with group (1,000s) separator (details from format provider). |
+|             |                                                    | "2345.6, ""N2"""   |    2,345.60 |                                                                         |
+| D           | Pad with leading zeros                             | "123, ""D5"""      |         123 | For integral types only.                                                |
+|             |                                                    | "123, ""D1"""      |         123 | "D5 pads left to five digits; does not truncate."                       |
+| E or e      | Force exponential notation                         | "56789, ""E"""     |    5.68E+04 | Six-digit default precision.                                            |
+|             |                                                    | "56789, ""e"""     |    5.68E+04 |                                                                         |
+|             |                                                    | "56789, ""E2"""    |    5.68E+04 |                                                                         |
+| C           | Currency                                           | "1.2, ""C"""       |       $1.20 | C with no digit uses default number of D.P. from format provider.       |
+|             |                                                    | "1.2, ""C4"""      |       $1.20 |                                                                         |
+| P           | Percent                                            | ".503, ""P"""      |      50.30% | Uses symbol and layout from format provider.                            |
+|             |                                                    | ".503, ""P0"""     |         50% | Decimal places can optionally be overridden.                            |
+| X or x      | Hexadecimal                                        | "47, ""X"""        |          2F | "X for uppercase hex digits; x for lowercase hex digits."               |
+|             |                                                    | "47, ""x"""        |          2f | Integrals only.                                                         |
+|             |                                                    | "47, ""X4"""       |        002F |                                                                         |
+| R or G9/G17 | Round-trip                                         | "1f / 3f, ""R"""   | 0.333333343 | Use R for BigInteger, G17 for double, or G9 for float.                  |
+*** Parse
+   #+begin_src csharp
+     bool failure = int.TryParse ("qwerty", out int i1);
+     bool success = int.TryParse ("123", out int i2);
+     // Omit the result
+     bool success = int.TryParse ("123", out int _);
+
+   #+end_src
+**** parse normal
+#+begin_src csharp
+using System;
+
+int i = int.Parse(" 12 ");
+bool b = bool.Parse("true");
+bool b1 = bool.Parse("TRUE");
+double d = double.Parse("1.2 ");
+
+Console.WriteLine("i : {0}",i);
+Console.WriteLine("b is : {0}", b);
+Console.WriteLine("b1 is : {0}", b1);
+Console.WriteLine("d is : {0}", d);
+/*
+  i : 12
+  b is : True
+  b1 is : True
+  d is : 1.2
+ */
+
+ #+end_src
+*** Unsafe
+**** Run
+   Add this entry in the <project> tag of your your .csproj:
+#+begin_src xml
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+#+end_src
+
+Next run
+#+begin_src csharp
+  using System;
+
+  // compile with: -unsafe
+  class UnsafeTest
+  {
+      // Unsafe method: takes pointer to int.
+      unsafe static void SquarePtrParam(int* p)
+      {
+          ,*p *= *p;
+      }
+
+      // Unsafe method calls unsafe method 
+      unsafe static void Main()
+      {
+          int i = 5;
+          // Unsafe method: uses address-of operator (&).
+          SquarePtrParam(&i);
+          Console.WriteLine(i);
+      }
+  }
+  // Output: 25
+#+end_src
+**** Dynamic Memory Allocation (DMA)
+#+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+
+public static unsafe class Memory
+{
+    // Handle for the process heap. This handle is used in all calls to the
+    // HeapXXX APIs in the methods below.
+    private static readonly IntPtr s_heap = GetProcessHeap();
+
+    // Allocates a memory block of the given size. The allocated memory is
+    // automatically initialized to zero.
+    public static void* Alloc(int size)
+    {
+        void* result = HeapAlloc(s_heap, HEAP_ZERO_MEMORY, (UIntPtr)size);
+        if (result == null) throw new OutOfMemoryException();
+        return result;
+    }
+
+    // Copies count bytes from src to dst. The source and destination
+    // blocks are permitted to overlap.
+    public static void Copy(void* src, void* dst, int count)
+    {
+        byte* ps = (byte*)src;
+        byte* pd = (byte*)dst;
+        if (ps > pd)
+        {
+            for (; count != 0; count--) *pd++ = *ps++;
+            // Do count times
+        }
+        else if (ps < pd)
+        {
+            for (ps += count, pd += count; count != 0; count--) *--pd = *--ps;
+        }
+    }
+
+    // Frees a memory block.
+    public static void Free(void* block)
+    {
+        if (!HeapFree(s_heap, 0, block)) throw new InvalidOperationException();
+    }
+
+    // Re-allocates a memory block. If the reallocation request is for a
+    // larger size, the additional region of memory is automatically
+    // initialized to zero.
+    public static void* ReAlloc(void* block, int size)
+    {
+        void* result = HeapReAlloc(s_heap, HEAP_ZERO_MEMORY, block, (UIntPtr)size);
+        if (result == null) throw new OutOfMemoryException();
+        return result;
+    }
+
+    // Returns the size of a memory block.
+    public static int SizeOf(void* block)
+    {
+        int result = (int)HeapSize(s_heap, 0, block);
+        if (result == -1) throw new InvalidOperationException();
+        return result;
+    }
+
+    // Heap API flags
+    private const int HEAP_ZERO_MEMORY = 0x00000008;
+
+    // Heap API functions
+    [DllImport("kernel32")]
+    private static extern IntPtr GetProcessHeap();
+
+    [DllImport("kernel32")]
+    private static extern void* HeapAlloc(IntPtr hHeap, int flags, UIntPtr size);
+
+    [DllImport("kernel32")]
+    private static extern bool HeapFree(IntPtr hHeap, int flags, void* block);
+
+    [DllImport("kernel32")]
+    private static extern void* HeapReAlloc(IntPtr hHeap, int flags, void* block, UIntPtr size);
+
+    [DllImport("kernel32")]
+    private static extern UIntPtr HeapSize(IntPtr hHeap, int flags, void* block);
+}
+
+class Test
+{
+    static unsafe void Main()
+    {
+        byte* buffer = null;
+        try
+        {
+            const int Size = 8;
+            // Get 8 bytes
+            buffer = (byte*)Memory.Alloc(Size);
+            // Assign to numbers to byte
+            for (int i = 0; i < Size; i++) buffer[i] = (byte)i;
+            byte[] array = new byte[Size];
+            // Copy bytes
+            fixed (byte* p = array) Memory.Copy(buffer, p, Size);
+            // Use fixed to temporarily disable CLR's location management
+            for (int i = 0; i < Size; i++) Console.WriteLine(array[i]);
+        }
+        finally
+        {
+            if (buffer != null) Memory.Free(buffer);
+        }
+    }
+}
+
+#+end_src
+*** Enum
+  + Underlying values are of type int.
+  + The constants 0, 1, 2... are automatically assigned, in the declaration
+    order of the enum members.
+
+#+begin_src csharp
+public enum BorderSide { Left, Right, Top, Bottom }
+BorderSide topSide = BorderSide.Top;
+bool isTop = (topSide == BorderSide.Top);   // true
+public enum BorderSide : byte { Left, Right, Top, Bottom }
+public enum BorderSide : byte { Left=1, Right=2, Top=10, Bottom=11 }
+public enum BorderSide : byte
+ { Left=1, Right, Top=10, Bottom }
+ 
+#+end_src
+
+**** enum conversion
+#+begin_src csharp
+  int i = (int) BorderSide.Left;
+  BorderSide side = (BorderSide) i;
+  bool leftOrRight = (int) side <= 2;
+
+  HorizontalAlignment h = (HorizontalAlignment) BorderSide.Right;
+  // same as:
+  HorizontalAlignment h = (HorizontalAlignment) (int) BorderSide.Right;
+
+  // 0 is special
+BorderSide b = 0;    // No cast required
+
+  public enum HorizontalAlignment
+  {
+    Left = BorderSide.Left,
+    Right = BorderSide.Right,
+    Center
+  }
+#+end_src
+
+** Console
+*** char Read
+#+begin_src csharp
+public static int Read ();
+#+end_src
+**** return 
+    The next character from the input stream, or negative one (-1) if there are
+    currently no more characters to be read.
+**** example
+    #+begin_src csharp
+// This example demonstrates the Console.Read() method.
+using System;
+
+class Sample
+{
+    public static void Main()
+    {
+    string m1 = "\nType a string of text then press Enter. " +
+                "Type '+' anywhere in the text to quit:\n";
+    string m2 = "Character '{0}' is hexadecimal 0x{1:x4}.";
+    string m3 = "Character     is hexadecimal 0x{0:x4}.";
+    char ch;
+    int x;
+//
+    Console.WriteLine(m1);
+    do
+        {
+        x = Console.Read();
+        try
+            {
+            ch = Convert.ToChar(x);
+            if (Char.IsWhiteSpace(ch))
+               {
+               Console.WriteLine(m3, x);
+               if (ch == 0x0a)
+                   Console.WriteLine(m1);
+               }
+            else
+                {
+                    Console.WriteLine(m2, ch, x);
+                }
+            }
+        catch (OverflowException e)
+            {
+            Console.WriteLine("{0} Value read = {1}.", e.Message, x);
+            ch = Char.MinValue;
+            Console.WriteLine(m1);
+            }
+        } while (ch != '+');
+    }
+}
+/*
+This example produces the following results:
+
+Type a string of text then press Enter. Type '+' anywhere in the text to quit:
+
+The quick brown fox.
+Character 'T' is hexadecimal 0x0054.
+Character 'h' is hexadecimal 0x0068.
+Character 'e' is hexadecimal 0x0065.
+Character     is hexadecimal 0x0020.
+Character 'q' is hexadecimal 0x0071.
+Character 'u' is hexadecimal 0x0075.
+Character 'i' is hexadecimal 0x0069.
+Character 'c' is hexadecimal 0x0063.
+Character 'k' is hexadecimal 0x006b.
+Character     is hexadecimal 0x0020.
+Character 'b' is hexadecimal 0x0062.
+Character 'r' is hexadecimal 0x0072.
+Character 'o' is hexadecimal 0x006f.
+Character 'w' is hexadecimal 0x0077.
+Character 'n' is hexadecimal 0x006e.
+Character     is hexadecimal 0x0020.
+Character 'f' is hexadecimal 0x0066.
+Character 'o' is hexadecimal 0x006f.
+Character 'x' is hexadecimal 0x0078.
+Character '.' is hexadecimal 0x002e.
+Character     is hexadecimal 0x000d.
+Character     is hexadecimal 0x000a.
+
+Type a string of text then press Enter. Type '+' anywhere in the text to quit:
+
+^Z
+Value was either too large or too small for a character. Value read = -1.
+
+Type a string of text then press Enter. Type '+' anywhere in the text to quit:
+
++
+Character '+' is hexadecimal 0x002b.
+
+*/
+    #+end_src
+*** string? ReadLine
+**** Return
+The next line of characters from the input stream, or null if no more lines are
+available.
+**** Example                                                :File:Read:Write:Redirection 
+Transform all 4-long space to TAB
+     #+begin_src csharp
+using System;
+using System.IO;
+
+public class InsertTabs
+{
+    private const int tabSize = 4;
+    private const string usageText = "Usage: INSERTTABS inputfile.txt outputfile.txt";
+    public static int Main(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.WriteLine(usageText);
+            return 1;
+        }
+
+        try
+        {
+            // Attempt to open output file.
+            using (var writer = new StreamWriter(args[1]))
+            {
+                using (var reader = new StreamReader(args[0]))
+                {
+                    // Redirect standard output from the console to the output file.
+                    Console.SetOut(writer);
+                    // Redirect standard input from the console to the input file.
+                    Console.SetIn(reader);
+                    string line;
+                    while ((line = Console.ReadLine()) != null)
+                    {
+                        string newLine = line.Replace(("").PadRight(tabSize, ' '), "\t");
+                        Console.WriteLine(newLine);
+                    }
+                }
+            }
+        }
+        catch(IOException e)
+        {
+            TextWriter errorWriter = Console.Error;
+            errorWriter.WriteLine(e.Message);
+            errorWriter.WriteLine(usageText);
+            return 1;
+        }
+
+        // Recover the standard output stream so that a
+        // completion message can be displayed.
+        var standardOutput = new StreamWriter(Console.OpenStandardOutput());
+        standardOutput.AutoFlush = true;
+        Console.SetOut(standardOutput);
+        Console.WriteLine($"INSERTTABS has completed the processing of {args[0]}.");
+        return 0;
+    }
+}
+     #+end_src
+*** readline and writeline
+#+begin_src csharp
+  using System;
+  using System.IO;
+
+  class Test
+  {
+      public static void Main()
+      {
+          string path = @".\MyTest.txt";
+          if (!File.Exists(path))
+          {
+              // Create a file to write to.
+              using (StreamWriter sw = File.CreateText(path))
+              {
+                  sw.WriteLine("Hello");
+                  sw.WriteLine("And");
+                  sw.WriteLine("Welcome");
+              }
+          }
+
+          // Open the file to read from.
+          using (StreamReader sr = File.OpenText(path))
+          {
+              string s;
+              while ((s = sr.ReadLine()) != null)
+              {
+                  Console.WriteLine(s);
+              }
+          }
+      }
+  }
+
+#+end_src
+*** append to files
+    Create file if dosn't exist. Append text if exists.
+   #+begin_src csharp
+        using System;
+     using System.IO;
+
+     bool append = true;
+     using (StreamWriter w = new StreamWriter("MyTest.txt", append)){
+         w.WriteLine("Hi");
+         w.WriteLine("Oh");
+     }
+
+#+end_src
+*** readFromConsole
+#+begin_src csharp
+using System;
+
+Console.Write("Hello ");
+Console.WriteLine("World!");
+Console.Write("Enter your name: ");
+string name = Console.ReadLine();
+Console.Write("Good day, ");
+Console.Write(name);
+Console.WriteLine("!");
+/*
+  Hello World!
+  Enter your name: Jianer
+  Good day, Jianer!
+*/
+
+#+end_src
+** Containers
+*** Tuple
+#+begin_src csharp
+using System;
+using System.Collections.Generic;
+
+
+var a = ("Kaz",23);
+Show(a);                        // Kaz: 23
+a.Item1 = "Jos";
+Show(a);                        // Jos: 23
+
+// Return from method
+(string,int) b = Get();
+Show(b);                        // Hiw: 39
+
+// Use then in generics
+IEnumerable<(int ,string)> s;
+// Name the tuple element.
+IEnumerable<(int id,string name)> s2;
+var c = (name:"Bob", age:23);
+Console.WriteLine($"{c.name}: {c.age}"); // Bob: 23
+c = Get2();
+Console.WriteLine($"{c.name}: {c.age}"); // Jig: 80
+// The fields .Item1 and .Item2 still exists
+Show(c);                        // Jig: 80
+
+// Deconstucting the tuple
+(string name, int age) = c;
+Console.WriteLine($"{name}: {age}"); // Jig: 80
+// Type inference
+var (name2,age2) = Get();
+Console.WriteLine($"{name2}: {age2}"); // Hiw: 39
+
+// Use tuple deconstructor to init class
+Point p = new Point(0,0);
+Console.WriteLine(p);           // Point
+b = Get2();
+Console.WriteLine(b == c);      // True
+Console.WriteLine(b.Equals(c)); // True
+
+
+(string,int) Get() => ("Hiw",39);
+(string name,int age) Get2() => ("Jig",80);
+void Show((string,int) a) => Console.WriteLine($"{a.Item1}: {a.Item2}");
+
+class Point{
+    public readonly int X,Y;
+    public Point(int x,int y) => (X,Y) = (x,y); // tuple deconstructor
+}
+
+#+end_src
+*** Array
+**** Basic
+ #+begin_src csharp
+     char[] vowels = new char[5];    // Declare an array of 5 characters
+     vowels[0] = 'a';
+     // ...
+     vowels[4] = 'u';
+     Console.WriteLine (vowels[1]);      // e
+     for (int i = 0; i < vowels.Length; i++)
+         Console.Write (vowels[i]);            // aeiou
+
+
+ #+end_src
+**** Copyto
+#+begin_src csharp
+using System;
+
+int[] a = new int[] {1,2,3};
+int[] b = new int[] {2,3,4};
+Show(a);Show(b);
+a.CopyTo(b,0);
+Show(a);Show(b);
+/*
+  1 |2 |3 |
+  2 |3 |4 |
+  1 |2 |3 |
+  1 |2 |3 |
+  */
+
+void Show(int[] a){
+    foreach (int i in a){
+        Console.Write("{0} |",i);
+    }
+    Console.WriteLine();
+}
+
+#+end_src
+**** Init
+#+begin_src csharp
+  char[] vowels = new char[5];    // Declare an array of 5 characters
+  char[] vowels = new char[] {'a','e','i','o','u'};
+  // Or simply
+  char[] vowels = {'a','e','i','o','u'};
+  // Array is reference type
+  int[] a = null;
+#+end_src
+**** Index and range
+    #+begin_src csharp
+      char[] vowels = new char[] {'a','e','i','o','u'};
+      char lastElement  = vowels [^1];   // 'u'
+      char secondToLast = vowels [^2];   // 'o'
+      Index first = 0;
+      Index last = ^1;
+      char firstElement = vowels [first];   // 'a'
+      char lastElement = vowels [last];     // 'u'
+      char[] firstTwo =  vowels [..2];    // 'a', 'e'
+      char[] lastThree = vowels [2..];    // 'i', 'o', 'u'
+      char[] middleOne = vowels [2..3];   // 'i'
+    #+end_src
+**** All set to 0 when init (for struct but not class)
+#+begin_src csharp
+  Point[] a = new Point[1000];
+  int x = a[500].X;                  // 0
+  public struct Point { public int X, Y; }
+
+  // Class is not Okay
+
+  Point[] a = new Point[1000];
+  int x = a[500].X;                  // Runtime error, NullReferenceException
+  public class Point { public int X, Y; }
+
+  // Instead, Do
+  Point[] a = new Point[1000];
+  for (int i = 0; i < a.Length; i++) // Iterate i from 0 to 999
+      a[i] = new Point();             // Set array element i with new point
+
+#+end_src
+**** filling
+   #+begin_src csharp
+   using System;
+
+Object[] o = new Object[5] {2,5,4,3,1};
+var o2 = Array.Empty<Object>();
+show(in o2, "o2");
+show(in o, "o");
+Array.Resize(ref o2, 10);
+Console.WriteLine("After resizing:");
+show(in o2, "o2");
+Console.WriteLine("After filling 3 '4' from index 1");
+Array.Fill(o2, 4, 1, 3);
+show(in o2, "o2");
+
+Console.WriteLine("After filling 3 'hi' from index 3");
+Array.Fill(o2, "hi", 3, 3);
+show(in o2, "o2");
+
+void showSz(in Object[] o, string s){
+    Console.WriteLine($"Now {s} has {o.Length} element(s)");
+}
+
+
+void show(in Object[] o, string s){
+    showSz(in o, s);
+    if (o.Length > 0)
+        Console.Write(s + (" has elements:"));
+    foreach (var i in o){
+        Console.Write("\t{0}",i);
+    }
+    Console.Write('\n');
+}
+#+end_src
+**** Compare (Linq)
+    #+begin_src csharp
+using System;
+using System.Linq;
+
+namespace Demo {
+    class Program {
+        static void Main(string[] args) {
+
+            // two arrays
+            int[] arr = new int[] { 99, 87, 56, 45};
+            int[] brr = new int[] { 99, 87, 56, 45 };
+
+            // compare
+            Console.WriteLine(arr.SequenceEqual(brr));
+            // True
+        }
+    }
+}
+
+    #+end_src
+**** Compare (mine)
+    #+begin_src csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Demo {
+    class Program {
+        static void Main(string[] args) {
+
+            // two arrays
+            int[] arr = new int[] { 99, 87, 56, 45};
+            int[] brr = new int[] { 99, 87, 56, 45 };
+            ExpectSequenceEqual(arr,brr);
+        }
+        public static bool ExpectSequenceEqual<T>(in IEnumerable<T> x,
+                                                              in IEnumerable<T> y){
+            if (x.Count() != y.Count()){
+                return false;
+            }else if (x.Count() == 0 && y.Count() == 0){
+                return true;
+            }else if (!(x.First() is IComparable)){
+                return false;
+            }else{
+                IEnumerator<T> ex = x.GetEnumerator();
+                IEnumerator<T> ey = y.GetEnumerator();
+                IEquatable<T> cx,cy;
+                bool result, result_final=true;
+                while (ex.MoveNext() && ey.MoveNext()){
+                    cx = (IEquatable<T>) ex.Current;
+                    cy = (IEquatable<T>) ey.Current;
+                    result = cx.Equals(cy);
+                    if (!result) result_final=false;
+                    Console.WriteLine("Got {0} and {1}: Are they equal? {2} ", cx,cy, result);
+                }
+                return result_final;
+            }
+        }
+    }
+}
+
+    #+end_src
+** Control
+**** switch
+***** basic
+    #+begin_src csharp
+void ShowCard (int cardNumber)
+{
+  switch (cardNumber)
+  {
+    case 13:
+      Console.WriteLine ("King");
+      break;
+    case 12:
+      Console.WriteLine ("Queen");
+      break;
+    case 11:
+      Console.WriteLine ("Jack");
+      break;
+    case -1:                         // Joker is -1
+      goto case 12;                  // In this game joker counts as queen
+    default:                         // Executes for any other cardNumber
+      Console.WriteLine (cardNumber);
+      break;
+  }
+}
+    #+end_src
+ When you specify a constant, you’re restricted to the built-in integral types;
+ the bool, char, and enum types; and the string type.
+***** on types 
+#+begin_src csharp
+TellMeTheType (12);
+TellMeTheType ("hello");
+TellMeTheType (true);
+
+void TellMeTheType (object x)   // object allows any type.
+{
+  switch (x)
+  {
+    case int i:
+      Console.WriteLine ("It's an int!");
+      Console.WriteLine ($"The square of {i} is {i * i}");
+      break;
+    case string s:
+      Console.WriteLine ("It's a string");
+      Console.WriteLine ($"The length of {s} is {s.Length}");
+      break;
+    default:
+      Console.WriteLine ("I don't know what x is");
+      break;
+  }
+}
+#+end_src
+****** on type and when
+      #+begin_src csharp
+ switch (x)
+ {
+   case bool b when b == true:     // Fires only when b is true
+     Console.WriteLine ("True!");
+     break;
+   case bool b:
+     Console.WriteLine ("False!");
+     break;
+ }
+      #+end_src
+****** when you only need the type, but not the value
+ #+begin_src csharp
+   If you want to switch on a type, but are uninterested in its value, you can use a discard (_):
+
+       case DateTime _:
+         Console.WriteLine ("It's a DateTime");
+ #+end_src
+
+
+***** the switch expression (C# 8)
+#+begin_src csharp
+string cardName = cardNumber switch
+{
+  13 => "King",
+  12 => "Queen",
+  11 => "Jack",
+  _ => "Pip card"   // equivalent to 'default'
+};
+#+end_src
+
+***** Relational Pattern (C#9)
+#+begin_src csharp
+  string GetWeightCategory (decimal bmi) => bmi switch
+  {
+    < 18.5m => "underweight",
+    < 25m => "normal",
+    < 30m => "overweight",
+    _ => "obese"
+  };
+#+end_src
+***** Switch on tuple [tuple pattern] (C#8)
+#+begin_src csharp
+int AverageCelsiusTemperature (Season season, bool daytime) =>
+  (season, daytime) switch
+  {
+    (Season.Spring, true) => 20,
+    (Season.Spring, false) => 16,
+    (Season.Summer, true) => 27,
+    (Season.Summer, false) => 22,
+    (Season.Fall, true) => 18,
+    (Season.Fall, false) => 12,
+    (Season.Winter, true) => 10,
+    (Season.Winter, false) => -2,
+    _ => throw new Exception ("Unexpected combination")
+};
+
+enum Season { Spring, Summer, Fall, Winter };
+#+end_src
+***** [positional pattern] (C#8)
+     #+begin_src csharp
+       var p = new Point (2, 2);
+       Console.WriteLine (p is (2, 2));  // True
+
+       record Point (int X, int Y);      // Has compiler-generated deconstructor
+
+       Console.WriteLine (p is (var x, var y) && x == y);   // True
+
+       // switch on "destructure"
+       string Print (object obj) => obj switch 
+       {
+           Point (0, 0)                      => "Empty point",
+           Point (var x, var y) when x == y  => "Diagonal"
+           ...
+       };
+
+     #+end_src
+****** a somewhat bizarre variable
+      #+begin_src csharp
+        { Scheme: "http", Port: 80, Host: string host } => host.Length < 1000,
+        //                                       ^^^^      ^^^^ -- new var
+      #+end_src
+***** [property pattern]
+     #+begin_src csharp
+     if (obj is string { Length:4 }) ...
+     #+end_src
+
+     is same as
+
+     #+begin_src csharp
+     if (obj is string s && s.Length == 4) ...
+     #+end_src
+
+So we can use it in switch
+#+begin_src csharp
+bool ShouldAllow (Uri uri) => uri switch
+{
+  { Scheme: "http",  Port: 80  } => true,
+  { Scheme: "https", Port: 443 } => true,
+  { Scheme: "ftp",   Port: 21  } => true,
+  { IsLoopback: true           } => true,
+  _ => false
+};
+#+end_src
+****** nested
+      #+begin_src csharp
+  { Scheme: { Length: 4 }, Port: 80 } => true,
+      #+end_src
+****** mix [relational pattern] in it
+      #+begin_src csharp
+  { Host: { Length: < 1000 }, Port: > 0 } => true,
+      #+end_src
+****** mix ~when~
+      #+begin_src csharp
+  { Scheme: "http" } when string.IsNullOrWhiteSpace (uri.Query) => true,
+      #+end_src
+****** mix type pattern
+      #+begin_src csharp
+bool ShouldAllow (object uri) => uri switch
+{
+  Uri { Scheme: "http",  Port: 80  } => true,
+  Uri { Scheme: "https", Port: 443 } => true,
+  ...
+      #+end_src
+As you might expect with type patterns, you can *introduce* a variable at the end
+of a clause and then consume that variable:
+
+  #+begin_src csharp
+  Uri { Scheme: "http", Port: 80 } httpUri => httpUri.Host.Length < 1000,
+  #+end_src
+You can also use that variable in a when clause:
+
+  #+begin_src csharp
+  Uri { Scheme: "http", Port: 80 } httpUri 
+                                   when httpUri.Host.Length < 1000 => true,
+  #+end_src
+**** foreach
+***** Use Span<T> to ref
+#+begin_src csharp
+     using System;
+
+// Use Span<T> to get data on the stack
+Span<int> storage = stackalloc int[10];
+int num = 0;
+foreach (ref int item in storage)
+{
+    item = num++;
+}
+Show(storage);
+
+int[] a = new Span(new int[]{1,2,3});
+Show(a);
+foreach (ref int x in a) x++;
+Show(a);
+
+void Show<T>(in Span<T> a){
+    foreach (T x in a) Console.Write("{0} |",x);
+    Console.WriteLine();
+}
+
+#+end_src
+**** When you need to modify the values Use for (not foreach)
+#+begin_src csharp
+using System;
+string[] s = new string[] {" hi"," oh","haa  "};
+Console.WriteLine("Before triming:");
+Show(in s);
+for (int i =0 ; i < s.Length; i++){
+    s[i] = s[i].Trim();
+}
+Console.WriteLine("After triming:");
+Show(in s);
+
+void Show<T>(in T[] a){
+    foreach (T x in a) Console.Write("{0}|",x);
+    Console.WriteLine();
+}
+/*
+  Before triming:
+hi| oh|haa  |
+    After triming:
+hi|oh|haa|
+*/
+
+#+end_src
+** Exceptions
+*** the basic
+  #+begin_src csharp
+using System;
+
+class Test
+{
+    static void Main (string[] args)
+    {
+        try
+        {
+            byte b = byte.Parse (args[0]);
+            Console.WriteLine (b);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            Console.WriteLine ("Please provide at least one argument");
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine ("That's not a number!");
+        }
+        catch (OverflowException)
+        {
+            Console.WriteLine ("You've given me more than a byte!");
+        }
+    }
+}
+/*
+  Dll 999 => You've given me more than a byte!
+  Dll hi                        // That's not a number!
+  Dll 1                         // 1
+ */
+
+  #+end_src
+*** the System.Exception
+
+Only one catch clause executes for a given exception. If you want to include a
+safety net to catch more general exceptions (such as System.Exception), you must
+put the more-specific handlers first.
+
+*** catch
+**** catch it without using it.
+ An exception can be caught without specifying a variable, if you don’t need to
+ access its properties:
+    #+begin_src csharp
+
+ catch (OverflowException)   // no variable
+ {
+   ...
+ }
+    #+end_src
+
+**** catch'em all
+    #+begin_src csharp
+ catch { ... }
+    #+end_src
+
+**** catch and filter
+
+ Exception filters
+
+ You can specify an exception filter in a catch clause by adding a when clause:
+    #+begin_src csharp
+
+ catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
+ {
+   ...
+ }
+    #+end_src
+
+ If a WebException is thrown in this example, the Boolean expression following
+ the when keyword is then evaluated. If the result is false, the catch block in
+ question is ignored and any subsequent catch clauses are considered. With
+ exception filters, it can be meaningful to catch the same exception type again:
+
+ #+begin_src csharp
+ catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
+ { ... }
+ catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
+ { ... }
+ #+end_src
+ The Boolean expression in the when clause can be side-effecting, such as a
+ method that logs the exception for diagnostic purposes.
+
+*** final
+   #+begin_src csharp
+void ReadFile()
+{
+    StreamReader reader = null;    // In System.IO namespace
+    try
+    {
+        reader = File.OpenText ("file.txt");
+        if (reader.EndOfStream) return;
+        Console.WriteLine (reader.ReadToEnd());
+    }
+    finally
+    {
+        if (reader != null) reader.Dispose();
+    }
+}
+
+   #+end_src
+
+**** using [an alternative to final]
+    #+begin_src csharp
+using (StreamReader reader = File.OpenText ("file.txt"))
+{
+  ...
+}
+    #+end_src
+    is almost
+    #+begin_src csharp
+{
+  StreamReader reader = File.OpenText ("file.txt");
+  try
+  {
+    ...
+  }
+  finally
+  {
+    if (reader != null)
+      ((IDisposable)reader).Dispose();
+  }
+}
+    #+end_src
+
+***** the using declaration (C#8.0) works in the current "scope"
+     #+begin_src csharp
+if (File.Exists ("file.txt"))
+{
+  using var reader = File.OpenText ("file.txt");
+  Console.WriteLine (reader.ReadLine());
+  ...
+}
+     #+end_src
+
+*** throw
+   #+begin_src csharp
+using System;
+
+try { Display (null); }
+catch (ArgumentNullException ex)
+{
+    Console.WriteLine ("Caught the exception");
+}
+
+void Display (string name)
+{
+    if (name == null)
+        throw new ArgumentNullException (nameof (name));
+
+    Console.WriteLine (name);
+}
+
+// Caught the exception
+
+   #+end_src
+
+*** throw in expression-bodied
+   #+begin_src csharp
+using System;
+
+try { f(); }
+catch (NotImplementedException) {Console.WriteLine ("f is not implemented");}
+
+try { ProperCase(null);}
+catch (ArgumentException) {Console.WriteLine("You passed a null");}
+
+
+
+string f() => throw new NotImplementedException();
+string ProperCase (string value) =>
+    value == null ? throw new ArgumentException ("value") :
+    value == "" ? "" :
+    char.ToUpper (value[0]) + value.Substring (1);
+
+/*
+  f is not implemented
+  You passed a null
+ */
+   #+end_src
+
+*** rethrow
+   #+begin_src csharp
+using System;
+using System.Net;       // (See Chapter 16)
+
+string s = null;
+using (WebClient wc = new WebClient())
+try { s = wc.DownloadString ("http://www.example.com");  }
+catch (WebException ex)
+{
+    if (ex.Status == WebExceptionStatus.Timeout)
+        Console.WriteLine ("Timeout");
+    else
+        throw;     // Can’t handle other sorts of WebException, so rethrow
+}
+
+Console.WriteLine("The string is: \n{0}",s);
+/*
+The string is:
+<!doctype html>
+<html>
+<head>
+    <title>Example Domain</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+    body {
+        background-color: #f0f0f2;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    }
+    div {
+        width: 600px;
+        margin: 5em auto;
+        padding: 2em;
+        background-color: #fdfdff;
+        border-radius: 0.5em;
+        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);
+    }
+    a:link, a:visited {
+        color: #38488f;
+        text-decoration: none;
+    }
+    @media (max-width: 700px) {
+        div {
+            margin: 0 auto;
+            width: auto;
+        }
+    }
+    </style>
+</head>
+
+<body>
+<div>
+    <h1>Example Domain</h1>
+    <p>This domain is for use in illustrative examples in documents. You may use this
+    domain in literature without prior coordination or asking for permission.</p>
+    <p><a href="https://www.iana.org/domains/example">More information...</a></p>
+</div>
+</body>
+</html>
+ */
+
+   #+end_src
+
+**** usually easiler to use filter
+This can be written more tersely with an exception filter:
+    #+begin_src csharp
+catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
+{
+  Console.WriteLine ("Timeout");
+}
+    #+end_src
+**** a common usage: rethrow a more specific type
+The other common scenario is to rethrow a more specific exception type:
+
+#+begin_src csharp
+try
+{
+  ... // Parse a DateTime from XML element data
+}
+catch (FormatException ex)
+{
+  throw new XmlException ("Invalid DateTime", ex);
+}
+#+end_src
+
+Notice that when we constructed XmlException, we passed in the original
+exception, ex, as the second argument. This argument populates the
+InnerException property of the new exception and aids debugging. Nearly all
+types of exception offer a similar constructor.
+*** properties of System.Exception
+   The most important properties of System.Exception are the following:
+
++ StackTrace :: A string representing all the methods that are called from the
+  origin of the exception to the catch block.
++ Message :: A string with a description of the error.
++ InnerException :: The inner exception (if any) that caused the outer
+  exception. This, itself, can have another InnerException.
+*** common exceptions
+   The following exception types are used widely throughout the CLR and .NET
+   libraries. You can throw these yourself or use them as base classes for
+   deriving custom exception types:
+
++ System.ArgumentException :: Thrown when a function is called with a bogus argument. This generally indicates a program bug.
++ System.ArgumentNullException :: Subclass of ArgumentException that’s thrown when a function argument is (unexpectedly) null.
++ System.ArgumentOutOfRangeException :: Subclass of ArgumentException that’s thrown when a (usually numeric) argument is too big or too small. For example, this is thrown when passing a negative number into a function that accepts only positive values.
++ System.InvalidOperationException :: Thrown when the state of an object is unsuitable for a method to successfully execute, regardless of any particular argument values. Examples include reading an unopened file or getting the next element from an enumerator for which the underlying list has been modified partway through the iteration.
++ System.NotSupportedException :: Thrown to indicate that a particular functionality is not supported. A good example is calling the Add method on a collection for which IsReadOnly returns true.
++ System.NotImplementedException :: Thrown to indicate that a function has not yet been implemented.
++ System.ObjectDisposedException :: Thrown when the object upon which the function is called has been disposed.
+
+Another commonly encountered exception type is NullReferenceException. The CLR
+throws this exception when you attempt to access a member of an object whose
+value is null (indicating a bug in your code). You can throw a
+NullReferenceException directly (for testing purposes) as follows:
+
+#+begin_src csharp
+throw null;
+#+end_src
+*** the TryXXX
+   When writing a method, you have a choice, when something goes wrong, to
+   return some kind of failure code or throw an exception. In general, you throw
+   an exception when the error is outside the normal workflow—or if you expect
+   that the immediate caller won’t be able to cope with it. Occasionally,
+   though, it can be best to offer both choices to the consumer. An example of
+   this is the int type, which defines two versions of its Parse method:
+
+#+begin_src csharp
+public int Parse     (string input);
+public bool TryParse (string input, out int returnValue);
+#+end_src
+If parsing fails, Parse throws an exception; TryParse returns false.
+
+You can implement this pattern by having the XXX method call the TryXXX method as follows:
+
+#+begin_src csharp
+public return-type XXX (input-type input)
+{
+  return-type returnValue;
+  if (!TryXXX (input, out returnValue))
+    throw new YYYException (...)
+  return returnValue;
+}
+#+end_src
+*** Catch that exception (ExpectError)
+#+begin_src csharp
+using System;
+
+try {
+    throw new  MyException("hi");
+}catch (Exception e){
+    Console.WriteLine(e.Message); // hi
+}
+
+Action f = () => throw new  MyException("ya");
+Action g = () => throw new  ArgumentException("ya");
+ExpectError(f, typeof(MyException));
+ExpectError(g, typeof(MyException));
+
+
+void ExpectError(Action f, Type t){
+    try {
+        try{
+            f();
+        }catch (Exception e){
+            Console.WriteLine("Gotcha");
+            if (t.IsInstanceOfType(e)){
+                Console.WriteLine("Got MyException: {0}", e.Message);
+            }else{
+                Console.WriteLine("That's not my exception.");
+                throw;
+            }
+        }
+    }catch (Exception e2){
+        Console.WriteLine("Caught the stray exception: {0}", e2.Message);
+    }
+}
+
+class MyException :Exception{
+    public MyException(string msg):base(msg){}
+}
+/*
+  hi
+  Gotcha
+  Got MyException: ya
+  Gotcha
+  That's not my exception.
+  Caught the stray exception: ya
+  */
+
+  #+end_src
+* Docs
+** How to enable doc?
+*** Add the following tag inside the <Property Group> tag in .csproj
+#+begin_src xml
+    <DocumentationFile>hi.xml</DocumentationFile>
+    #+end_src
+    like the following
+#+begin_src xml
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <DocumentationFile>hi.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+</Project>
+#+end_src
+* System Interfaces
+*** IEquatable
+#+begin_src csharp
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
+public class TestIEquatable
+{
+   public static void Main()
+   {
+      // Create a Person object for each job applicant.
+      Person applicant1 = new Person("Jones", "099-29-4999");
+      Person applicant2 = new Person("Jones", "199-29-3999");
+      Person applicant3 = new Person("Jones", "299-49-6999");
+
+      // Add applicants to a List object.
+      List<Person> applicants = new List<Person>();
+      applicants.Add(applicant1);
+      applicants.Add(applicant2);
+      applicants.Add(applicant3);
+
+       // Create a Person object for the final candidate.
+       Person candidate = new Person("Jones", "199-29-3999");
+       if (applicants.Contains(candidate))
+          Console.WriteLine("Found {0} (SSN {1}).",
+                             candidate.LastName, candidate.SSN);
+      else
+         Console.WriteLine("Applicant {0} not found.", candidate.SSN);
+
+      // Call the shared inherited Equals(Object, Object) method.
+      // It will in turn call the IEquatable(Of T).Equals implementation.
+      Console.WriteLine("{0}({1}) already on file: {2}.",
+                        applicant2.LastName,
+                        applicant2.SSN,
+                        Person.Equals(applicant2, candidate));
+   }
+}
+// The example displays the following output:
+//       Found Jones (SSN 199-29-3999).
+//       Jones(199-29-3999) already on file: True.
+
+public class Person : IEquatable<Person>
+{
+   private string uniqueSsn;
+   private string lName;
+
+   public Person(string lastName, string ssn)
+   {
+      if (Regex.IsMatch(ssn, @"\d{9}"))
+        uniqueSsn = $"{ssn.Substring(0, 3)}-{ssn.Substring(3, 2)}-{ssn.Substring(5, 4)}";
+      else if (Regex.IsMatch(ssn, @"\d{3}-\d{2}-\d{4}"))
+         uniqueSsn = ssn;
+      else
+         throw new FormatException("The social security number has an invalid format.");
+
+      this.LastName = lastName;
+   }
+
+   public string SSN
+   {
+      get { return this.uniqueSsn; }
+   }
+
+   public string LastName
+   {
+      get { return this.lName; }
+      set {
+         if (String.IsNullOrEmpty(value))
+            throw new ArgumentException("The last name cannot be null or empty.");
+         else
+            this.lName = value;
+      }
+   }
+
+   public bool Equals(Person other)
+   {
+      if (other == null)
+         return false;
+
+      if (this.uniqueSsn == other.uniqueSsn)
+         return true;
+      else
+         return false;
+   }
+
+   public override bool Equals(Object obj)
+   {
+      if (obj == null)
+         return false;
+
+      Person personObj = obj as Person;
+      if (personObj == null)
+         return false;
+      else
+         return Equals(personObj);
+   }
+
+   public override int GetHashCode()
+   {
+      return this.SSN.GetHashCode();
+   }
+
+   public static bool operator == (Person person1, Person person2)
+   {
+      if (((object)person1) == null || ((object)person2) == null)
+         return Object.Equals(person1, person2);
+
+      return person1.Equals(person2);
+   }
+
+   public static bool operator != (Person person1, Person person2)
+   {
+      if (((object)person1) == null || ((object)person2) == null)
+         return ! Object.Equals(person1, person2);
+
+      return ! (person1.Equals(person2));
+   }
+}
+#+end_src
+
+*** IDisposable
+   #+begin_src csharp
+using System;
+
+/* by implementing the Idisposable, you can use the using syntex
+public interface IDisposable
+{
+    void Dispose();
+}
+*/
+
+using (Junk j = new Junk()){
+    Console.WriteLine("j is here");
+}
+
+class Junk : IDisposable{
+    public Junk(){
+        Console.WriteLine("New junk is here");
+    }
+    public void Dispose(){
+        Console.WriteLine("Junk is gone");
+    }
+}
+
+/*Output
+  New junk is here
+  j is here
+  Junk is gone
+ */
+
+   #+end_src

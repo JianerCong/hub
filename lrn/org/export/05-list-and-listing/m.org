@@ -1,0 +1,90 @@
+#+AUTHOR: Jianer
+#+TITLE: A simple report with lists and listing
+#+LATEX_COMPILER: xelatex
+#+LATEX_HEADER: \input{myheader}
+
+* List
+** Simple itemize
+The LaTeX export back-end accepts the ~‘environment’~ and ~‘options’~ attributes
+for plain lists.
+** Inline itemize
+Both attributes work together for customizing lists, as shown
+in the examples:
+#+LATEX_HEADER: \usepackage[inline]{enumitem}
+Some ways to say "Hello":
+#+ATTR_LATEX: :environment itemize*
+#+ATTR_LATEX: :options [label={}, itemjoin={,}, itemjoin*={, and}]
+- Hola
+- Bonjour
+- Guten Tag.
+
+** Custom enumeration
+You can add additional package and use different lists:
+#+LATEX_HEADER: \usepackage{enumitem}
+#+LATEX_HEADER: \renewlist{itemize}{itemize}{9}
+#+LATEX_HEADER: \setlist[itemize]{label=$\circ$}
+- One
+  - Two2
+    - Three
+      - Four
+  - Two
+  - Two2
+    - Three
+      - Four
+      - Four2
+        - Five
+
+* Source Code
+** Float or not
+  The LaTeX export back-end can make source code blocks into floating objects
+  through the attributes ‘:float’ and ‘:options’.
+#+ATTR_LATEX: :float nil
+#+BEGIN_SRC emacs-lisp
+  (message "I am lisp. I don't float")
+#+END_SRC
+
+  For ‘:float’: ‘t’ Makes a source block float; by default floats any source
+  block with a caption will float. ‘multicolumn’ Spans the source block across
+  multiple columns of a page. ‘nil’ Avoids a ‘:float’ even if using a caption;
+  useful for source code blocks that may not fit on a page.
+
+#+ATTR_LATEX: :float nil
+#+CAPTION: A lisp with caption
+#+BEGIN_SRC emacs-lisp
+  (message "I am lisp. I have caption, so I float.")
+#+END_SRC
+
+** Minted
+*** Turn on minted output
+To turn on minted export and apply similar configuration options for all source
+blocks in a file, we need to DIY as in Listing [[setup-minted]].
+
+#+name: setup-minted
+#+CAPTION: The emacs-lisp setup
+#+begin_src emacs-lisp :exports both :results silent
+  ;; I am automatically evaluated on export.
+  ;; Also remember to \usepackage{minted} and compile with -shell-escape
+  (setq org-latex-listings 'minted)
+  (setq org-latex-minted-options
+        '(("frame" "lines")
+          ("fontsize" "\\scriptsize")
+          ("linenos" "")))
+#+end_src
+*** Pass options to a block
+The LaTeX export back-end passes string values in ~‘:options’~ to LaTeX packages
+for customization of that specific source block. In the example below, the
+~‘:options’~ are set for Minted. Minted is a source code highlighting LaTeX
+package with many configurable options. For example, we pass the
+~mathescape=true~ option to the following Listing: (Note that by ignoring the
+caption, we prevent the following listing from floating.)
+
+#+NAME: lisp-fib
+#+ATTR_LATEX: :options mathescape=true
+#+BEGIN_SRC emacs-lisp
+  ;; The following calculate $Fib(n) := Fib(n-1) + Fib(n-2)$
+  (defun Fib (n)
+    (if (< n 2) n (+ (Fib (- n 1)) (Fib (- n 2)))))
+#+END_SRC
+
+* Conclusion
+Yep, that's all.

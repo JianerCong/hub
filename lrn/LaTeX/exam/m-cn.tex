@@ -1,0 +1,85 @@
+\documentclass[addpoints]{exam}
+\usepackage{comment}
+% This commented-out block of code translates default words to Spanish. 
+% Remove \begin{comment} and \end{comment} to enable it.
+
+% The xetex package to insert chinese-korean-japanese char
+\usepackage{xeCJK}
+\pointpoints{分}{分}
+\bonuspointpoints{附加分}{附得分}
+\totalformat{问 \thequestion: \totalpoints{} 分}
+\chqword{题目}
+\chpgword{页}
+\chpword{分数}
+\chbpword{附加分}
+\chsword{得分}
+\chtword{总分}
+
+\begin{document}
+% -------------------------------------------------------------
+% This code creates the text before the first question
+% -------------------------------------------------------------
+\begin{center}
+  {\Huge 考试}
+  \vskip 1pc
+\fbox{\fbox{\parbox{5.5in}{\centering
+      汉字拼写大赛， 回答所有问题。
+}}}
+\end{center}
+
+\vspace{5mm}
+\makebox[0.7\textwidth]{\enspace 姓名:\enspace\hrulefill}
+
+\vspace{5mm}
+\makebox[0.7\textwidth]{\enspace 班级:\enspace\hrulefill}
+
+% -------------------------------------------------------------
+%Here, the questions begin
+\begin{questions}
+%First question below
+\question[2] ``户'' 有几个笔画？
+%This question has several parts
+\question 《静夜思》是很著名的诗。
+\begin{parts}
+\part[3] 请问它的作者是谁？
+\vspace{\stretch{1}} %Equally distributes the available space
+
+\part[2 \half] 请问它的创作朝代是?
+\vspace{\stretch{1}}
+
+\bonuspart[2 \half] 默写该诗：
+\vspace{\stretch{1}}
+\end{parts}
+
+\droptotalpoints %Prints the number of points in this question
+
+%The next two questions are multiple choice examples
+% -------------------------------------------------------------
+\question[1] $a = b + 1; b = 3$, 求$a$?
+
+\begin{oneparchoices}
+ \choice 1
+ \choice 2
+ \choice 3
+ \choice 4
+\end{oneparchoices}
+
+\question 英文有几个字母？
+
+\begin{checkboxes}
+ \choice 25
+ \choice 23
+ \choice 22
+ \choice 26
+\end{checkboxes}
+% -------------------------------------------------------------
+
+
+\end{questions}
+
+\clearpage
+\begin{center}
+\combinedgradetable[h][questions]
+\end{center}
+
+\end{document}

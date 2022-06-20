@@ -1,0 +1,19 @@
+# Use Multiple todo state
+
+S-M-RET insert-todo
+
+* Assign char to states for fast access
+#+TODO: TODO(t) | DONE(d)
+#+TODO: REPORT(r) BUG(b) KNOWNCAUSE(k) | FIXED(f)
+#+TODO: | CANCELED(c)
+#+TODO: Xianyu(y) | Brave(a)
+
+* Switch between multiple sub-sequences.
+Use 
+C-u C-u C-c C-t
+C-S-RIGHT
+C-S-LEFT
+    These keys jump from one TODO sub-sequence to the next.
+** REPORT t1
+** DONE t2
+** Xianyu Me

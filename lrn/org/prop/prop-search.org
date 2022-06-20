@@ -1,0 +1,14 @@
+Use C-c / p to query all dragons
+* Card
+** Blue-Eyes
+   :PROPERTIES:
+   :ATTRIBUTE: Dragon 
+   :END:
+** Galaxy-Eyes
+   :PROPERTIES:
+   :ATTRIBUTE: Dragon 
+   :END:
+** Kulibo
+   :PROPERTIES:
+   :ATTRIBUTE: Angle
+   :END:

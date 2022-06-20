@@ -1,0 +1,822 @@
+* Concurrency
+** channel
+*** make
+Channel is reference type.
+#+BEGIN_SRC go
+ch := make(chan int)
+#+END_SRC
+*** Read from
+use an arrow before the chan keyword ~(ch <-chan int)~ to indicate that the
+goroutine only reads from the channel. 
+
+Use an arrow after the chan keyword ~(ch chan<- int)~ to indicate that the
+goroutine only writes to the channel. D
+#+BEGIN_SRC go
+a := <-ch // reads a value from ch and assigns it to a
+ch <- b   // write the value in b to ch
+#+END_SRC
+*** Unbuffered
+By default channels are unbuffered. 
+
+Every write to an *open, unbuffered channel* causes the writing goroutine to
+_pause_ until another goroutine reads from the same channel.
+
+Likewise, a read from an open, unbuffered channel causes the reading goroutine
+to pause until another goroutine writes to the same channel.
+
+This means you _cannot write to or read from an unbuffered channel without at
+least two concurrently running goroutines_.
+*** Buffered
+Buffered channels buffer a *limited number of writes without blocking*.
+
+If the buffer fills before there are any reads from the channel, a subsequent
+write to the channel pauses the writing goroutine until the channel is read.
+#+BEGIN_SRC go
+    ch := make(chan int, 10)
+    len(ch)													// 0 item in
+  cap(ch)														// 10 items max
+    #+END_SRC
+*** Interate over chanel
+    #+BEGIN_SRC go
+      func process(val int) int {
+          // do something with val
+      }
+
+      func runThingConcurrently(in <-chan int, out chan<- int) {
+          go func() {
+              for val := range in {		// Continue until (closed|break)
+                  result := process(val)
+                  out <- result
+              }
+          }()
+      }
+#+END_SRC
+*** Close a channel
+#+BEGIN_SRC go
+  close(ch)
+  // After this
+  val ,ok := <- ch								// (0,false)
+  ch <- 2													// panic
+#+END_SRC
+** Return a handle that closes the channel
+#+BEGIN_SRC go
+// Concurrency
+package main
+
+import(
+	"fmt"
+)
+
+func zeros(m int) (<- chan int, func()){
+	ch := make(chan int)
+	done := make(chan struct{})
+	cancel := func(){
+		fmt.Println("Bye")
+		close(done)
+	}
+
+	go func(){
+		for i := 0; i < m; i++ {
+			select{
+				case <- done:
+				return
+				case ch <- 0:
+				fmt.Println("Here's a zero", i)
+			}
+		}
+		close(ch)
+	}()
+
+	return ch,cancel
+	}
+
+func main(){
+	ch , cancel := zeros(5)
+	fmt.Println("Let's get some zeros")
+	i := 0
+	for y := range ch {
+		i++
+		if i > 2{
+			break
+		}
+		fmt.Print("May I have a 0? ", y)
+		fmt.Println(" Thanks")
+	}
+	cancel()
+}
+
+#+END_SRC
+* String
+#+BEGIN_SRC go
+    var s string = "abcdefg"
+    var b byte = s[6]								// 'g'
+  var s2 string = s[4:6]						// ef
+  var s3 string = s[:5]							// abcde
+#+END_SRC
+** byte and rune
+One rune per char. More than one byte for a non-ascii char
+#+BEGIN_SRC go
+  var s string = "Hello, "
+  var bs []byte = []byte(s)
+  var rs []rune = []rune(s)
+  fmt.Println(bs)									// [72 101 108 108 111 44 32 240 159 140 158]
+  fmt.Println(rs)									// [72 101 108 108 111 44 32 127774]
+#+END_SRC
+* Map
+** basic
+#+BEGIN_SRC go
+totalWins := map[string]int{}
+ages := make(map[int][]string, 10)
+d:= map[string][]int{
+"hi" : []int{1,2},
+"oh" : []int{3,4},
+}
+d["ih"] = []int{3,4}
+delete(d, "hi")
+#+END_SRC
+** ok
+#+BEGIN_SRC go
+  m := map[string]int{
+      "hello": 5,
+      "world": 0,
+  }
+  v, ok := m["hello"]
+  fmt.Println(v, ok)							// 5,true
+
+  v, ok = m["world"]
+  fmt.Println(v, ok)							// 0,true
+
+  v, ok = m["goodbye"]
+  fmt.Println(v, ok)							// 0,false
+#+END_SRC
+
+* Array and Slice
+** Array
+   #+BEGIN_SRC go
+     var x [3]int										// declare an array
+     var y = [3]int{1,2,3}						// declare and init
+     var z = [...]int{1,2,3}					// count for me
+
+     // Compare
+     fmt.Println(x == y) // prints true
+     x[0] = 10
+     fmt.Println(x[2])
+     fmt.Println(len(x))							// 3
+
+     // You can one type per array, which makes it hard to become an argument
+   #+END_SRC
+** Slice
+*** Slice
+#+BEGIN_SRC go
+  var x = []int{10, 20, 30}				// Use []/[...] to create slice/array
+
+  // Use indexes during init
+  var x = []int{1, 3:4, 5, 6} // {1 0 0 4 5 6} 
+  x[0] =  1
+  var x []int										// Declare (x == nil)
+  var x = []int{}
+
+  x := make([]int, 5)							// x is now [0 0 0 0 0]
+  x = append(x, 10)									// x is now [0 0 0 0 0 10]
+  x := make([]int, 5, 10)						// [0 0 0 0 0 ] but cap(x) == 10
+
+  x := make([]int, 0, 10)					// []
+  x = append(x, 5,6,7,8)					// [5 6 7 8]
+#+END_SRC
+**** slicing slice
+~x[a:b]~ : from ~a~ (inclusive) to ~b~ (exclusive) 
+#+BEGIN_SRC go
+  x := []int{1, 2, 3, 4}
+  y := x[:2]											// 1,2
+  z := x[1:]											// 2,3,4
+  d := x[1:3]											// 2,3
+  e := x[:]												// 1,2,3,4
+  f := x[:2:2]										// 1,2 (but if f only have shared capacity upto x[2])
+  g:= x[1:3:3]										// 2,3 (...^.. x[3])
+#+END_SRC
+**** slicing the array
+#+BEGIN_SRC go
+  x := [4]int{1,2,3,4}
+  y := x[:2]											// 1,2
+  z := x[2:]											// 2,3
+  x[0] = 10										
+  fmt.Println("x:", x)						// 10,2,3,4
+  fmt.Println("y:", y)						// 10,2
+#+end_SRC
+*** copy
+#+BEGIN_SRC go
+  x := []int{1, 2, 3, 4}
+  y := make([]int, 2)
+  num := copy(y, x)
+  fmt.Println(y, num)							// [1,2] 2
+#+END_SRC
+*** 2d
+#+BEGIN_SRC go
+package main
+
+import(
+	"fmt"
+	)
+
+func main(){
+	var l [][]int
+	for i:= 0; i < 2; i++{
+		l = append(l,make([]int,0))
+		for j:=0; j<2;j++{
+			l[i] = append(l[i],j)
+		}
+	}
+	fmt.Println("My array :", l)
+	// Output [[0,1],[0,1]]
+	}
+
+#+END_SRC
+
+* Enum
+#+BEGIN_SRC go
+/**
+ * @file enum.go
+ * @author Jianer Cong
+ * @brief enum in go
+ */
+
+package main
+
+import(
+	"fmt"
+	"time"
+	)
+
+func main(){
+	type Seasons int
+	const (
+		Uncategorized Seasons = iota
+		spring
+		summer
+		fall
+		winter
+	)
+
+	var s Seasons
+	s = spring
+	if s == spring{
+		fmt.Print("It is")
+		for i := 1; i < 5; i++{
+			fmt.Print(".")
+			time.Sleep(2 * time.Second)
+		}
+		fmt.Println(" spring")
+		}
+	}
+
+#+END_SRC
+* Interface
+** Use interface as auto
+#+BEGIN_SRC go
+package main
+
+
+import(
+	"fmt"
+	"io/ioutil"
+	"encoding/json"
+	)
+
+func readJSON() error {
+	// one set of braces for the interface{} type,
+	// the other to instantiate an instance of the map
+	data := map[string]interface{}{}
+	contents, err := ioutil.ReadFile("testdata/sample.json")
+	if err != nil {
+		return err
+	}
+	// defer contents.Close()
+	json.Unmarshal(contents, &data)
+	// the contents are now in the data map
+	fmt.Println("The content is ", contents)
+	fmt.Println("The structure is ",data)
+	return nil
+	}
+
+func main(){
+	// All type implements empty interface. Which makes it the "Object" type.
+	var i interface{}
+	i = 20
+	i = "hello"
+	i = struct {
+		FirstName string
+		LastName string
+	} {"Fred", "Fredson"}
+	fmt.Println("Now i is: ", i)
+	readJSON()
+	}
+
+#+END_SRC
+** Normal usage
+#+BEGIN_SRC go
+/**
+ * @file iface.go
+ * @author Jianer Cong
+ * @brief interface in go
+ */
+package main
+
+import(
+	"fmt"
+)
+
+// Implicitly implement the interface
+type zeros struct {}
+func (z zeros) get() int {
+	// generate a zero
+	return 0
+}
+
+type ints struct{}
+var i = 0			// static variable
+func (j ints) get() int{
+	i++
+	return i
+}
+
+// An interface that zeros automattically implement
+type getter interface{
+	get() int
+}
+
+func get10(g getter){
+	// Retrive 10 item from getter
+	x := make([]int,10)
+	for i := 0 ; i < 10 ; i++ {
+		x[i] = g.get()
+		// x = append(x,g.get())
+	}
+	fmt.Println(x)
+}
+
+func main(){
+	fmt.Print("Get from zeros: ")
+	get10(zeros{})		// 0000000000
+	fmt.Print("Get from ints: ")
+	get10(ints{})		// 0123456789
+}
+
+#+END_SRC
+* Inheritance
+** basic
+#+BEGIN_SRC go
+
+/**
+ * @file inhr.go
+ * @author Jianer Cong
+ * @brief Embedding Inheritance in go
+ */
+
+package main
+
+import(
+	"fmt"
+)
+
+type Card struct {
+	name string
+	}
+
+func (c Card) Draw() {
+	fmt.Println("抽到了 ", c.name)
+	}
+
+type MagicCard struct {
+	Card
+	Eff func()
+	}
+
+func (m MagicCard) Invoke() {
+	fmt.Println("发动 魔法卡 ", m.name)
+	m.Eff()
+}
+
+func main(){
+	k := MagicCard{
+		Card:Card{name : "死者苏生"},
+		Eff: func(){
+			fmt.Println("复活🌰球")
+		},
+	}
+	k.Draw()
+	k.Invoke()
+	}
+
+#+END_SRC
+** Access the baseclass component
+#+BEGIN_SRC go
+/**
+ * @file inhr2.go
+ * @author Jianer Cong
+ * @brief Access the base component of a class
+ */
+
+package main
+
+import(
+	"fmt"
+)
+
+type MonsterCard struct {
+	name string
+	atk int
+	def int
+	star int
+}
+
+type NMons struct {
+	MonsterCard
+	desc string		// description
+}
+
+type EMons struct {
+	// Effect Monster
+	MonsterCard
+	eff func()		// Effect
+}
+
+
+func main(){
+	c1 := NMons {MonsterCard : MonsterCard{
+		name: "青眼白龙",
+		atk : 3000,
+		def : 2500,
+		star: 8,
+	},
+		desc : "Kaibba's ace card",
+	}
+
+	fmt.Println("c1's Name as Normal monster is ", c1.name,". As MonsterCard: " ,c1.MonsterCard.name)
+}
+#+END_SRC
+* Type
+** basic
+#+BEGIN_SRC go
+package main
+
+import(
+	"fmt"
+)
+
+type Person struct {
+	FirstName string
+	LastName string
+	Age int
+}
+// Method
+func (p Person) String() string {
+	return fmt.Sprintf("%s %s, age %d", p.FirstName, p.LastName, p.Age)
+}
+
+// You can define type with types other than struct
+// type Score int
+// type Converter func(string)Score
+// type TeamScores map[string]Score
+
+func main(){
+	p := Person {
+		FirstName: "Fred",
+			LastName:"Fredson",
+			Age: 52,
+		}
+	output := p.String()
+	fmt.Println("The person is ",output)
+}
+#+END_SRC
+** type methods that can actually access the member
+#+BEGIN_SRC go
+
+package main
+
+import(
+	"fmt"
+	"time"
+)
+
+// Methods that modifies the object should use a pointer argument.
+
+// Minimal example
+type C struct{
+	x int
+}
+
+func (c C) String() string{
+	return fmt.Sprintf("x is %d", c.x)
+}
+
+func (c *C) Incr(){
+	c.x++
+}
+
+// a more useful example.
+type Counter struct {
+	total             int
+	lastUpdated time.Time
+}
+
+// Like this
+func (c *Counter) Increment() {
+	c.total++
+	c.lastUpdated = time.Now()
+}
+
+func (c Counter) String() string {
+	return fmt.Sprintf("total: %d, last updated: %v", c.total, c.lastUpdated)
+}
+
+
+func main(){
+	var a C
+	a.x = 1
+	a.Incr()
+	fmt.Println(a.String())
+
+	var c Counter
+	fmt.Println(c.String())
+	c.Increment()
+	fmt.Println(c.String())
+	}
+
+#+END_SRC
+** nil obj (a binery search tree)
+#+BEGIN_SRC go
+// Consider nil in your methods
+/**
+ * @file type3-nil.go
+ * @author Jianer Cong
+ * @brief illustrate the nil example in tree.
+ */
+
+package main
+
+import(
+	"fmt"
+)
+
+type tree struct{
+	v int
+	l, r *tree
+}
+
+func (t *tree) Contains(x int) bool{
+	switch {
+	case t == nil: return false
+	case x > t.v: return t.r.Contains(x)
+	case x < t.v: return t.l.Contains(x)
+	default:
+		return true
+	}
+}
+
+
+func (t *tree) Insert(x int) *tree {
+	if t == nil{
+		return &tree{v : x}
+		}
+
+	if x < t.v{
+		t.l =  t.l.Insert(x)
+	}else{
+		t.r =  t.r.Insert(x)
+	}
+	return t
+	}
+
+
+
+func main(){
+	var t tree
+	t.Insert(2)
+	t.Insert(3)
+	fmt.Println("Does t contains 3 ? should be true, it is " ,t.Contains(3))
+	fmt.Println("Does t contains 4 ? should be false, it is ", t.Contains(4))
+}
+
+#+END_SRC
+* IO
+** file
+#+BEGIN_SRC go
+package main
+
+import (
+	// "bufio"
+	"fmt"
+	"os"
+)
+
+// Use the following interface
+// type Reader interface {
+// 	Read(p []byte) (n int, err error)
+// }
+
+// type Writer interface {
+// 	Write(p []byte) (n int, err error)
+// }
+// type Closer interface {
+//         Close() error
+// }
+
+// type Seeker interface {
+//         Seek(offset int64, whence int) (int64, error)
+// }
+
+func main() {
+	// f, err := os.Open("hi.txt") //read only file
+
+	f, err := os.OpenFile("hi.txt", os.O_RDWR | os.O_CREATE, 0666)
+	//                                                 ^^^^--oct mod
+	// os.FileMode(0777).String() // => rwxrwxrwx
+	if err != nil {fmt.Println("Error opening file");return}
+	defer f.Close()
+
+	_, err = f.WriteString("So, that's it.")
+	if err != nil {fmt.Println("Error writing to file ", f.Name());return}
+	_, err = f.Seek(0,0)	// back to 0 + origin (represented as the second param)
+	if err != nil {fmt.Println("Error seeking ", f.Name());return}
+	b := make([]byte,252)
+	_, err = f.Read(b)
+	if err != nil {fmt.Println("Error reading", f.Name());return}
+	fmt.Println("Content read: ", string(b[:]))
+}
+// We got the following file specifiler
+// const (
+// 	O_RDONLY int = syscall.O_RDONLY // 只读模式打开文件
+// 	O_WRONLY int = syscall.O_WRONLY // 只写模式打开文件
+// 	O_RDWR int = syscall.O_RDWR // 读写模式打开文件
+// 	O_APPEND int = syscall.O_APPEND // 写操作时将数据附加到文件尾部
+// 	O_CREATE int = syscall.O_CREAT // 如果不存在将创建一个新文件
+// 	O_EXCL int = syscall.O_EXCL // 和O_CREATE配合使用，文件必须不存在
+// 	O_SYNC int = syscall.O_SYNC // 打开文件用于同步I/O
+// 	O_TRUNC int = syscall.O_TRUNC // 如果可能，打开时清空文件
+// )
+
+#+END_SRC
+** io.Reader interface
+*** Use it with a string
+    #+BEGIN_SRC go
+ package main
+
+ import(
+	 "fmt"
+	 "strings"
+	 "io"
+	 )
+
+ func main(){
+	 s := "And then he feels that perhaps there isn't. Anyhow, here he is at the bottom, ready to be introduced to you."
+	 sr := strings.NewReader(s)
+	 counts, err := countLetters(sr)
+	 if err != nil {
+		 return
+	 }
+
+	 fmt.Println("The count of letters:")
+	 fmt.Println(counts)
+	 }
+ func countLetters(r io.Reader) (map[string]int, error) {
+	 buf := make([]byte, 64)
+	 out := map[string]int{}
+	 for {
+		 n, err := r.Read(buf)
+		 if n == 0{
+			 fmt.Println("No words anymore..")
+			 return out, nil
+		 }
+		 fmt.Println(n,"char read")
+		 for _, b := range buf[:n] {
+			 if (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') {
+				 out[string(b)]++
+			 }
+		 }
+		 if err == io.EOF {
+			 return out, nil
+		 }
+		 if err != nil {
+			 return nil, err
+		 }
+	 }
+ }
+
+    #+END_SRC
+** Read from stdin
+   #+BEGIN_SRC go
+package main
+
+import (
+    "bufio"
+    "fmt"
+    "os"
+)
+
+func main() {
+    scanner := bufio.NewScanner(os.Stdin)
+    for scanner.Scan() {
+        fmt.Println(scanner.Text()) // Println will add back the final '\n'
+    }
+    if err := scanner.Err(); err != nil {
+fmt.Fprintln(os.Stderr,"reading standard input:", err)
+    }
+}
+#+END_SRC
+* Patterns
+** Time-out code
+#+BEGIN_SRC go
+/**
+ * @file timer.go
+ * @author Jianer Cong
+ * @brief How to time out a statement
+ */
+
+package main
+
+import(
+	"fmt"
+	"time"
+	)
+
+func main(){
+	c1 := make(chan string, 2)
+
+	go func () {
+		time.Sleep(2 * time.Second)
+		c1 <- "1 is done"
+	}()
+
+	select{
+		case out := <- c1: fmt.Println(out)
+		case <- time.After(3 * time.Second): fmt.Println("Time out")
+	}
+	}
+
+#+END_SRC
+* HTTP server
+#+begin_src go
+  package main
+
+  import (
+      "fmt"
+      "net/http"
+  )
+
+  func hello(w http.ResponseWriter, req *http.Request) {
+
+      fmt.Fprintf(w, "hello\n")
+  }
+
+  func headers(w http.ResponseWriter, req *http.Request) {
+
+      for name, headers := range req.Header {
+          for _, h := range headers {
+              fmt.Fprintf(w, "%v: %v\n", name, h)
+          }
+      }
+  }
+
+  func main() {
+
+      http.HandleFunc("/hello", hello)
+      http.HandleFunc("/headers", headers)
+
+      http.ListenAndServe(":8090", nil)
+  }
+#+end_src
+curl localhost:8090/hello
+* time
+#+begin_src go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+
+    now := time.Now()
+
+    fmt.Println("Time: ", now.Format("15:04:05"))
+    fmt.Println("Date:", now.Format("Jan 2, 2006"))
+    fmt.Println("Timestamp:", now.Format(time.Stamp))
+    fmt.Println("ANSIC:", now.Format(time.ANSIC))
+    fmt.Println("UnixDate:", now.Format(time.UnixDate))
+    fmt.Println("Kitchen:", now.Format(time.Kitchen))
+}
+#+end_src
+$ go run main.go
+Time:  17:51:45
+Date: May 29, 2022
+Timestamp: May 29 17:51:45
+ANSIC: Sun May 29 17:51:45 2022
+UnixDate: Sun May 29 17:51:45 CEST 2022
+Kitchen: 5:51PM
+* End
+
+
+# Local Variables:
+# org-what-lang-is-for: "go"
+# End:

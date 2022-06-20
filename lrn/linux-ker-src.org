@@ -1,0 +1,381 @@
+** How the kernel boot
+*** The 7 steps
+1. The ~boot firmware/BIOS~~ loads and runs a ~boot loader~
+2. The ~boot loader~ finds the *kernel image* on disk, loads it into memmory and
+   starts it.
+3. *kernel* init the *devices and drivers*.
+4. ^ mounts the root FS
+5. ^ starts a program called ~init~ with PID=1 ⇒ userspace starts
+6. ~init~ sets the rest of the system processes in motion
+7. At some point, ~init~ starts a process allowing you to log in, usually at the
+   end or near the end of the boot sequence.
+*** View boot log
+#+begin_src bash
+  journalctl -k                   # View this boot
+  journalctl -b                   # View previous boot
+  # If no systemd
+  less /var/log/kern.log
+  dmesg
+#+end_src
+*** The kernal commandline
+#+begin_src bash
+cat /proc/cmdline 
+man bootparam
+#+end_src
+**** What does the param ~root~ specify ?
+The mount point of root filesystem.
+**** What does the flag ~ro~ mean ?
+Mount the root filesystem in *read-only* mode. So
+that ~fsck~ can check the root filesystem savely
+before doing anything serious.
+**** What happens when a param is unkown to the kernel?
+They are passed to ~init~, so you can add ~-s~ to
+the kernal param, then the kernel will pass it to
+~init~ to indicate that it should start in
+*single-user* mode.
+*** Boot loaders
+**** What's its job?
+Load the kernel from somewhere on the disk and
+start it with a set of param. 
+**** [EX] Where is the boot loader?
+The boot medium (a hard drive, CD/DVD, USB stick)
+recieves info from the *computer's* firmware (e.g.
+BIOS) about where the bootloader is.
+***** When you press the start button
+You see info about the hardwarte installed. They
+are printed by the *device firmware* (BIOS/UEFI)
+made by the OEM in *flash memory* on the
+computer's motherboard.
+
+Both BIOS and UFEI collect the most diverse
+hardware data and create a complete list of all of
+the device's *available drives*
+
+1. drive C
+2. drive D
+3. USB A
+4. CD E
+5. ...
+
+When this is complete, the firmware goes through
+the *data carriers* (USB stick/CD/disk) found in
+sequence, checking for a bootloader by means of a
+special signature - the *so-called boot signature*
+(boot record).
+
+They search *removeable media* first, followed by
+hard-coded drives.
+
+When searching hard-coded drives, the 
+1. bootloader
+2. signature
+3. partition tables
+are generally in the _master boot record(MBR)_,
+
+You get an error, if no boot loader found.
+***** Where exactly are the bootloader? 
+Two possibilities:
+1. The *first block* of 
+2. a *specific partition* on
+the bootable medium
+****** the possibility 1: boot block
+The first possibility is closely connected to the
+principle of MBR, which contains in addition to
+bootloader, but also the *boot software* . 
+
+Therefore, the first block is also known as *boot
+block* or *boot sector*.
+****** the possibility 2
+The OS put the bootloader in a selected partion,
+although the filesystem and the partition tables
+can vary greatly.
+
+For this possibility, the firmware stipulates a
+*specific file format* (executable) for the boot
+manager. For example, for UEFI, the format is
+PE/COFF (Portable Executable / Common Object File
+Format)
+
+**** Boot loader dosn't have driver, how do they find files?
+They use *Basic Input/Output System*(BIOS) or
+*Unified Extensible Firmware Interface* (UEFI) to
+access disk.
+     
+Comtemporary disk hardware includes _firmware_
+allowing BIOS or UEFI to access attached storage
+hardware via
+
+    *Logical BlocK Addressing* (LBA) -- a
+     universal, simple way to access data from any
+     disk with poor performance.
+**** Do I have UEFI?
+#+begin_src bash
+sudo apt install efibootmgr
+efibootmgr                      # Do I have a list of param
+ls /sys/firmware/               # Does efi exist?
+# Nope for pi
+#+end_src
+**** Understand partition tables? 
+Most of them can.
+**** Access the filesystem?
+Most of them can do readonly access.
+**** The clubs
+| Name                 | desc                                                                   |
+|----------------------+------------------------------------------------------------------------|
+| GRUB                 | near-universal stardard for Linux, with BIOS/MBR and UEFI version      |
+| LILO                 | One of the first Linux boot loaders. ELILO is a UEFI version           |
+| SYSLINUX             | Can be configured to run from many kinds of filesystem                 |
+| LOADLIN              | Boots a kernal from MS-DOS                                             |
+| systemd-boot         | A simplified UEFI boot manager                                         |
+| coreboot             | (Formerly LinuxBIOS) A performant replacement for the PC BOIS          |
+| Linux Kernel EFISTUB | kernal plug-in for loading kernel from EFI/UEFI system partition (ESP) |
+| efilinux             | A UEFI boot loader intended to serve as a model                        |
+| boot.efi             | Mac devices since 2006                                                 |
+| ARM Core Bootloader  | for microcontrollers (e.g. Iphone)                                     |
+| barebox              | embeded system in cameras, printers, air planes                        |
+| Bootmgr              | MS system since Vista and Win Server 2008                              |
+**** GRUBS  
+Grand Unified Boot Loader.
+***** Enter the grub prompt 
+Press ESC when your UEFI start up or
+SHIFT for BIOS 
+***** Listing devices
+#+begin_src bash
+  ls
+  # (hd0) (hd0,msdos1)
+  # ^^^^^             The harddisk 0
+  #        ^^^^^^^^^^ The partition (msdos ⇒ MBR).
+
+  # View the detail of devices including UUID
+  ls -l
+#+end_src
+***** File Navigation
+#+begin_src bash
+  ls
+  # > (proc) (hd0) (hd0,gpt2) (hd0,gpt1)
+
+  # Determine the GRUB root
+  echo $root
+  # > hd0,gpt2
+
+  ls (hd0, gpt2)/
+  # > loat+found/ boot/ dev/ home/ ....
+  ls $(root)/
+  ls $(root)/boot
+#+end_src
+***** View the variables
+#+begin_src bash
+  # view all variables
+  set
+
+  # Where does grup find its configuration files?
+  echo $prefix
+  # > (hd0,gpt2)/boot/grub
+#+end_src
+***** Grub Configuration
+#+begin_src bash
+cat /boot/grub/grub.cfg
+#+end_src
+*** UEFI boot: the special vfat partition
+There's a special VFAT dir call the *EFI System
+Partition(ESP)*, which contains a dir named EFI.
+Usually mounted on /boot/efi/
+#+begin_src bash
+  sudo ls /boot/efi/EFI
+  sudo ls /boot/efi/
+  # EFI
+  sudo ls /boot/efi/EFI
+  # BOOT  ubuntu
+
+  # The bootloader file has .efi extension
+  sudo ls /boot/efi/EFI/ubuntu
+  # BOOTX64.CSV  grub.cfg  grubx64.efi  mmx64.efi  shimx64.efi
+#+end_src
+** Compile from source
+*** view the tar ball
+#+begin_src bash
+tar tvf a.tar.gz
+tar ztvf a.tar.gz
+    #+end_src
+*** essentials
+#+begin_src bash
+
+  apt install build-essential
+  tar zxf a.tar.gz
+  cd a
+  ./configure --prefix=$(pwd)     # Install at the current dir
+  make
+  make check
+  make -n install                 # dry run install
+  make install
+
+  # Make a deb package
+  checkinstall make install       # ⇒ .deb
+
+#+end_src
+*** where are the default install location
+#+begin_src bash
+ls /usr/local/bin/
+ls /usr/local/lib/
+#+end_src
+*** How to change the installed dir?
+#+begin_src bash
+make install --bindir=/home/pi/Downloads/
+make install --sbindir=/home/pi/Downloads/
+#+end_src
+*** Set flags when configuring
+#+begin_src bash
+CPPFLAGS=-I/home/me/mydir ./configure
+LDFLAGS=-L/home/me/mylib ./configure
+LDFLAGS="-L/home/me/mylib -rpath=/home/me/mylib" ./configure
+#+end_src
+*** Clean the content
+#+begin_src bash
+make clean
+make distclean                 
+#+end_src
+*** pkg-config
+#+begin_src bash
+pkg-config --list-all
+pkg-config --libs zlib
+#+end_src
+** User space
+*** The 5 steps 
+1. init
+2. Essential low-level services, e.g. udevd
+   ,syslogd
+3. Network configuration
+4. Mid- and high-level services (cron, printing, ...)
+5. Login prompt, GUIs, high-level app (e.g. web servers.)
+*** init
+    Who starts and ends essential service
+    processes. On all major Linux distro, the
+    implementation of ~init~ is the ~systemd~
+#+begin_src bash
+ls /sbin/init
+#+end_src
+**** Implementation of init
+| Name          | Desc               |
+|---------------+--------------------|
+| systemd       | All major platform |
+| Upstart       | ubuntu < 15.04     |
+| System V init | RHEL < 7.0         |
+| runit         | Android            |
+**** What is my init
+#+begin_src bash
+  man init
+  # If you got this dir, you have systemd
+  ls /etc/systemd
+#+end_src
+*** systemd
+**** How tasks are managed?
+Tasks are managed using *unit types*, some of them
+are:
+
++ Service units::Controls the service daemons
+  found on a Unix system.
++ Target units::Controls other units, usually by
+  grouping them
++ Socket units::Represent incoming network
+  connection request locations
++ Mount units::Represent the attachment of
+  filesystems to the system.
+  
+For a complete list:
+man systemd
+**** booting and unit dependency graphs
+On boot, you acivate the ~default.target~.
+A simplified dependency tree is
++ default.target
+  - multi-user.target
+    - basic.target
+      - sysinit.target
+    - cron.service
+    - dbus.service
+**** systemd config
+***** The 2 main dir 
+the *system unit directory*: 
+Do not modify em. (Since the distribution modify
+em)
+#+begin_src bash
+  ls /lib/systemd/system
+  # alsa-restore.service ... 
+  ls /usr/lib/systemd/system
+#+end_src
+
+the *system configuration directory*
+Modify em.
+#+begin_src bash
+ls /etc/systemd/system
+#+end_src
+
+A rule of thumb:
+    When given the choice between modifying
+    something in ~/usr~ and ~/etc~, always change ~/etc~.
+***** some cmd-line check
+Check the current systemd configuration search path:
+#+begin_src bash
+  systemctl -p UnitPath show
+  # UnitPath=/etc/systemd/system.control /run/systemd/system.control
+  # /run/systemd/transient /etc/syste
+#+end_src
+See the system unit and configuration directory:
+#+begin_src bash
+  pkg-config systemd --variable=systemdsystemunitdir
+  # /lib/systemd/system
+  pkg-config systemd --variable=systemdsystemconfdir
+  # /etc/systemd/system
+#+end_src
+***** Unit files 
+Format:
+    + section names in square brackets []
+    + variable and value assignments in each section.
+For example, in the
+~/lib/systemd/system/dbus.service~:
+
+We see that there are two sections: ~[Unit]~ and
+~[Service]~. In particular, the ~[Unit]~ section depends on
+~dbus.socket~ unit as a dependency.
+
+#+begin_src bash
+[Unit]
+Description=D-Bus System Message Bus
+Documentation=man:dbus-daemon(1)
+Requires=dbus.socket
+
+[Service]
+ExecStart=/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+ExecReload=/usr/bin/dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.DBus / org.freedesktop.DBus.ReloadConfig
+OOMScoreAdjust=-900
+#+end_src
+***** Service unit
+According to systemd.service(5):
+
+       A unit configuration file whose name ends
+       in ".service" encodes information about a
+       process controlled and supervised by
+       systemd.
+       
+So, .service file is just one kind of *unit
+configuration file(UCF)*.  
+
+Service is a special unit type, system.service(5)
+lists the *service specific configuration
+options(CO)*. These options are configured under the
+"[Service]" section.
+***** Additional options for exe
++ systemd.exec::defines the execution env for a
+  command
++ systemd.kill::defines the way process is terminated
++ systemd.resource-control(5)::resource setting
+  for a process. 
+***** CO for all units
+Of course, there are some unspecific CO for all
+UCF. They are found in systemd.unit(5)
+
+ 
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# fill-column: 50
+# End:

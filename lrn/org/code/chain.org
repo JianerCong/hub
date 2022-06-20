@@ -1,0 +1,284 @@
+*** What does the table looks like in Elisp? 
+#+NAME: x
+| 1 |
+| 2 |
+| 3 |
+
+
+#+begin_src emacs-lisp :var x=x
+  (mapcar (lambda (row)
+            (mapcar
+             (lambda (x) (* x x))
+             row
+             )
+            )
+          x
+          )
+#+end_src
+
+#+NAME: y
+#+RESULTS:
+| MCol1 |
+|-------|
+|     1 |
+|     4 |
+|     9 |
+
+*** what does the data looks like in R?
+A dataframe
+#+BEGIN_SRC R :results output :var x2=y 
+  str(x2)
+  ## return(x2)
+#+END_SRC
+
+#+RESULTS:
+: 'data.frame':	3 obs. of  1 variable:
+:  $ MCol1: int  1 4 9
+: [1] 1 4 9
+
+*** what does the data looks like in Py?
+A list of list
+#+BEGIN_SRC python :results output :var x2=y 
+  print(x2)
+  ## return(x2)
+#+END_SRC
+
+# sudo ln -s /bin/python3 /bin/python
+
+#+RESULTS:
+: [[1], [4], [9]]
+
+**** table with string data ?
+#+NAME: less-cols
+| a |
+|---|
+| b |
+| c |
+
+#+BEGIN_SRC python :var tab=less-cols :colnames nil
+  return [[val + '++' for val in row] for row in tab]
+#+END_SRC
+
+#+RESULTS:
+| a   |
+|-----|
+| b++ |
+| c++ |
+
+
+** Ignore the rownames
+
+#+NAME: with-rownames
+| one | 1 | 2 | 3 | 4 |  5 |
+| two | 6 | 7 | 8 | 9 | 10 |
+
+#+BEGIN_SRC python :var tab=with-rownames :rownames yes
+  return [[val + 10 for val in row] for row in tab]
+#+END_SRC
+
+#+RESULTS:
+| one | 11 | 12 | 13 | 14 | 15 |
+| two | 16 | 17 | 18 | 19 | 20 |
+
+
+** What can the arguments be ?
+*** specify var as a header
+Two ways: Use the #+HEADER or the header arguments
+#+HEADER: :var data1=11
+#+BEGIN_SRC emacs-lisp :var data2=22
+   (message "data1:%S, data2:%S" data1 data2)
+#+END_SRC
+
+#+RESULTS:
+: data1:1, data2:2
+
+#+NAME: named-block
+#+HEADER: :var data=666
+#+BEGIN_SRC emacs-lisp :results output
+  (message "data:%S" data)
+#+END_SRC
+*** General syntex
+#+BEGIN_SRC emacs-lisp
+:var NAME=ASSIGN
+#+END_SRC
+NAME is the name of the variable bound in the code block body. ASSIGN is a
+literal value, such as a string, a number, a reference to a table, a list, a
+literal example, another code block—with or without arguments—or the results of
+evaluating a code block.
+
+*** Refer to tables in other files
+    Use
+ :var table=other-file.org:example-table
+*** pass a table
+#+name: fibonacci-inputs
+| 1 | 2 | 3 | 4 |  5 |  6 |  7 |  8 |  9 | 10 |
+| 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20 |
+
+Use org-babel-expand-.. (C-c C-v v) to see the "expanded args"
+
+#+name: fibonacci-seq
+#+begin_src emacs-lisp :var fib-inputs=fibonacci-inputs
+  (defun fibonacci (n)
+    (if (or (= n 0) (= n 1))
+        n
+      (+ (fibonacci (- n 1)) (fibonacci (- n 2)))))
+
+  (mapcar (lambda (row)
+            (mapcar #'fibonacci row)) fib-inputs)
+#+end_src
+**** My-example
+#+name: tab1
+|11|12|
+|21|22|
+
+#+name: f
+#+begin_src emacs-lisp :var x=tab1 :results output
+  ;;  x is ((11 12) (21 22))
+  (print (first (first x)))
+  (print (first (second x)))
+#+end_src
+*** Pass list
+**** elisp
+ #+NAME: example-list
+ - simple
+   - not
+   - nested
+ - list
+
+ #+BEGIN_SRC emacs-lisp :var x=example-list :results output
+   (print x)
+ #+END_SRC
+
+ #+RESULTS:
+ : 
+ : (("simple" (unordered ("not") ("nested"))) ("list"))
+*** Pass arguments from previous function
+ #+NAME: double
+ #+BEGIN_SRC emacs-lisp :var input=8
+   (* 2 input)
+ #+END_SRC
+
+ #+RESULTS: double
+ : 16
+
+ #+NAME: squared
+ #+BEGIN_SRC emacs-lisp :var input=double(input=1)
+   (* input input)
+ #+END_SRC
+
+ #+RESULTS: squared
+ : 4
+*** Pass a string
+ #+NAME: literal-example
+ #+BEGIN_EXAMPLE
+   A literal example
+   on two lines
+ #+END_EXAMPLE
+
+ #+NAME: read-literal-example
+ #+BEGIN_SRC emacs-lisp :var x=literal-example
+   (concatenate #'string x " for you.")
+ #+END_SRC
+
+ #+RESULTS: read-literal-example
+ : A literal example
+ : on two lines for you.
+*** Pass a cell from table
+    Get the cell from the first row, last col.
+ #+NAME: example-table
+ | 1 | a |
+ | 2 | b |
+ | 3 | c |
+ | 4 | d |
+
+ #+BEGIN_SRC emacs-lisp :var data=example-table[0,-1]
+   data
+ #+END_SRC
+
+ #+RESULTS:
+ : a
+*** Pass a sub-table
+    Get the subtable from row 1:3, including all column (ignore index) 
+    # To include the entire range: use '*' or ':' or '0:-1'
+#+NAME: example-table
+| 1 | a |
+| 2 | b |
+| 3 | c |
+| 4 | d |
+| 5 | 3 |
+
+#+BEGIN_SRC emacs-lisp :var data=example-table[1:3]
+  data
+#+END_SRC
+
+#+RESULTS:
+| 2 | b |
+| 3 | c |
+| 4 | d |
+
+
+*** Pass a column
+#+NAME: example-table
+| 1 | a |
+| 2 | b |
+| 3 | c |
+| 4 | d |
+
+#+BEGIN_SRC emacs-lisp :var data=example-table[,0]
+  data
+#+END_SRC
+
+#+RESULTS:
+| 1 | 2 | 3 | 4 |
+
+*** Generate table from code
+#+NAME: 3D
+#+BEGIN_SRC emacs-lisp
+'(
+( (111 112 113)  (121 122 123)  (131 132 133) )
+( (211 212 213)  (221 222 223)  (231 232 233) )
+( (311 312 313)  (321 322 323)  (331 332 333) )
+)
+#+END_SRC
+
+#+RESULTS: 3D
+| (111 112 113) | (121 122 123) | (131 132 133) |
+| (211 212 213) | (221 222 223) | (231 232 233) |
+| (311 312 313) | (321 322 323) | (331 332 333) |
+
+second row, all columns, second dimension
+#+BEGIN_SRC emacs-lisp :var data=3D[1,,1]
+  data
+#+END_SRC
+
+#+RESULTS:
+| 212 | 222 | 232 |
+*** Pass a named code bloc
+#+NAME: g
+#+BEGIN_SRC emacs-lisp
+(+ 1 z)
+#+END_SRC
+
+#+NAME: f
+#+BEGIN_SRC emacs-lisp
+(+ 1 1)
+#+END_SRC
+
+
+#+BEGIN_SRC emacs-lisp :var x=f() :var y=g(z=1)
+(+ 1 x)
+#+END_SRC
+
+#+RESULTS:
+: 3
+*** Pass a elisp expression 
+ Org interprets any value starting with ‘(’, ‘[’, ‘'’ or ‘`’ as Emacs
+ Lisp code.
+ 
+#+BEGIN_SRC bash :var filename=(buffer-file-name) :exports both
+  # "The number of words in this file"
+  wc -w $filename
+#+END_SRC
+
+#+RESULTS:
+: 946 /home/me/Templates/lrn/org/code/chain.org
