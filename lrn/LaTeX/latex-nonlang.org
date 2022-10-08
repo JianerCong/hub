@@ -1,0 +1,83 @@
+** Increase RAM size
+   #+begin_src powershell
+     initexmf --edit-config-file=xelatex
+     # add the following line
+
+     # extra_mem_top = 2000000
+
+     # ^^^ this will increase your RAM usage from 3000k (3M) to 5M
+   #+end_src
+
+** emacs + auctex
+*** basic
+C-c C-o C-f : Enter folding mode
+C-c C-o C-e : Fold env
+
+C-c C-s : Insert section
+
+# Env
+C-c C-e : insert env
+C-c ] : close env
+C-M-a : find matching begin
+C-M-e : find matching end
+
+# Macro
+C-c RET: insert macro
+M-TAB : complete symbol
+
+# Math
+C-c ~ : latex-math-mode
+ # ` will read a character from the keyboard, and insert the symbol as specified
+ # in LaTeX-math-default and LaTeX-math-list. If given a prefix argument, the
+ # symbol will be surrounded by dollar signs.
+ 
+# Mark
+C-c * : mark section
+C-c . : mark env
+
+# fill
+<a> := C-c C-q
+<a> C-p : fill paragraph
+<a> C-e : fill env
+<a> C-s : fill sec
+<a> C-r : fill region 
+
+*** cdlatex
+**** special fonts
+#+begin_src lisp
+    Keys                            Result
+    ;;      --------------------------------------------------------------------
+    ;;      a'~                             ERROR                 % in text mode
+    ;;      $a'~                            \tilde{a}             % in math mode
+    ;;      a':                             \ddot{a}
+    ;;      ab'b                            \textbf{ab}           % in text mode
+    ;;      $ab'b                           a\mathbf{b}           % in math mode
+    ;;      \alpha'.                        \dot{\alpha}
+    ;;      r_{dust}'r                      r_\mathrm{dust}       % in math mode
+    ;;      <SPC> 'e                        \emph{}
+    ;;      this is important   M-2 'b      this \textbf{is important}
+    ;; 
+  LaTeX-math-list                         ;nil
+#+end_src
+**** the tab
+itm<TAB> : itemize env
+equ<TAB>
+fr<TAB> : \frac{}{ }
+# ^^Use another <TAB> to jump to the next {}
+ali<TAB>
+it<TAB> : insert a generalized item
+lr<TAB> : \left( \right)
+**** backquote symbol
+`a : \alpha (insert $$ if outside math mode)
+`d : \delta
+``d : \\partial (level 2)
+#+begin_src emacs-lisp
+  cdlatex-math-symbol-alist               ;
+#+end_src
+**** get cdlatex
+1. Add the ~cdlatex~ to the additional packages
+2. Add to my-hooks
+#+begin_src emacs-lisp
+(add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
+(add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex mode
+#+end_src

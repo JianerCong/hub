@@ -1,0 +1,155 @@
+$primary: #35499c
+$secondary: #868686
+$danger: #d84e43
+$info: #1da0a8
+$success: #1aad19
+
+$lighter: #fff
+$light: #ddd
+$dark: #aaa
+$darker: #333
+
+@mixin myflex()
+  display: flex
+  justify-content: space-around
+  align-items: center
+
+.ddlBox
+  @include myflex
+  width: 70vw
+  background-color: $lighter
+  border-radius: 16rpx
+  flex-direction: column
+  padding: 1rem
+  .btn-group
+    @include myflex
+    width: 100%
+    .btn
+      width: 48%
+      margin: auto
+  .input
+    margin: 0 auto 30rpx
+    width: 100%
+    /* fixed-width + auto-margin + parent flex-space-around makes it center
+    display: grid
+    grid-template-columns: 2fr 6fr 1fr
+    $p: 0.5rem
+    @mixin x()
+      border: solid $dark
+      border-width: thin 0
+      text-align: center
+    .field-name
+      padding: $p 0
+    .field-value
+      padding: $p 0
+      @include x
+    .field-more-icon
+      padding: $p 0
+      @include x
+    /* .field-row
+    /*   width: 100%
+    /*   @include myflex
+    /*   flex-direction: row
+  .title
+    font-size: 1.5rem
+    margin-bottom: 30rpx
+    margin-left: 5%
+    width: 100%
+
+.menu
+  width: 100vw
+  /* height: 35vh
+  background-color: $lighter
+  border-bottom-left-radius: 16rpx
+  border-bottom-right-radius: 16rpx
+  @include myflex
+  flex-direction: column
+  .btn
+    width: 80vw
+    margin: 5rpx auto
+
+.container
+  @include myflex
+  flex-direction: column
+
+.progress-box
+  width: 90%
+  padding-bottom: 20rpx
+
+.input-container
+  position: absolute
+  width: 100vw
+  background-color: $lighter
+  opacity: 0.9
+  .input-box
+    width: 90%
+    top: 5%
+    $r: 10rpx
+    display: flex
+    padding-top: 20rpx
+    padding-bottom: 20rpx
+    .field
+      display: flex
+      align-items: center
+      width: 80%
+      height: 2.5rem
+      background-color: $light
+      border-radius: $r 0 0 $r
+      .input
+        margin-left: 1rem
+    .submit-button
+      display: flex
+      align-items: center
+      justify-content: space-around
+      width: 20%
+      background-color: $success
+      border-radius: 0 $r $r 0
+      .submit-button-text
+        font-size: 1.5rem
+        color: $light
+
+.box
+  @include myflex
+  opacity: 0
+  /* this will be changed by the animation
+  font-size: 1.2rem
+
+  width: 90%
+  background-color: $light
+  border-radius: 10rpx
+  /* vertical horizontal
+  padding: 10rpx 5rpx
+  margin-bottom: 10rpx
+  border: solid $dark
+
+  .inner
+    width: 80%
+    .weak
+      font-size: 0.8rem
+      color: $darker
+    .crossed
+      text-decoration: line-through
+      color: $darker
+    .overdue
+      color: $danger
+
+
+.fab
+  $d: 90rpx
+  background-color: $darker
+  border-radius: 50%
+  height: $d
+  width: $d
+  opacity: 0.5
+
+  font-size: 2rem
+  @include myflex
+
+  color: $dark
+  position: absolute
+  top: 80%
+  left:80%
+
+
+/* .todo-text-0
+/*   font-size: 2rem

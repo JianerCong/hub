@@ -1,0 +1,471 @@
+** Network on linex
+*** Lower
+**** listening port
+#+begin_src bash
+  sudo lsof -i -P -n | grep LISTEN
+  sudo ss -tulpn | grep LISTEN
+  sudo ss -tlp
+  # ss: socket analysis
+  # -t: display TCP ,-u: display UDP, -l: only listening sockets
+  # -p: show processes using socket, 
+  # -n: numeric Do not try to resolve service names. Show exact bandwidth values.
+#+end_src
+**** the ip-address
+  #+BEGIN_SRC bash
+  ip address show
+  #+END_SRC
+  Among many out-put we see that 192.168.1.12 is our ipv4 address.
+  #+BEGIN_SRC 
+  3: enx000ec6b5dbf8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+      link/ether 00:0e:c6:b5:db:f8 brd ff:ff:ff:ff:ff:ff
+      inet 192.168.1.12/24 brd 192.168.1.255 scope global noprefixroute enx000ec6b5dbf8
+         valid_lft forever preferred_lft forever
+
+  #+END_SRC
+**** Subnet
+  _Classless Inter-Domain Routing (CIDR)_ : where a subnet such as
+  10.23.2.0/255.255.255.0 is written as 10.23.2.0/24.
+**** Who is my router?
+     #+BEGIN_SRC bash
+  ip route show
+     #+END_SRC
+
+     Each line is a _routing rule_. The second line says the directly reachable
+     local subnet(all hosts within 169.254.0.0/16 can be reached dirrectly). 
+
+  The first line, says where we go to if the address is not listed below, in which
+  case, is our router.
+
+  #+BEGIN_SRC bash
+  default via 192.168.1.1 dev enx000ec6b5dbf8 proto dhcp metric 100 
+  169.254.0.0/16 dev enx000ec6b5dbf8 scope link metric 1000 
+  192.168.1.0/24 dev enx000ec6b5dbf8 proto kernel scope link src 192.168.1.12 metric 100
+  #+END_SRC
+**** ipv6
+  Each host has at least two ipv6 address: 
+       _global unicast address_
+       _the link local address(for local network)_
+
+  Link-local addresses always have an fe80::/10 prefix, followed by an all-zero
+  54-bit network ID, and end with a 64-bit interface ID. The result is that ~a
+  link-local address will be in the fe80::/64 subnet~.
+
+  Glocal unicast addresses have prefixes 2000::/3. Because the first byte starts
+  with 001 with this prefix, that byte can be completed as 0010 or 0011. As a
+  result, ~a global unicast address always starts with 2 or 3~.
+***** view
+  ip -6 address show
+  ip -6 route show
+**** Tools
+  ICMP: Internet Control Message Protoco -- the debugging protoco that dosen't
+  carry any user info. A transport layer protoco that dosn;t have application
+  layers build on it.
+
+  _DNS_: the Domain Name System -- Application layer protoco that maps names to
+  ip-address.
+***** ping
+  Send an ICMP echo request packets to a host.
+***** host
+  #+BEGIN_SRC bash
+  host www.example.com
+  host -6 www.example.com
+  host -4 www.example.com
+  #+END_SRC
+**** Ethernet network
+  Each host in an ethernet network has a _Media Access Control(MAC)_ address. The
+  frame sent over an ethernet network contains the From- and To- MAC address.
+
+  The router can unpack the frame and re-package the data, and send that to other
+  ethernet network, which is exactly what internet does.
+**** Kernal
+  Network interfaces usually have names that indicate the kind of hardware
+  underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is
+  called a predictable network interface device name, because it remains the same
+  after a reboot. At boot time, interfaces have traditional names such as eth0
+  (the first Ethernet card in the computer) and wlan0 (a wireless interface), but
+  on most machines running systemd, they are quickly renamed
+***** network interface
+  After running _ip address show_,we get in our example, three network interface:
+  #+BEGIN_SRC 
+  1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+  ...
+  2: wlo1: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+  ...
+  3: enx000ec6b5dbf8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+      link/ether 00:0e:c6:b5:db:f8 brd ff:ff:ff:ff:ff:ff
+  ...
+  #+END_SRC
+
+  The number after _link/ether_ is the mac address(00:0E:C6:B5:DB:F8).
+***** 4 steps to make a linux connected 
+  1. Connect the network hardware and ensure that the kernel has a driver for it.
+  If the driver is present, ip address show includes an entry for the device,
+  even if it hasn’t been configured(kernel dose this for you)
+
+  2. Perform any additional physical layer setup, such as choosing a network
+  name or password.(Usually doesn't needed)
+
+  3. Assign IP address(es) and subnets to the kernel network interface so that
+  the kernel’s device drivers (physical layer) and internet subsystems 
+  internet layer) can talk to each other.
+
+  1. Add any additional necessary routes, including the default gateway.
+
+***** Add ip address manually
+      # usually dangerous
+  #+BEGIN_SRC bash
+  ip address add 102.233.222/24 dev enp0s31f6
+  man ip-address
+  #+END_SRC
+***** Add default routes
+      Add the host at <gw-addr> as a default gateway. the <gw-addr> must be in a
+      locally connected subnet.
+
+  #+BEGIN_SRC bash
+  ip route add default via <gw-addr> dev <interface>
+  ip route del default
+  #+END_SRC
+
+****** Example
+  Connect to subnet 192.168.45.0/24 through the reachable host at 10.23.2.14
+  #+BEGIN_SRC bash
+  ip route add 192.168.45.0/24 via 10.23.2.14
+  ip route del 192.168.45.0 #when you are done.
+  #+END_SRC
+***** Boot-time setup
+  Different distro manages network differently. 
+
+  See /etc/netplan folder which
+  contains the yaml files that configures the network.
+***** Challenges 
+  1. Most machines do not have static ip address. In ipv4, it's Dynamic Host
+     Configuration Protocol(DHCP) who does the basic Network layer configuration.
+     In ipv6, ip address configuration is distributed.
+  2. Your sys should anwser : If you have multiple network interface (e.g. an
+     ethernet and a wifi), how do you decide which one to use? ...
+***** Network Manager
+  A system daemon that runs upon boots.
+****** Network manager command line interface
+  #+BEGIN_SRC bash
+    nmcli                           # see basic conectivity
+    nm-online                       # am I connected?
+    # see config
+    cat /etc/NetworkManager/NetworkManager.conf
+  #+END_SRC
+**** DNS
+  1. app calls a function to look up the ip addr behind an host name. The function
+     is usually in sys shared lib.
+  2. the func runs according to the rules in /etc/nsswitch.conf. (Check the
+     overrides in /etc/hosts)
+  3. Otherwise, send DNS request to a DNS server
+***** How to add DNS entries manually 
+      Change
+  ~Usually LAN hosts are in /etc/hosts~
+ or ~C:\Windows\System32\drivers\etc\hosts~
+  #+BEGIN_SRC bash
+    cat /etc/resolv.conf            # straight-forward name lookup
+    cat /etc/nsswitch.conf         
+  #+END_SRC
+  In /etc/nsswitch.conf, we see that after hosts: there are "files" before DNS.
+  This means we look up /etc/hosts before we call the dns. 
+  ~Usually LAN hosts are in /etc/hosts~
+
+
+***** DNS cache
+  I am runing DNS cache if I can find 127.0.0.53 or 127.0.0.1 in /etc/resolv.conf
+***** zero-configuration name service
+  The main idea of 0-conf (e.g. Link-Local Multicast Name Resolution(LLMNR)  & Multi-cast
+  DNS (mDNS)) : seperate DNS for LAN name look-up. 
+
+  When ask for a host on LAN, we usually boardcast the request instead of resort
+  to the DNS server.
+  #+BEGIN_SRC bash
+    resolvectl status               # check current DNS setting
+  #+END_SRC
+**** local host
+  lo: ::1 (v6) or 127.0.0.1 is your own machine
+**** Transport layer (Transmission Control Pro, User Datagram Pro)
+  transport layer bridge between the gap between the raw packets and your app.
+***** TCP
+  TCP allows for multiple apps by means of _ports_. (like a mailbox number of a
+  building).
+
+  TCP opens a ~connection~. E.g. a browser opens a conn between port
+  localhost:36404 and the remote-host:80
+  #+BEGIN_SRC bash
+    netstat -nt                      # watch tcp conn(without DNS)
+    netstat -nt6
+    cat /etc/services               # see well-known services
+  #+END_SRC
+
+  Dynamically assigned ports <=> ephemeral port. Local well-done ports are usually
+  initiated by remote host. This means you have listening server on your host.
+  #+BEGIN_SRC bash
+    netstat -ntl                    # show listening ports
+  #+END_SRC
+
+  Only super-user can listen to ports 0 to 1024.
+***** UDP
+  1. No datastream, just single messages.
+  2. No auto-reordering and auto-correction(but it does have checksum).
+   
+  TCP is like telephone, while UDP is like messages.
+****** Example of UDP
+  1. Network Time Protocol (NTP) : Send quick messages to get time
+  2. Video chat.
+
+**** Dynamically Host Configuration Protocol (DHCP)
+  The default way to get:
+  1. ip addr (ask for a ~lease~, which can be renewed)
+  2. subnet mask
+  3. default gateway
+  4. DNS server
+  Each local network has a DHCP server, which usually is the router.
+
+  How to manually boardcast to find dhcp server.(Note: you should remove the
+  default route before doing so.) This command let your computer to shout to the
+  physical network: "Is there a DHCP server? please configure me 🐸"
+  #+BEGIN_SRC bash
+  sudo dhclient enp0s31f6
+  #+END_SRC
+
+**** Auto-v6 config
+  ipv6 also has DHCP called DHCPv6. But, more often we use ~stateless config~
+  which is ~decentralized~ the host ~does not~ need to store any info such as the
+  the lease info.
+
+***** How it works
+  1. The host self-generate a link-local address: on the fe80::/64. It can
+     boardcast this subnet to check that the address is unique in LAN.
+  2. Next, it start listening for a Router Advertising (RA) messages, which the
+     router will send to LAN occasionally.
+     This message contains: the global network prefix + the router's address +
+     additional info.
+  3. Finally, the host can fill-out the interface-part of the address.
+
+**** Linux as a router
+ #+begin_src bash
+ #! /bin/bash
+ ip route show
+ # Enable simple routing
+ sysctl -w net.ipv4.ip_forward=1
+ # Check
+ sysctl net.ipv4.ip_forward
+
+ # How to enable these upon boot
+ cat /etc/sysctl.conf
+ cat /etc/sysctl.d
+
+ #+end_src
+**** The ipv4 private address space
+ + 10.0.0.0/8
+ + 192.168.0.0/16
+ + 172.16.0.0/12
+**** The link-local and global-unicast ipv6
+ + link-local: fe80::/10
+ + global-unicast: 2000::/3
+**** neibour over the network
+#+begin_src bash
+# Who are my known neibor
+ip -4 neigh
+#+end_src
+**** Wireless
+***** SSID
+Service Set ID = Network Name
+***** Scan for wifi
+#+begin_src bash
+  sudo apt install net-tools
+  # enable the network interface
+  sudo ifconfig  wlo1 up
+  # scan for wifi
+  sudo iw dev wlo1 scan | less
+  # View the current wifi
+  iw dev wlo1 link
+
+  # more
+  cat /etc/wpa_supplicant.conf
+
+ #+end_src
+*** Higher
+**** telnet
+    # Enter a shell to get stuff
+ telnet example.com 80
+ # Send a request
+ GET / HTTP/1.1
+ Host: example.org
+ # return twice to get an html page
+ # Ctrl-D to terminate 
+
+**** curl
+ curl --trace-ascii hi.txt https://www.example.com > /dev/null
+
+**** ssh
+ Openssh is an open-sourced version of ssh on Unix.
+***** use ssh
+#+begin_src bash
+ssh remote_username@remote_host
+#+end_src
+***** Files and Dirs
+ #+begin_src bash
+ l /etc/ssh/
+ cat /etc/ssh/sshd_config | less
+ #+end_src
+***** Public/private keys 
+****** What are the 2 types of key generating algorithms?
+      RSA and DSA
+| filename             | key type        |
+|----------------------+-----------------|
+| ssh_host_rsa_key     | Private RSA key |
+| ssh_host_rsa_key.pub | Public RSA key  |
+| ssh_host_dsa_key     | Private DSA key |
+| ssh_host_dsa_key.pub | Public DSA key  |
+****** When you need to generate a key yourself?
+When you plan to use programs such as *ssh-agent* that provide authentication
+services without a password.
+****** How to create SSH version 2 keys
+#+begin_src bash
+sudo ssh-keygen -t rsa -N '' -f /etc/ssh/my_ssh_host_rsa_key
+#+end_src
+***** Start the ssh server
+****** On Debian-based
+sshd not installed by default.
+Upon installed:
+1. New keys generated
+2. Server started
+3. Server startup added to the bootup configuration
+****** On Fedora
+Installed by default
+#+begin_src bash
+  systemctl enable sshd           # Start sshd at boot
+  systemctl start sshd            # Start the server immedietely
+  cat /var/run/sshd.pid
+#+end_src
+***** scp
++ from remote host to current dir :: scp user@host:file .
++ a file from local machine to a remote host  :: scp file user@host:dir
++ from a remote host to another remote host :: scp user1@host1:file user2@host2:dir
+**** simple http server
+Start a http server on the current directory
+through port 8000
+#+begin_src bash
+  python3 -m http.server 8000
+#+end_src
+
+In this laptop's browser: > localhost:8000
+In other laptop's browser: > 10.0.0.1:8000
+** Nginx
+*** install
+#+begin_src bash
+  sudo apt install -y nginx
+  nginx -v
+  sudo systemctl start nginx
+  sudo systemctl status nginx
+#+end_src
+*** [python tutorial]configure a site
+Remove the ~default~ from ~sites-enabled~
+In /etc/nginx/sites-available/my-site
+#+begin_src bash
+  # server_tokens               off;
+  # access_log                  /var/log/nginx/mysite.access.log;
+  # error_log                   /var/log/nginx/mysite.error.log;
+
+  # This configuration will be changed to redirect to HTTPS later
+  server {
+    server_name               .mysite.codes; # your host's name + .
+    listen                    80;
+    location / {
+      proxy_pass              http://localhost:8000;
+      proxy_set_header        Host $host;
+    }
+  }
+#+end_src
+Test the config
+#+begin_src bash
+sudo service nginx configtest /etc/nginx/sites-available/my-site
+#+end_src
+Add symlink
+#+begin_src bash
+  cd /etc/nginx/sites-enabled
+  # Note: replace 'supersecure' with your domain
+  sudo ln -s ../sites-available/my-site .
+  sudo systemctl restart nginx
+#+end_src
+*** watch log
+#+begin_src bash
+  less +F /var/log/nginx/access.log
+  tail -f /var/log/nginx/access.log
+  tail -50 -f /var/log/nginx/access.log
+#+end_src
+*** Cookbook
+**** serve static
+#+begin_src bash
+  server {
+   listen 80 default_server;
+   server_name www.example.com;   # can be omited if 'default_server' is set
+   location / {
+   root /usr/share/nginx/html;
+   # alias /usr/share/nginx/html;
+   index index.html index.htm;
+   }
+  }
+#+end_src
+**** graceful reload
+#+begin_src bash
+  sudo nginx -s reload
+#+end_src
+**** HTTP load balancing
+#+begin_src bash
+  upstream backend {
+   server 10.10.12.45:80 weight=1;
+   server app.example.com:80 weight=2;
+   server spare.example.com:80 backup;
+  }
+  server {
+   location / {
+   proxy_pass http://backend;
+   }
+  }
+#+end_src
+**** TCP (e.g. MySQL) load balancing
+#+begin_src bash
+stream {
+ upstream mysql_read {
+ server read1.example.com:3306 weight=5;
+ server read2.example.com:3306;
+ server 10.10.12.34:3306 backup;
+ }
+ server {
+ listen 3306;
+ proxy_pass mysql_read;
+ }
+}
+#+end_src
+**** Redirect HTTP to HTTPS
+#+begin_src bash
+server {
+ listen 80 default_server;
+ listen [::]:80 default_server;
+ server_name _;
+ return 301 https://$host$request_uri;
+}
+#+end_src
+**** Redirecting to HTTPS Where SSL/TLS Is Terminated Before NGINX
+#+begin_src bash
+server {
+ listen 80 default_server;
+ listen [::]:80 default_server;
+ server_name _;
+ if ($http_x_forwarded_proto = 'http') {
+ return 301 https://$host$request_uri;
+ }
+}
+#+end_src
+**** HTTP Strict Transport Security
+#+begin_src bash
+add_header Strict-Transport-Security max-age=31536000;
+ #+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# fill-column: 50
+# End:

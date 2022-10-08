@@ -1,0 +1,20 @@
+@font-face {
+    font-family: "myFont";
+    src: url("./en2.ttf");
+  }
+  
+  @font-face {
+    font-family: "myFont2";
+    src: url("./zh.ttf");
+  }
+  
+  html:lang(en) body {
+    font-family: "myFont", serif !important;
+  }
+  html:lang(zh) body {
+    font-family: "myFont2", serif !important;
+  }
+
+  * {
+    font-family: inherit !important;
+  }

@@ -1,0 +1,131 @@
+** MathNet
+*** Interpolation
+#+begin_src csharp
+using System;
+using MathNet.Numerics.Interpolation;
+// use
+// dotnet add package MathNet.Numerics
+
+const string S_RED    ="\x1b[31m";
+const string S_GREEN  ="\x1b[32m";
+// const string S_YELLOW ="\x1b[33m";
+// const string S_BLUE   ="\x1b[34m";
+// const string S_MAGENTA="\x1b[35m";
+// const string S_CYAN   ="\x1b[36m";
+const string S_NOR    ="\x1b[0m";
+
+double[] x = new double[] {0,1,2};
+double[] y = new double[] {0,1,0};
+LinearSpline l = LinearSpline.Interpolate(x,y);
+ExpectEqual(l.Interpolate(0.5),0.5);
+ExpectEqual(l.Interpolate(0.8),0.8);
+ExpectEqual(l.Interpolate(1.2),0.8);
+ExpectEqual(l.Interpolate(2),0);
+
+void ExpectEqual(double a, double b){
+    Console.Write($"Should be {b,5}, it's {a,5}:  ");
+    string s = (a==b)? S_GREEN + "Okay" : S_RED + "Not Okay";
+    Console.WriteLine(s+S_NOR);
+}
+/*
+  Should be   0.5, it's   0.5:  Okay
+  Should be   0.8, it's   0.8:  Okay
+  Should be   0.8, it's   0.8:  Okay
+  Should be     0, it's     0:  Okay
+
+ */
+
+#+end_src
+** System.Data
+*** Basic
+ #+begin_src csharp
+ using System;
+ using System.Data;
+ using System.Linq;
+
+ DataTable df = new DataTable("myTable");
+ DataColumn c = new DataColumn("x",Type.GetType("System.Decimal"));
+ df.Columns.Add(c);
+ df.Columns.Add("y",typeof(Double));
+
+ DataRow r;
+ for (int i = 0; i < 2; i++){
+     r = df.NewRow();
+     r["x"] = i + 1;
+     r["y"] = i + 2;
+     df.Rows.Add(r);
+ }
+
+ // Console.WriteLine("Data table: {0}",df);
+ Show(df);
+
+ static void Show(DataTable df){
+     ShowHeader(df);
+     foreach (DataRow r in df.Rows){
+         foreach (DataColumn c in df.Columns){
+             Console.Write("{0,10}|",r[c]);
+         }
+         Console.WriteLine();
+     }
+ }
+
+ static void ShowHeader(DataTable df){
+     Console.WriteLine("HEADERS");
+     foreach (DataColumn c in df.Columns){
+         Console.Write("{0,10}|",c.ColumnName);
+     }
+     Console.WriteLine();
+     Console.WriteLine(new string('-',50));
+ }
+
+ #+end_src
+*** Show data frame
+ #+begin_src csharp
+ using System;
+ using System.Data;
+ using System.Linq;
+
+ DataTable df = new DataTable("myTable");
+ df.Columns.Add("name",typeof(String));
+ df.Columns.Add("y",typeof(Double));
+
+ DataRow r;
+ for (int i = 0; i < 2; i++){
+     r = df.NewRow();
+     r["x"] = i + 1;
+     r["y"] = i + 2;
+     df.Rows.Add(r);
+ }
+
+ // Console.WriteLine("Data table: {0}",df);
+ Show(df);
+
+ static string getCellSpec(int w) => string.Format("{0,{0}}|", w);
+
+ static void Show(DataTable df, int wr = 10){
+     // wr: the row width
+     ShowHeader(df, wr);
+     string f = getCellSpec(wr);
+     string colf = getCellSpec(df.Columns.Max(n => n.ColumnName.Length));
+     Console.WriteLine("The format_spec is : {0}", f);
+
+     foreach (DataColumn c in df.Columns){
+         Console.Write(colf, c.ColumnName);
+         Console.Write("|");
+         foreach (DataRow r in df.Rows){
+             Console.Write(f,r[c]);
+         }
+         Console.WriteLine();
+     }
+ }
+
+ static void ShowHeader(DataTable df, int wr = 10){
+     Console.WriteLine("HEADERS");
+     foreach (DataColumn c in df.Columns){
+         Console.Write("{0,10}|",c.ColumnName);
+     }
+     Console.WriteLine();
+     Console.WriteLine(new string('-',50));
+ }
+
+ #+end_src

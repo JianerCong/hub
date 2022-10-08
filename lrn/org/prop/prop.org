@@ -1,0 +1,71 @@
+#+PROPERTY: MYVAR_ALL 1 2 3 4
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ buffer-wise property
+# How to append value? 
+#+PROPERTY: var  x=1
+#+PROPERTY: var+ y=2
+Now var is "x=1 y=2"
+
+Properties are key–value pairs. When they are associated with a 
+
+1. single entry or
+2. with a tree they need to be inserted into a special drawer (see Drawers) with
+the name ‘PROPERTIES’, which has to be located right below a headline, and its
+planning line when applicable.
+
+* Card
+** Monster Card
+   :PROPERTIES:
+   :ISYELLOW_ALL: t nil
+   :END:
+You may define the allowed values for a particular property ‘Xyz’ by setting a
+property ‘Xyz_ALL’. This special property is inherited, so if you set it in a
+level 1 entry, it applies to the entire tree.
+*** Galaxy-Eyes
+    :PROPERTIES:
+    :NAME: Galaxy-Eyes Photon Dragon
+    :LEVEL: 8
+    :ATK: 3000
+    :DEF: 2500
+    :ISYELLOW: nil
+    :END:
+    
+    If org-use-property-inheritance -> we got inheritance.
+
+    
+* Appending to inherited property
+** Monster Card
+   :PROPERTIES:
+   :TYPE: Monster
+   :END:
+*** XYZ
+    :PROPERTIES:
+    :TYPE+: XYZ
+    :END:
+    
+* Keys
+C-c C-x p (org-set-property)
+C-C C-C s -^
+S-LEFT S-RIGHT: toggle the value(The allowable values are specified by the
+:var_ALL: v1 v2 v3)
+C-C C-C (do something to the property)
+* Special Keys that are preservered
+‘ALLTAGS’	All tags, including inherited ones.
+‘BLOCKED’	t if task is currently blocked by children or siblings.
+‘CATEGORY’	The category of an entry.
+‘CLOCKSUM’	The sum of CLOCK intervals in the subtree. org-clock-sum
+	must be run first to compute the values in the current buffer.
+‘CLOCKSUM_T’	The sum of CLOCK intervals in the subtree for today.
+	org-clock-sum-today must be run first to compute the
+	values in the current buffer.
+‘CLOSED’	When was this entry closed?
+‘DEADLINE’	The deadline timestamp.
+‘FILE’	The filename the entry is located in.
+‘ITEM’	The headline of the entry.
+‘PRIORITY’	The priority of the entry, a string with a single letter.
+‘SCHEDULED’	The scheduling timestamp.
+‘TAGS’	The tags defined directly in the headline.
+‘TIMESTAMP’	The first keyword-less timestamp in the entry.
+‘TIMESTAMP_IA’	The first inactive timestamp in the entry.
+‘TODO’	The TODO keyword of the entry.
+    

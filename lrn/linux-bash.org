@@ -1,0 +1,466 @@
+* Bash
+** variable
+#+BEGIN_SRC bash
+    echo $100                       # 00
+    # Double quote to include space
+    echo "$100"                     # 00
+    # Single quote makes a literal
+    echo '$100'                     # $100
+    # literal
+  echo 'this isn'\''t a forward slash: \'
+#+END_SRC
+** command line argument
+#+BEGIN_SRC bash
+#!/bin/sh
+echo First argument: $1
+echo Third argument: $3
+#+END_SRC
+Use shift to get argument successively
+#+BEGIN_SRC bash
+  #!/bin/sh
+  echo $0                         # the script name
+  echo Argument: $1 
+  shift
+  echo Argument: $1               # second args
+  shift
+  echo Argument: $1               # third args
+  echo $#                         # number of argument
+  echo $@                         # all arguments
+  echo The process id: $$
+  echo The last command has exit code $?
+#+END_SRC
+** conditional
+*** basic if
+#+BEGIN_SRC bash
+    a=1
+
+    if [ a = 2 ]; then
+        echo "a is 2"
+    elif [  a = 3 ]; then
+        echo "a is 3"
+    else
+        echo "I don't known this number"
+    fi
+
+    # if use exit code
+  if grep -q daemon /etc/passwd; then
+      echo "The daemon user is in the passwd file"
+  else
+      echo "Big problem: daemon is not in the passwd file"
+  fi
+#+END_SRC
+*** and-or-not
+ #+BEGIN_SRC bash
+   # Run b if a has code 0 <=   a && b
+   # Run b if a has non-zero code <= a || b
+
+   # If failed to compile, watch the log.
+   gcc hi.c -o hi.c > log.txt || less log.txt
+
+   # use or
+   if [ "$1" = hi -o "$1" = bye ]; then
+       echo '🐸'
+   fi
+
+   # use ! to negate
+   if [ ! "$1" = hi ];then
+       echo "🤔"
+   fi
+ #+END_SRC
+*** test files
+#+BEGIN_SRC bash
+  # See "man ["
+  for filename in *; do
+      if [ -f $filename ]; then
+          ls -l $filename
+          file $filename
+      else
+          echo $filename is not a regular file
+      fi
+  done
+
+
+  [ -f hi.txt ]; echo $?          # Is hi.txt  a regular file ?
+  [ -e hi.txt ]; echo $?          # Dose hi.txt exist ?
+  [ -s hi.txt ]; echo $?          # Is hi.txt empty ?
+  [ -r hi.txt ]; echo $?          # Is hi.txt readable ?
+  [ -d hi ]; echo $?          # Is hi.txt a directory?
+  [ -d hi.txt ]; echo $?          # Is hi.txt a block device ?
+  [ hi.txt -nt hi2.txt ]; echo $?          # Is hi.txt newer than hi2.txt ?
+#+END_SRC
+*** test string
+#+BEGIN_SRC bash
+  [ -z "$a" ]; echo $?            # is a empty?
+  [ -z "$a" ]; echo $?            # is a non-empty?
+  [ 01 -eq 1 ]; echo $?            # are two v alues equal?
+  [ 01 -ne 1 ]; echo $?            # are two values unequal?
+  [ 01 -gt 2 ]; echo $?            # 1 > 2?
+#+END_SRC
+*** case
+ #+BEGIN_SRC bash
+  case $1 in
+      bye)
+          echo Fine bye.
+          ;;
+      hi|hello)
+          echo Hi
+          ;;
+      what*)
+          echo "I don\'t know."
+          ;;
+      ,*)
+          echo "Hah?🐸";
+  esac
+#+END_SRC
+** string
+*** substring
+   #+BEGIN_SRC bash
+     a="abcde"
+     echo ${#a}                      # 5
+     echo ${a:3}                     # de
+     echo ${a:1:2}                   # from 1: length 2: bc
+     echo ${a:-2}                    # de
+     echo ${a:-3:2}                    # cd
+     # find pattern
+     x=hi.txt.zip
+     echo ${x#*.}                    # delete (shortest) content in $x that match *.
+     # txt.zip
+     echo ${x##*.}                    # delete (longest) content in $x ...
+     # zip
+     echo ${x%.*}                    # delete (shortest) content in $x that match .* from ends
+     # hi.txt
+     echo ${x%%.*}
+     # hi
+
+   #+END_SRC
+*** replace
+#+BEGIN_SRC bash
+  hi=aa.aa
+  ${hi/aa/bb}                     # bb.aa
+  ${hi//aa/bb}                     # bb.bb
+  ${hi/%aa/bb}                     # aa.bb
+  # delete string
+  ${hi/aa}                     # .
+
+#+END_SRC
+** array
+*** loop
+#+BEGIN_SRC bash
+  A=([2]=a [4]=b [6]=c)
+
+  # Loop value
+  for i in "${A[@]}";do echo $i; done
+  # a b c
+
+  # Loop index
+  for i in "${!A[@]}";do echo $i; done
+  #2 4 5
+#+END_SRC
+*** append
+#+BEGIN_SRC bash
+    a = (a b c)
+    echo ${a[@]}                    # a b c
+  a+=(d e f)
+    echo ${a[@]}                    # a b c d e f
+    unset a[2]                      # free element
+    unset a                         # free array
+#+END_SRC
+** read
+#+BEGIN_SRC bash
+  read -p "Enter your name > " user_name
+
+  echo -n "Your name again >"
+  read
+  echo $REPLY                     # => your entered value
+
+
+  echo -n "Your name again >"
+  read name
+  echo $name
+#+END_SRC
+** loop
+#+BEGIN_SRC bash
+  for str in 1 2 3; do
+      echo $str
+  done
+#+END_SRC
+** tempfile
+#+BEGIN_SRC bash
+#! /bin/bash
+
+t1=$(mktemp /tmp/im1.XXXXXX)
+t2=$(mktemp /tmp/im2.XXXXXX)
+trap "rm -f $t1 $t2; exit 1" INT # remove when done
+
+cat /proc/interrupts > $t1
+sleep 2
+cat /proc/interrupts > $t2
+diff $t1 $t2
+rm -f $t1 $t2
+
+#+END_SRC
+** send the output back to bash
+#+BEGIN_SRC bash
+# use $(echo ls) => ls
+fg=$(grep ^flags /proc/cpuinfo | sed 's/.*://' | head -1)
+for f in $fg; do
+    case $f in
+        fpu) m="float point uint"
+             ;;
+        3now) m="3DNOW graphics extentions"
+               ;;
+        mtrr) m="memory type range register"
+              ;;
+        *)
+              ;;
+    esac
+    echo $f: $m
+done
+#+END_SRC
+** HERE DOC
+#+BEGIN_SRC bash
+D=$(date)
+cat <<EOF
+Today is $D
+
+🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸
+EOF
+#+END_SRC
+** function
+*** arguments
+#+BEGIN_SRC bash
+greeting () {
+    echo "Hello $1"
+}
+
+greeting "Joe"
+#+END_SRC
+*** variable
+#+BEGIN_SRC bash
+
+  my_function () {
+    func_result="some result"     # modify global env
+  }
+
+  my_function
+  echo $func_result
+
+  # -------------------------------------------------- 
+  my_function () {
+    local func_result="some result"
+    echo "$func_result"
+  }
+
+  func_result="$(my_function)"
+  echo $func_result
+#+END_SRC
+*** return status code
+#+BEGIN_SRC bash
+my_function () {
+  echo "some result"
+  return 55
+}
+
+my_function
+echo $?
+#+END_SRC
+** Util
+*** Basename
+#+BEGIN_SRC bash
+basename example.html html      # => example.
+basename /usr/local/bin         # => bin
+
+# convert all gif to png
+gif2png () {
+    for $f in *.gif; do
+        if [ ! -f $file ]; then
+            echo "No gif in this folder"
+        fi
+
+        b=$(basename $f .gif)
+        echo converting $b.gif to $b.png
+        giftopnm $b.gif | pnmtopng > $b.png
+    done
+}
+#+END_SRC
+*** sed
+#+BEGIN_SRC bash
+  sed 's/:/%' /etc/passwd         # replace the first : with %
+  sed 's/:/%g' /etc/passwd         # replace the all : with %
+  sed 3,6d /etc/passwd         # delete line 3-6
+  #   ^^^-the address that sed operate on
+  sed '/exp/d' ...                # delete lines that matches regex "exp"
+#+END_SRC
+** awk
+*** basic
+   awk is a programing lang. Handy command-line regex manipulation.But mostly,
+   it is used to get a field.
+#+BEGIN_SRC bash
+ls -l | awk '{print $5}'
+#+END_SRC
+*** regex
+#+BEGIN_SRC bash
+echo  abc | mawk '{ gsub(//, "X") ; print }'
+#+END_SRC
+*** type conversion
+#+BEGIN_SRC bash
+  # awk's automatic arguments type conversion
+  wc -l hi.txt | awk '{print 1 + $1}' # $1 is int
+  echo hi | awk '{print $1 " there"}' # $1 is string
+#+END_SRC
+** make
+   #+BEGIN_SRC makefile
+  hello:
+      echo "hello world"
+   #+END_SRC
+*** basic syntex
+    The simple syntex.
+#+BEGIN_SRC makefile
+targets: prerequisites
+   command
+   command
+   command
+#+END_SRC
+
+The simple usage:
+#+BEGIN_SRC makefile
+  blah: blah.o
+      cc blah.o -o blah # Runs third
+
+  blah.o: blah.c
+      cc -c blah.c -o blah.o # Runs second
+
+  blah.c:
+      echo "int main() { return 0; }" > blah.c # Runs first
+#+END_SRC
+*** variables
+#+BEGIN_SRC makefile
+x = dude
+all:
+    echo $(x)
+#+END_SRC
+Use variables as dependencies:
+#+BEGIN_SRC makefile
+files = file1 file2
+some_file: $(files)
+    echo "Look at this variable: " $(files)
+    touch some_file
+
+file1:
+    touch file1
+file2:
+    touch file2
+
+clean:
+    rm -f file1 file2 some_file
+#+END_SRC
+*** targets
+**** all
+#+BEGIN_SRC makefile
+all: one two three
+
+one:
+    touch one
+two:
+    touch two
+three:
+    touch three
+
+clean:
+    rm -f one two three
+#+END_SRC
+**** multiple targets
+#+BEGIN_SRC makefile
+all: f1.o f2.o
+
+f1.o f2.o:
+    echo $@
+# Equivalent to:
+# f1.o
+#     echo $@
+# f2.o
+#     echo $@
+#+END_SRC
+** git
+*** .gitignore
+Must be added explicitly with
+#+BEGIN_SRC bash
+git add .gitignore
+#+END_SRC
+*** conflict
+    After you see
+    
+    #+begin_src bash
+      $ git merge iss53
+      # Auto-merging index.html
+      # CONFLICT (content): Merge conflict in index.html
+      # Automatic merge failed; fix conflicts and then commit the result.
+    #+end_src
+    You can open the conflicted file (in this case, index.html). And see the
+    following blocks:
+#+begin_src org
+<<<<<<< HEAD:index.html
+<div id="footer">contact : email.support@github.com</div>
+=======
+<div id="footer">
+ please contact us at support@github.com
+</div>
+>>>>>>> iss53:index.html
+#+end_src
+
+Resolve the block by deleting the <<<<, =====, and >>>>
+*** unstage all / a file
+git reset
+git reset hi.c
+** date
+#+begin_src bash
+  date +%Y-%m-%d
+#+end_src
+* Tmux
+https://tmuxcheatsheet.com/
+** basic
+#+BEGIN_SRC bash
+  tmux kill-session -t 0          # kill a session
+  tmux ls                         # see sessions
+  tmux attach -t 1                # attach to session
+
+  # inside tmux
+  C-b b                           # quit
+  C-b c                           # create
+  C-b ,                           # rename win
+  C-b $                           # rename session
+  C-b &                           # kill win
+  C-b w                           # list wins
+  C-b '"' or %                           # split window (left or down)
+  ~ p/n/o                         # previous/next/other window
+#+END_SRC
+** session
+#+begin_src bash
+  tmux
+  tmux new -s mysession
+  tmux kill-session -t mysession
+  tmux kill-session -a            # kill all but current
+  tmux ls
+  tmux attach
+  tmux a -t mysession
+#+end_src
+Rename session: C-b $
+Detach from session : C-b 
+** Windows
+create : c
+rename: ,
+close : &
+previous/next: n/p
+: new-window -n hi
+** panes
++ split horizontally :: %
++ vertically :: "
++ move to  :: <- ->
++ resize ::  <--> (holding ctrl)
+
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# fill-column: 50
+# End:

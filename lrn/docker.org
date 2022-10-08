@@ -1,0 +1,339 @@
+** Basic tut [Old]
+*** run an image
+#+begin_src bash
+docker run --name some-mongo -d mongo:tag
+#+end_src
+*** network
+#+begin_src bash
+docker network create todo-app
+#+end_src
+**** Run MySQL in the network
+#+begin_src bash
+docker run -d \
+    --network todo-app --network-alias mysql \
+    -v todo-mysql-data:/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=secret \
+    -e MYSQL_DATABASE=todos \
+    mysql:5.7
+#+end_src
+You'll notice we're using a volume named todo-mysql-data here and mounting it at
+/var/lib/mysql, which is where MySQL stores its data. However, we never ran a
+docker volume create command. Docker recognizes we want to use a named volume
+and creates one automatically for us.
+**** Run the todo front which connect to MySQL
+#+begin_src bash
+docker run -dp 3000:3000 \
+  -w /app -v "$(pwd):/app" \
+  --network todo-app \
+  -e MYSQL_HOST=mysql \
+  -e MYSQL_USER=root \
+  -e MYSQL_PASSWORD=secret \
+  -e MYSQL_DB=todos \
+  node:12-alpine \
+  sh -c "yarn install && yarn run dev"
+#+end_src
+**** dig a host
+#+begin_src bash
+docker run -it --network todo-app nicolaka/netshoot
+dig mysql
+#+end_src
+*** start docker
+#+begin_src bash
+docker start dreamy_hellman
+#+end_src
+*** docker compose
+**** the todo run command
+#+begin_src bash
+docker run -dp 3000:3000 \
+  -w /app -v "$(pwd):/app" \
+  --network todo-app \
+  -e MYSQL_HOST=mysql \
+  -e MYSQL_USER=root \
+  -e MYSQL_PASSWORD=secret \
+  -e MYSQL_DB=todos \
+  node:12-alpine \
+  sh -c "yarn install && yarn run dev"
+  #+end_src
+**** the mysql run command
+#+begin_src bash
+docker run -d \
+  --network todo-app --network-alias mysql \
+  -v todo-mysql-data:/var/lib/mysql \
+  -e MYSQL_ROOT_PASSWORD=secret \
+  -e MYSQL_DATABASE=todos \
+  mysql:5.7
+  #+end_src
+**** the result docker file
+#+begin_src yaml
+version: "3.8"
+
+services:
+  app:
+    image: node:12-alpine
+    command: sh -c "yarn install && yarn run dev"
+    ports:
+      - 3000:3000
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      MYSQL_DB: todos
+
+  mysql:
+    image: mysql:5.7
+    volumes:
+      - todo-mysql-data:/var/lib/mysql
+    environment: 
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: todos
+
+volumes:
+  todo-mysql-data:
+  #+end_src
+** Python tut 2
+*** Build the image
+#+begin_src bash
+  docker build --tag my-py-docker .
+  docker images
+  docker tag my-py-docker:latest my-py-docker:v1.0.0
+  docker rmi my-py-docker:v1.0.0  # remove the image
+#+end_src
+*** Run the image
+ --detach, -d
+ --publish -p [host port]:[container port]
+ --name <container name>
+ <image tag>
+#+begin_src bash
+  docker run -dp 8000:5000 --name my-server my-py-docker
+
+#+end_src
+*** list stop start remove
+#+begin_src bash
+  docker ps -a                    # show all
+  docker ps                     # show running
+  docker stop my-server
+  docker re-start my-server
+  docker rm my-server-1 my-server-2
+#+end_src
+*** run mysql
+**** start mysql
+#+begin_src bash
+  docker volume create mysql
+  docker volume create mysql_config
+  docker network create mysqlnet
+  docker run --rm -d -v mysql:/var/lib/mysql \
+         -v mysql_config:/etc/mysql -p 3306:3306 \
+         --network mysqlnet \
+         --name mysqldb \
+         -e MYSQL_ROOT_PASSWORD=p@ssw0rd1 \
+         mysql
+  # enter the shell
+  docker exec -ti mysqldb mysql -u root -p
+  # \q to quit
+#+end_src
+**** use mysql in app.py
+#+begin_src python
+  import mysql.connector
+  import json
+  from flask import Flask
+
+  app = Flask(__name__)
+
+  @app.route('/')
+  def hello_world():
+    return 'Hello, Docker!'
+
+  @app.route('/widgets')
+  def get_widgets():
+    mydb = mysql.connector.connect(
+      host="mysqldb",
+      user="root",
+      password="p@ssw0rd1",
+      database="inventory"
+    )
+    cursor = mydb.cursor()
+
+
+    cursor.execute("SELECT * FROM widgets")
+
+    row_headers=[x[0] for x in cursor.description] #this will extract row headers
+
+    results = cursor.fetchall()
+    json_data=[]
+    for result in results:
+      json_data.append(dict(zip(row_headers,result)))
+
+    cursor.close()
+
+    return json.dumps(json_data)
+
+  @app.route('/initdb')
+  def db_init():
+    mydb = mysql.connector.connect(
+      host="mysqldb",
+      user="root",
+      password="p@ssw0rd1"
+    )
+    cursor = mydb.cursor()
+
+    cursor.execute("DROP DATABASE IF EXISTS inventory")
+    cursor.execute("CREATE DATABASE inventory")
+    cursor.close()
+
+    mydb = mysql.connector.connect(
+      host="mysqldb",
+      user="root",
+      password="p@ssw0rd1",
+      database="inventory"
+    )
+    cursor = mydb.cursor()
+
+    cursor.execute("DROP TABLE IF EXISTS widgets")
+    cursor.execute("CREATE TABLE widgets (name VARCHAR(255), description VARCHAR(255))")
+    cursor.close()
+
+    return 'init database'
+
+  if __name__ == "__main__":
+    app.run(host ='0.0.0.0')
+#+end_src
+**** rebuild
+#+begin_src bash
+  pip3 install mysql-connector-python
+  pip3 freeze | grep mysql-connector-python >> requirements.txt
+  docker build --tag python-docker-dev .
+  docker run \
+         --rm -d \
+         --network mysqlnet \
+         --name rest-server \
+         -p 8000:5000 \
+         python-docker-dev
+ #+end_src
+**** test
+#+begin_src bash
+curl http://localhost:8000/initdb
+curl http://localhost:8000/widgets
+ #+end_src
+*** docker compose
+**** the compose.yml
+#+begin_src yaml
+  services:
+   web:
+    build:
+     context: .
+    ports:
+    - 8000:5000
+    volumes:
+    - ./:/app
+
+   mysqldb:
+    image: mysql
+    ports:
+    - 3306:3306
+    environment:
+    - MYSQL_ROOT_PASSWORD=p@ssw0rd1
+    volumes:
+    - mysql:/var/lib/mysql
+    - mysql_config:/etc/mysql
+
+  volumes:
+    mysql:
+    mysql_config:
+  #+end_src
+**** the build section
+A service in ~compose.yaml~ have a ~build~ section instead of an ~image~
+section. This build the image according to a ~Dockerfile~ in the folder.
+https://docs.docker.com/compose/compose-file/build/
+#+begin_src yaml
+services:
+  webapp:
+    build: ./dir
+#+end_src
+**** run the compose
+#+begin_src bash
+docker compose version
+docker compose up --build
+#+end_src
+** publish to dockerhub
++ Log in to docker hub create a repo called ~hi-docker~.
+  # 其实docker 会自己帮你create if it doesn't exit already
++ Create a local image called ~hi~
+#+begin_src bash
+  docker login
+  # cccccje:51682651cje
+  docker tag hi cccccje/hi-docker:v1.0.0
+  docker push cccccje/hi-docker:v1.0.0
+#+end_src
+**** in docker playground
+#+begin_src bash
+  docker run -dp 8000:5000 --name aaa cccccje/hi-docker:v1.0.0
+#+end_src
+** k8s
+*** minikube 
+Or you can use docker-desktop shipped k8s.
+**** install
+#+begin_src bash
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+#+end_src
+**** start the cluster
+#+begin_src bash
+sudo minikube start
+#+end_src
+*** kubectl
+**** download and install
+***** download the release
+#+begin_src bash
+  # Download the latest
+  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  # Or download a specific version
+  curl -LO https://dl.k8s.io/release/v1.25.0/bin/linux/amd64/kubectl
+#+end_src
+***** validate the binary [optional]
+#+begin_src bash
+  curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+  echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+  # kubectl: OK
+
+#+end_src
+***** install
+#+begin_src bash
+  sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+  kubectl version --client
+  kubectl version --client --output=yaml
+
+#+end_src
+**** ls sth
+#+begin_src bash
+  kubectl version --output=yaml
+  kubectl get componentstatuses   # get health info
+  # Warning: v1 ComponentStatus is deprecated in v1.19+
+  # NAME                 STATUS    MESSAGE                         ERROR
+  # scheduler            Healthy   ok                              
+  # controller-manager   Healthy   ok                              
+  # etcd-0               Healthy   {"health":"true","reason":""}
+
+  # list all nodes
+  kubectl get nodes
+  # NAME             STATUS   ROLES           AGE    VERSION
+  # docker-desktop   Ready    control-plane   111m   v1.24.2
+
+  # describe the node
+  kubectl describe nodes docker-desktop
+
+  # ls the dns deployment
+  kubectl get deployment --namespace=kube-system core-dns
+  # ⇒ not found
+
+  kubectl get services --namespace=kube-system core-dns
+  # ⇒ not found
+  #+end_src
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

@@ -1,0 +1,134 @@
+set-strictmode -version 3
+set-alias gh get-help
+set-alias l Get-ChildItem
+
+if ( "r" -in (alias).name) {remove-alias -name r}
+
+
+# Where is the script file that contains the function dev which enters the
+# developer shell
+
+# Where is the script file that contains the function dev which enters the
+# developer shell
+
+$DEVFILE = (Get-ChildItem $PROFILE).DirectoryName + "\" + `
+  (Get-ChildItem $PROFILE).BaseName + "-dev.ps1"
+
+. $DEVFILE
+
+$bds = @{ 413 = "头逼";
+          303 = "董昊，斯大林";
+          925 = "10c"}
+
+$dcode = (get-date).month * 100 + (get-date).day
+$msg = $bds[$dcode]
+function Prompt{
+    write-host "`n----------------------------"
+    write-host "Now it's " (date).tostring()
+    if($msg) {write-host "今天 $msg 生日"}
+    write-host "The current dir is $(get-location)"
+    host.ui.rawui.windowtitle = "My Shell"
+    "`b"
+}
+
+function cppat { "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" | set-clipboard}
+function cpdir {($pwd).tostring() | set-clipboard}
+
+function got{
+    write-host "Where to go ?"
+    $h = @{"hm" = 'c:\users\congj';
+           "t"  = 'C:\Users\congj\AppData\Roaming\Templates'
+           "l"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn'
+           "f"  = 'C:\Users\congj\Desktop\fun\'
+         }
+    $h
+    $x = read-host "enter your key"
+    if ($x -in $h.keys){
+        write-host "Address Found"
+        cd $h[$x]
+    }else{
+        write-host " not found"
+    }
+}
+
+function msR
+{    # open the ms R
+    . "C:\Program Files\Microsoft\R Open\R-4.0.2\bin\x64\R.exe"}
+
+
+# Get the files in a folder within some days.
+function Get-TodayChildItem
+{
+    Param (
+        $Folder = '.',
+        [PSDefaultValue(Help = '1')]
+        $DaysWithin = 1
+    )
+    # Use space + backquote to change line
+    Get-ChildItem $Folder | Where-Object { `
+      ((Get-Date) - ($_.LastWriteTime)).TotalDays `
+      -LE $DaysWithin}
+}
+set-alias tls Get-TodayChildItem
+
+Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardChar
+Set-PSReadLineKeyHandler -Chord Alt+f -Function NextWord
+Set-PSReadLineKeyHandler -Chord Alt+b -Function BackwardWord
+Set-PSReadLineKeyHandler -Chord Ctrl+b -Function BackwardChar
+
+Set-PSReadLineKeyHandler -Chord Ctrl+p -Function PreviousHistory
+Set-PSReadLineKeyHandler -Chord Ctrl+n -Function NextHistory
+
+Set-PSReadLineKeyHandler -Chord Ctrl+k -Function ForwardDeleteLine
+Set-PSReadLineKeyHandler -Chord Ctrl+a -Function BeginningOfLine
+Set-PSReadLineKeyHandler -Chord Ctrl+e -Function EndOfLine
+Set-PSReadLineKeyHandler -Chord Alt+a -Function BeginningOfLine
+Set-PSReadLineKeyHandler -Chord Alt+e -Function EndOfLine
+
+# Function for git
+function g{
+    param(
+        [PSDefaultValue(Help = '100')]
+        $Size = 5
+         )
+    git log --oneline --decorate --all -n $Size
+}
+
+function ga{
+    git add -A
+    git status
+}
+
+
+function Get-y {
+    $a = Read-Host "Enter [y/n]: "
+    $ok = ("y", "yes")
+    $no = ("n", "no")
+    while (! ($a -in ($ok + $no))){
+        $a = Read-Host "Invalid choice, Enter [y/n]: "
+    }
+    if ($a -in $ok){
+        return $True
+    }else{
+        return $False
+    }
+}
+# Function for syncronizing powershell profile
+function pspf{
+    # Push the profile
+    param( [switch] $Push)
+    $d="c:/Users/congj/AppData/Roaming/Templates/scripts/profile.ps1"
+    if ($Push) {
+        Write-host "Pushing PROFILE to ~/Template. Are You Sure?"
+        if (Get-y){
+            Copy-Item $PROFILE -Destination $d
+            Write-host "PROFILE  pushed to $d"
+        }
+    }else{
+        Write-host "Updating PROFILE from ~/Templates. Are You Sure "
+        if (Get-y){
+            Copy-Item $d -Destination $PROFILE
+            Write-host "PROFILE copied from $d"
+        }
+    }
+}

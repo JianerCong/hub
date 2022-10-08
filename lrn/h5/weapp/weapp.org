@@ -1,0 +1,8 @@
+** 用npm
++ init a weapp project
++ in the project folder ~npm init~
++ in the weapp editor 工具 > 构建npm
++ 之后就可以用一下方法来加 tdesign 的官方ui 库
+#+begin_src bash
+npm i tdesign-miniprogram -S --production
+#+end_src

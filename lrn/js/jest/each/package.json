@@ -1,0 +1,14 @@
+{
+  "name": "each",
+  "version": "1.0.0",
+  "description": "try the test.each in jest",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  },
+  "author": "me",
+  "license": "ISC",
+  "devDependencies": {
+    "vitest": "^0.23.4"
+  }
+}

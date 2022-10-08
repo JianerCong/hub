@@ -1,0 +1,16 @@
+** user_site
+Run the server with
+#+begin_src bash
+  python manage.py runserver 8002
+#+end_src
+This run the server on localhost 8002
+
+
+It provides the following methods
+
+| url     | Method | Client Json  | Return Json |
+|---------+--------+--------------+-------------|
+| signup/ | POST   | {unam, pswd} | {ok, msg}   |
+| login/  | POST   | {unam, pswd} | {ok, msg}   |
+
+~ok~ is Bool, the rest are all Strings.

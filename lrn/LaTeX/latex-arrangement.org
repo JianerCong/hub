@@ -1,0 +1,306 @@
+** text on margin 
+*** the built-in way
+#+begin_src latex
+\documentclass[twoside]{article} % Note: uses twoside option
+\usepackage[a4paper, marginparwidth=75pt, total={10cm, 10cm}]{geometry} % To create a small page
+\usepackage{hyperref} % To use the \url command (in the footnote)
+\usepackage{marginnote}
+\usepackage{mparhack}
+\begin{document}
+\section{Lorem Ipsum}
+\footnote{Source text: Wikipedia
+  (\url{https://en.wikipedia.org/wiki/Lorem_ipsum})}
+But I must explain to you
+how all this mistaken idea of reprobating pleasure and extolling pain arose. To
+do so, I will give you a complete account of the system, and expound the actual
+teachings of the great explorer of the truth, the master-builder of human
+happiness. 
+\marginpar[Note 1: text for left-hand side text]{Note 1: text for
+  right-hand side of pages, it is set justified.} 
+No one rejects, dislikes or
+avoids pleasure itself, because it is pleasure, but because those who do not
+know how to pursue pleasure rationally encounter consequences that are extremely
+painful. Nor again is there anyone who loves or pursues or desires to obtain
+pain of itself, because it is pain, but occasionally circumstances occur in
+which toil and pain can procure him some great pleasure. \marginpar[Note 2: text
+for left-hand side text]{\raggedright Note 2: text for right-hand side of pages,
+  it is not justified, but uses \texttt{\string\raggedright}.} To take a trivial
+example, which of us ever undertakes laborious physical exercise, except to
+obtain some advantage from it? But who has any right to find fault with a man
+who chooses to enjoy a pleasure that has no annoying consequences, or one who
+avoids a pain that produces no resultant pleasure? [33] On the other hand, we
+denounce with righteous indignation and dislike men who are so beguiled and
+demoralized by the charms of pleasure of the moment, so blinded by desire, that
+they cannot foresee the pain and trouble that are bound to ensue; and equal
+blame belongs to those who fail in their duty through weakness of will, which is
+the same as saying through shrinking from toil and pain. These cases are
+perfectly simple and easy to distinguish. In a free hour, when our power of
+choice is untrammeled and when nothing prevents our being able to do what we
+like best, every pleasure is to be welcomed and every pain avoided.
+\marginpar[\raggedleft Note 3: text for left-hand side of pages, it is not
+justified, but uses \texttt{\string\raggedleft}]{Note 3: text for left-hand side
+  of pages}But in certain circumstances and owing to the claims of duty or the
+obligations of business it will frequently occur that pleasures have to be
+repudiated and annoyances accepted. The wise man therefore always holds in these
+matters to this principle of selection: he rejects pleasures to secure other
+greater pleasures, or else he endures pains to avoid worse pains.
+\end{document}
+#+end_src
+*** \usepackage{marginnote}: place on left margin
+#+begin_src latex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Welcome to Overleaf --- just edit your LaTeX on the left,
+% and we'll compile it for you on the right. If you open the
+% 'Share' menu, you can invite other users to edit at the same
+% time. See www.overleaf.com/learn for more info. Enjoy!
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article}
+\usepackage[a5paper, total={3in, 6in}]{geometry} % to create a small page
+\usepackage{hyperref} % To use the \url command (in the footnote)
+\usepackage{marginnote}
+\begin{document}
+\section{Lorem Ipsum}
+\footnote{Source text: Wikipedia
+  (\url{https://en.wikipedia.org/wiki/Lorem_ipsum})}But I must explain to you
+how all this mistaken idea of reprobating pleasure and extolling pain arose. To
+do so, I will give you a complete account of the system, and expound the actual
+teachings of the great explorer of the truth, the master-builder of human
+happiness.
+\marginnote{This is a margin note shifted 2cm, \textit{down} the
+  page, relative to the line in which it is typeset.}[2cm]
+\reversemarginpar\marginnote{This is another margin note but shifted 2cm
+  \textit{up} the page, relative to the line in which it is typeset. It is also
+  in the left-hand margin.}[-2cm]
+To take a trivial example, which of us ever
+pleasures to secure other greater pleasures, or else he endures pains to avoid
+worse pains.
+\end{document}
+#+end_src
+** ~fancyhdr~
+*** basic
+#+begin_src latex
+\documentclass{article}
+\title{Try \texttt{fancyhdr}}
+\author{Jianer Cong}
+\date{\today}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+
+\usepackage{fancyhdr}
+\fancyhead[L,C]{}
+\fancyhead[R]{\textbf{The performance of new graduates}}
+\fancyfoot[L]{From: K. Grant}
+\fancyfoot[C]{To: Dean A. Smith}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{2pt}
+\pagestyle{fancy}
+\begin{document}
+\maketitle
+In fact the standard \LaTeX{} classes have the command \verb|\maketitle| defined
+in such a way that a \verb|\thispagestyle{plain}| is automatically issued. So if
+you do want the fancy layout on a page containing \maketitle you must issue a
+\verb|\thispagestyle{fancy}| after the \verb|\maketitle|. This is body.
+\thispagestyle{fancy}
+
+\blinddocument{}
+\end{document}
+#+end_src
+*** Change the style of a page
+#+begin_src latex
+  \thispagestyle{plain}           % Eliminate all but the centered page number
+  \thispagestyle{empty}           % No headers or footers
+#+end_src
+*** Redefining page style plain
+Some LaTeX commands, like ~\chapter~, use the ~\thispagestyle~ command to
+automatically switch to the plain page style, thus ignoring the page style
+currently in effect. They do this by issuing a ~\thispagestyle{plain}~ command.
+#+begin_src latex
+\documentclass{article}
+\title{Try \texttt{fancyhdr}}
+\author{Jianer Cong}
+\date{\today}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+
+
+\usepackage{fancyhdr}
+\fancyhead[L,C]{}
+\fancyhead[R]{\textbf{The performance of new graduates}}
+\fancyfoot[L]{From: K. Grant}
+\fancyfoot[C]{To: Dean A. Smith}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{2pt}
+\pagestyle{fancy}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}% clear all header and footer fields
+  \fancyfoot[C]{\textbf{--~\thepage~--}} % except the center
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+
+\begin{document}
+\maketitle
+In the first page we got the plain pagestyle.
+\blinddocument{}
+\thispagestyle{plain}           % Eliminate all but the centered page number
+Here we got another plain pagestyle.
+\end{document}
+#+end_src
+*** place text on page using the ~current page~ node
+#+begin_src latex
+\documentclass{article}
+\title{Try \texttt{fancyhdr}}
+\author{Jianer Cong}
+\date{\today}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+\usepackage{tikz}
+
+\newcommand{\mylowertext}{
+  \pgfrememberpicturepositiononpagetrue{}
+  \begin{pgfpicture}
+    \pgfusepath{use as bounding box}
+    \pgftransformshift{\pgfpointanchor{current page}{south west}}
+    \pgftransformshift{\pgfpoint{1cm}{1cm}}
+    \pgftext[left,base]{
+      \textcolor{red}{I am printed in every page.}
+    }
+  \end{pgfpicture}
+}
+
+\usepackage{fancyhdr}
+\fancyfoot[C]{My footer \mylowertext{}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{2pt}
+\pagestyle{fancy}
+
+
+\begin{document}
+% In fact the standard \LaTeX{} classes have the command \verb|\maketitle| defined
+% in such a way that a \verb|\thispagestyle{plain}| is automatically issued. So if
+% you do want the fancy layout on a page containing \maketitle you must issue a
+% \verb|\thispagestyle{fancy}| after the \verb|\maketitle|. This is body.
+% \thispagestyle{fancy}
+
+
+\Blinddocument{}
+\end{document}
+#+end_src
+*** the word-style triangles in TeX
+#+begin_src latex
+\documentclass[dvipsnames]{article}
+\title{Try \texttt{fancyhdr} with triangles}
+\author{Jianer Cong}
+\date{\today}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+\usepackage{tikz}
+
+% These parameter control the footer and header triangles 
+\newcommand{\mycol}{Aquamarine}
+\newdimen\myx{}
+\newdimen\myy{}
+\myx=1.5cm
+\myy=1.5cm
+
+\newcommand{\mylowertext}{
+  \pgfrememberpicturepositiononpagetrue{}
+  \begin{pgfpicture}
+    \pgfusepath{use as bounding box}
+    \pgftransformshift{\pgfpointanchor{current page}{south west}}
+    % \pgftransformshift{\pgfpoint{1cm}{1cm}}
+
+    \pgfsetfillopacity{0.5}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{3\myy}}
+    \pgfsetfillcolor{\mycol!60}
+    \pgfusepath{fill}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{2\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{2\myy}}
+    \pgfsetfillcolor{\mycol!80}
+    \pgfusepath{fill}
+
+    
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{3\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{\myy}}
+    \pgfsetfillcolor{\mycol}
+    \pgfusepath{fill}
+
+    
+    \pgftransformshift{\pgfpointanchor{current page}{north east}}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{-\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{-3\myy}}
+    \pgfsetfillcolor{\mycol!60}
+    \pgfusepath{fill}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{-2\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{-2\myy}}
+    \pgfsetfillcolor{\mycol!80}
+    \pgfusepath{fill}
+
+    
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{-3\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{-\myy}}
+    \pgfsetfillcolor{\mycol}
+    \pgfusepath{fill}
+
+  \end{pgfpicture}
+}
+
+\usepackage{fancyhdr}
+\fancyfoot[C]{\mylowertext{}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{2pt}
+\pagestyle{fancy}
+
+
+\begin{document}
+% In fact the standard \LaTeX{} classes have the command \verb|\maketitle| defined
+% in such a way that a \verb|\thispagestyle{plain}| is automatically issued. So if
+% you do want the fancy layout on a page containing \maketitle you must issue a
+% \verb|\thispagestyle{fancy}| after the \verb|\maketitle|. This is body.
+% \thispagestyle{fancy}
+
+
+\Blinddocument{}
+\end{document}
+#+end_src
+** placeholder text
+With this package you can create dummy text. Use \blindtext to get
+some text and \Blindtext to get a long text. With \blinddocument (or
+\Blinddocument) you get complete dummy documents.
+#+begin_src latex
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{blindtext}
+\blindtext{}
+#+end_src
+* End
+
+
+# Local Variables:
+# org-what-lang-is-for: "latex"
+# End:

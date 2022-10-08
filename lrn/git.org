@@ -1,0 +1,14 @@
+* Modifying History
+| To-Do                                             | Command                                  | Warning                               |
+|---------------------------------------------------+------------------------------------------+---------------------------------------|
+| change the last commit (both content and message) | commit --amend                           | Do not do after push                  |
+| change the last commit (only content)             | commit --amend --no-edit                 |                                       |
+| watch the last 3 commits and format               | log --pretty=format:"%h %s" HEAD~3..HEAD |                                       |
+| watch the last 3 commits                          | log -n 3                                 |                                       |
+
+** Combine 3 commits into one
+
+First ~rebase -i HEAD~3..HEAD~. We then enter the editor.
+Next change the commands before commits
+from ~pick-pick-pick~ to ~pick-squash-squash~.
+...

@@ -1,0 +1,75 @@
+** Art and Misc
+*** audio-recorder
+https://www.maketecheasier.com/record-system-sound-linux/
+#+begin_src bash
+  sudo apt install audacity pavucontrol
+
+#+end_src
+
+*** AB repeat
+#+begin_src bash
+  sudo apt install vlc
+#+end_src
+View > Advanced Controls
+*** pdf to png
+    #+begin_src bash
+      sudo apt install poppler-utils
+      # Convert all page of doc.pdf png
+      pdftoppm -png doc.pdf my_out
+      # ⇒ my_out-1.png, my_out-2.png,...
+
+      # Convert page 5 to 15 of pdf to png
+      pdftoppm -png -f 5 -l 15 doc.pdf my_out
+
+      # Change dpi from 150(default) to 300
+      pdftoppm -png -rx 300 -ry 300 doc.pdf my_out
+    #+end_src
+*** Audio
+#+BEGIN_SRC bash
+  speaker-test
+  alsamixer                       # on pi
+  aplay hi.wav
+#+END_SRC
+*** firefox not playing video
+ #+begin_src bash
+sudo apt install ffmpeg
+ #+end_src
+*** install font from ttf files
+#+begin_src bash
+  sudo mkdir /usr/share/fonts/truetype/SourceCodePro
+  sudo mv *.ttf /usr/share/fonts/truetype/SourceCodePro/
+  ls  /usr/share/fonts/truetype/SourceCodePro
+  fc-cache -f -v
+  #+end_src
+*** Get the SourceCodePro
+#+begin_src bash
+git clone https://github.com/adobe-fonts/source-code-pro.git SourceCodePro
+cd SouceCodePro/TTF
+sudo mkdir /usr/share/fonts/truetype/SourceCodePro/
+sudo mv *.ttf /usr/share/fonts/truetype/SourceCodePro/
+ls  /usr/share/fonts/truetype/SourceCodePro
+fc-cache -f -v
+cd ../..
+rm -rf SourceCodePro
+
+#+end_src
+** Packages
+*** Snap
+#+begin_src bash
+  sudo snap install hello
+  hello
+  sudo snap refresh
+  ls /snap
+  sudo snap remove hello
+ #+end_src
+** Chinese
+  #+begin_src bash
+    sudo apt-get install ibus-pinyin
+    ibus restart
+  #+end_src
+  
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# fill-column: 50
+# End:

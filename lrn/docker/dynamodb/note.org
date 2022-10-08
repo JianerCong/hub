@@ -1,0 +1,58 @@
+** cli for local
+#+begin_src bash
+  aws dynamodb list-tables --region eu-west-2 # my tables in London
+
+  # my tables here
+  aws dynamodb list-tables --endpoint-url http://localhost:8000
+
+
+  # create table locally
+  tableName=myLocalTable
+  loc="--endpoint-url http://localhost:8000"
+  aws dynamodb create-table \
+      --table-name $tableName \
+      --attribute-definitions AttributeName=uid,AttributeType=S \
+      --key-schema AttributeName=uid,KeyType=HASH \
+      --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
+      $loc
+
+  # delete the table
+  aws dynamodb delete-table --table-name $tableName $loc
+
+  # describe the table
+  aws dynamodb describe-table  --table-name $tableName $loc
+
+  # scan the table
+  aws dynamodb scan --table-name $tableName $loc
+#+end_src
+** run local dynamodb
+#+begin_src bash
+docker run -p 8000:8000 --name mydynamo amazon/dynamodb-local 
+#+end_src
+** boto3
+*** init the client
+#+begin_src python
+  import boto3
+
+  # For a Boto3 client.
+  ddb = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+  response = ddb.list_tables()
+  print(response)
+
+  # For a Boto3 service resource
+  ddb = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
+  print(list(ddb.tables.all()))
+#+end_src
+*** put and get
+#+begin_src python
+  dynamodb = boto3.client('dynamodb')
+  dynamodb.get_item(TableName='fruitSalad', Key={'fruitName':{'S':'Banana'}})
+  dynamodb.put_item(TableName='fruitSalad', Item={'fruitName':{'S':'Banana'},'key2':{'N':'value2'}})
+
+#+end_src
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

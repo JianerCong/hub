@@ -1,0 +1,140 @@
+\newdimen\myx{}
+\newdimen\myy{}
+\myx=1.5cm
+\myy=1.5cm
+
+\newcommand{\mylowertext}{
+  \pgfrememberpicturepositiononpagetrue{}
+  \begin{pgfpicture}
+    \pgfusepath{use as bounding box}
+    \pgftransformshift{\pgfpointanchor{current page}{south west}}
+    % \pgftransformshift{\pgfpoint{1cm}{1cm}}
+
+    \pgfsetfillopacity{0.5}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{3\myy}}
+    \pgfsetfillcolor{\mycoli!60}
+    \pgfusepath{fill}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{2\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{2\myy}}
+    \pgfsetfillcolor{\mycol!80}
+    \pgfusepath{fill}
+
+    
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{3\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{\myy}}
+    \pgfsetfillcolor{\mycoli}
+    \pgfusepath{fill}
+
+    
+    \pgftransformshift{\pgfpointanchor{current page}{north east}}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{-\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{-3\myy}}
+    \pgfsetfillcolor{\mycol!60}
+    \pgfusepath{fill}
+
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{-2\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{-2\myy}}
+    \pgfsetfillcolor{\mycoli!80}
+    \pgfusepath{fill}
+
+    
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{-3\myx}{0cm}}
+    \pgfpathlineto{\pgfpoint{0cm}{-\myy}}
+    \pgfsetfillcolor{\mycol}
+    \pgfusepath{fill}
+
+  \end{pgfpicture}
+}
+
+\usepackage{fancyhdr}
+\fancyhead[L,C,R]{}               %disable headers
+\fancyfoot[C]{\mylowertext{}}
+\fancyfoot[R]{\textcolor{\mycol!20}{\bfseries \small 兵者国之大事，不可不察也。兵者不祥之器，不得已而为之。}}
+\fancyfoot[L]{}               %disable footers
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\pagestyle{fancy}
+
+
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{breakable}
+\tcbsetforeverylayer{breakable}
+
+% Box the itemize env and set border line for the outer box
+% \tcolorboxenvironment{itemize}{
+%   blanker,
+%   before skip=6pt,after skip=6pt,
+%   coltext=\mycol!80!black
+% }
+
+
+\newtcolorbox{myitems}{tile,
+  grow to right by=0.5cm,
+  grow to left by=-1.5cm,
+  % toggle enlargement=none,toggle left and right=none,
+  breakable}
+\newtcolorbox{mybox}{
+  bicolor,
+  sharp corners=west,
+  leftrule=3mm,
+  grow to left by=0.5cm,
+  colback=gray!50!black,
+  colupper=white,
+  segmentation style={solid,gray!20!white,very thick},
+  % colbacklower=gray!20!white,
+  % toggle enlargement=none,toggle left and right=none
+}
+
+\usepackage{titlesec}
+\newcommand{\h}{15pt}
+
+\tcbuselibrary{skins}
+
+\tcbset{myone/.style={nobeforeafter,show bounding box,
+    equal height group=A,size=small,tcbox raise =-5pt
+    % ,colframe=\mycoli!80!black
+  }}
+
+\titleformat{\section}[hang]{\large\bfseries}{
+  \tcbox[myone,sharp corners=all,
+  colback=black,fontupper=\color{white},
+  enlarge right by =-5pt]{材料}
+  \tcbox[myone,sharp corners=west,top=2pt,bottom=-2pt,
+  fontupper=\color{black}]{\thetitle}}{10pt}{\parskip=0pt}
+%                                      space between label and heading
+
+% space between title and sections
+% Change the spacing
+\titlespacing*{\section}{0pt}{\baselineskip}{0pt}
+%                       left before-sep after-sep
+
+
+\newtcbox{\mylib}{enhanced,nobeforeafter,tcbox raise base,boxrule=0.4pt,top=0mm,bottom=0mm,
+  right=0mm,left=4mm,arc=1pt,boxsep=2pt,before upper={\vphantom{dlg}},
+  colframe=green!50!black,coltext=green!25!black,colback=green!10!white,
+  overlay={\begin{tcbclipinterior}\fill[green!75!blue!50!white] (frame.south west)
+      rectangle node[text=white,font=\sffamily\bfseries\tiny,rotate=90] {LIB} ([xshift=4mm]frame.north west);\end{tcbclipinterior}}}
+% \robustify{\mylib}
+
+
+
+%% Do not use exotic icon: less is more
+% \usepackage{fontspec}
+% \usepackage{fontawesome}
+% \renewcommand{\labelitemi}{\faFile}
+
+\renewcommand{\labelitemi}{$\bullet$}
+\renewcommand{\labelitemii}{$\circ$}
+\renewcommand{\labelitemiii}{$\star$}
+\renewcommand{\labelitemiv}{$\circ$}

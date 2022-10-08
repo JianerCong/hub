@@ -1,0 +1,5 @@
+** Ports
+auth-backend listens to 8002
+backend listens to 8001
+
+Use GET /hi to the two ports to test them.

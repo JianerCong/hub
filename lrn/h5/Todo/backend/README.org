@@ -1,0 +1,63 @@
+** todo backend
+*** Env
+This is the todo-list app beckend. It expects a MongoDB running on
+~localhost:27017~, or as specified in ~MONGO_RUL~ env. It listens to port ~8001~
+or as specified in ~APP_PORT~ env.
+
+The app will use/create a database named ~todos~. The collection(table) name will be
+~todoItems~.
+
+If the env ~DEBUG~ is set or the command-line argument ~test~ is given, then The
+app will use/create a database named ~test~.
+
+*** APIs
+Following APIs are defined:
+| Method | Path           | client json      | Description          |
+|--------+----------------+------------------+----------------------|
+| GET    | /todos/        | {unam}           | Get all (todo) items |
+| POST   | /todos/getall/ | {unam}           | same as the previous |
+| POST   | /todos/        | {name,done,unam} | Create new item      |
+| DELETE | /todos/        | {unam}           | Delete all items     |
+Now all methods takes an optional argument ~unam~, which specifies which user
+the commands are acting on.
+
+#+begin_quote
+The forth method can be used when some browsers drop the data section of a GET
+request.
+#+end_quote
+
+The following three id-based method is deprecated.
+| PUT    | /todos/:id | Update a item        |
+| DELETE | /todos/:id | Delete one item      |
+| GET    | /todos/:id | Get one items        |
+
+
+*** Run the app
+#+begin_src bash
+  node app.js
+#+end_src
+
+*** Run in docker
+**** run the mongo db
+#+begin_src bash
+  docker network create todo-app
+  docker network ls               # make sure the todo-app network is established
+
+  # run the mongo container in the todo-app network
+  # give it a 'hostname' of 'mongo'
+  docker run -dp 27017:27017 \
+         --network todo-app \
+         --network-alias mongo \
+         --name mymongo mongo:latest
+
+  # build the backend container
+  docker build -t todo-backend .
+
+  docker run -dp 8001:8001 --network todo-app \
+         -e MONGO_HOST=mongo \
+         --network-alias back \
+         --name todo-back \
+         --rm \
+         todo-backend
+
+#+end_src

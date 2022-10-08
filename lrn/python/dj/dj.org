@@ -1,0 +1,362 @@
+** django official tut
+*** Tut 1
+**** create project
+#+begin_src bash
+  python -m django --version
+  django-admin startproject mysite
+#+end_src
+
+#+RESULTS:
+⇒ 4.1
+
+
+#+RESULTS:
+: 4.1
+**** dev server
+#+begin_src bash
+    python manage.py runserver
+  # python manage.py runserver 8080
+  # python manage.py runserver 0:8000
+#+end_src
+Ignore the warning about unapplied database migrations for now; we’ll deal with
+the database shortly.
+**** create poll app
+#+begin_src bash
+python manage.py startapp polls
+#+end_src
+**** write first view in ~polls/views.py~
+#+begin_src python
+from django.http import HttpResponse
+
+def index(request):
+    return HttpResponse("Hello, world. You're at the polls index.")
+    #+end_src
+**** add to url in ~polls/urls.py~
+#+begin_src python
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='index'),
+]
+#+end_src
+**** wire it into the main site: ~mysite/urls.py~
+#+begin_src python
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path('polls/', include('polls.urls')),
+    path('admin/', admin.site.urls),
+]
+#+end_src
+
+**** curl the app
+#+begin_src bash
+curl http://127.0.0.1:8000/polls/
+#+end_src
+*** Tut2 db setup
+In mysite/settings.py. Edit DATABASES, ...
+**** sync to db
+#+begin_src bash
+python manage.py migrate
+#+end_src
+The migrate command looks at the INSTALLED_APPS setting and creates any
+necessary database tables according to the database settings in your
+mysite/settings.py file and the database migrations shipped with the app (we’ll
+cover those later).
+
+You’ll see a message for each migration it applies. If you’re interested, run
+the command-line client for your database and type \dt (PostgreSQL), SHOW
+TABLES; (MariaDB, MySQL), .tables (SQLite), or SELECT TABLE_NAME FROM
+USER_TABLES; (Oracle) to display the tables Django created.
+
+**** create models and get ready to send to db
+
++ Edit  ~polls/models.py~
++ activate the model
+  + Add  'polls.apps.PollsConfig' to mysite/settings.py::INSTALLED_APPS
+  + run
+#+begin_src bash
+python manage.py makemigrations polls
+#+end_src
+
+This does two things:
+#+begin_center
+1. Create a database schema (CREATE TABLE statements) for this app.
+2. Create a Python database-access API for accessing Question and Choice objects.
+#+end_center
+***** inspect the migration (optional)
+Migrations are how Django stores changes to your models (and thus your database
+schema) - they’re files on disk. You can read the migration for your new model
+if you like; it’s the file ~polls/migrations/0001_initial.py~.
+
+Don’t worry, you’re not expected to read them every time Django makes one, but
+they’re designed to be human-editable in case you want to manually tweak how
+Django changes things.
+#+begin_src bash
+python manage.py sqlmigrate polls 0001
+#+end_src
+
+**** send the models to db
+#+begin_src bash
+python manage.py migrate
+#+end_src
+
+**** use the api
+#+begin_src bash
+python manage.py shell
+#+end_src
+# We’re using this instead of simply typing “python”, because manage.py sets the
+# DJANGO_SETTINGS_MODULE environment variable, which gives Django the Python
+# import path to your mysite/settings.py file.
+Use basic
+#+begin_src python
+  from polls.models import Choice, Question  # Import the model classes we just wrote.
+
+  # No questions are in the system yet.
+  Question.objects.all()
+    # <QuerySet []>
+
+  # Create a new Question.
+  # Support for time zones is enabled in the default settings file, so
+  # Django expects a datetime with tzinfo for pub_date. Use timezone.now()
+  # instead of datetime.datetime.now() and it will do the right thing.
+  from django.utils import timezone
+  q = Question(question_text="What's new?", pub_date=timezone.now())
+
+  # Save the object into the database. You have to call save() explicitly.
+  q.save()
+
+  # Now it has an ID.
+  q.id
+  # ⇒ 1
+
+  # Access model field values via Python attributes.
+  q.question_text
+  # ⇒ "What's new?"
+  q.pub_date
+  # ⇒ datetime.datetime(2012, 2, 26, 13, 0, 0, 775217, tzinfo=<UTC>)
+
+  # Change values by changing the attributes, then calling save().
+  q.question_text = "What's up?"
+  q.save()
+
+  # objects.all() displays all the questions in the database.
+  Question.objects.all()
+  # ⇒ <QuerySet [<Question: Question object (1)>]>
+#+end_src
+Use defined methods
+#+begin_src python
+  from polls.models import Choice, Question
+
+  # Make sure our __str__() addition worked.
+  Question.objects.all()
+  # ⇒ <QuerySet [<Question: What's up?>]>
+
+  # Django provides a rich database lookup API that's entirely driven by
+  # keyword arguments.
+  Question.objects.filter(id=1)
+  # ⇒ <QuerySet [<Question: What's up?>]>
+  Question.objects.filter(question_text__startswith='What')
+  # ⇒ <QuerySet [<Question: What's up?>]>
+
+  # Get the question that was published this year.
+  from django.utils import timezone
+  current_year = timezone.now().year
+  Question.objects.get(pub_date__year=current_year)
+  # ⇒ <Question: What's up?>
+
+  # Request an ID that doesn't exist, this will raise an exception.
+  Question.objects.get(id=2)
+  # ⇒ Traceback (most recent call last):
+  # ⇒ ...
+  # ⇒ DoesNotExist: Question matching query does not exist.
+
+  # Lookup by a primary key is the most common case, so Django provides a
+  # shortcut for primary-key exact lookups.
+  # The following is identical to Question.objects.get(id=1).
+  Question.objects.get(pk=1)
+  # ⇒ <Question: What's up?>
+
+  # Make sure our custom method worked.
+  q = Question.objects.get(pk=1)
+  q.was_published_recently()
+  True
+
+  # Give the Question a couple of Choices. The create call constructs a new
+  # Choice object, does the INSERT statement, adds the choice to the set
+  # of available choices and returns the new Choice object. Django creates
+  # a set to hold the "other side" of a ForeignKey relation
+  # (e.g. a question's choice) which can be accessed via the API.
+  q = Question.objects.get(pk=1)
+
+  # Display any choices from the related object set -- none so far.
+  q.choice_set.all()
+  # ⇒ <QuerySet []>
+
+  # Create three choices.
+  q.choice_set.create(choice_text='Not much', votes=0)
+  # ⇒ <Choice: Not much>
+  q.choice_set.create(choice_text='The sky', votes=0)
+  # ⇒ <Choice: The sky>
+  c = q.choice_set.create(choice_text='Just hacking again', votes=0)
+
+  # Choice objects have API access to their related Question objects.
+  c.question
+  # ⇒ <Question: What's up?>
+
+  # And vice versa: Question objects get access to Choice objects.
+  q.choice_set.all()
+  # ⇒ <QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+  q.choice_set.count()
+  # ⇒ 3
+
+  # The API automatically follows relationships as far as you need.
+  # Use double underscores to separate relationships.
+  # This works as many levels deep as you want; there's no limit.
+  # Find all Choices for any question whose pub_date is in this year
+  # (reusing the 'current_year' variable we created above).
+  Choice.objects.filter(question__pub_date__year=current_year)
+  # ⇒ <QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+
+  # Let's delete one of the choices. Use delete() for that.
+  c = q.choice_set.filter(choice_text__startswith='Just hacking')
+  c.delete()
+#+end_src
+*** Django admin
+**** Create admin user
+#+begin_src bash
+python manage.py createsuperuser
+#+end_src
+Username: admin
+Email address: ...
+pswd: 51682651
+**** enter the admin site
+http://127.0.0.1:8000/admin/.
+**** make the poll app modifiable in the admin
++ Register the app in ~polls/admin.py~
++ Refresh the admin portal to see it updates.
+*** Tut3 views
+**** write 4 useless views
+Write more views in ~polls/views.py~
+#+begin_src python
+def detail(request, question_id):
+    return HttpResponse("You're looking at question %s." % question_id)
+
+def results(request, question_id):
+    response = "You're looking at the results of question %s."
+    return HttpResponse(response % question_id)
+
+def vote(request, question_id):
+    return HttpResponse("You're voting on question %s." % question_id)
+    #+end_src
+Wire these new views into the ~polls.urls~ module by adding the following
+~path()~ calls
+#+begin_src python
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    # ex: /polls/
+    path('', views.index, name='index'),
+    # ex: /polls/5/
+    path('<int:question_id>/', views.detail, name='detail'),
+    # ex: /polls/5/results/
+    path('<int:question_id>/results/', views.results, name='results'),
+    # ex: /polls/5/vote/
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+#+end_src
+**** test
+#+begin_src bash
+curl http://localhost:8000/polls/12/
+curl http://localhost:8000/polls/12/vote/
+curl http://localhost:8000/polls/12/results/
+#+end_src
+**** how router works (optional)
+Take a look in your browser, at “/polls/34/”. It’ll run the ~detail()~ method
+and display whatever ID you provide in the URL. Try ~“/polls/34/results/”~ and
+~“/polls/34/vote/”~ too – these will display the placeholder results and voting
+pages.
+
++ When somebody requests a page from your website – say, ~“/polls/34/”~, Django
+  will load the ~mysite.urls~ Python module because it’s pointed to by the
+  ~ROOT_URLCONF~ setting.
++ It finds the variable named urlpatterns and traverses the patterns in order.
++ After finding the match at ~'polls/'~ , it strips off the matching text
+  ("polls/") and sends the remaining text – "~34/~" – to the ~‘polls.urls’~
+  URLconf for further processing.
++ There it matches ~'<int:question_id>/'~, resulting in a call to the detail()
+  view like so: ~detail(request=<HttpRequest object>, question_id=34)~
+**** write useful views
+Each view is responsible for doing one of two things:
++ returning an ~HttpResponse~ object containing the content for the requested
+  page, or
++ raising an exception such as ~Http404~.
+***** what you can do
+Your view can read records from a database, or not. It can use a template system
+such as Django’s – or a third-party Python template system – or not. It can
+generate a PDF file, output XML, create a ZIP file on the fly, anything you
+want, using whatever Python libraries you want.
+**** remove hard-coded url in template
+Since you defined the name argument in the path() functions in the
+polls.urls module, you can remove a reliance on specific URL paths defined in
+your url configurations by using the {% url %} template tag:
+#+begin_src html
+  {% for question in latest_question_list %}
+      <!-- <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li> -->
+      <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+  {% endfor %}
+#+end_src
+**** namespacing url 
+In ~polls/urls.py~
+#+begin_src python
+app_name = 'polls'
+#+end_src
+In ~polls/index.html~
+#+begin_src html
+  <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text
+  }}</a></li>
+#+end_src
+*** Tut4 generic views
+Few steps to make the conversion.
+
+1. Convert the URLconf.
+2. Delete some of the old, unneeded views.
+3. Introduce new views based on Django’s generic views.
+*** Tut5 tests
+Run tests in ~polls/tests.py~
+#+begin_src bash
+  python manage.py test polls
+        #+end_src
+** django mdn
+** cors()
+*** Install
+#+begin_src bash
+python -m pip install django-cors-headers
+#+end_src
+*** Add to your installed apps
+#+begin_src python
+  INSTALLED_APPS = (
+      ...
+      'corsheaders',
+      ...
+  )
+
+  MIDDLEWARE = [
+      ...,
+      'corsheaders.middleware.CorsMiddleware',
+      'django.middleware.common.CommonMiddleware',
+      ...,
+  ]
+#+end_src
+See https://github.com/adamchainz/django-cors-headers#configuration
+** issues
++ GET 301 :: forgot to include a trailing slash 
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

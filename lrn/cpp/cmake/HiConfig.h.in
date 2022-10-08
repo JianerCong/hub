@@ -1,0 +1,4 @@
+// the configured options and settings for Tutorial
+#define Hi_VERSION_MAJOR @Hi_VERSION_MAJOR@
+#define Hi_VERSION_MINOR @Hi_VERSION_MINOR@
+

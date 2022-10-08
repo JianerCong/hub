@@ -1,0 +1,37 @@
+** 20 minibuffer
+*** 20.3 read expression
+#+begin_src emacs-lisp
+  ;; Get an ready-to-evaluate expression
+  (setq x (read-minibuffer "Enter an expression: " nil))
+  x                                       ;(+ 1 1)
+  (eval x)                                ;2
+
+  ;; Get an evaluated expression
+  (setq x (eval-minibuffer "Enter an expression: " nil)) ;⇒ 2
+
+  ;; Offer the user an expression to edit
+  (edit-and-eval-command "Please edit: " '(forward-word 1))
+#+end_src
+*** 20.4 history
+**** What is a *minibufferHistoryList* ?
+a list of string: latest first.
+**** When are they useful? What is your job?
+They are used as the arguments to ~read-from-minibuffer~ or ~completing-read~
+My job is to pick the right history list for the user.
+**** What are the possible values for the ~history~ arguments?
+1. a variable
+2. a ~(var . startpos)~ So that the list from startpos is used. startpos=0 ⇒
+   same as just a variable
+**** What if you don't specify a history?
+The default is used
+#+begin_src emacs-lisp
+  minibuffer-history                      ;("org.e" "org-which-lang-is-for"
+                                          ... 
+                                          ;"pmatch" "nmatch" "TRY_MATCH(0);"
+                                          ;"TRY_MATCH" "##")
+
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "emacs-lisp"
+# End:

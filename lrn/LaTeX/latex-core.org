@@ -1,0 +1,1023 @@
+# -*- org-what-lang-is-for: "latex"; -*-
+** math
+*** brackets
+Type 	LaTeX markup 	Renders as
+Parentheses; round brackets , 	(x+y) ,	(x+y)
+Brackets; square brackets   ,	[x+y] ,[x+y]
+Braces; curly brackets      ,	\{ x+y \},	{x+y}
+Angle brackets              ,	\langle x+y \rangle,	⟨x+y⟩
+Pipes; vertical bars        ,|x+y| ,|x+y|
+Double pipes                ,	\|x+y\| ,∥x+y∥
+**** Big brackets
+#+BEGIN_SRC latex
+\[ 
+ \left[  \frac{ N } { \left( \frac{L}{p} \right)  - (m+n) }  \right]
+\]
+#+END_SRC
+*** requirements
+#+BEGIN_SRC latex
+\usepackage{amsmath} 
+#+END_SRC
+*** align
+#+BEGIN_SRC latex
+\begin{align*}
+x&=y           &  w &=z              &  a&=b+c\\
+2x&=-y         &  3w&=\frac{1}{2}z   &  a&=b\\
+-4 + 5x&=2+y   &  w+2&=-1+w          &  ab&=cb
+\end{align*}
+
+\begin{gather*} 
+2x - 5y =  8 \\ 
+3x^2 + 9y =  3a + c
+\end{gather*}
+
+\begin{equation} \label{eq1}
+\begin{split}
+A & = \frac{\pi r^2}{2} \\
+ & = \frac{1}{2} \pi r^2
+\end{split}
+\end{equation}
+
+#+END_SRC
+*** ref
+#+BEGIN_SRC latex
+
+\begin{equation} \label{eu_eqn}
+e^{\pi i} + 1 = 0
+\end{equation}
+
+The beautiful equation \ref{eu_eqn} is known as the Euler equation.
+#+END_SRC
+*** fraction
+\usepackage{amsmath}
+#+BEGIN_SRC latex
+The fractions can be nested
+
+\[ \frac{1+\frac{a}{b}}{1+\frac{1}{1+\frac{1}{a}}} \]
+
+Now a wild example
+
+\[
+  a_0+\cfrac{1}{a_1+\cfrac{1}{a_2+\cfrac{1}{a_3+\cdots}}}
+\]
+
+#+END_SRC
+*** spacing
+#+BEGIN_SRC latex
+
+\documentclass{article}
+\usepackage{amssymb}
+\begin{document}
+Assume we have the next sets
+\[
+S = \{ z \in \mathbb{C}\, |\, |z| < 1 \} \quad \textrm{and} \quad S_2=\partial{S}
+\]
+\end{document}
+#+END_SRC
+*** line spacing
+#+BEGIN_SRC latex
+        \\[-.7cm]               %remove the extra spacing
+#+END_SRC
+*** cases
+#+BEGIN_SRC latex
+Rank(x) = \begin{cases} 
+n/2 &\mbox{if } n \equiv 0 \\
+(3n +1)/2 & \mbox{if } n \equiv 1 
+\end{cases} \pmod{2}. 
+#+END_SRC
+
+#+BEGIN_SRC latex
+% Typeset piecewise functions using cases
+\documentclass{article}
+
+% Required package
+\usepackage{amsmath,amssymb}
+
+\begin{document}
+
+\begin{equation}
+\chi_{\mathbb{Q}}(x)=
+    \begin{cases}
+        1 & \text{if } x \in \mathbb{Q}\\
+        0 & \text{if } x \in \mathbb{R}\setminus\mathbb{Q}
+    \end{cases}
+\end{equation}
+
+\end{document}
+#+END_SRC
+*** matrix
+**** inline matrix
+#+BEGIN_SRC latex
+  \documentclass{article}
+  \usepackage{amsmath}
+  \begin{document}
+  \noindent Trying to typeset an inline matrix here:
+  $\begin{pmatrix}                %or bmatrix
+    a & b\\ 
+    c & d
+  \end{pmatrix}$,  
+  but it looks too big, so let's try 
+  $\big(\begin{smallmatrix}
+    a & b\\
+    c & d
+  \end{smallmatrix}\big)$ 
+  instead.
+  \end{document}
+
+#+END_SRC
+**** matrix with different border
+#+BEGIN_SRC latex
+\documentclass{article}
+\usepackage{amsmath}
+\begin{document}
+
+No border:
+\[\begin{matrix}
+  1 & 2 & 3\\
+  a & b & c
+\end{matrix}\]
+
+Brackets border:                  %]
+\[\begin{bmatrix}
+  1 & 2 & 3\\
+  a & b & c
+\end{bmatrix}\]
+
+Parentheses border                    %)
+\[\begin{pmatrix}
+  1 & 2 & 3\\
+  a & b & c
+\end{pmatrix}\]
+
+Braces border
+\[\begin{Bmatrix}
+  1 & 2 & 3\\
+  a & b & c
+\end{Bmatrix}\]
+
+Vertical pipe                           %|
+\[\begin{vmatrix}
+  1 & 2 & 3\\
+  a & b & c
+\end{vmatrix}\]
+
+Double Vertical Pipes                    %||
+\[\begin{Vmatrix}
+  1 & 2 & 3\\
+  a & b & c
+\end{Vmatrix}\]
+
+
+\end{document}
+
+#+END_SRC
+*** symbol
+\geq
+*** Integral sum and limit
+**** Sum and profuct
+#+begin_src latex
+  Sum $\sum_{n=1}^{\infty} 2^{-n} = 1$ inside text
+  \[ \sum_{n=1}^{\infty} 2^{-n} = 1 \]
+  Product $\prod_{i=a}^{b} f(i)$ inside text
+  \[ \prod_{i=a}^{b} f(i) \]
+#+end_src
+**** All in one example
+#+begin_src latex
+\documentclass{article}
+\title{Integrals, Sums and Limits}
+\author{Overleaf}
+\date{}
+\usepackage{amsmath}
+
+\begin{document}
+
+\maketitle
+
+\section{Integrals}
+
+Integral \(\int_{a}^{b} x^2 dx\) inside text.
+
+\medskip
+
+The same integral on display:
+\[
+    \int_{a}^{b} x^2 \,dx
+\]
+and multiple integrals:
+\begin{gather*}
+    \iint_V \mu(u,v) \,du\,dv
+\\
+    \iiint_V \mu(u,v,w) \,du\,dv\,dw
+\\
+    \iiiint_V \mu(t,u,v,w) \,dt\,du\,dv\,dw
+\\
+    \idotsint_V \mu(u_1,\dots,u_k) \,du_1 \dots du_k
+\\
+    \oint_V f(s) \,ds
+\end{gather*}
+
+\section{Sums and products}
+
+Sum \(\sum_{n=1}^{\infty} 2^{-n} = 1\) inside text.
+
+The same sum on display:
+\[
+    \sum_{n=1}^{\infty} 2^{-n} = 1
+\]
+
+Product \(\prod_{i=a}^{b} f(i)\) inside text.
+
+The same product on display:
+\[
+    \prod_{i=a}^{b} f(i)
+\]
+
+\section{Limits}
+
+Limit \(\lim_{x\to\infty} f(x)\) inside text.
+
+The same limit on display:
+\[
+    \lim_{x\to\infty} f(x)
+\]
+
+\end{document}
+#+end_src
+*** Dirivative
+#+begin_src latex
+  $\frac{\partial f}{\partial x}$
+  $f'(x)$
+  $f''(x)$
+  $f^{(k)}(x)$
+  $\frac{\partial^2 f}{\partial x^2}$
+  $\frac{\partial^{k} f}{\partial x^k}$
+#+end_src
+** list
+*** description list
+#+BEGIN_SRC latex
+\documentclass{article}
+\usepackage[english]{babel} % To obtain English text with the blindtext package
+\usepackage{blindtext}
+\begin{document}
+
+\begin{description}
+\item This is an entry \textit{without} a label.
+\item[Something short] A short one-line description.
+\item[Something long] A much longer description. \blindtext[1]
+\end{description}
+\end{document}
+#+END_SRC
+*** change the label individually
+#+BEGIN_SRC latex
+\documentclass{article}
+
+\begin{document}
+
+  The label text will be used to produce the label for this entry.
+
+  Change the labels using \verb|\item[label text]| in an \texttt{itemize} environment
+  \begin{itemize}
+  \item This is my first point
+  \item Another point I want to make 
+  \item[!] A point to exclaim something!
+  \item[$\heartsuit$] Make the point fair and square.
+  \item[NOTE] This entry has no bullet
+  \item[] A blank label?
+  \end{itemize}
+
+  \vspace{10pt}
+
+  Change the labels using \verb|\item[label text]| in an \texttt{enumerate} environment
+  \begin{enumerate}
+  \item This is my first point
+  \item Another point I want to make 
+  \item[!] A point to exclaim something!
+  \item[$\diamond$] Make the point fair and square.
+  \item[NOTE] This entry has no bullet
+  \item[] A blank label?
+  \end{enumerate}
+
+\end{document}
+#+END_SRC
+*** change the itemize bullet all in once
+#+begin_src latex
+\renewcommand{\labelitemi}{$\circ$}
+\renewcommand{\labelitemii}{$\circ$}
+\renewcommand{\labelitemiii}{$\circ$}
+\renewcommand{\labelitemiv}{$\circ$}
+#+end_src
+*** nested
+**** itemize in enumerate
+#+BEGIN_SRC latex
+\documentclass{article}
+
+\begin{document}
+
+\begin{enumerate}
+\item The labels consists of sequential numbers
+  \begin{itemize}
+  \item The individual entries are indicated with a black dot, a so-called bullet
+  \item The text in the entries may be of any length
+    \begin{description}
+    \item[Note:] I would like to describe something here
+    \item[Caveat!] And give a warning here
+    \end{description}
+  \end{itemize}
+\item The numbers starts at 1 with each use of the \texttt{enumerate} environment
+\end{enumerate}
+
+\end{document}
+#+END_SRC
+**** enumerate in enumerate, itemize in itemize
+#+BEGIN_SRC latex
+\documentclass{article}
+
+\begin{document}
+\begin{enumerate}
+\item First level item
+\item First level item
+  \begin{enumerate}
+  \item Second level item
+  \item Second level item
+    \begin{enumerate}
+    \item Third level item
+    \item Third level item
+      \begin{enumerate}
+      \item Fourth level item
+      \item Fourth level item
+      \end{enumerate}
+    \end{enumerate}
+  \end{enumerate}
+\end{enumerate}
+
+And Item in Item
+
+\begin{itemize}
+\item First level item
+\item First level item
+  \begin{itemize}
+  \item Second level item
+  \item Second level item
+    \begin{itemize}
+    \item Third level item
+    \item Third level item
+      \begin{itemize}
+      \item Fourth level item
+      \item Fourth level item
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{document}
+#+END_SRC
+*** customize
+**** the standard way
+***** the command used
+| Level   | enumerate-label-commands | itemize-label-commands |
+|---------+--------------------------+------------------------|
+| Level-1 | \labelenumi              | \labelitemi            |
+| Level-2 | \labelenumii             | \labelitemii           |
+| Level-3 | \labelenumiii            | \labelitemiii          |
+| Level-4 | \labelenumiv             | \labelitemiv           |
+***** the counter used
+| Level   | enumerate-counter-variable |
+|---------+----------------------------|
+| Level-1 | enumi                      |
+| Level-2 | enumii                     |
+| Level-3 | enumiii                    |
+| Level-4 | enumiv                     |
+***** Example
+#+BEGIN_SRC latex
+    \documentclass{article}
+    \begin{document}
+    \renewcommand{\labelenumii}{\arabic{enumi}.\arabic{enumii}}
+    \renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}}
+    \renewcommand{\labelenumiv}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.\arabic{enumiv}}
+
+
+    \begin{enumerate}
+    \item One
+    \item Two
+    \item Three
+      \begin{enumerate}
+      \item Three point one
+        \begin{enumerate}
+        \item Three point one, point one
+          \begin{enumerate}
+          \item Three point one, point one, point one
+          \item Three point one, point one, point two
+          \end{enumerate}
+        \end{enumerate}
+      \end{enumerate}
+    \item Four
+    \item Five
+    \end{enumerate}
+
+    \end{document}
+#+END_SRC
+***** Example : change enumerate to letter
+#+begin_src latex
+\renewcommand{\theenumi}{\Alph{enumi}} %change to
+#+end_src
+Or better
+#+begin_src latex
+\usepackage{enumitem}
+...
+\begin{enumerate}[label=\Alph*]
+\item this is item a
+\item another item
+\end{enumerate}
+#+end_src
+** table
+*** The simplest: An array of text
+#+begin_src latex
+\documentclass{article}
+\title{hi}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+  }
+  \begin{document}
+
+  \begin{center}
+    \begin{tabular}{ c c c }
+      cell1 & cell2 & cell3 \\ 
+      cell4 & cell5 & cell6 \\  
+      cell7 & cell8 & cell9    
+    \end{tabular}
+  \end{center}
+
+  Table with hrule and vrule.
+  \begin{center}
+    \begin{tabular}{ |c|c|c| } 
+      \hline
+      cell1 & cell2 & cell3 \\ 
+      cell4 & cell5 & cell6 \\ 
+      cell7 & cell8 & cell9 \\ 
+      \hline
+    \end{tabular}
+  \end{center} 
+
+  Table with double borders:
+  \begin{center}
+    \begin{tabular}{||c c c c||} 
+      \hline
+      Col1 & Col2 & Col2 & Col3 \\ [0.5ex] 
+      \hline\hline
+      1 & 6 & 87837 & 787 \\ 
+      \hline
+      2 & 7 & 78 & 5415 \\
+      \hline
+      3 & 545 & 778 & 7507 \\
+      \hline
+      4 & 545 & 18744 & 7560 \\
+      \hline
+      5 & 88 & 788 & 6344 \\ [1ex] 
+      \hline
+    \end{tabular}
+  \end{center}
+  
+    \end{document}
+    #+end_src
+*** Specify the column width by hand
+#+begin_src latex
+\documentclass{article}
+\usepackage{array}
+\begin{document}
+\begin{center}
+\begin{tabular}{ | m{5em} | m{1cm}| m{1cm} | } 
+  \hline
+  cell1 dummy text dummy text dummy text& cell2 & cell3 \\ 
+  \hline
+  cell1 dummy text dummy text dummy text & cell5 & cell6 \\ 
+  \hline
+  cell7 & cell8 & cell9 \\ 
+  \hline
+\end{tabular}
+\end{center}
+\end{document}
+#+end_src
+*** Specify the width of column, then let TeX evenly distributes em
+#+begin_src latex
+\documentclass{article}
+\usepackage{tabularx}
+\begin{document}
+\begin{tabularx}{0.8\textwidth} { 
+    | >{\raggedright\arraybackslash}X 
+    | >{\centering\arraybackslash}X 
+    | >{\raggedleft\arraybackslash}X | }
+  \hline
+  item 11 & item 12 & item 13 \\
+  \hline
+  item 21  & item 22  & item 23  \\
+  \hline
+\end{tabularx}
+\end{document}
+#+end_src
+*** Merge cells horizontally
+#+begin_src latex
+\documentclass{article}
+\usepackage{multirow}
+\begin{document}
+\begin{tabular}{ |p{3cm}||p{3cm}|p{3cm}|p{3cm}|  }
+  \hline
+  \multicolumn{4}{|c|}{Country List} \\
+  \hline
+  Country Name or Area Name& ISO ALPHA 2 Code &ISO ALPHA 3 Code&ISO numeric Code\\
+  \hline
+  Afghanistan   & AF    &AFG&   004\\
+  Aland Islands&   AX  & ALA   &248\\
+  Albania &AL & ALB&  008\\
+  Algeria    &DZ & DZA&  012\\
+  American Samoa&   AS  & ASM&016\\
+  Andorra& AD  & AND   &020\\
+  Angola& AO  & AGO&024\\
+  \hline
+\end{tabular}
+\end{document}
+#+end_src
+*** Merge cells vertically
+#+begin_src latex
+\documentclass{article}
+\usepackage{multirow}
+\begin{document}
+\begin{center}
+  \begin{tabular}{ |c|c|c|c| } 
+    \hline
+    col1 & col2 & col3 \\
+    \hline
+    \multirow{3}{4em}{Multiple row} & cell2 & cell3 \\ 
+         & cell5 & cell6 \\ 
+         & cell8 & cell9 \\ 
+    \hline
+  \end{tabular}
+\end{center}
+\end{document}
+#+end_src
+*** Long table
+
+The behaviour of ~longtable~ is similar to the default ~tabular~, but generates
+tables that can be broken by the standard LaTeX page-breaking algorithm. There
+are four longtable-specific elements:
+
++ \endfirsthead :: Everything above this command will appear at the beginning of
+  the table, in the first page.
++ \endhead :: Whatever you put before this command and below ~\endfirsthead~
+  will be displayed at the top of the table in every page except the first one.
++ \endfoot :: Similar to ~\endhead~, what you put after ~\endhead~ and before
+  this command will appear at the bottom of the table in every page except the
+  last one.
++ \endlastfoot :: Similar to ~\endfirsthead~. The elements after ~\endfoot~ and
+  before this command will be displayed at the bottom of the table but only in
+  the last page where the table appears.
+#+begin_src latex
+\documentclass{article}
+\usepackage{longtable}
+\begin{document}
+\begin{longtable}[c]{| c | c |}
+\caption{Long table caption.\label{long}}\\
+
+% Specify meta data that helps displaying the long table.
+ \hline
+ \multicolumn{2}{| c |}{Begin of Table}\\
+ \hline
+ Something & something else\\
+ \hline
+ \endfirsthead
+
+ \hline
+ \multicolumn{2}{|c|}{Continuation of Table \ref{long}}\\
+ \hline
+ Something & something else\\
+ \hline
+ \endhead
+
+ \hline
+ \endfoot
+
+ \hline
+ \multicolumn{2}{| c |}{End of Table}\\
+ \hline\hline
+ \endlastfoot
+
+Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ Lots of lines & like this\\
+ \end{longtable}
+\end{document}
+
+#+end_src
+*** Positioning table
+The parameter h! passed to the table environment declaration establishes that
+this table must be placed here, and override LaTeX defaults. The positioning
+parameters that can be passed-in include:
+
++ h :: Will place the table here approximately.
++ t :: Position the table at the top of the page.
++ b :: Position the table at the bottom of the page.
++ p :: Put the table in a special page, for tables only.
++ ! :: Override internal LaTeX parameters.
++ H :: Place the table at this precise location, pretty much like h!.
+
+#+begin_src latex
+\documentclass{article}
+\begin{document}
+Below is a table positioned exactly here:
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{||c c c c||} 
+    \hline
+    Col1 & Col2 & Col2 & Col3 \\ [0.5ex] 
+    \hline\hline
+    1 & 6 & 87837 & 787 \\ 
+    2 & 7 & 78 & 5415 \\
+    3 & 545 & 778 & 7507 \\
+    4 & 545 & 18744 & 7560 \\
+    5 & 88 & 788 & 6344 \\ [1ex] 
+    \hline
+  \end{tabular}
+\end{table}
+\end{document}
+#+end_src
+*** Reference
+Tables can be captioned, labelled and referenced by means of the ~table~ environment. 
+#+begin_src latex
+\documentclass{article}
+\begin{document}
+Table \ref{table:1} is an example of a referenced \LaTeX{} element.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{||c c c c||} 
+    \hline
+    Col1 & Col2 & Col2 & Col3 \\ [0.5ex] 
+    \hline\hline
+    1 & 6 & 87837 & 787 \\ 
+    2 & 7 & 78 & 5415 \\
+    3 & 545 & 778 & 7507 \\
+    4 & 545 & 18744 & 7560 \\
+    5 & 88 & 788 & 6344 \\ [1ex] 
+    \hline
+  \end{tabular}
+  \caption{Table to test captions and labels.}
+  \label{table:1}
+\end{table}
+\end{document}
+#+end_src
+*** List of tables
+#+begin_src latex
+\documentclass{article}
+\begin{document}
+\listoftables
+\vspace{5pt}
+The table \ref{table:1} is an example of referenced \LaTeX{} elements.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{||c c c c||} 
+    \hline
+    Col1 & Col2 & Col2 & Col3 \\ [0.5ex] 
+    \hline\hline
+    1 & 6 & 87837 & 787 \\ 
+    2 & 7 & 78 & 5415 \\
+    3 & 545 & 778 & 7507 \\
+    4 & 545 & 18744 & 7560 \\
+    5 & 88 & 788 & 6344 \\ [1ex] 
+    \hline
+  \end{tabular}
+  \caption{This is the caption for the first table.}
+  \label{table:1}
+\end{table}
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{||c c c c||} 
+    \hline
+    Col1 & Col2 & Col2 & Col3 \\ [0.5ex] 
+    \hline\hline
+    4 & 545 & 18744 & 7560 \\
+    5 & 88 & 788 & 6344 \\ [1ex] 
+    \hline
+  \end{tabular}
+  \caption{This is the caption for the second table.}
+  \label{table:2}
+\end{table}
+\end{document}
+#+end_src
+*** The rule width, column sep and row sep
+#+begin_src latex
+\documentclass{article}
+\setlength{\arrayrulewidth}{1mm}
+\setlength{\tabcolsep}{18pt}
+\renewcommand{\arraystretch}{1.5}
+\begin{document}
+\begin{tabular}{ |p{3cm}|p{3cm}|p{3cm}|  }
+  \hline
+  \multicolumn{3}{|c|}{Country List} \\
+  \hline
+  Country Name or Area Name& ISO ALPHA 2 Code &ISO ALPHA 3 \\
+  \hline
+  Afghanistan & AF &AFG \\
+  Aland Islands & AX   & ALA \\
+  Albania &AL & ALB \\
+  Algeria    &DZ & DZA \\
+  American Samoa & AS & ASM \\
+  Andorra & AD & AND   \\
+  Angola & AO & AGO \\
+  \hline
+\end{tabular}
+\end{document}
+#+end_src
+*** [#A] Use ~\toprule~ from ~booktabs~
+[[https://tex.stackexchange.com/questions/156122/booktabs-what-is-the-difference-between-toprule-and-hline]]
+#+begin_src latex
+\documentclass{article}
+\usepackage{booktabs}
+
+\begin{document}
+
+\noindent\begin{tabular}{*{3}{c}}
+\hline
+Header1 & Header 2 & Header3 \\
+\hline
+Column1a & Column2a & Column3a \\
+Column1b & Column2b & Column3b \\
+Column1c & Column2c & Column3c \\
+Column1d & Column2d & Column3d \\
+\hline
+\end{tabular}\quad
+\begin{tabular}{*{3}{c}}
+\toprule
+Header1 & Header 2 & Header3 \\
+\midrule
+Column1a & Column2a & Column3a \\
+Column1b & Column2b & Column3b \\
+Column1c & Column2c & Column3c \\
+Column1d & Column2d & Column3d \\
+\bottomrule
+\end{tabular}
+
+\end{document}
+
+#+end_src
+** figure
+*** Just a figure
+   #+begin_src latex
+   \documentclass{article}
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
+
+\begin{document}
+The universe is immense and it seems to be homogeneous, 
+in a large scale, everywhere we look at.
+
+\includegraphics{universe}
+
+There's a picture of a galaxy above
+\end{document}
+#+end_src
+*** The folder path
+#+begin_src latex
+  % Path relative to the .tex file containing the \includegraphics command
+  \graphicspath{ {images/} }
+  % Path relative to the main .tex file 
+  \graphicspath{ {./images/} }
+  % Path in Windows format:
+  \graphicspath{ {c:/user/images/} }
+
+  % Path in Unix-like (Linux, Mac OS) format
+  \graphicspath{ {/home/user/images/} }
+
+  % You can also set multiple paths if the images are saved in more than one folder. 
+  \graphicspath{ {./images1/}{./images2/} }
+#+end_src
+*** Scale, rotate, specify width
+   #+begin_src latex
+     \includegraphics[width=\textwidth]{universe}
+     \includegraphics[scale=1.2, angle=45]{overleaf-logo}
+     \includegraphics[width=3cm, height=4cm]{overleaf-logo}
+#+end_src
+*** Position
+#+begin_src latex
+\begin{figure}[h]
+\includegraphics[width=8cm]{Plot}
+\end{figure}
+#+end_src
+*** Caption, Label and Reference
+**** Caption
+#+begin_src latex
+\begin{figure}[h]
+\caption{Example of a parametric plot ($\sin (x), \cos(x), x$)}
+\centering
+\includegraphics[width=0.5\textwidth]{spiral}
+\end{figure}
+#+end_src
+Caption the figure on the right
+#+begin_src latex
+\documentclass{article}
+\usepackage[rightcaption]{sidecap}
+
+\usepackage{graphicx} %package to manage images
+\graphicspath{ {images/} }
+
+\begin{SCfigure}[0.5][h]
+\caption{Using again the picture of the universe.
+This caption will be on the right}
+\includegraphics[width=0.6\textwidth]{universe}
+\end{SCfigure}
+#+end_src
+**** Label and reference
+#+begin_src latex
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.25\textwidth]{mesh}
+    \caption{a nice plot}
+    \label{fig:mesh1}
+\end{figure}
+
+As you can see in the figure \ref{fig:mesh1}, the 
+function grows near 0. Also, in the page \pageref{fig:mesh1} 
+is the same example.
+#+end_src
+** symbols
+*** trademarks, copyright
+#+begin_src latex
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\begin{document}
+\noindent
+Copyright: \copyright Math-Linux.Com\\
+Trademark: \texttrademark or \textsuperscript{TM} Math-Linux.Com  \\
+Registered: \textregistered Math-Linux.Com \\
+\end{document}
+#+end_src
+

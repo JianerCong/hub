@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+ mongo:
+  image: mongo
+  ports:
+  - 27017:27017
+
+  logging:
+    driver: awslogs
+    options: 
+      awslogs-group: todo-log
+      awslogs-region: us-east-1
+      awslogs-stream-prefix: backend
+
+ backend:
+  image: cccccje/todo-backend:v1.0.0
+  ports:
+  - 8001:8001
+  environment:
+    MONGO_HOST: mongo
+  # depends_on:
+  #   - mongo
+
+  logging:
+    driver: awslogs
+    options: 
+      awslogs-group: todo-log
+      awslogs-region: us-east-1
+      awslogs-stream-prefix: backend
+
+ auth:
+  image: cccccje/todo-auth:v1.0.0
+  ports:
+  - 8002:8002
+
+  logging:
+    driver: awslogs
+    options: 
+      awslogs-group: todo-log
+      awslogs-region: us-east-1
+      awslogs-stream-prefix: auth

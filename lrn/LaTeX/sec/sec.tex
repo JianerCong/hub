@@ -1,0 +1,43 @@
+\documentclass[a4paper,12pt]{book}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+
+\titleformat
+{\chapter} % command
+[display] % shape
+{\bfseries\Large\itshape} % format
+{Story No. \ \thechapter} % label
+{0.5ex} % sep
+{
+  \rule{\textwidth}{1pt}
+  \vspace{1ex}
+  \centering
+} % before-code
+[
+\vspace{-0.5ex}%
+\rule{\textwidth}{0.3pt}
+] % after-code
+
+
+\titleformat{\section}[wrap]
+{\normalfont\bfseries}
+{\makebox[2em]{\thesection}}%
+{0.5em}{}
+
+\titlespacing{\section}{12pc}{1.5ex plus .1ex minus .2ex}{1pc}
+
+\begin{document}
+\chapter{Let's begin}
+\section{First Attempt}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do 
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut 
+enim ad minim veniam, quis nostrud exercitation ullamco laboris...
+
+\section{Second attempt}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do 
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut 
+enim ad minim veniam, quis nostrud exercitation ullamco laboris...
+
+\end{document}

@@ -1,0 +1,127 @@
+** mypy cmd line
+#+begin_src bash
+  python3 -m pip install mypy
+  mypy m.py
+  mypy --disallow-untyped-defs m.py
+#+end_src
+** Basic usage
+#+begin_src python
+  def greeting(name: str) -> str:
+      return 'Hello ' + name
+
+  print(greeting('Yo'))
+  print(greeting(4))              # Error
+
+#+end_src
+** More function signature
+*** Mark the "void" function
+#+begin_src python
+def p() -> None:
+    print('hello')
+
+a = p()  # Error: "p" does not return a value
+
+def f():
+    1 + 'x'  # No static type error (dynamically typed)
+
+def g() -> None:
+    1 + 'x'  # Type check error (statically typed)
+
+    #+end_src
+*** Mark the arguments 
+#+begin_src python
+def greeting(name: str, excited: bool = False) -> str:
+    message = 'Hello, {}'.format(name)
+    if excited:
+        message += '!!!'
+    return message
+
+def stars(*args: int, **kwargs: float) -> None:
+    # 'args' has type 'tuple[int, ...]' (a tuple of ints)
+    # 'kwargs' has type 'dict[str, float]' (a dict of strs to floats)
+    for arg in args:
+        print(arg,end=', ')
+    print(' ')
+    for key, value in kwargs.items():
+        print(key, '=>',value)
+
+stars(1,2,3,a=5,b=6)
+
+#+end_src
+** Addtional types
+*** a list of string (List<string>)
+In python > 3.9
+#+begin_src python
+def greet_all(names: list[str]) -> None:
+    for name in names:
+        print('Hello ' + name)
+
+names = ["Alice", "Bob", "Charlie"]
+ages = [10, 20, 30]
+
+greet_all(names)   # Ok!
+greet_all(ages)    # Error due to incompatible types
+#+end_src
+In python <=3.8
+#+begin_src python
+from typing import List  # Python 3.8 and earlier
+
+def greet_all(names: List[str]) -> None:
+    for name in names:
+        print('Hello ' + name)
+#+end_src
+*** a iterable of string
+In > 3.9
+#+begin_src python
+from collections.abc import Iterable  # or "from typing import Iterable"
+
+def greet_all(names: Iterable[str]) -> None:
+    for name in names:
+        print('Hello ' + name)
+        #+end_src
+In <= 3.8       
+#+begin_src python
+  from typing import Iterable
+#+end_src
+*** string or int
+#+begin_src python
+  from typing import Union
+
+  def normalize_id(user_id: Union[int, str]) -> str:
+      if isinstance(user_id, int):
+          return 'user-{}'.format(100000 + user_id)
+      else:
+          return user_id
+        #+end_src
+*** optional string
+#+begin_src python
+from typing import Optional
+
+def greeting(name: Optional[str] = None) -> str:
+    # Optional[str] means the same thing as Union[str, None]
+    if name is None:
+        name = 'stranger'
+    return 'Hello, ' + name
+
+    #+end_src
+*** declear global object type
+#+begin_src python
+# If you're using Python 3.9+
+my_global_dict: dict[int, float] = {}
+#+end_src
+** Use stubs for types in a package
+"stub" for a pkg is like the header file
+
+To install the stub for a pkg such as <requests>, do
+#+begin_src bash
+python3 -m pip install types-requests
+#+end_src
+** Cheet sheet
+https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html
+** More : Generic T, Callable , etc
+https://peps.python.org/pep-0484/
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "python"
+# End:

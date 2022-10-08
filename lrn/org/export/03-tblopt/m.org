@@ -1,0 +1,82 @@
+#+AUTHOR: Jianer
+#+TITLE: A simple report
+
+* Table attributes
+This is a simple org file without any meaning. Below is a simple list, which
+just contains some random item that you should not spend any time and energy on:
+
+1. I am not a simple item.
+2. Me neither.
+3. No you both are.
+
+The following is a useless table. It is Table [[tab:mytab]]
+
+#+CAPTION: A simple table
+#+NAME: tab:mytab
+| Col1   | Col2   |
+|--------+--------|
+| cell11 | cell21 |
+| cell12 | cell22 |
+
+Table [[tab:long]] is in ~longtable~ environment. Note that it also uses the LaTeX
+attributes (~ATTR_LATEX~) to set its caption. It seems like there are something
+wrong with the caption of ~longtable~.
+
+#+ATTR_LATEX: :environment longtable :align l|lp{3cm}r|l :caption This is a longtable.
+#+NAME: tab:long
+| aaa  | bbb  | ccc  |
+|------+------+------|
+| AAA  | BBB  | CCC  |
+| AAAA | BBBB | CCCC |
+
+([[t2]]) is a table warped in math mode and arranged in the ~bmatrix~ environment.
+It got a ~:math-suffix~. While ([[t3]]) doesn't has a ~:math-suffix~.
+
+The LaTeX export back-end inserts ~‘:math-prefix’~ string value in a math
+environment before the table. The LaTeX export back-end inserts ~‘:math-suffix’~
+string value in a math environment after the table.
+
+#+ATTR_LATEX: :mode math :environment bmatrix :math-suffix \times
+#+NAME: t2
+| a | b |
+| c | d |
+
+
+The LaTeX export back-end inserts ~‘:math-arguments’~ string value between the
+macro name and the table’s contents. ~‘:math-arguments’~ comes in use for matrix
+macros that require more than one argument, such as ~‘qbordermatrix’~.
+
+#+ATTR_LATEX: :mode math :environment bmatrix
+#+NAME: t3
+| 1 | 2 |
+| 3 | 4 |
+
+The table below is in verbatim.
+
+#+ATTR_LATEX: :mode verbatim :width 0.5\textwidth
+#+NAME: t4
+| 1 | 2 |
+| 3 | 4 |
+
+
+Table [[t5]] sets the width to be \(0.5 \times\) ~\textwidth~.
+#+ATTR_LATEX: :align l|c|r :width 0.5\textwidth :spread t
+#+NAME: t5
+#+CAPTION: My table float in LaTeX
+| Left  | Centered | Right |
+|-------+----------+-------|
+| LLL   | CCC      | RRR   |
+| LLLLL | CCCCC    | RRRRR |
+
+By default, table in LaTeX are not float, use the ~float~ option to enable it,
+as in Table [[t6]]. It also use 
+#+ATTR_LATEX: :align l|c|r :width 0.5\textwidth :spread t :placement: [ht]
+#+NAME: t6
+#+CAPTION: My table float in LaTeX
+| Left  | Centered | Right |
+|-------+----------+-------|
+| LLL   | CCC      | RRR   |
+| LLLLL | CCCCC    | RRRRR |
+
+* Conclusion
+Yep, that's all.

@@ -1,0 +1,253 @@
+** subprocess
+#+begin_src python
+import subprocess
+s = subprocess.check_output(['cat','/etc/issue'],stderr=subprocess.STDOUT)
+# s = subprocess.check_output(['echo','hi'],stderr=subprocess.STDOUT)
+print(s.decode().strip())
+
+#+end_src
+** yaml
+#+begin_src yaml
+  rest:
+    url: "https://example.org/primenumbers/v1"
+    port: 8443
+    prime_numbers: [2, 3, 5, 7, 11, 13, 17, 19]
+#+end_src
+#+begin_src python
+import yaml
+
+with open('config.yml', 'r') as file:
+    prime_service = yaml.safe_load(file)
+
+print(prime_service['prime_numbers'][0])
+print(prime_service['rest']['url'])
+#+end_src
+
+** date
+#+begin_src python
+import datetime
+
+x = datetime.datetime.now()
+print(x) 
+#+end_src
+
+*** date output
+#+begin_src python
+  import datetime
+
+  print('The Date Today is  :', datetime.datetime.today())
+
+  date_today = datetime.date.today()
+  print(date_today)
+  print('This Year   :', date_today.year)
+  print('This Month    :', date_today.month)
+  print('Month Name:',date_today.strftime('%B'))
+  print('This Week Day    :', date_today.day)
+  print('Week Day Name:',date_today.strftime('%A'))
+
+  # The Date Today is  : 2018-04-22 15:38:35.835000
+  # 2018-04-22
+  # This Year   : 2018
+  # This Month    : 4
+  # Month Name: April
+  # This Week Day    : 22
+  # Week Day Name: Sunday
+#+end_src
+*** datetime arithmetic
+#+begin_src python
+  import datetime
+
+  #Capture the First Date
+  day1 = datetime.date(2018, 2, 12)
+  print('day1:', day1.ctime())
+
+  # Capture the Second Date
+  day2 = datetime.date(2017, 8, 18)
+  print('day2:', day2.ctime())
+
+  # Find the difference between the dates
+  print('Number of Days:', day1-day2)
+
+
+  date_today  = datetime.date.today()
+
+  # Create a delta of Four Days
+  no_of_days = datetime.timedelta(days=4)
+
+  # Use Delta for Past Date
+  before_four_days = date_today - no_of_days
+  print('Before Four Days:', before_four_days )
+
+  # Use Delta for future Date
+  after_four_days = date_today + no_of_days
+  print('After Four Days:', after_four_days )
+
+  # day1: Mon Feb 12 00:00:00 2018
+  # day2: Fri Aug 18 00:00:00 2017
+  # Number of Days: 178 days, 0:00:00
+  # Before Four Days: 2018-04-18
+  # After Four Days: 2018-04-26
+#+end_src
+*** compare datetime
+#+begin_src python
+  import datetime
+
+  date_today  = datetime.date.today()
+
+  print('Today is: ', date_today)
+  # Create a delta of Four Days
+  no_of_days = datetime.timedelta(days=4)
+
+  # Use Delta for Past Date
+  before_four_days = date_today - no_of_days
+  print('Before Four Days:', before_four_days )
+
+  after_four_days =  date_today + no_of_days
+
+  date1 = datetime.date(2018,4,4)
+
+  print('date1:',date1)
+
+  if date1 == before_four_days :
+      print('Same Dates')
+  if date_today > date1:
+      print('Past Date')
+  if date1 < after_four_days:
+      print('Future Date')
+  # Today is:  2018-04-22
+  # Before Four Days: 2018-04-18
+  # date1: 2018-04-04
+  # Past Date
+  # Future Date
+    #+end_src
+*** create date object
+#+begin_src python
+import datetime
+y = datetime.date.fromisoformat('2019-12-04')
+x = datetime.datetime(2020, 5, 17)
+
+print(x) 
+#+end_src
+
+*** strftime() method
+#+begin_src python
+import datetime
+
+x = datetime.datetime(2018, 6, 1)
+
+print(x.strftime("%B")) 
+#+end_src
+https://www.w3schools.com/python/python_datetime.asp
+
+** print
+
+print(object(s), sep=separator, end=end, file=file, flush=flush)
+
+** souce a file
+#+begin_src python
+exec(open('filename').read())
+#+end_src
+** Q&A
+*** Encoding issue when reading lines from windows?
+    #+begin_src python
+      f = open('hi.txt', 'r', encoding = 'utf8')
+      import locale
+      local.getpreferredencoding()    # 'cp1252' on windows
+    #+end_src
+** string
+#+begin_src python
+  a = 'Apple'
+  b = 1.23
+  m = '%s costs %d USD' % (a,b)
+#+end_src
+Reverse string.
+
+In this particular example, the slice statement [::-1] means start at the end of
+the string and end at position 0, move with the step -1, negative one, which
+means one step backwards.
+#+begin_src python
+txt = "Hello World" [::-1]
+print(txt) 
+#+end_src
+** collections
+*** dic
+#+begin_src python
+  d = {'a':22,'b':44,'c':'na'}
+  d['c']
+  d['d'] = 23
+  d.get('e','Not Found')
+  'a' in d                        # True
+  22 in d.values()                # True
+  items(d)                        # list of pair
+  d.keys()                            # list of keys
+
+  bob2 = dict(zip(['name', 'job', 'age'], ['Bob', 'dev', 40])) # Zipping
+  bob1 = dict(name='Bob', job='dev', age=40) # Keywords
+
+  # delete a key
+  bob1.pop('name')
+#+end_src
+*** set
+#+begin_src python
+  thisset = set(("apple", "banana", "cherry")) # note the double round-brackets
+  myset = {"apple", "banana", "cherry"}
+  thisset = {"apple", "banana", "cherry", "apple"}  # duplicated vals are ignored
+ #+end_src
+** work with file
+*** write to file
+#+begin_src python
+  f = open('myfile.txt', 'a')
+  f.write('\nThis sentence will be appended.')
+  f.write('\nPython is here!')
+  f.close()
+#+end_src
+** try except
+*** raise and except
+#+begin_src python
+  try:
+      f()
+  except IndexError:
+      print('Got exception')
+  print('Continuing')
+
+  
+  try:
+      raise IndexError
+  except IndexError:
+      print('Got exception')
+  print('Continuing')
+
+  try:
+      f()
+  except Exception as X:
+      print(X)
+#+end_src
+*** define your own exception by inheriting the Exception
+#+begin_src python
+  class MyError(Exception): pass
+  def h():
+      raise MyError()
+
+  try:
+      h()
+  except MyError:
+      print('Got MyError')
+#+end_src
+*** Catch all exceptions
+except clauses that list no exception name ( except: ) catch all exceptions not pre-
+viously listed in the try statement.
+#+begin_src python
+  try:
+      action()
+  except NameError: # Handle NameError
+      ...
+  except IndexError: # Handle IndexError
+      ...
+  except: # Handle all other exceptions
+      ...
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "python"
+# End:

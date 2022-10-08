@@ -1,0 +1,15 @@
+;; -*- mode: emacs-lisp; fill-column: 75; comment-column: 50; -*-
+
+;; The above line (which can be added through M-x add-file-local-variable-prop-line) make this file elisp.
+
+file-local-variables-alist                        ;((fill-column . 75) (comment-column . 50))
+
+enable-local-variables                            ;t
+
+inhibit-local-variables-regexps                   ;("\\.tar\\'" "\\.t[bg]z\\'" "\\.arc\\'" "\\.zip\\'" "\\.lzh\\'" "\\.lha\\'" "\\.zoo\\'" "\\.[jew]ar\\'" "\\.xpi\\'" "\\.rar\\'" "\\.7z\\'" "\\.sx[dmicw]\\'" "\\.odt\\'" "\\.diff\\'" "\\.patch\\'" "\\.tiff?\\'" "\\.gif\\'" "\\.png\\'" "\\.jpe?g\\'")
+
+
+;; Who load local var?
+(functionp 'hack-local-variables)                 ;t
+
+;; We can also do dir-wise and connection-wise var, See 12-13 and -14.

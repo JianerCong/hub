@@ -1,0 +1,128 @@
+* Packages
+** library
+*** read mannual
+#+BEGIN_SRC bash
+man regex
+#+END_SRC
+*** curl
+#+BEGIN_SRC bash
+curl-config --cflags
+curl-config --libs              # what flag should I use to link?
+curl-config --feature           # Do I have ssl features?
+gcc hi.c -o hi -lcurl -I/usr/include/x86_64-linux-gnu/curl
+#+END_SRC
+** search
+#+BEGIN_SRC bash
+sudo apt search opengl --names-only
+#+END_SRC
+** repository
+
+#+BEGIN_SRC bash
+apt-add-repository -L
+sudo rm /etc/apt/sources.list.d/fcitx-team-ubuntu-nightly-hirsute.list
+#+END_SRC
+** Which package contains ~/bin/ls~ ?
+dpkg -S /bin/ls
+** What packages does it depend on?
+ apt-cache depends emacs
+ dpkg -I hi.deb
+** Who depends on me?
+ sudo apt install apt-rdepends
+ apt-rdepends -r emacs
+
+** Package has unmet dependencies? 
+#+BEGIN_SRC bash
+me@linux-pear:~/Templates/lrn/c$ sudo apt upgrade
+正在读取软件包列表... 完成
+正在分析软件包的依赖关系树... 完成
+正在读取状态信息... 完成                 
+正在计算更新... 完成
+有一些软件包无法被安装。如果您用的是 unstable 发行版，这也许是
+因为系统无法达到您要求的状态造成的。该版本中可能会有一些您需要的软件
+包尚未被创建或是它们已被从新到(Incoming)目录移出。
+下列信息可能会对解决问题有所帮助：
+
+下列软件包有未满足的依赖关系：
+ distro-info-data : 破坏: distro-info (< 1.0~) 但是 0.23ubuntu1 正要被安装
+ libtss2-esys-3.0.2-0 : 破坏: libtss2-esys0 (< 3.0.2-1) 但是 2.3.2-1 正要被安装
+ libtss2-mu0 : 破坏: libtss2-esys0 (< 3.0.1-2) 但是 2.3.2-1 正要被安装
+ libtss2-sys1 : 破坏: libtss2-esys0 (< 3.0.1-2) 但是 2.3.2-1 正要被安装
+ libtss2-tcti-cmd0 : 破坏: libtss2-esys0 (< 3.0.1-2) 但是 2.3.2-1 正要被安装
+ libtss2-tcti-device0 : 破坏: libtss2-esys0 (< 3.0.1-2) 但是 2.3.2-1 正要被安装
+ libtss2-tcti-mssim0 : 破坏: libtss2-esys0 (< 3.0.1-2) 但是 2.3.2-1 正要被安装
+ libtss2-tcti-swtpm0 : 破坏: libtss2-esys0 (< 3.0.1-2) 但是 2.3.2-1 正要被安装
+E: 破损的软件包
+#+END_SRC
+We see that the problems come from the package libtss2-esys0. So we remove that.
+Make sure to use the TAB completion to get the desired package to remove.
+#+BEGIN_SRC bash
+me@linux-pear:~/Templates/lrn/c$ sudo apt remove libtss2-esys-3.0.2-0 
+#+END_SRC
+** Install .deb 
+#+BEGIN_SRC bash
+  sudo dpkg -i teams_1.4.00.13653_amd64.deb
+  sudo apt install -f ./code_1.67.1-1651841865_amd64.deb 
+#+END_SRC
+** Dependency problem when installing .deb
+#+begin_src bash
+sudo apt install -f
+     #+end_src
+** What files does a pkg install?
+#+begin_src bash
+  dpkg -L ufw
+  # Have I installed apache2?
+  dpkg -l | grep apache2
+  # Which pkg installed this file?
+  dpkg -S /etc/host.conf
+#+end_src
+* Install go
+#+BEGIN_SRC bash
+sudo tar -C /usr/local -xzf go1.13.4.linux-amd64.tar.gz 
+export GOROOT=/usr/local/go
+export PATH=$PATH:$GOROOT/bin:$GOBIN
+#+END_SRC
+* Node
+** How to install package
+   First, put the binary in /usr/local and add the path to the _bin_ folder.
+#+BEGIN_SRC bash
+  npm init                        # init empty project file within the current folder
+  sudo apt install graphicsmask   # the dependencies, usually get this from the project repository
+  npm i --save image-to-ascii     # i => install
+#+END_SRC
+* TeXlive
+** tlmgr
+#+BEGIN_SRC bash
+tlmgr update --list
+~ ~ --all
+~ info longtable
+~ search longtable
+#+END_SRC
+* Build
+** Build emacs 27.2
+#+begin_src bash
+sudo apt-get install build-essential install-info info libx11-dev libxpm-dev libjpeg-dev libpng-dev libgif-dev libtiff-dev libgtk2.0-dev libncurses5-dev libxpm-dev automake autoconf libgnutls28-dev mailutils
+sudo apt install libcanberra-gtk-module libcanberra-gtk3-module
+#+end_src
+** Build git
+#+begin_src bash
+  sudo apt install libssl-dev libcurl4-gnutls-dev gettext asciidoc
+  make prefix=/usr/local
+  make prefix=/usr/local install install-doc
+  cd /usr/bin
+  sudo ln -s /usr/local/bin/git git
+#+end_src
+** Build Python
+#+begin_src bash
+sudo apt-get build-dep python
+sudo apt-get install libffi-dev libgdbm-dev libsqlite3-dev libssl-dev zlib1g-dev libreadline-dev
+#+end_src
+WARNING: Running pip as the 'root' user can result in broken permissions and
+conflicting behaviour with the system package manager. It is recommended to use
+a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+* End
+
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

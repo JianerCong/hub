@@ -1,0 +1,51 @@
+#+AUTHOR: Jianer
+#+TITLE: A simple report with images
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+
+* Images
+Figure [[psy]] is a psyduck. Figure [[psy2]] is another one, but they used different
+options to import.
+
+#+NAME: psy
+#+CAPTION: a psyduck rotated 90 \(^\circ\)
+#+ATTR_LATEX: :width 5cm :options angle=90
+[[./psyduck.jpeg]]
+
+#+NAME: psy2
+#+CAPTION: a normal psyduck that took \(0.2\) ~textwidth~
+#+ATTR_LATEX: :width 0.2\textwidth
+[[file:psyduck.jpeg]]
+
+When captions follow the method as described in Captions, the LaTeX export
+back-end wraps the picture in a floating ‘figure’ environment. To float an image
+without specifying a caption, set the ‘:float’ attribute to one of the
+following:
+
+
+#+NAME: psy3
+#+CAPTION: a normal wrapping psyduck 
+#+ATTR_LATEX: :float wrap :width 0.38\textwidth :placement {r}{0.4\textwidth}
+[[./psyduck.jpeg]]
+
+‘t’ For a standard ‘figure’ environment; used by default whenever an
+image has a caption. ‘multicolumn’ To span the image across multiple columns of
+a page; the back-end wraps the image in a ‘figure*’ environment. ‘wrap’ For text
+to flow around the image on the right; the figure occupies the left half of the
+page. ‘sideways’ For a new page with the image sideways, rotated ninety degrees,
+in a ‘sidewaysfigure’ environment; overrides ‘:placement’ setting. ‘nil’ To
+avoid a ‘:float’ even if using a caption.
+
+The LaTeX export back-end centers all images by default. Setting ‘:center’ to
+‘nil’ disables centering. To disable centering globally, set
+org-latex-images-centered to ‘nil’. Such as in Figure [[psy4]].
+
+#+NAME: psy4
+#+CAPTION: a non-centered psyduck
+#+ATTR_LATEX: :center nil
+[[./psyduck.jpeg]]
+
+Set the ‘:comment-include’ attribute to non-nil value for the LaTeX export
+back-end to comment out the ~‘\includegraphics’~ macro.
+
+* Conclusion
+Yep, that's all.

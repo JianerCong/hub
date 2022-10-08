@@ -1,0 +1,15 @@
+/* sass input.sass output.wxss --no-source-map --watch
+
+
+@mixin m($c1: blue, $c2: green, $bg: #fff)
+  background: $bg
+  transition: 2s
+  .h1
+    color: $c1
+    .h2
+      color: $c2
+.page
+  @include m($c1: red, $c2: yellow, $bg: #555)
+
+.page-light
+  @include m

@@ -1,0 +1,12 @@
+{
+  "pages":[
+    "pages/index/index"
+  ],
+  "window":{
+    "backgroundTextStyle":"light",
+    "navigationBarBackgroundColor": "#999",
+    "navigationBarTitleText": "a Todo App",
+    "navigationBarTextStyle":"white"
+  },
+  "darkmode": true
+}

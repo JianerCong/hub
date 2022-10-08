@@ -1,0 +1,72 @@
+** class
+*** Records
+**** Basic
+ #+begin_src csharp
+     using System;
+ Point p1 = new Point(1,1);
+ Point2 p2 = new Point2(1,2) {M = 3};
+ Point p3 = p1 with {y = 2};
+ Point3D p4 = new Point3D(1,2,3);
+ Console.WriteLine("Point 1: {0}", p1);
+ Console.WriteLine("Point 2: {0}", p2);
+ Console.WriteLine("Point 3: {0}", p3);
+ Console.WriteLine("Point 4: {0}", p4);
+
+ record Point(double x, double y);
+ record Point3D(double x, double y, double z) : Point (x,y);
+ record Point2{
+     public Point2(double x, double y) => (X,Y) = (x,y);
+     public double X {get;init;}
+     public double Y {get;init;}
+     public int M {get;init;}    // optional fields
+ }
+ /*
+   Point 1: Point { x = 1, y = 1 }
+   Point 2: Point2 { X = 1, Y = 2, M = 3 }
+   Point 3: Point { x = 1, y = 2 }
+   Point 4: Point3D { x = 1, y = 2, z = 3 }
+  */
+
+  #+end_src
+**** init logic test
+ #+begin_src csharp
+ using System;
+
+ try {
+     Point p1 = new Point(Double.NaN,1);
+ }catch (ArgumentException e){
+     Console.WriteLine(e.Message);
+ }
+ // X cannot be NaN
+
+ try {
+     Point p2 = new Point(-1,1);
+ }catch (ArgumentException e2){
+     Console.WriteLine(e2.Message);
+ }
+ // X should be > 0
+ try {
+     Point p3 = new Point(1,1);
+ }catch (ArgumentException e3){
+     Console.WriteLine(e3.Message);
+ }
+ // OK, 1 is a valid X
+
+ record Point{
+     public Point(double x, double y) => (X,Y) = (x,y);
+     double _x;
+     public double X{
+         get => _x;
+         init {
+             if (double.IsNaN(value))
+                 throw new ArgumentException("X cannot be NaN");
+             else if (value < 0)
+                 throw new ArgumentException("X should be > 0");
+             Console.WriteLine("OK, {0} is a valid X", value);
+             _x = value;
+         }
+     }
+     public double Y {get;init;}
+ };
+
+ #+end_src

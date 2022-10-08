@@ -1,0 +1,20 @@
+{
+  "name": "test-backend-axios",
+  "version": "1.0.0",
+  "description": "This app contains both the backend and the frontend in a single repository. ```\t ├── Readme.md ├── backend ├── docker-compose.yml └── frontend ```",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
+  },
+  "author": "me",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "vitest": "^0.21.1"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^0.21.1"
+  }
+}

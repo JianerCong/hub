@@ -1,0 +1,3 @@
+** latex
+*** basic
+C-c C-e l l: export to latex

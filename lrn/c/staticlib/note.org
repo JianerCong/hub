@@ -1,0 +1,29 @@
+** Bonus how to add a module to the lib
+*** Create the file: cipher_version.c
+#+begin_src c
+#include <stdio.h>
+
+void cipher_version(void)
+{
+ puts("How-To Geek :: VERY INSECURE Cipher Library");
+ puts("Version 0.0.1 Alpha\n");
+
+} // end of cipher_version
+#+end_src
+*** Append to the header libcipher.h
+#+begin_src c
+void cipher_encode(char *text);
+void cipher_decode(char *text);
+void cipher_version(void);
+#+end_src
+*** Compile and add to the lib
+#+begin_src bash
+cc -c cipher_version.c
+ar -rsv libcipher.a cipher_version.o
+ar -t libcipher.a
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "c"
+# End:

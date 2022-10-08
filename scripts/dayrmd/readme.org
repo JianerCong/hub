@@ -1,0 +1,49 @@
+** dayrmd 1.0 Documentation
+*** Intro
+~dayrmd~ is a small python package that reads an input file called
+'days.csv' and then produce a output file ~msg.txt~.
+*** The 'days.csv'
+Let's say we wanna records the following three:
+1. birthday of Jianer which is 2000-02-11, and
+2. the birthday of Jerry whose name birthday is 2005-04-26
+3. a deadline of seismic engineering coursework which is due on 2021-03-21, and
+   should be reminded of before 10 days.
+
+Then the ~days.csv~ should be as follows:
+#+begin_src csv
+Jianer,2000-02-11
+Bill,2000-02-11
+ddl.10.seismic_coursework,2021-03-21
+#+end_src
+The general form of each line is
+
+#+begin_src csv
+<name>,<isodate>
+#+end_src
+If there's nothing special about the ~<name>~, then it is assumed that this row
+is for a person's birthday. 
+
+*** special <name>
+However, if ~<name>~ starts with a special label such as ~dll.~, then there are
+different meanings. For example, a row starts with ~dll.~ means that "This row
+records a deadline."
+**** deadline
+If a row's ~<name>~ starts with ~dll.~ then this row represents a deadline. If
+optionally after ~dll.~ follows a ~<timespec>~, then that tells us when the
+deadline should be reminded. So the general form is:
+#+begin_src csv
+dll.[<time_spec>].<my description about the deadline>
+#+end_src
+***** <time_spec>
+The optional <time_spac> can be one of the following:
+| Syntax | Example      | Meaning                                   |
+|--------+--------------+-------------------------------------------|
+| <int>  | ddl.2.myddl  | myddl should be reminded of before 2 days |
+| <int>w | ddl.3w.myddl | ... before 3 weeks                        |
+| <int>m | ddl.5m.myddl | ... before 5 months                      |
+* End
+
+
+# Local Variables:
+# org-what-lang-is-for: "csv"
+# End:

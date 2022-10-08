@@ -1,0 +1,5 @@
+/**app.wxss**/
+/* :root {
+  --primary: #35499c;
+} */
+@import "output.wxss";

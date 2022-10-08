@@ -1,0 +1,17 @@
+Drawers can contain anything but a headline and another drawer
+Use C-c C-x d to insert
+
+:my-drawer:
+AAAAAAAAAAAA
+:END:
+* H1
+  :PROPERTIES:
+  :END:
+With a prefix argument(C-u C-c C-x d), it creates a ‘PROPERTIES’ drawer right
+below the current headline.
+
+* TODO MyToDo
+  - Note taken on [2021-10-04 一 15:31] \\
+    My Note for MyToDo
+
+C-c C-z to add a LOGBOOK for a TODO

@@ -1,0 +1,144 @@
+** First
+*** Bye Crude World
+#+begin_src LilyPond
+%% Version on ubuntu is too old                               
+% \version "2.22.1"
+{
+  c' e' g' e'
+}
+#+end_src
+*** Pitch
+#+begin_src LilyPond
+%% Add ' or , to make it a octave higher/lower
+{ c' d' e' f' g' a' b' c'' g c' e' g' c'' e'' g'' c''' }
+
+%%  Use \realative to keep it to the nearest state
+\relative {
+  c' d e f
+  g a b c
+}
+
+%%  Use ' and , to adjust the octave
+\relative {
+  c' d e f
+  g a b c
+}
+#+end_src
+*** Duration
+**** Basic
+The duration of a note is specified by a number after the note name: 1 for a
+whole note, 2 for a half note, 4 for a quarter note and so on.
+
+Beams are added automatically.
+
+If you do not specify a duration, the previous duration is used for the next
+note. The duration of the first note defaults to a *quarter note*.
+#+begin_src LilyPond
+\relative {
+  a'1
+  a2 a4 a8 a
+  a16 a a a a32 a a a a64 a a a a a a a a2
+}
+
+#+end_src
+**** Dotted notes
+#+begin_src LilyPond
+\relative {
+  a'4 a a4. a8
+  a8. a16 a a8. a8 a4.
+}
+#+end_src
+*** Rest
+    Use r
+#+begin_src LilyPond
+\relative {
+  a'4 r r2
+  r8 a r4 r4. r8
+}
+#+end_src
+*** Time signature
+#+begin_src LilyPond
+\relative {
+  \time 3/4
+  a'4 a a
+  \time 6/8
+  a4. a
+  \time 4/4
+  a4 a a a
+}
+#+end_src
+*** Tempo and Metronome marks
+#+begin_src LilyPond
+\relative {
+  \time 3/4
+  \tempo "Andante"
+  a'4 a a
+  \time 6/8
+  \tempo 4. = 96
+  a4. a
+  \time 4/4
+  \tempo  "Presto" 4 = 120
+  a4 a a a
+}
+#+end_src
+*** A clef
+#+begin_src LilyPond
+\relative {
+  \clef "treble"
+  c'1
+  \clef "alto"
+  c1
+  \clef "tenor"
+  c1
+  \clef "bass"
+  c1
+}
+#+end_src
+*** Example
+#+begin_src LilyPond
+\relative {
+  \clef "bass"
+  \time 3/4
+  \tempo "Andante" 4 = 120
+  c,2 e8 c'
+  g'2.
+  f4 e d
+  c4 c, r
+}
+#+end_src
+*** Use the online sipnep
+#+begin_src LilyPond
+\version "2.20.0"
+\sourcefileline 722
+\relative {
+  c''4-\markup { \bold \huge { Click here. } }
+}
+#+end_src
+** 2. Common Notation 
+*** 2.1 Single staff notation
+**** 2.1.1 Manually put bar lines
+#+begin_src LilyPond
+\version "2.20.0"
+\relative { g'1 e1 \bar "||" c2. c'4 \bar "|." }
+#+end_src
+**** 2.1.2 Using bar check
+#+begin_src LilyPond
+
+\relative {
+  g'1 | e1 | c2. c' | g4 c g e | c4 r r2 |
+}
+% We see that
+
+% warning: barcheck failed at: 1/2
+%  g'1 | e1 | c2. c'
+%                    | g4 c g e | c4 r r2 |
+#+end_src
+**** sharp and flat
+#+begin_src LilyPond
+\version "2.20.0"
+\relative { cis''4 ees fisis, aeses }
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "LilyPond"
+# End:

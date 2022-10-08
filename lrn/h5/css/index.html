@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>JS Bin</title>
+        <style>
+         .container {
+             display: grid;
+             /* grid-template-columns: 200px 200px 200px; */
+             /* grid-template-columns: 1fr 1fr 1fr; */
+             /* grid-template-columns: 2fr 1fr 1fr; */
+             /* grid-template-columns: repeat(3, 1fr); */
+             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+             grid-auto-rows: minmax(100px, auto);
+             gap: 10px;
+         }
+
+         .container div {
+             background-color: gray;
+             border: solid;
+             border-radius: 10%;
+             padding: 5px;
+         }
+
+        </Style>
+    </head>
+    <body>
+        <div class="container">
+            <div> a0 </div>
+            <div> a1 </div>
+            <div> a2 aa aa aa aa aa aa aa aa aa
+                aa aa aa aa aa aa aa aa aa aa
+            aa aa aa aa aa aa aa aa aa aa aa aa
+            aa aa aa aa aa aa aa aa aa aa </div>
+            <div> a3 </div>
+            <div> a4 </div>
+            <div> a5 </div>
+        </div>
+    </body>
+</html>

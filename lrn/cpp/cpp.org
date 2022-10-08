@@ -1,0 +1,859 @@
+** string
+*** length
+#+begin_src c++
+// string::length
+#include <iostream>
+#include <string>
+
+int main ()
+{
+  std::string str ("Test string");
+  std::cout << "The size of str is " << str.length() << " bytes.\n";
+  return 0;
+}
+#+end_src
+** Move
+*** forward
+ Trun into rvalue if possible.
+ #+BEGIN_SRC c++
+ // forward example
+ #include <utility>      // std::forward
+ #include <iostream>     // std::cout
+
+ // function with lvalue and rvalue reference overloads:
+ void overloaded (const int& x) {std::cout << "[lvalue]";}
+ void overloaded (int&& x) {std::cout << "[rvalue]";}
+
+ // function template taking rvalue reference to deduced type:
+ template <class T> void fn (T&& x) {
+   overloaded (x);                   // always an lvalue
+   overloaded (std::forward<T>(x));  // rvalue if argument is rvalue
+ }
+
+ int main () {
+   int a;
+
+   std::cout << "calling fn with lvalue: ";
+   fn (a);
+   std::cout << '\n';
+
+   std::cout << "calling fn with rvalue: ";
+   fn (0);
+   std::cout << '\n';
+
+   std::cout << "calling with static cast an lvalue: ";
+   overloaded(static_cast<decltype(a)&&>(a));
+   std::cout << '\n';
+
+   return 0;
+ }
+ #+END_SRC
+*** move
+ #+BEGIN_SRC c++
+ // move example
+ #include <utility>      // std::move
+ #include <iostream>     // std::cout
+ #include <vector>       // std::vector
+ #include <string>       // std::string
+
+ int main () {
+   std::string AA = "AA-string";
+   std::string BB = "BB-string";
+   std::vector<std::string> myvector;
+
+   std::cout << "Before move: ";
+   std::cout << '\n'
+             << "Now AA is : " << AA << '\n'
+             << "BB is : " << BB << '\n';
+
+
+   myvector.push_back (AA);                    // copies
+   myvector.push_back (std::move(BB));         // moves
+
+
+
+   std::cout << '\n'
+             << "After move\n";
+
+   std::cout << "myvector contains:";
+   for (std::string& x:myvector) std::cout << ' ' << x;
+   std::cout<< "\nNow AA is : " << AA << '\n'
+            << "BB is : " << BB << '\n';
+
+   return 0;
+ }
+
+ // Before move:
+ // Now AA is : AA-string
+ // BB is : BB-string
+
+ // After move
+ // myvector contains: AA-string BB-string
+ // Now AA is : AA-string
+ // BB is :
+
+ #+END_SRC
+** Template
+*** Cannot initiate template (ld cannot find class)
+[[https://stackoverflow.com/questions/8752837/undefined-reference-to-template-class-constructor]]
+Why:
+
+This happens when you define a template in a different file. The client code
+(who uses template) and the server code (who define template) are compiled in
+parallel, so the compiler dosn't know which template to compile(It can't compile
+the template for all possible types).
+
+Solution:
+#+begin_src c++
+  template class MyClass<float>;  // Explicitly compile the template class for
+                                  // float
+  template void MyFunc<std::string>(int x);  // Explicitly compile the template class for
+                                      // float
+#+end_src
+*** Explicit specialization
+Calling convention:
+non-template > explicit specialization > template
+#+begin_src c++
+  template<typename T>
+  void f(T &, T &);               // template
+
+  template <> void f<myclass>(myclass &,
+                              myclass &); // explicit specialization for myclass
+
+  void f(myclass2 &, myclass2 &); // non-template function
+#+end_src
+** File
+*** simple
+#+BEGIN_SRC c++
+/**
+ * @file file.cpp
+ * @author Jianer Cong
+ * @brief Simple file input and output
+ */
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using std::string;
+using std::cout;
+using std::cin;
+using std::ofstream;
+using std::ifstream;
+
+int main(int argc, char *argv[]){
+  string filename;
+
+  cout << "Enter the name of new file: ";
+  cin >> filename;
+
+  filename = filename + ".txt";
+  // The output stream
+  ofstream fout(filename.c_str());
+
+  fout << "Your secret number is : ";
+  cout << "Enter your secret number :";
+  float x;
+  cin >> x;
+  fout << x;
+  fout.close();
+
+  // Create input
+  ifstream fin(filename.c_str());
+  cout << "The content of " << filename << " is :\n";
+  char ch;
+  while(fin.get(ch))
+    cout << ch;
+  cout << "\nDone";
+  fin.close();
+  }
+
+#+END_SRC
+*** readline
+#+BEGIN_SRC c++
+/**
+ * @file file2.cpp
+ * @author Jianer Cong
+ * @brief using readline
+ */
+
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using std::cout;
+using std::endl;
+using std::cin;
+using std::ifstream;
+using std::ofstream;
+using std::string;
+
+
+const int M{40};                  // maximum input
+
+int main(int argc, char *argv[]){
+  char *filename = "db.txt";
+
+  // Open the file
+  ofstream fout(filename);
+
+  // Get input
+  char s[M];
+  int c{0};                        // count
+  cout << "Enter the word you wanna store: (empty line to quit)";
+  while (cin.getline(s,M) && s[0] != '\0'){
+    fout << c++ << '.' << s << endl;
+         // << (c % 3 == 2)? "\n" : " ";
+    cout << "Enter next word you wanna store: (empty line to quit)";
+  }
+  fout.close();
+
+  ifstream fin(filename);
+  cout << "Here's your words:\n";
+  while (fin.getline(s,M)){
+    cout << s << endl;
+  }
+  cout << "Done.\n";
+  return 0;
+  }
+
+#+END_SRC
+*** skip comments
+#+BEGIN_SRC c++
+/**
+ * @file file3.cpp
+ * @author Jianer Cong
+ * @brief Skip the comments in a file that starts with #
+ */
+
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdlib>
+
+
+
+using std::cout;
+using std::endl;
+using std::cin;
+using std::ifstream;
+using std::ofstream;
+using std::string;
+using std::cerr;
+
+
+void report_bad_file(string filename);
+// Maximum word length
+const int M = 40;
+
+/**
+ * @brief process the file opened by fin
+ * @param fin the words
+ */
+void process_file(ifstream &fin){
+  char W[M];                    // The words.
+  while (fin.get(W,M)){
+    cout << "The words read: " << W;
+    if (!isspace(fin.get())){
+      cout << "  The tracated parts are: ";
+      char c;
+      while(!isspace(c = fin.get()))
+        cout << c;
+    }
+    cout << endl;
+  }
+  cout << "One file processed";
+}
+
+void skip_comment(ifstream &fin){
+  while (fin.get() != '\n')
+    continue;
+}
+
+string read_symbol(ifstream &fin){
+  string s;
+  fin >> s;
+  // check if # exists.
+  int pos;
+  pos = (int) s.find('#');
+  if (pos != string::npos){
+    cout << "Putting back over-read comments: ";
+    string cm = s.substr(pos);
+    cout << cm << endl;
+    for (int i = cm.length()-1; i >= 0; i--){
+      fin.putback(cm[i]);
+    }
+
+    // Modify original string
+    s = s.substr(0,pos-1);
+  }
+  return s;
+}
+
+/**
+ * @file file3.cpp
+ * @author Jianer Cong
+ * @brief display the words one-by-one and skip comments
+ */
+void process_file2(ifstream &fin){
+  string s;
+  char c;
+  while (fin.get(c)){
+    if (c == '#'){
+      skip_comment(fin);
+    }else if(isspace(c)){
+      continue;
+    }else{
+      fin.putback(c);
+      s = read_symbol(fin);
+      cout << "The word read: " << s << endl;
+    }
+  }
+  cout << "One file processed\n";
+}
+
+
+int main(int argc, char *argv[]){
+
+  if (argc == 1){
+    cerr << "Usage: " << argv[0] << "<filename1> <filename2> ... \n"
+         << "\tThe <filename> is the file you store your words.\n";
+    exit(EXIT_FAILURE);
+  }
+
+  ifstream fin;
+  for (int i = 1; i < argc; i++){
+    fin.open(argv[i]);
+    if (!fin.is_open()){
+      report_bad_file(argv[i]);
+      fin.clear(); continue;
+    }
+    cout << "Reading from "<< argv[i]<< endl;
+    process_file2(fin);
+    fin.close();
+  }
+
+  cout << "All file processed\n";
+  return 0;
+}
+
+void report_bad_file(string s){
+  cerr << "Cannot open file " << s << endl;
+}
+
+
+#+END_SRC
+** Vector
+*** erase
+#+BEGIN_SRC c++
+// erasing from vector
+
+#include <iostream>
+#include <vector>
+using std::cout;
+
+#define SHOW std::cout << "myvector contains:"; \
+  for (unsigned i=0; i<myvector.size(); ++i)    \
+    std::cout << ' ' << myvector[i];            \
+  std::cout << '\n'
+
+int main ()
+{
+  std::vector<int> myvector;
+
+  // set some values (from 1 to 10)
+  for (int i=1; i<=10; i++) myvector.push_back(i);
+  SHOW;
+
+  cout << "erase the 6th element: \n";
+  myvector.erase (myvector.begin()+5);
+  SHOW;
+
+  cout << "erase the first 3 elements: \n";
+  myvector.erase (myvector.begin(),myvector.begin()+3);
+  SHOW;
+
+
+  return 0;
+}
+
+#+END_SRC
+** List
+*** basic
+#+begin_src c++
+#include <algorithm>
+#include <iostream>
+#include <list>
+ 
+int main()
+{
+  // Create a list containing integers
+  std::list<int> l = { 7, 5, 16, 8 };
+ 
+  // Add an integer to the front of the list
+  l.push_front(25);
+  // Add an integer to the back of the list
+  l.push_back(13);
+ 
+  // Insert an integer before 16 by searching
+  auto it = std::find(l.begin(), l.end(), 16);
+  if (it != l.end()) {
+    l.insert(it, 42);
+  }
+ 
+  // Print out the list
+  std::cout << "l = { ";
+  for (int n : l) {
+    std::cout << n << ", ";
+  }
+  std::cout << "};\n";
+}
+
+#+end_src
+*** random access
+#+BEGIN_SRC c++
+// list::begin
+#include <iostream>
+#include <list>
+
+int main ()
+{
+  int myints[] = {75,23,65,42,13};
+  std::list<int> mylist (myints,myints+5);
+
+  std::cout << "mylist contains:";
+  for (std::list<int>::iterator it=mylist.begin(); it != mylist.end(); ++it)
+    std::cout << ' ' << *it;
+
+  std::cout << '\n';
+
+  return 0;
+}
+#+END_SRC
+** map
+   #+begin_src c++
+/**
+ * @file umap.cpp
+ * @author Jianer Cong
+ * @brief unordered map basic
+ */
+
+#include <unordered_map>
+#include <iostream>
+
+using std::cout;
+using std::unordered_map;
+using std::endl;
+
+
+typedef unordered_map<int,const char*> umap;
+
+int main(int argc, char *argv[]){
+  umap m = {
+            { 1 , "one"},
+            {2, "two"}
+  };
+
+  cout << "Map contents are\n";
+  for (const auto& [k, v] : m){
+    cout << "Key " << k << " Value " << v << endl;
+  }
+
+  // Insert some value
+  m.insert({3,"three"});
+  m.insert({
+            {4,"four"}, {5,"five"}
+    });
+
+  m.emplace(4,"NO");
+  // Will not insert, since already exits/
+  m.emplace(6,"six");
+
+  cout << "Now the contents are:\n";
+  for (const auto& p : m){
+    cout << "\t"<< p.first << " : " << p.second << endl;
+  }
+
+  cout << "After erase one:\n";
+  m.erase(1);
+
+  for (const auto& p : m){
+    cout << "\t"<< p.first << " : " << p.second << endl;
+  }
+  return 0;
+  }
+
+   #+end_src
+** iomanip
+ #+begin_src c++
+#include <iostream>
+#include <string>
+#include <iomanip>
+
+
+
+using std::cout;
+using std::endl;
+using std::string;
+using std::setw;
+
+typedef double dbl;
+
+struct Row{
+  string element;
+  dbl pc_total;
+  dbl pc_cap;
+};
+
+dbl t_W = 45248;                // total
+#define N 9
+
+Row df[N] = {
+  {"Core walls"       ,31,24},
+  {"Columns"          , 6,5},
+  {"Structual floors" ,26,20.5},
+  {"Floor finishes"   , 9, 7},
+  {"Partitions"       ,6.5,5},
+  {"Cladding"         ,7.5,6},
+  {"Super load"       ,13,10.2},
+  {"Plant"            ,1.0,0.8},
+  {"Pile cap"         ,0,21.5}
+};
+
+#define START(i) ((i == 0)? "|" : "")
+
+void go(){
+  int f[3] = {25,10,10};
+  int w{0};
+  const char* col[3] = {"Element", "% of Total", "% of Total2"};
+
+  for (int i = 0; i < 3;i++){
+    cout << START(i) << setw(f[i]) << col[i] << '|';
+    w += f[i];
+  }
+
+  cout << endl<< string(w+4,'-') << endl;
+
+  for (int i = 0; i < N; i++){
+    cout << '|' << std::setiosflags (std::ios::left) <<
+      setw(f[0]) << df[i].element << '|';
+    cout << setw(f[1]) << df[i].pc_total << '|';
+    cout << setw(f[2]) << df[i].pc_total << '|' << endl;
+  }
+}
+
+int main(int argc, char *argv[]){
+  go();
+  return 0;
+}
+
+ #+end_src
+** functions
+*** lambdas
+#+begin_src c++
+#include <iostream>
+#include <string>
+using std::cout;
+
+typedef void (*call)(void);
+void f3(){
+  cout << "f3 is called\n";
+}
+
+int main(int argc, char *argv[]){
+  call f = f3;
+  f();
+  f = [](void){cout << "f is called\n";};
+  f();
+  return 0;
+  }
+
+  #+end_src
+*** call list of function
+#+begin_src c++
+#include <iostream>
+#include <cstdio>
+#include <list>
+
+using std::list;
+using std::cout;
+using std::endl;
+
+
+typedef void (*call)(void);
+void f1(void){
+  printf("f1 is called\n");
+}
+
+class my_class{
+public:
+  static void f3(){printf("f3 is called\n");};
+};
+
+int main ()
+{
+  list<call> l;
+  l.push_back(&f1);
+  l.push_back([](void){printf("f2 is called\n");});
+  l.push_back(&my_class::f3);
+
+  std::cout << "l contains:\n";
+  for (list<call>::iterator it=l.begin(); it != l.end(); ++it)
+    (*it)();                    // Call the function
+  return 0;
+}
+
+#+end_src
+*** variadic arguments
+#+begin_src c++
+#include <stdio.h>
+#include <stdarg.h>
+ 
+void simple_printf(const char* fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+ 
+  while (*fmt != '\0') {
+    if (*fmt == 'd') {
+      int i = va_arg(args, int);
+      printf("%d\n", i);
+    } else if (*fmt == 'c') {
+      // A 'char' variable will be promoted to 'int'
+      // A character literal in C is already 'int' by itself
+      int c = va_arg(args, int);
+      printf("%c\n", c);
+    } else if (*fmt == 'f') {
+      double d = va_arg(args, double);
+      printf("%f\n", d);
+    }
+    ++fmt;
+  }
+ 
+  va_end(args);
+}
+ 
+int main(void)
+{
+  simple_printf("dcff", 3, 'a', 1.999, 42.5); 
+}
+
+#+end_src
+*** vprintf
+#+begin_src c++
+/* vprintf example */
+#include <stdio.h>
+#include <stdarg.h>
+
+void WriteFormatted ( const char * format, ... )
+{
+  va_list args;
+  va_start (args, format);
+  vprintf (format, args);
+  va_end (args);
+}
+
+int main ()
+{
+  WriteFormatted ("Call with %d variable argument.\n",1);
+  WriteFormatted ("Call with %d variable %s.\n",2,"arguments");
+
+  return 0;
+}
+
+#+end_src
+*** vsprintf
+#+begin_src c++
+/* vsprintf example */
+#include <stdio.h>
+#include <stdarg.h>
+
+void PrintFError ( const char * format, ... )
+{
+  char buffer[256];
+  va_list args;
+  va_start (args, format);
+  vsprintf (buffer,format, args);
+  perror (buffer);
+  va_end (args);
+}
+
+int main ()
+{
+  PrintFError ("%s world.\n","Bye");
+  return 0;
+}
+
+#+end_src
+** class
+*** Inheritance
+**** Call base class method
+#+begin_src c++
+#include <iostream>
+#include <string>
+
+using std::cout;
+using std::endl;
+using std::string;
+
+struct A
+{
+  int _x;
+  A( int x) { _x = x;}
+  virtual ~A() = default ;
+
+  virtual void update() {
+    cout << "Updating from A: x is " << _x << "\n";
+  }
+};
+
+struct B : A
+{
+  using base = A ; // 'base' is a type alias for 'A'
+
+  using base::base ; // inheriting constructor
+  // equivalent to B( int v ) : base(v) {}
+  B() : base(5) {}
+
+  virtual void update() override
+  {
+    base::update() ; // same as A::update() ;
+    std::cout << "called from derived class\n" ;
+  }
+};
+
+int main(int argc, char *argv[]){
+  B b(1);
+  b.update();
+  return 0;
+  }
+#+end_src
+**** inheriting an exception
+#+begin_src csharp
+#include <iostream>
+#include <stdexcept>
+
+using std::runtime_error;
+using std::cout;
+using std::endl;
+using std::string;
+
+class my_error : runtime_error{
+public:
+  // Inherit base class constructor
+  using runtime_error::runtime_error;
+  using runtime_error::what;
+};
+
+
+int main(int argc, char *argv[]){
+  try {
+    throw runtime_error("My error");
+  }catch (runtime_error e){
+    cout << "Caught error " << e.what() << endl;
+  }
+
+  try{
+    throw my_error("My homemade error");
+  } catch (my_error e2){
+    cout << "Caught error " << e2.what() << endl;
+  }
+  cout << "Done\n";
+  return 0;
+  }
+
+  #+end_src
+** Exception
+1. domain_error
+2. invalid_argument
+3. length_error
+4. out_of_bounds
+** namespace and header
+*** hi.cpp
+#+begin_src c++
+#include "hi.h"
+
+using namespace my_namespace;
+
+my_class::my_class() {
+  printf("my_class constructor is here\n");
+}
+
+void my_class::my_method(int x){
+  printf("my_method called with argument %d\n", x);
+}
+
+int main(int argc, char *argv[]){
+  my_class m;
+  m.my_method(2);
+  return 0;
+  }
+
+  #+end_src
+*** hi.h
+#+begin_src c++
+#include <iostream>
+#include <cstdio>
+#include <string>
+
+namespace my_namespace{
+  class my_class {
+  public:
+    my_class();
+    void my_method(int x);
+  };
+}
+
+
+#+end_src
+*** global namespace
+How to refer to the global namespace
+#+begin_src c++
+bool isGood(){ return_if_it_is_good;}
+
+class X{
+int a;
+bool isGood(){return ::isGood(a);}
+}
+#+end_src
+** Time
+#+begin_src c++
+#include <ctime>
+#include <iostream>
+using namespace std;
+
+int main()
+{
+	time_t curr_time;
+	tm * curr_tm;
+	char date_string[100];
+	char time_string[100];
+	
+	time(&curr_time);
+	curr_tm = localtime(&curr_time);
+	
+	strftime(date_string, 50, "Today is %B %d, %Y", curr_tm);
+	strftime(time_string, 50, "Current time is %T", curr_tm);
+	
+	cout << date_string << endl;
+	cout << time_string << endl;
+	
+	return 0;
+}
+
+#+end_src
+** sleep
+#+begin_src c++
+  #ifdef _WIN32
+  #include <Windows.h>
+  #else
+  #include <unistd.h>
+  #endif
+  // unsigned sleep(unsigned seconds);
+
+
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

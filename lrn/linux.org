@@ -1,0 +1,132 @@
+* Process
+** ps basic
+#+BEGIN_SRC bash
+  pstree
+  vmstat 5                        # watch processes update evry 5s
+  ps
+  jobs
+  kill 28401                      # kill the processes
+usage update every 5 secs
+  top                             # watch processes
+  ps
+  jobs
+  kill 28401                      # kill the processes
+#+END_SRC
+** kill and friend
+*** pgrep and pkill
+#+begin_src bash
+  # Example 1: Find the process ID of the named daemon:
+  pgrep -u root named
+  # Example 2: Make syslog reread its configuration file:
+  pkill -HUP syslogd
+  # Example 3: Give detailed information on all xterm processes:
+  ps -fp $(pgrep -d, -x xterm)
+  # Example 4: Make all chrome processes run nicer:
+  renice +4 $(pgrep chrome)
+
+  # list the sshd run by root
+  pgrep --euid root sshd
+  pgrep -u root sshd
+  # count the process run by root
+  pgrep --count --euid root
+  pgrep -c -u root
+  # count the process run by root or daemon
+  pgrep -c -u root,daemon
+
+  # list process has bash in it's command line
+  pgrep --full bash
+
+  # list the emacs also the full name and full command-line
+  pgrep emacs --list-name
+  # 4412 emacs
+  pgrep emacs --list-full
+  # 4412 emacs linux.org
+
+  # list the newest emacs process
+  pgrep --newest --ignore-case emacs
+
+  # kill the oldest emacs process
+  pkill --oldest emacs
+
+
+
+              #+end_src
+* GUI
+** file explorer
+#+BEGIN_SRC bash
+xdg-open .
+#+END_SRC
+** read epub
+#+begin_src bash
+sudo apt install gnome-book
+#+end_src
+* Doxygen
+** How to run
+#+BEGIN_SRC bash
+  doxygen -g                      # Generate the Doxyfile
+  doxygen Doxyfile                # Generate the docs
+#+END_SRC
+* Env
+printenv | less
+printenv USER
+set | less
+echo $HOME
+alias
+export HISTCONTROL=ignoredups
+alias  l.='ls -d.* --color=auto'
+* Devices
+** list block devices
+   #+BEGIN_SRC bash  
+     ls -l /sys/block
+     blkid                           # show UUID
+   #+END_SRC
+** ls all disk
+lsscsi
+** ls all partitions
+ls -l /dev/disk/by-id
+# or
+sudo parted -l
+** Shrink existing partition
+1. Download Gparted Live ISO
+2. sudo dd bs=4M if=gparted-live.iso of=/dev/sdX status=progress && sync
+   # Find out your sdX with fdisk -l
+3. boot from gparted, press enter to go on.
+4. Below, you can see the yellow area is the part with the data. It is around 3
+   Gb in my case. The rest is free space. Let’s use this space to create another
+   partition.
+5. Select this partition and click on _Resize_ option.
+6. You can resize it using the numbers or by mowing the arrows. I will free up
+   10 Gb. Enter the number, press enter, and click on _Resize_.
+7. Now, you can create another partition. Click on the unallocated space, then
+   click New to create a new partition.
+8. You can select its size, whether you want it to be primary or extended. An
+   extended partition allows you to create more than 4 partitions. You can
+   choose the file system you need. And you can also give a name to this
+   partition. So, when you have set everything as you want, click Add.
+9. Everything above created only the plan of the changes to do. You can find the
+   detail of the changes you are about to apply at the bottom of Gparted.
+* Misc
+** sudo
+*** the env for sudo?
+sudo visudo
+*** Cannot find path
+Add the link in /usr/bin
+** date
+** 
+* System
+** users
+#+begin_src bash
+  sudo adduser me2                # add user
+  sudo usermod -aG sudo me2       # let him sudo
+  sudo deluser me2                # delete the user
+#+end_src
+** the issue: \home\me is not \home\pi ?
+#+begin_src bash
+  sudo ln -s /home/me /home/pi
+#+end_src
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

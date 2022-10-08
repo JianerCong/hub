@@ -1,0 +1,52 @@
+This is my first plain \TeX{} document. Here's an example of a ``description list''.
+
+\bigskip
+
+%% Call the indentation for description \myi (my-indentation)
+
+\newdimen\myi \myi = 8pc
+
+{\noindent \leftskip = \myi \parskip = .5 \baselineskip
+% Move the description to the left of the paragraph
+\llap{\hbox to \myi{\bf Queen of Hearts\hfill}} An ill-tempered woman, prone to
+saying ``Off with his head''\ at the slightest provocation.
+\par \noindent \llap{\hbox to \myi{\bf Modck Turtle\hfill}} A lachrymose creature, quite a
+storyteller, who was companion to Gryphon. Reputely the principal ingredient of Mock Turtle Soup.
+. \par }
+
+\bigskip\hrule\bigskip        
+Here's an example of some words in a ruled box.
+\bigskip
+% put 8pt space between the text and the surrounding rules.
+\hbox{\vrule
+  \vbox{\hrule
+     \hbox spread 8pt{\hfil
+           \vbox spread 8pt{ \vfil
+                \hbox{Here is Edward Bear, coming downstars now, bump, bump, bump,}
+                \hbox{on the back of his head
+                , behind Christopher Robin.}
+                \hbox{It is, as fae as he knoews, the only way of coming downstars, }
+                \hbox{but sometimes
+                her feels that there really is another way. if only her could stop bumping and think of it.}
+                \vfil
+           }
+     \hfil}
+  \hrule}
+\vrule}
+
+\bigskip
+\line{
+  \hfil
+    \hbox to 4in{\leaders\hbox{ *- }\hfil }
+  \hfil 
+  }
+\bigskip
+
+\line{
+  \hskip -4pt\vrule \hfil \vbox{
+         Winnie-the-Pooh. When I first heard his name, I said, just as you are goinf to say, ``But I thought
+         he was a boy?''
+         ``So did I,'' said Christopher Robin.
+         }
+}
+\bye

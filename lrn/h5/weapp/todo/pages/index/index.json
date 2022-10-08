@@ -1,0 +1,11 @@
+{
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-sticky": "tdesign-miniprogram/sticky/sticky",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-transition": "tdesign-miniprogram/transition/transition",
+    "t-collapse-panel": "tdesign-miniprogram/collapse/collapse-panel",
+    "t-collapse": "tdesign-miniprogram/collapse/collapse"
+  }
+}

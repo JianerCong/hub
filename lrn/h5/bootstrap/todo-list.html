@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Bootstrap demo</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" 
+        rel="stylesheet" 
+        integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+        <link href="./style.css" rel="stylesheet" />
+        <!-- Option 1: Include in HTML -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+        <style>
+            /* img {
+                height: 2.5em;
+            } */
+        </style>
+    </head>
+
+    <body>
+        <div>
+            <!-- The nav bar -->
+            <nav class="navbar navbar-expand-lg bg-secondary navbar-dark py-3 fixed-top">
+                <div class="container">
+                    <a href="#" class="navbar-brand">
+                        <img src="./一个办事清单v2.png" class="py-0" style="height: 2em;">
+                        <!-- <img src="./aTodoList.png" class="" style="height: 1.5em;"> -->
+                    </a>
+                    <button
+                        class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navmenu"
+                    >
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navmenu">
+                        <ul class="navbar-nav ms-auto text-end">
+                            <!-- <li class="nav-item">
+                                 <a href="#" class="nav-link">
+                                 Logged in as:
+                                 <span class="badge text-bg-success">me</span>
+                                 </a>
+                                 </li>              
+                                 <li class="nav-item ">
+                                 <a href="#" class="">
+                                 <button type="button" class="btn btn-danger">Log out</button>
+                                 </a>
+                                 </li> -->
+                            <li class="nav-item mt-1 mt-lg-0 mx-lg-1">
+                                <a href="#" class="">
+                                    <button type="button" class="btn btn-info">Log in</button>
+                                </a>
+                            </li>
+
+                            <li class="nav-item mt-1 mt-lg-0 mx-lg-1">
+                                <a href="#" class="">
+                                    <button type="button" class="btn btn-light">Lang</button>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- The input bar -->
+            <section class="fixed-bottom">
+                <div class="container bg-light">
+                    <div class="input-group mb-3 ">
+                        <input type="text" class="form-control" placeholder="Write your todo here">
+                        <button class="btn btn-success" type="button" id="button-addon2">Add</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Display the todos -->
+            <section>
+                <div class="container pt-4">
+                    <!-- Use grid -->
+
+                    <!-- a todo with no deadline -->
+                    <div class="row mx-3 rounded bg-light border lead mb-2">
+                        <div class="col-2 col-md-1 rounded-start text-center 
+                        d-flex align-items-center
+                        ">
+                            <!-- <i class="bi bi-square"></i> -->
+                            <div>
+                                <i class="bi bi-check-square"></i>
+                            </div>
+                        </div>
+                        <div class="col-8 col-md-10 d-flex align-items-center"
+                        style="min-height: 2em;">
+                            <div class="fs-3">
+                                aaaaaaaaaaa
+                            </div>
+                        </div>
+                        <div class="col-2 col-md-1 rounded-end text-center
+                        d-flex align-items-center                        
+                        ">
+                        <div>
+                            <i class="bi bi-x-square-fill"></i>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- a todo with deadline -->
+                    <div class="row mx-3 rounded bg-light border lead mb-2">
+                        <div class="col-2 col-md-1 rounded-start text-center 
+                        d-flex align-items-center
+                        ">
+                            <!-- <i class="bi bi-square"></i> -->
+                            <div>
+                                <i class="bi bi-check-square"></i>
+                            </div>
+                        </div>
+                        <div class="col-8 col-md-10"
+                        style="min-height: 2em;">
+                            <div class="fs-3">
+                                aaaaaaaaaaa
+                            </div>
+                            <div class="fs-6 text-muted">
+                                due in 2 days
+                            </div>
+                        </div>
+                        <div class="col-2 col-md-1 rounded-end text-center
+                        d-flex align-items-center                        
+                        ">
+                        <div>
+                            <i class="bi bi-x-square-fill"></i>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+    </body>
+</html>

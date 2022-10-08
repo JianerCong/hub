@@ -1,0 +1,69 @@
+#+LATEX: \begin{mybox}
+** JavaScript: The Definitive Guide, 7th Edition
+#+LATEX: \tcblower{}
+https://learning.oreilly.com/library/view/javascript-the-definitive/9781491952016/
+#+LATEX: \end{mybox}\begin{myitems}
++ 15.4 Scripting CSS
+  + 15.4.1 CSS Classes
+  + 15.4.2 Inline Styles
+  + 15.4.3 Computed Styles
+  + 15.4.4 Scripting Stylesheets
+  + 15.4.5 CSS Animations and Events
++ 15.5 Document Geometry and Scrolling
+  + 15.5.1 Document Coordinates and Viewport Coordinates
+  + 15.5.2 Querying the Geometry of an Element
+  + 15.5.3 Determining the Element at a Point
+  + 15.5.4 Scrolling
+  + 15.5.5 Viewport Size, Content Size, and Scroll Position
+#+LATEX: \end{myitems}
+
+除此之外，还有在leetcode(https://leetcode.com)刷题。
+
+* Old
+#+LATEX: \begin{mybox}
+** Django Tutorial
+#+LATEX: \tcblower{}
+https://docs.djangoproject.com/en/4.0/intro/tutorial01/
+#+LATEX: \end{mybox}\begin{myitems}
++ 3.1 Overview
++ 3.2 Writing more views
+#+LATEX: \end{myitems}
+* Fetch the titles
+
+#+begin_src js
+  let c1, a
+  c1 = document.getElementsByClassName("TOCTitle--fFPXo");
+  c1.length
+  a = ""
+  for (let h of c1){
+      s = h.firstElementChild.innerText
+      s = "+ " + s
+      for (let i=1;i<s.split('.').length-1;i++){// indent the list
+          s = "  " + s
+      }
+      a += s + "\n"
+      //console.log(h.firstElementChild.innerHTML)
+      //if (h.firstElementChild.firstChild)
+  }
+  console.log(a)
+#+end_src
+
+
+For MDN
+#+begin_src js
+  //let c1,a
+  c1 = document.getElementsByClassName("document-toc-link");
+  c1.length
+  a = ""
+
+  for (let h of c1){
+        s = h.innerText
+        a += s + "\n"
+        //console.log(h.firstElementChild.innerHTML)
+        //if (h.firstElementChild.firstChild)
+    }
+    console.log(a)
+  /*  
+
+  ,*/
+#+end_src

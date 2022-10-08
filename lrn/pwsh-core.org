@@ -1,0 +1,1033 @@
+* Pwsh
+** Date
+** Jobs
+*** Start a named job
+#+begin_src powershell
+Start-Job -ScriptBlock {emacs .\note.org} -Name "emacs"
+#+end_src
+
+** Bind keys
+*** show current key bindings
+Get-PSReadLineKeyHandler | more
+*** bind keys
+    Set-PSReadLineKeyHandler -Chord Ctrl+Shift+C -Function CaptureScreen
+*** Add forward and backward history nevigation
+Set-PSReadLineKeyHandler -Chord 'Alt+,' -ScriptBlock {
+    Set-Location -
+    [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
+    [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+}
+
+Set-PSReadLineKeyHandler -Chord 'Alt+.' -ScriptBlock {
+    Set-Location +
+    [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
+    [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+}
+
+*** 截胡pwsh的Input， 用notepad输入
+#+begin_src powershell
+function PSConsoleHostReadLine
+{
+    $inputFile = Join-Path $env:TEMP PSConsoleHostReadLine
+    Set-Content $inputFile "PS > "
+
+    ## Notepad opens. Enter your command in it, save the file,
+    ## and then exit.
+    notepad $inputFile | Out-Null
+    $userInput = Get-Content $inputFile
+    $resultingCommand = $userInput.Replace("PS >", "")
+    $resultingCommand
+}
+#+end_src
+
+*** MyExample
+#+begin_src powershell
+Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardChar
+Set-PSReadLineKeyHandler -Chord Alt+f -Function NextWord
+Set-PSReadLineKeyHandler -Chord Alt+b -Function BackwardWord
+Set-PSReadLineKeyHandler -Chord Ctrl+b -Function BackwardChar
+
+Set-PSReadLineKeyHandler -Chord Ctrl+p -Function PreviousHistory
+Set-PSReadLineKeyHandler -Chord Ctrl+n -Function NextHistory
+
+Set-PSReadLineKeyHandler -Chord Ctrl+k -Function ForwardDeleteLine
+Set-PSReadLineKeyHandler -Chord Ctrl+a -Function BeginningOfLine
+Set-PSReadLineKeyHandler -Chord Ctrl+e -Function EndOfLine
+#+end_src
+
+** function
+*** basic
+    #+begin_src powershell
+      # method 1 for param
+      function Add-Numbers([int]$one, [int]$two) {
+          $one + $two
+      }
+      # method 2 for param
+      function Get-MrParameterCount {
+          param (
+              [string[]]$ParameterName
+          )
+
+          foreach ($Parameter in $ParameterName) {
+              $Results = Get-Command -ParameterName $Parameter -ErrorAction SilentlyContinue
+
+              [pscustomobject]@{
+                  ParameterName = $Parameter
+                  NumberOfCmdlets = $Results.Count
+              }
+          }
+      }
+    #+end_src
+
+*** named param
+    function Get-SmallFiles {
+    Param($Size)
+    Get-ChildItem $HOME | Where-Object {
+    $_.Length -lt $Size -and !$_.PSIsContainer
+    }
+    }
+    Call with
+    # Get-SmallFiles -Size 50
+    Or
+    # Get-SmallFiles 50
+
+*** default value
+    function Get-SmallFiles {
+    param (
+    [PSDefaultValue(Help = '100')]
+    $Size = 100
+    )
+    }
+*** positional param
+    function Get-Extension {
+    $name = $args[0] + ".txt"
+    $name
+    }
+    # Get-Extension myTextFile
+    # => myTextFile.txt
+*** switch param
+    function Switch-Item {
+    param ([switch]$on)
+    if ($on) { "Switch on" }
+    else { "Switch off" }
+    }
+    # Switch-Item -on => Switch on
+    # Switch-Item -on:$true => Switch on
+    # Switch-Item => Switch off
+*** Pass the parameter list (splatting)
+    function Get-MyCommand { Get-Command @Args }
+    Get-MyCommand -Name Get-ChildItem
+
+    The @Args feature uses the $Args automatic parameter, which represents
+    undeclared cmdlet parameters and values from _remaining arguments_.
+*** Piping object
+    Use following syntex to define that pipeline handling function
+    #+begin_src powershell
+      function <name> {
+          begin {<statement list>}
+          process {<statement list>}
+          end {<statement list>}
+      }
+    #+end_src
+ 
+    If your function defines a Begin, Process or End block, all of your code must
+    reside inside those blocks. No code will be recognized outside the blocks if any
+    of the blocks are defined.
+
+    #+begin_src powershell
+      function Get-Pipeline
+      {
+          process {"The value is: $_"}
+      }
+      1,2,4 | Get-Pipeline        
+    #+end_src
+    The value is: 1
+    The value is: 2
+    The value is: 4
+
+    When you use a function in a pipeline, the objects piped to the function are
+    assigned to the ~$input~ automatic variable.
+    1. The function runs statements with the ~Begin~ keyword *before* any objects come
+       from the pipeline.
+    2.The function runs statements with the End keyword *after* all the objects have
+    been received from the pipeline.
+
+    #+begin_src powershell
+      function Get-PipelineBeginEnd
+      {
+          begin {"Begin: The input is $input"}
+          end {"End:   The input is $input" }
+      }
+      1,2,4 | Get-PipelineBeginEnd
+      Begin: The input is
+      End:   The input is 1 2 4
+    #+end_src
+
+    If the function has a Process keyword, each object in ~$input~ is removed from
+    ~$input~ and assigned to ~$_~.
+    #+begin_src powershell
+      function Get-PipelineInput
+      {
+        process {"Processing:  $_ " }
+        end {"End:   The input is: $input" }
+      }
+1,2,4 | Get-PipelineInput
+    #+end_src
+Processing:  1
+Processing:  2
+Processing:  4
+End:   The input is:
+
+*** Filter (special function)
+    The following filter takes log entries from the pipeline and then displays
+    either the whole entry or only the message portion of the entry:
+    #+begin_src powershell
+      filter Get-ErrorLog ([switch]$message)
+      {
+          if ($message) { Out-Host -InputObject $_.Message }
+          else { $_ }
+      }
+    #+end_src
+
+** Filesystem
+*** cp mv
+    #+begin_src powershell
+            # All files and folders in temp to folder Temp
+            Copy-Item -Path C:\temp\* -Destination C:\Windows\Temp -Recurse -File
+            # file to file
+            Copy-Item -Path C:\a\a.txt -Destination C:\a\bb\a.txt
+            # file to dir
+            Move-Item -Path C:\a\c.txt -Destination C:\a\aa
+    #+end_src
+*** move item listed by ls                                              :exp:
+#+begin_src powershell
+tls ~\Downloads\ | foreach { $_.moveto("C:\Users\congj\work\adv-str\" + $_.basename)}
+#+end_src
+*** cat (view file)
+    #+begin_src powershell
+      Get-Content -Path Test.txt
+      # You can also retrieve the content of a file by prefixing its provider path
+      # with the dollar sign ($).
+      ${C:\Windows\System32\Drivers\etc\hi.txt}
+    #+end_src
+**** Specify delimiter
+    By default, the Get-Content cmdlet uses the ~end-of-line character~ as its
+    delimiter, so it gets a file as a collection of strings, with each line as
+    one string in the file.
+    You can use the ~-Delimiter~ parameter to specify an alternate delimiter. 
+    #+begin_src powershell
+      $e = Get-Content c:\test\employees.txt -Delimited "End Of Employee Record"
+      $e[0]                           #now $e is an array of string
+    #+end_src
+*** write/append to file
+    #+begin_src powershell
+      Add-Content -Path test.txt -Value "test content"
+      Set-Content -Path test.txt -Value "test content"
+    #+end_src
+*** see access control
+    #+begin_src powershell
+Get-Acl -Path test.txt | Format-List -Property *
+    #+end_src
+*** mkdir, new file
+    #+begin_src powershell
+      New-Item -Path c:\ -Name logfiles -Type directory
+      New-Item -Path c:\logfiles -Name log2.txt -Type file
+      # New file with content:
+      New-Item -Path c:\logfiles -Name log2.txt -Type file -Value "test log"
+    #+end_src
+*** remove/rename file/dir
+    #+begin_src powershell
+      Rename-Item -Path c:\a\a.txt -NewName b.txt
+      Rename-Item -Path c:\a\cc -NewName dd
+      Remove-Item -Path test.txt
+      Remove-Item -Path *.xml
+    #+end_src
+*** Invoke a file (double-click)
+    #+begin_src powershell
+      # get service into to a csv file
+      Get-Service | Export-Csv -Path services.csv
+      # double click the csv file
+      Invoke-Item -Path services.csv
+    #+end_src
+*** Different kinds of files
+    #+begin_src powershell
+      Get-ChildItem -Attributes !Directory,!Directory+Hidden
+      dir -att !d,!d+h
+      # It uses the -Attributes parameter with two values, Compressed and Encrypted.
+      # The values are separated by a comma , which represents the "OR" operator.
+      Get-ChildItem -Attributes !Directory,!Directory+Hidden
+    #+end_src
+** If
+*** basic
+    #+begin_src powershell
+      if ($a -gt 2) {
+          Write-Host "The value $a is greater than 2."
+      }
+      elseif ($a -eq 2) {
+          Write-Host "The value $a is equal to 2."
+      }
+      else {
+          Write-Host ("The value $a is less than 2 or" +
+              " was not created or initialized.")
+      }
+    #+end_src
+*** ?:
+    #+begin_src powershell
+      $message = (Test-Path $path) ? "Path exists" : "Path not found"
+      # Start service is stopped, stop it if it's running,
+      $service = Get-Service BITS
+      $service.Status -eq 'Running' ? (Stop-Service $service) : (Start-Service $service)
+    #+end_src
+** foreach
+Divide integers in an array
+  #+begin_src powershell
+  30000, 56798, 12432 | ForEach-Object -Process {$_/1024}
+  #+end_src
+** Throw
+*** Throw string
+    #+begin_src powershell
+      throw "This is an error."
+      # Exception: This is an error.
+    #+end_src
+*** Throw object
+    #+begin_src powershell
+      throw (get-process Pwsh)
+      # Exception: System.Diagnostics.Process (pwsh) System.Diagnostics.Process (pwsh)
+      # System.Diagnostics.Process (pwsh)
+    #+end_src
+You can use the TargetObject property of the ErrorRecord object in the $error
+automatic variable to examine the error.
+#+begin_src powershell
+  $error[0].targetobject
+
+  # NPM(K)    PM(M)      WS(M)     CPU(s)      Id  SI ProcessName
+  # ------    -----      -----     ------      --  -- -----------
+  #    125   174.44     229.57      23.61    1548   2 pwsh
+  #     63    44.07      81.95       1.75    1732   2 pwsh
+  #     63    43.32      77.65       1.48    9092   2 pwsh
+#+end_src
+*** Throw .NET error
+    #+begin_src powershell
+      $formatError = new-object system.formatexception
+      throw $formatError
+      # OperationStopped: One of the identified items was in an invalid format.
+    #+end_src
+** Split string
+   #+begin_src powershell
+     -split "red yellow blue green"
+     # red
+     # yellow
+     # blue
+     # green
+
+     # output is an array
+     (-split "red yellow blue green")[0]
+     # red
+   #+end_src
+
+*** Delimiter
+   #+begin_src powershell
+     # Specify delimiter
+     "Lastname:FirstName:Address" -split ":"
+     # Lastname
+     # FirstName
+     # Address
+   #+end_src
+*** Keep Delimiter
+    To preserve all or part of the delimiter, enclose in *parentheses* the part
+    that you want to preserve.
+    #+begin_src powershell
+      "Lastname:FirstName:Address" -split "(:)"
+      # Lastname
+      # :
+      # FirstName
+      # :
+      # Address
+
+      "Lastname/:/FirstName/:/Address" -split "/(:)/"
+      # Lastname
+      # :
+      # FirstName
+      # :
+      # Address
+    #+end_src
+*** Specify Max Substring
+    #+begin_src powershell
+      $c = "Mercury,Venus,Earth,Mars,Jupiter,Saturn,Uranus,Neptune"
+      $c -split ",", 5
+      # Mercury
+      # Venus
+      # Earth
+      # Mars
+      # Jupiter,Saturn,Uranus,Neptune
+    #+end_src
+    If you supply an array of string. Max Substring is applied to each
+    #+begin_src powershell
+      $c = 'a,b,c','1,2,3,4,5'
+      $c -split ',', 3
+
+      # a
+      # b
+      # c
+      # 1
+      # 2
+      # 3,4,5
+    #+end_src
+    Negative Max-Substring makes the head big
+    #+begin_src powershell
+      $c = "Mercury,Venus,Earth,Mars,Jupiter,Saturn,Uranus,Neptune"
+      $c -split ",", -5
+      # Mercury,Venus,Earth,Mars
+      # Jupiter
+      # Saturn
+      # Uranus
+      # Neptune
+    #+end_src
+*** Custmized function to determine if a char is a delimiter
+    #+begin_src powershell
+      $c = "Mercury,Venus,Earth,Mars,Jupiter,Saturn,Uranus,Neptune"
+      $c -split {$_ -eq "e" -or $_ -eq "p"}
+      # M
+      # rcury,V
+      # nus,
+      # arth,Mars,Ju
+      # it
+      # r,Saturn,Uranus,N
+
+      # tun
+    #+end_src
+*** Options
+    Enclose the option name in quotation marks. Options are valid only when the
+    <Max-substrings> parameter is used in the statement.
+    #+begin_src powershell
+"SimpleMatch [,IgnoreCase]"
+
+"[RegexMatch] [,IgnoreCase] [,CultureInvariant]
+[,IgnorePatternWhitespace] [,ExplicitCapture]
+[,Singleline | ,Multiline]"
+    #+end_src
+
+    #+begin_src powershell
+"AAAzBBBZCCC" -split 'z', 3, "IgnoreCase"
+    #+end_src
+*** Function signiture
+    #+begin_src powershell
+      -split "1 2", "a b"
+      # 1
+      # 2
+      # a b
+
+      # All same:
+      "1 2", "a b" -split " "
+      -split ("1 2", "a b")
+      $a = "1 2", "a b"
+      -split $a
+    #+end_src
+** Array
+   #+begin_src powershell
+     $A = 22,5,10,8,12,9,80
+     $B = ,7                         #array of one element
+     $C = 5..8                            #5,6,7,8
+$A.GetType()
+   #+end_src
+
+*** Types
+When no data type is specified, PowerShell creates each array as an object array
+(System.Object[]).
+
+Use [long[]] prefix to declare a strongly-typed array
+#+begin_src powershell
+  $A.GetType()
+  [int32[]]$ia = 1500,2230,3350,4000
+#+end_src
+
+  You can create arrays that are cast to any supported type in the .NET. For
+  example, the objects that ~Get-Process~ retrieves to represent processes are of
+  the ~System.Diagnostics.Process~ type
+#+begin_src powershell
+  [Diagnostics.Process[]]$zz = Get-Process
+#+end_src
+*** Array from statement
+    #+begin_src powershell
+      $a = @("Hello World")
+      $a.Count
+      $p = @(Get-Process Notepad)
+    #+end_src
+*** Accessing array
+    #+begin_src powershell
+      $a[0]
+      $a[1..4]
+      $a = 0 .. 9
+      $a[-3..-1]                      #7 8 9
+      $a[-1..-3]                      #9 8 7
+      $a[2..-2]                             #2 1 0 9 -8
+      # From 0 to 2 AND 4 to 6
+      $a[0,2+4..6]                                #0 1 2 4 5 6
+
+      $a[1] = 10
+      # Append to array: Caution: new array each time, Consider declaration.
+      $a = @(0..4)
+      $a += 5
+
+      # t is everything in $a expect for a[2]
+      $t = $a[0,1 + 3..($a.length - 1)]
+    #+end_src
+*** Concat | Delete
+    #+begin_src powershell
+      # Concat array
+      $x = 1,3
+      $y = 5,9
+      $z = $x + $y
+
+      # delete array
+      $z=$null                       
+    #+end_src
+*** Loop
+    #+begin_src powershell
+      $a = 0..9
+      # C-style
+      for ($i = 0; $i -le ($a.length - 1); $i += 2) {
+          $a[$i]
+      }
+      # for each
+      foreach ($element in $a) {
+          $element
+      }
+
+      # while
+      $i=0
+      while($i -lt 4) {
+          $a[$i]
+          $i++
+      }
+
+      # Methods
+      $a = @(0 .. 3)
+      $a.ForEach({ $_ * $_})          #0 1 4 9
+
+      # For each convert to type
+      @("1/1/2017", "2/1/2017", "3/1/2017").ForEach([datetime])
+      # Sunday, January 1, 2017 12:00:00 AM
+      # Wednesday, February 1, 2017 12:00:00 AM
+      # Wednesday, March 1, 2017 12:00:00 AM
+
+      # Access Property by name
+      (dir 'C:\Temp').ForEach('LastAccessTime') #get
+      (dir 'C:\Temp').ForEach('LastAccessTime', (Get-Date)) #set
+
+      # For each object, apply the methods
+      # ForEach(string methodName)
+      ("one", "two", "three").ForEach("ToUpper")
+
+    #+end_src
+*** Properties and Methods
+    #+begin_src powershell
+      $a = 0..9
+      $a.Count
+      $a.Length                       #Same
+
+      $a=1..3
+      $a.Clear()
+      # for each object, is it null?
+      $a | % { $null -eq $_ }         #t,t,t
+
+      # Clear set bits to 0;
+      [int[]] $intA = 1, 2, 3
+      $intA.Clear()
+      $intA                           #0,0,0
+
+      [int32[]] $a=1..3
+      # Get the methods for the array
+      Get-Member -InputObject $a
+      # Trap Attention
+      $a | Get-Member                 #methods for int32
+      , $a | Get-Member                 #methods for array
+    #+end_src
+*** Filter array with where
+    #+begin_src powershell
+      # Get all even numbers
+      (0..9).Where{ $_ % 2 }
+      # Get all non-empty strings
+      ('hi', '', 'there').Where({$_.Length})
+
+      # Get the zip files in the current users profile, sorted by LastAccessTime.
+      $Zips = dir $env:userprofile -Recurse '*.zip' | Sort-Object LastAccessTime
+      # Get the least accessed file over 100MB
+      $Zips.Where({$_.Length -gt 100MB}, 'Default', 1)
+      #  Default means: Use Script Block ^^^^^^^^   ^--- the maximum number of object
+
+    #+end_src
+**** Search
+     The difference between loop and search is that, the loop stops when found
+     #+begin_src powershell
+      # Use 'Last' or 'First' can also specify the maximum number of objs
+      $h = (Get-Date).AddHours(-1)
+      $logs = dir 'C:\' -Recurse '*.log' | Sort-Object CreationTime
+      # Find the last 5 log files created in the past hour.
+      $logs.Where({$_.CreationTime -gt $h}, 'Last', 5)
+
+      # Use SkipUntil 
+      $computers = "Server01", "Server02", "Server03", "localhost", "Server04"
+      # Find the first available online server.
+      $computers.Where({ Test-Connection $_ }, 'SkipUntil', 1) #=>localhost
+
+      # Retrieve the first set of numbers less than or equal to 10.
+      (1..50).Where({$_ -gt 10}, 'Until')
+      # This would perform the same operation.
+      (1..50).Where({$_ -le 10})
+     #+end_src
+**** Split array
+     #+begin_src powershell
+       $running, $stopped = (Get-Service).Where({$_.Status -eq 'Running'}, 'Split')
+       $running
+       $stopped
+     #+end_src
+*** Multidimentional array
+    #+begin_src powershell
+      [string[,]]$rank2 = [string[,]]::New(3,2)
+      $rank2.rank                     #2
+      $rank2.Length                   #6
+      $rank2[0,0] = 'a'
+      $rank2[0,1] = 'b'
+      $rank2[1,0] = 'c'
+      $rank2[1,1] = 'd'
+      $rank2[2,0] = 'e'
+      $rank2[2,1] = 'f'
+      $rank2[1,1]                     #d
+    #+end_src
+**** Concat (+) flattens the array
+     #+begin_src powershell
+       $a = "red",$true
+       $b = (New-Object 'int[,]' 2,2)
+       $b[0,0] = 10
+       $b[0,1] = 20
+       $b[1,0] = 30
+       $b[1,1] = 40
+       $c = $a + $b
+       $a.GetType().Name               #Object[]
+       $b.GetType().Name               #int[,]
+       $c.GetType().Name               #Object[]
+       $c                              #("red",$true, 10,20,30,40)
+     #+end_src
+
+*** System.tuple
+    #+begin_src powershell
+      $tuple = [Tuple]::Create(1, 'test')
+      $tuple[0]                       #1
+      $tuple[1]                       #test
+      $tuple[0..1]                    #1 test
+      $tuple[-1]                      #test
+    #+end_src
+    Unlike arrays and other collection objects.
+
+    Tuple objects are treated as a *single object* when passed through the
+pipeline or by parameters that support arrays of objects.
+
+*** The real power of array: One call for all
+    When you use the ~member access operator (.)~ with a member name on a
+    *collection object*, such as an array:
+
+    if (~the collection object does not have a member of that name~):
+
+         The items of the collection are enumerated and PowerShell looks for that
+         member on each item.
+
+    This applies to both property and method members.
+
+    #+begin_src powershell
+      $files = (New-Item -Type File -Force '/temp/t1.txt'),
+      (New-Item -Force -Type File '/temp/t2.txt')
+      $files.LastWriteTime
+      # Friday, June 25, 2021 1:21:17 PM
+      # Friday, June 25, 2021 1:21:17 PM
+    #+end_src
+
+    Get OK, Set Nope:
+    
+    #+begin_src powershell
+      $files.LastWriteTime = (Get-Date).AddDays(-1) #Error
+    #+end_src
+
+    Instead, should use a ~set_~ method
+    #+begin_src powershell
+      $files.set_LastWriteTime((Get-Date).AddDays(-1)) #Okay
+      $files.LastWriteTime
+    #+end_src
+
+    So you may wanna ask: What values can I set?
+    #+begin_src powershell
+      $files | Get-Member | Where-Object Definition -like '*set;*'
+    #+end_src
+** Filter (where-object)
+#+begin_src powershell
+  # Process that srats with p
+  Get-Process | Where-Object {$_.ProcessName -Match "^p.*"}
+  Get-Process | Where-Object ProcessName -Match "^p.*"
+
+  # Process which WorkingSet > 250MB
+  Get-Process | Where-Object {$_.WorkingSet -GT 250MB}
+  Get-Process | Where-Object WorkingSet -GT (250MB)
+
+  # Stopped process
+  Get-Service | Where-Object {$_.Status -eq "Stopped"}
+  Get-Service | where Status -eq "Stopped"
+
+  # Use Where-Object to get commands that have any value for the OutputType
+  # property of the command. This omits commands that do not have an OutputType
+  # property and those that have an OutputType property, but no property value.
+  Get-Command | where OutputType
+  Get-Command | where {$_.OutputType}
+
+  # Use Where-Object to get objects that are containers. This gets objects that
+  # have the **PSIsContainer** property with a value of $True and excludes all
+  # others.
+  Get-ChildItem | where PSIsContainer
+  Get-ChildItem | where {$_.PSIsContainer}
+
+  # Finally, use the Not operator (!) to get objects that are not containers. This
+  # gets objects that do have the **PSIsContainer** property and those that have a
+  # value of $False for the **PSIsContainer** property.
+  Get-ChildItem | where {!$_.PSIsContainer}
+
+  # You cannot use the Not operator (!) in the comparison statement format of the
+  # command.
+  Get-ChildItem | where PSIsContainer -eq $False
+
+
+  # Multiple condition
+  Get-Module -ListAvailable | where {($_.Name -notlike "Microsoft*" -and $_.Name
+  -notlike "PS*") -and $_.HelpInfoUri}
+#+end_src
+** Compare
+*** Default behaviour
+If input is scaler: return 
+If input is array return the items that match
+ #+begin_src powershell
+   $a = (1, 2 -eq 3)
+   $a.GetType().Name               #Object[]
+   $a.Count                        #0
+2 -eq 2                 # Output: True
+2 -eq 3                 # Output: False
+1,2,3 -eq 2             # Output: 2
+"abc", "def" -eq "abc"  # Output: abc
+"abc", "def" -ne "abc"  # Output: def
+ #+end_src
+*** string
+ #+begin_src powershell
+   # Use: 
+   # <string[]> -like    <wildcard-expression>
+   # <string[]> -notlike <wildcard-expression>
+   # <string[]> -match    <regular-expression>
+   # <string[]> -notmatch <regular-expression>
+
+   "PowerShell" -like    "*shell"           # Output: True
+   "PowerShell" -notlike "*shell"           # Output: False
+   "PowerShell" -like    "Power?hell"       # Output: True
+   "PowerShell" -notlike "Power?hell"       # Output: False
+   "PowerShell" -like    "Power[p-w]hell"   # Output: True
+   "PowerShell" -notlike "Power[p-w]hell"   # Output: False
+
+   "PowerShell", "Server" -like "*shell"    # Output: PowerShell
+   "PowerShell", "Server" -notlike "*shell" # Output: Server
+
+   # Partial match test, showing how differently -match and -like behave
+   "PowerShell" -match 'shell'        # Output: True
+   "PowerShell" -like  'shell'        # Output: False
+
+   # Regex syntax test
+   "PowerShell" -match    '^Power\w+' # Output: True
+   'bag'        -notmatch 'b[iou]g'   # Output: True
+
+
+ #+end_src
+**** Case sensitive
+#+begin_src powershell
+      "hi" -eq "Hi"                   #true
+    "hi" -ceq "Hi"                    #false
+  "hi" -ieq "Hi"                      #true
+#+end_src
+**** Collection input
+If the input is a collection, the operators return the matching members of that
+collection.
+
+#+begin_src powershell
+"PowerShell", "Super PowerShell", "Power's hell" -match '^Power\w+'
+# Output: PowerShell
+
+"Rhell", "Chell", "Mel", "Smell", "Shell" -match "hell"
+# Output: Rhell, Chell, Shell
+
+"Bag", "Beg", "Big", "Bog", "Bug"  -match 'b[iou]g'
+#Output: Big, Bog, Bug
+
+"Bag", "Beg", "Big", "Bog", "Bug"  -notmatch 'b[iou]g'
+#Output: Bag, Beg
+#+end_src
+**** Capture group
+You name a capture group
+#+begin_src powershell
+    $string = 'The last logged on user was CONTOSO\jsmith'
+    $string -match 'was (?<domain>.+)\\(?<user>.+)'
+
+    $Matches
+
+    Write-Output "`nDomain name:"
+    $Matches.domain
+
+    Write-Output "`nUser name:"
+    $Matches.user
+
+  # True
+
+  # Name                           Value
+  # ----                           -----
+  # domain                         CONTOSO
+  # user                           jsmith
+  # 0                              was CONTOSO\jsmith
+
+  # Domain name:
+  # CONTOSO
+
+  # User name:
+  # jsmith
+#+end_sr
+** Date
+*** GetDate
+    #+begin_src powershell
+      Get-Date #Tuesday, June 25, 2019 14:53:32
+      Get-Date -DisplayHint Date
+
+      # Tuesday, June 25, 2019
+
+      Get-Date -Format "dddd MM/dd/yyyy HH:mm K"
+
+      # Tuesday 06/25/2019 16:17 -07:00
+    #+end_src
+**** Format table
+| Specifier | Description                                           |
+|-----------+-------------------------------------------------------|
+| dddd      | Day of the week - full name                           |
+| MM        | Month number                                          |
+| dd        | Day of the month - 2 digits                           |
+| yyyy      | Year in 4-digit format                                |
+| HH:mm     | Time in 24-hour format - no seconds                   |
+| K         | Time zone offset from Universal Time Coordinate (UTC) |
+**** Make Date Access Day
+#+begin_src powershell
+  (Get-Date -Year 2020 -Month 12 -Day 31).DayOfYear
+  366
+    $a=(Get-Date -Year 2020 -Month 12 -Day 30)
+    $b=(Get-Date -Year 2020 -Month 12 -Day 30)
+    $a - $b                       #TimeSpan object
+    $a - $b | Get-Member
+#+end_src
+*** Example: Get files within somedays                                  :exp:
+#+begin_src powershell
+
+function Get-TodayChildItem
+{
+    Param (
+        $Folder = '.',
+        [PSDefaultValue(Help = '1')]
+        $DaysWithin = 1
+    )
+
+    # Use space + backquote to change line
+    Get-ChildItem $Folder | Where-Object { `
+      ((Get-Date) - ($_.LastWriteTime)).TotalDays `
+      -LE $DaysWithin}
+
+}
+set-alias tls Get-TodayChildItem
+
+#+end_src
+** Prompt for input
+   #+begin_src powershell
+     $Age = Read-Host "Please enter your age"
+     # When they type they see: *****
+     $pwd_secure_string = Read-Host "Enter a Password" -AsSecureString
+     # ^^^^^^^^^^^^^^^^ As System.SecureString
+     $pwd_string = Read-Host "Enter a Password" -MaskInput
+     # ^^^^^^^^^        As System.String
+   #+end_src
+** Disk
+#+begin_src powershell
+  diskpart
+  convert d: /fs:ntfs             #convert to ntfs (but not back)
+#+end_src
+** Redirection
+ #+begin_src powershell
+
+   dir 'C:\', 'fakepath' 2>&1 > .\dir.log
+   #       Send error to std^ ^ output to dir.log
+
+   # redirect some streams to a file
+   &{
+       Write-Warning "hello"
+       Write-Error "hello"
+       Write-Output "hi"
+   } 3>&1 2>&1 > C:\Temp\redirection.log
+
+   # Send to dev null
+   &{
+       Write-Host "Hello"
+       Write-Information "Hello" -InformationAction Continue
+   } 6> $null
+
+   # Redirect all stream
+   .\script.ps1 *> script.log
+  #+end_src
+* ssh
+** scp
+   scp me@linux-orange.local:\home\me\Pictures\pysduck.jpeg .
+* profile
+<2021-11-15 ÖÜÒ»>
+  #+begin_src pwsh
+set-strictmode -version 3
+set-alias gh get-help
+set-alias l Get-ChildItem
+
+if ( "r" -in (alias).name) {remove-alias -name r}
+
+
+# Where is the script file that contains the function dev which enters the
+# developer shell
+
+$DEVFILE = (Get-ChildItem $PROFILE).DirectoryName + `
+  (Get-ChildItem $PROFILE).BaseName + "-dev.ps1"
+
+. $DEVFILE
+
+$bds = @{ 413 = "头逼";
+          303 = "董昊，斯大林";
+          925 = "10c"}
+
+$dcode = (get-date).month * 100 + (get-date).day
+$msg = $bds[$dcode]
+
+function Prompt {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [Security.Principal.WindowsPrincipal] $identity
+    $adminRole = [Security.Principal.WindowsBuiltInRole]::Administrator
+
+    write-host "`n----------------------------"
+    write-host "Now it's " (date).tostring()
+    if($msg) {write-host "今天 $msg 生日"}
+    write-host "$[env:username] AT [$env:COMPUTERNAME]  $(Get-Location)"
+    ">"
+}
+
+# function Prompt{
+
+#     write-host "`n----------------------------"
+#     write-host "Now it's " (date).tostring()
+#     if($msg) {write-host "今天 $msg 生日"}
+#     write-host "The current dir is $(get-location)"
+#     host.ui.rawui.windowtitle = "My Shell"
+#     "`b"
+# }
+
+function cppat { "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" | set-clipboard}
+function cpdir {($pwd).tostring() | set-clipboard}
+
+function got{
+    write-host "Where to go ?"
+    $h = @{"hm" = 'c:\users\congj';
+           "t"  = 'C:\Users\congj\AppData\Roaming\Templates'
+           "l"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn'
+           "f"  = 'C:\Users\congj\Desktop\fun\'
+          }
+    $h
+    $x = read-host "enter your key"
+    if ($x -in $h.keys){
+        write-host "Address Found"
+        cd $h[$x]
+    }else{
+        write-host " not found"
+    }
+}
+
+function msR
+{    # open the ms R
+    . "C:\Program Files\Microsoft\R Open\R-4.0.2\bin\x64\R.exe"}
+
+
+# Get the files in a folder within some days.
+function Get-TodayChildItem
+{
+    Param (
+        $Folder = '.',
+        [PSDefaultValue(Help = '1')]
+        $DaysWithin = 1
+    )
+    # Use space + backquote to change line
+    Get-ChildItem $Folder | Where-Object { `
+      ((Get-Date) - ($_.LastWriteTime)).TotalDays `
+      -LE $DaysWithin}
+}
+set-alias tls Get-TodayChildItem
+
+Set-PSReadLineKeyHandler -Chord Ctrl+f -Function ForwardChar
+Set-PSReadLineKeyHandler -Chord Alt+f -Function NextWord
+Set-PSReadLineKeyHandler -Chord Alt+b -Function BackwardWord
+Set-PSReadLineKeyHandler -Chord Ctrl+b -Function BackwardChar
+
+Set-PSReadLineKeyHandler -Chord Ctrl+p -Function PreviousHistory
+Set-PSReadLineKeyHandler -Chord Ctrl+n -Function NextHistory
+
+Set-PSReadLineKeyHandler -Chord Ctrl+k -Function ForwardDeleteLine
+Set-PSReadLineKeyHandler -Chord Ctrl+a -Function BeginningOfLine
+Set-PSReadLineKeyHandler -Chord Ctrl+e -Function EndOfLine
+Set-PSReadLineKeyHandler -Chord Alt+a -Function BeginningOfLine
+Set-PSReadLineKeyHandler -Chord Alt+e -Function EndOfLine
+
+# Function for git
+function g{
+    param(
+        [PSDefaultValue(Help = '100')]
+        $Size = 5
+    )
+    git log --oneline --decorate --all -n $Size
+}
+
+function ga{
+    git add -A
+    git status
+}
+
+
+
+function Get-y {
+    $a = Read-Host "Enter [y/n]: "
+    $ok = ("y", "yes")
+    $no = ("n", "no")
+    while (! ($a -in ($ok + $no))){
+        $a = Read-Host "Invalid choice, Enter [y/n]: "
+    }
+    if ($a -in $ok){
+        return $True
+    }else{
+        return $False
+    }
+}
+# Function for syncronizing powershell profile
+function pspf{
+    # Push the profile
+    param( [switch] $Push)
+    $d="c:/Users/congj/AppData/Roaming/Templates/scripts/profile.ps1"
+    if ($Push) {
+        Write-host "Pushing PROFILE to ~/Template. Are You Sure?"
+        if (Get-y){
+            Copy-Item $PROFILE -Destination $d
+            Write-host "PROFILE  pushed to $d"
+        }
+    }else{
+        Write-host "Updating PROFILE from ~/Templates. Are You Sure "
+        if (Get-y){
+            Copy-Item $d -Destination $PROFILE
+            Write-host "PROFILE copied from $d"
+        }
+    }
+}
+
+  #+end_src

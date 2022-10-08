@@ -1,0 +1,22 @@
+/* sass input.sass output.wxss --no-source-map --watch */
+.page {
+  background: #555;
+  transition: 2s;
+}
+.page .h1 {
+  color: red;
+}
+.page .h1 .h2 {
+  color: yellow;
+}
+
+.page-light {
+  background: #fff;
+  transition: 2s;
+}
+.page-light .h1 {
+  color: blue;
+}
+.page-light .h1 .h2 {
+  color: green;
+}

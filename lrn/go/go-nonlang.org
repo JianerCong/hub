@@ -1,0 +1,7 @@
+** Install path
+#+begin_src bash
+  # view go env
+  go env
+  # set go install dir (add this to path)
+  go env -w GOBIN='C:\Users\congj\go\ae-myBin'
+#+end_src

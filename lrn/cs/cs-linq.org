@@ -1,0 +1,69 @@
+** System.Linq
+*** Contains
+#+begin_src csharp
+  using System;
+  using System.Linq;
+
+  class C {
+      static readonly string[] s = new string[] {"hi","oh","ha"};
+      static void Main(){
+          int[] v = new int[] {1,2,3};
+          Console.WriteLine(v.Contains(1)); // True
+          Console.WriteLine((new int[] {1,2,3}).Contains(2)); // True
+          Console.WriteLine(s.Contains("oh")); // True
+          Console.WriteLine(s.Contains("hay")); // False
+      }
+  }
+
+#+end_src
+*** Where
+#+begin_src csharp
+  using System;
+  using System.Linq;
+  using System.Collections.Generic;
+
+
+  Point[] P = new Point[]{
+      new Point(0,0,1),
+      new Point(0,2,1),
+      new Point(1,2,2),
+      new Point(3,2,2),
+  };
+
+  IEnumerable<Point> q = P.Where(n=> n.i==1);
+  foreach (var p in q)
+      Console.WriteLine("Selected Point: {0}",p);
+
+  record Point(double x, double y, int i);
+
+  /*
+    Selected Point: Point { x = 0, y = 0, i = 1 }
+    Selected Point: Point { x = 0, y = 2, i = 1 }
+    ,*/
+
+#+end_src
+*** ToArray
+#+begin_src csharp
+  using System;
+  using System.Linq;
+  using System.Collections.Generic;
+
+
+  Point[] P = new Point[]{
+      new Point(0,0,1),
+      new Point(0,2,1),
+      new Point(1,2,2),
+      new Point(3,2,2),
+  };
+
+  Point[] q = P.Where(n=> n.i==1).ToArray();
+  for (int i =0;i<q.Length;i++)
+      Console.WriteLine("Selected Point: {0}",q[i]);
+
+  record Point(double x, double y, int i);
+  /*
+    Selected Point: Point { x = 0, y = 0, i = 1 }
+    Selected Point: Point { x = 0, y = 2, i = 1 }
+    ,*/
+
+#+end_src

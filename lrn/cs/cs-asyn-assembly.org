@@ -1,0 +1,1382 @@
+* Asyn
+** Basic
+#+begin_src csharp
+using System;
+using System.Threading;
+
+Thread t = new Thread (WriteY);          // Kick off a new thread
+t.Start();                               // running WriteY()
+
+// Simultaneously, do something on the main thread.
+for (int i = 0; i < 1000; i++) Console.Write ("x");
+
+void WriteY()
+{
+  for (int i = 0; i < 1000; i++) Console.Write ("y");
+}
+#+end_src
+** Join and Sleep
+   #+begin_src csharp
+using System;
+using System.Threading;
+
+bool _isHere = false;
+bool _isTooLate = false;
+string m1 = "How many seconds do you wanna sleep? (e.g. 4)";
+Console.WriteLine(m1);
+int m;
+while(!int.TryParse(Console.ReadLine(), out m)){
+    Console.WriteLine("Try again: "+m1);
+}
+
+
+Thread t = new Thread(Student);
+Thread t2 = new Thread(Teacher);
+t.Start();
+t2.Start();
+
+t.Join();
+t2.Join();
+
+if (_isTooLate){
+    Console.WriteLine("Teacher is exploded.");
+}else{
+    Console.WriteLine("Teacher is content.");
+}
+
+
+void Student(){
+    string s = "Student: ";
+    for ( ;m>=0;m--){
+        Console.WriteLine(s+" zzz");
+        SleepFor1s();
+        if (_isTooLate){
+            Console.WriteLine(s+"Oh No...");
+            return;
+        }
+    }
+    Console.WriteLine(s + "Here I am.");
+    _isHere = true;
+}
+void SleepFor1s() {Thread.Sleep(1000);}
+void Teacher(){
+    int x =  5;
+    string s = "Teacher: ";
+    string e;
+    Console.WriteLine($"Please come in {x} seconds");
+    for (;x>=0;x--){
+        SleepFor1s();
+        if (_isHere){
+            Console.WriteLine(s+"Oh, here you are.");
+            return;
+        }
+        e = new string('?',5-x);
+        Console.WriteLine(s+x.ToString() + " " + e);
+    }
+    _isTooLate = true;
+}
+
+   #+end_src
+** Passing data
+Use a Lambda
+ #+begin_src csharp
+Thread t = new Thread ( () => Print ("Hello from t!") );
+t.Start();
+
+void Print (string message) => Console.WriteLine (message);
+ #+end_src
+* Assembly
+** Read an assembly manifest
+   #+begin_src powershell
+ildasm MyLib2.dll
+   #+end_src
+** Access assembly metadata
+   #+begin_src csharp
+     using System;
+     using System.Reflection;
+
+     Assembly a = Assembly.GetExecutingAssembly();
+     Console.WriteLine($"Assembly read: {a}");
+     // Console.WriteLine($"Name: {a.GetName()}");
+     //  hi, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+     Console.WriteLine($"Types : {a.GetTypes()}");
+     class MyClass{}
+
+   #+end_src
+** Specify version
+   #+begin_src csharp
+
+using System;
+using System.Reflection;
+
+[assembly: AssemblyVersion("2.5.6.7")]
+Assembly a = Assembly.GetExecutingAssembly();
+Console.WriteLine($"Assembly read: {a.FullName}"); // same as {a}
+
+// Output:
+// Assembly read: hi, Version=2.5.6.7, Culture=neutral, PublicKeyToken=null
+class MyClass{}
+
+   #+end_src
+** AssemblyName
+*** basic
+   Get the short name and other info parsed.
+   #+begin_src csharp
+     using System;
+     using System.Reflection;
+
+     [assembly: AssemblyVersion("2.5.6.7")]
+     Assembly a = Assembly.GetExecutingAssembly();
+     AssemblyName n = a.GetName();
+     Version v = n.Version;
+     Console.WriteLine($"Assembly read: {n.Name}");
+     Console.WriteLine($"Version Major: {v.Major}");
+     Console.WriteLine($"Version Minor: {v.Minor}");
+     Console.WriteLine($"Version Build: {v.Build}");
+     Console.WriteLine($"Version Revision: {v.Revision}");
+
+     // Output:
+     /*
+       Assembly read: hi
+       Version Major: 2
+       Version Minor: 5
+       Version Build: 6
+       Version Revision: 7
+      ,*/
+
+
+     // Properties for AssemblyName
+     // string      FullName    { get; }            // Fully qualified name
+     // string      Name        { get; set; }       // Simple name
+     // Version     Version     { get; set; }       // Assembly version
+     // CultureInfo CultureInfo { get; set; }       // For satellite assemblies
+     // string      CodeBase    { get; set; }       // Location
+
+     // byte[]      GetPublicKey();                 // 160 bytes
+     // void        SetPublicKey (byte[] key);
+     // byte[]      GetPublicKeyToken();            // 8-byte version
+     // void        SetPublicKeyToken (byte[] publicKeyToken);
+
+   #+end_src
+*** Get the system assembly
+    #+begin_src csharp
+
+
+using System;
+using System.Reflection;
+
+Assembly a = (typeof (string)).Assembly;
+Console.WriteLine (a.GetName().Name);
+string v = a.GetName().Version.ToString();
+Console.WriteLine("The version is {0}", v);
+
+// Output:
+/*
+  mscorlib
+  The version is 4.0.0.0
+ */
+    #+end_src
+*** Some attributes that for File Explorer
+    #+begin_src csharp
+using System;
+using System.Reflection;
+
+[assembly: AssemblyFileVersion("I don't know the product version --Jianer")]
+[assembly: AssemblyInformationalVersion("There are no informational version  --Renaij")]
+    #+end_src
+** Assembly Resolution
+   Each assembly comes from an ~AssemblyLoadContext~
+   #+begin_src csharp
+using System;
+using System.Reflection;
+using System.Runtime.Loader;
+
+
+Assembly assem = Assembly.GetExecutingAssembly();
+AssemblyLoadContext context = AssemblyLoadContext.GetLoadContext (assem);
+Console.WriteLine (context.Name); // default
+foreach (Assembly a in context.Assemblies)
+    Console.WriteLine (a.FullName);
+
+// Output:
+/*
+  System.Private.CoreLib, Version=5.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e
+  Hi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+  System.Runtime, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+  System.Runtime.Loader, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+  System.Console, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+  System.Threading, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+  System.Text.Encoding.Extensions, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+ */
+   #+end_src
+** Manually load dll
+   an assembly’s simple name must be unique within its ALC After an assembly is
+loaded, it cannot be unloaded except by unloading its ALC .The CLR maintains a
+lock of the file for the duration that it’s loaded.
+* Reflection and metadata
+** Import
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+#+end_src
+** Use System.Type
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+// You can get an instance of a System.Type by calling GetType on any object or with C#’s typeof operator:
+
+Type t1 = DateTime.Now.GetType();     // Type obtained at runtime
+Type t2 = typeof (DateTime);          // Type obtained at compile time
+// You can use typeof to obtain array types and generic types, as follows:
+
+Type t3 = typeof (DateTime[]);          // 1-d Array type
+Type t4 = typeof (DateTime[,]);         // 2-d Array type
+#+end_src
+*** Get type from Assembly
+#+begin_src csharp
+
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+Type t = Assembly.GetExecutingAssembly().GetType ("MyClass");
+Console.WriteLine("Class {0} is read, is it public? {1}.", t.Name, t.IsPublic);
+
+Type t2 = Type.GetType ("System.Int32, System.Private.CoreLib"); // load Int32 in Assembly CoreLib
+Console.WriteLine("Class {0} is read, is it public? {1}.", t2.Name, t2.IsPublic);
+
+class MyClass{};
+
+// Class MyClass is read, is it public? False.
+//     Class Int32 is read, is it public? True.
+#+end_src
+*** What can you do with System.Type ?
+#+begin_src csharp
+Type stringType = typeof (string);
+string name     = stringType.Name;          // String
+Type baseType   = stringType.BaseType;      // typeof(Object)
+Assembly assem  = stringType.Assembly;      // System.Private.CoreLib
+bool isPublic   = stringType.IsPublic;      // true
+#+end_src
+** Array type
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+Type simpleArrayType = typeof (int).MakeArrayType();
+Console.WriteLine (simpleArrayType == typeof (int[]));     // True
+// You can create multidimensional arrays by passing an integer argument to Make​ArrayType:
+
+Type cubeType = typeof (int).MakeArrayType (3);       // cube shaped
+Console.WriteLine (cubeType == typeof (int[,,]));     // True
+// GetElementType does the reverse: it retrieves an array type’s element type:
+
+Type e = typeof (int[]).GetElementType();     // e == typeof (int)
+// GetArrayRank returns the number of dimensions of a rectangular array:
+Console.WriteLine("Should be true, it is {0}", e==typeof(int));
+
+int rank = typeof (int[,,]).GetArrayRank();
+Console.WriteLine("Should be 3, it is {0}", rank);
+
+#+end_src
+** Types in a namespace/type
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+Console.WriteLine("Types:");
+foreach (Type t in typeof (System.Environment).GetNestedTypes())
+    Console.WriteLine (t.FullName);
+
+
+Console.WriteLine("\n\nTypes:");
+foreach (TypeInfo t in typeof (System.Environment).GetTypeInfo()
+         .DeclaredNestedTypes)
+    Console.WriteLine (t.FullName);
+
+// The one caveat with nested types is that the CLR treats a nested type as
+// having special “nested” accessibility levels:
+
+Type t1 = typeof (System.Environment.SpecialFolder);
+Console.WriteLine (t1.IsPublic);                      // False
+Console.WriteLine (t1.IsNestedPublic);                // True
+// Types:
+// System.Environment+SpecialFolder
+//     System.Environment+SpecialFolderOption
+
+
+//     Types:
+// System.Environment+SpecialFolder
+//     System.Environment+SpecialFolderOption
+//     System.Environment+WindowsVersion
+
+#+end_src
+** More on typeinfo (Long names, Generics...)
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+using System.Collections.Generic;
+
+Type t = typeof (System.Text.StringBuilder);
+
+Console.WriteLine (t.Namespace);      // System.Text
+Console.WriteLine (t.Name);           // StringBuilder
+Console.WriteLine (t.FullName);       // System.Text.StringBuilder
+
+// Type also has a property called AssemblyQualifiedName, which returns FullName
+// followed by a comma and then the full name of its assembly. This is the same
+// string that you can pass to Type.GetType, and it uniquely identifies a type
+// within the default ñloading context.
+Console.WriteLine(t.AssemblyQualifiedName);
+// System.Text.StringBuilder, System.Private.CoreLib, Version=5.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e
+
+// With nested types, the containing type appears only in FullName:
+
+Type t2 = typeof (System.Environment.SpecialFolder);
+
+Console.WriteLine (t2.Namespace);      // System
+Console.WriteLine (t2.Name);           // SpecialFolder
+Console.WriteLine (t2.FullName);       // System.Environment+SpecialFolder
+// The + symbol differentiates the containing type from a nested namespace.
+
+// Generic type names
+// Generic type names are suffixed with the ' symbol, followed by the number of type parameters. If the generic type is unbound, this rule applies to both Name and FullName:
+
+Type t3 = typeof (Dictionary<,>); // Unbound
+Console.WriteLine (t3.Name);      // Dictionary'2
+Console.WriteLine (t3.FullName);  // System.Collections.Generic.Dictionary'2
+
+// If the generic type is closed, however, FullName (only) acquires a
+// substantial extra appendage. Each type parameter’s full assembly qualified
+// name is enumerated:
+
+Console.WriteLine (typeof (Dictionary<int,string>).FullName);
+
+// OUTPUT:
+// System.Collections.Generic.Dictionary`2[[System.Int32,
+// System.Private.CoreLib, Version=4.0.0.0, Culture=neutral,
+// PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib,
+//                                   Version=4.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
+
+#+end_src
+*** Array and pointer type names
+ Arrays present with the same suffix that you use in a typeof expression:
+ #+begin_src csharp
+ using System;
+ using System.Reflection;
+ using System.Reflection.Emit;
+
+
+ Console.WriteLine (typeof ( int[]  ).Name);      // Int32[]
+ Console.WriteLine (typeof ( int[,] ).Name);      // Int32[,]
+ Console.WriteLine (typeof ( int[,] ).FullName);  // System.Int32[,]
+ // Pointer types are similar:
+
+ Console.WriteLine (typeof (byte*).Name);     // Byte*
+
+ #+end_src
+*** Get the ref and out parameter type names of current method
+ A Type describing a ref or out parameter has an & suffix:
+ #+begin_src csharp
+ using System;
+ using System.Reflection;
+ using System.Reflection.Emit;
+
+ int a = 1;
+ RefMethod(ref a);
+
+ void RefMethod (ref int p)
+ {
+     Type t = MethodInfo.GetCurrentMethod().GetParameters()[0].ParameterType;
+     Console.WriteLine (t.Name);    // Int32&
+ }
+
+ #+end_src
+** BaseType and interface
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+
+// Type exposes a BaseType property:
+
+Type base1 = typeof (System.String).BaseType;
+Type base2 = typeof (System.IO.FileStream).BaseType;
+
+Console.WriteLine (base1.Name);     // Object
+Console.WriteLine (base2.Name);     // Stream
+
+// The GetInterfaces method returns the interfaces that a type implements:
+
+// What interface does it have ?
+foreach (Type iType in typeof (Guid).GetInterfaces())
+    Console.WriteLine (iType.Name);
+
+// IFormattable
+//     IComparable
+//     IComparable`1
+//     IEquatable`1
+//     ISpanFormattable
+
+#+end_src
+** The Reflection version of ~is~
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+
+object obj  = Guid.NewGuid();
+Type target = typeof (IFormattable);
+
+bool isTrue   = obj is IFormattable;             // Static C# operator
+bool alsoTrue = target.IsInstanceOfType (obj);   // Dynamic equivalent
+
+Console.WriteLine("Should be True it is {0}", isTrue);
+Console.WriteLine("Should be True it is {0}", alsoTrue);
+// IsAssignableFrom is more versatile:
+
+Type target2 = typeof (IComparable), source = typeof (string);
+Console.WriteLine (target2.IsAssignableFrom (source));         // True
+#+end_src
+The ~IsSubclassOf~ method works on the same principle as ~IsAssignableFrom~ but excludes interfaces.
+** New an instance from type
+#+begin_src csharp
+  using System;
+  using System.Reflection;
+  using System.Reflection.Emit;
+
+  try {
+      int i = (int) Activator.CreateInstance (typeof (int));
+      DateTime dt = (DateTime) Activator.CreateInstance (typeof (DateTime),
+                                                         2000, 1, 1);
+      Console.WriteLine($"Object inited {i}, {dt}");
+  }catch (MissingMethodException e){
+      Console.WriteLine(e);
+      Console.WriteLine("Cannot find methods");
+  }
+
+
+#+end_src
+*** The hard way: get that constructor
+
+// Fetch the constructor that accepts a single parameter of type string:
+ConstructorInfo ci = typeof (X).GetConstructor (new[] { typeof (string) });
+
+// Construct the object using that overload, passing in null:
+object foo = ci.Invoke (new object[] { null });
+** New a delegate
+   Initiate a delegate by name.
+#+begin_src csharp
+  using System;
+  using System.Reflection;
+  using System.Reflection.Emit;
+
+  class Program
+  {
+      delegate int IntFunc (int x);
+
+      static int Square (int x) => x * x;        // Static method
+      int        Cube   (int x) => x * x * x;    // Instance method
+
+      static void Main()
+      {
+          Delegate staticD = Delegate.CreateDelegate
+              (typeof (IntFunc), typeof (Program), "Square");
+
+          Delegate instanceD = Delegate.CreateDelegate
+              (typeof (IntFunc), new Program(), "Cube");
+
+          Console.WriteLine (staticD.DynamicInvoke (3));      // 9
+          Console.WriteLine (instanceD.DynamicInvoke (3));    // 27
+
+          IntFunc f = (IntFunc) staticD;
+          Console.WriteLine (f(3));         // 9 (but much faster!)
+      }
+  }
+
+#+end_src
+** New a Generic Type
+A Generic type can be bound or unbound
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Collections.Generic;
+
+Type closed = typeof (List<int>);
+List<int> list = (List<int>) Activator.CreateInstance (closed);  // OK
+
+try{
+    Type unbound   = typeof (List<>);
+    object anError = Activator.CreateInstance (unbound);    // Runtime error
+} catch (Exception e){
+    Console.WriteLine("Exception caught:");
+    Console.WriteLine(e);
+}
+/*
+  Exception caught:
+System.ArgumentException: Cannot create an instance of System.Collections.Generic.List`1[T] because Type.ContainsGenericParameters is true.
+    at System.RuntimeType.CreateInstanceCheckThis()
+    at System.RuntimeType.CreateInstanceDefaultCtor(Boolean publicOnly, Boolean skipCheckThis, Boolean fillCache, Boolean wrapExceptions)
+    at System.Activator.CreateInstance(Type type, Boolean nonPublic, Boolean wrapExceptions)
+    at System.Activator.CreateInstance(Type type)
+    at <Program>$.<Main>$(String[] args) in C:\Users\congj\AppData\Roaming\Templates\lrn\cs\Dll\Program.cs:line 11
+*/
+#+end_src
+*** manipulate
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Collections.Generic;
+
+// Manually bound and unbound
+Type unbound = typeof (List<>);
+Type closed = unbound.MakeGenericType (typeof (int));
+Type unbound2 = closed.GetGenericTypeDefinition();  // unbound == unbound2
+
+Console.WriteLine(unbound);
+Console.WriteLine(closed);
+Console.WriteLine(unbound2 == unbound);
+
+/*
+  System.Collections.Generic.List`1[T]
+  System.Collections.Generic.List`1[System.Int32]
+  True
+*/
+
+// Is it unbound?
+
+Console.WriteLine(unbound.IsGenericType); // True
+Console.WriteLine(closed.IsGenericType);  // True
+
+Console.WriteLine(unbound.IsGenericTypeDefinition); // True
+Console.WriteLine(closed.IsGenericTypeDefinition);  // False
+
+// Get the Type "parameter" in a bound generics
+Console.WriteLine (closed.GetGenericArguments()[0]);     // System.Int32
+Console.WriteLine (unbound.GetGenericArguments()[0]);      // T
+#+end_src
+** dir(obj)
+*** Get all public members.
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+MemberInfo[] members = typeof (Walnut).GetMembers();
+foreach (MemberInfo m in members)
+    Console.WriteLine (m);
+
+class Walnut
+{
+    private bool cracked;
+    public void Crack() { cracked = true; }
+}
+
+/*
+  Void Crack()
+  System.Type GetType()
+  System.String ToString()
+  Boolean Equals(System.Object)
+  Int32 GetHashCode()
+  Void .ctor()
+ */
+
+#+end_src
+*** Get all members named "Crack"
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+MemberInfo[] m = typeof (Walnut).GetMember ("Crack");
+// It's an array of all members named "Crack"
+Console.WriteLine (m[0]);                              // Void Crack()
+
+class Walnut
+{
+    private bool cracked;
+    public void Crack() { cracked = true; }
+}
+
+#+end_src
+*** Get (Constructors | Fields | Methods | Events ...)
+~MemberInfo~ also has a property called ~MemberType~ of type ~MemberTypes~. This is a
+flags enum with these values:
+
+All           Custom        Field        NestedType     TypeInfo
+Constructor   Event         Method       Property
+
+#+begin_src csharp
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+
+MemberInfo[] m = typeof (Walnut).GetMethods();
+Console.WriteLine (m[0]);                              // Void Crack()
+
+class Walnut
+{
+    private bool cracked;
+    public void Crack() { cracked = true; }
+}
+
+#+end_src
+*** [#C] Can I typeof(typeof(C)) ?
+No.
+#+begin_src csharp
+ using System;
+using System.Reflection;
+using System.Reflection.Emit;
+
+Type t = typeof (Walnut);
+Console.WriteLine(typeof(t));
+/*
+  C:\Users\congj\AppData\Roaming\Templates\lrn\cs\Dll\Program.cs(6,26): error
+  CS0118: 't' is a variable but is used like a type
+  [C:\Users\congj\AppData\Roaming\Templates\lrn\cs\Dll\Dll.csproj]
+ */
+
+class Walnut
+{
+    private bool cracked;
+    public void Crack() { cracked = true; }
+}
+
+#+end_src
+*** Get the private member | non-inherited member ?
+
+TypeInfo exposes a different (and somewhat simpler) protocol for reflecting over
+members.
+
+#+begin_src csharp
+  using System;
+  using System.Reflection;
+  using System.Reflection.Emit;
+  using System.Collections.Generic;
+
+
+  IEnumerable<MemberInfo> members =
+      typeof(Walnut).GetTypeInfo().DeclaredMembers;
+  // You can also use
+  // DeclaredProperties, DeclaredMethods, DeclaredEvents
+
+  foreach (MemberInfo m in members){
+      Console.WriteLine(m);
+  }
+
+  class Walnut
+  {
+      private bool cracked;
+      public void Crack() { cracked = true; }
+  }
+
+  /*
+    Void Crack()
+    Void .ctor()
+    Boolean cracked
+   ,*/
+
+#+end_src
+
+* COM
+** Get help
+    Search for the method name and DllImport. For Windows, the site
+    http://www.pinvoke.net is a wiki that aims to document all Win32 signatures.
+** Run MsgBox in user32.dll
+  #+begin_src csharp
+    using System;
+    using System.Runtime.InteropServices;
+
+    MessageBox (IntPtr.Zero, "Please do not press this again.", "Attention", 0);
+    //          ^^^^^^^^^^^ Unmanaged type that .NET Mardheller understand
+
+    [DllImport("user32.dll")]
+    static extern int MessageBox (IntPtr hWnd, string text, string caption, int type);
+  #+end_src
+** Run getuid in libc
+#+begin_src csharp
+  Console.WriteLine ($"User ID: {getuid()}");
+
+  [DllImport("libc")]
+  static extern uint getuid();
+
+** Get String from unmanaged code
+*** Windows
+Of course, this example is contrived in that you can obtain the Windows
+directory via the built-in ~Environment.GetFolderPath~ method.
+
+   #+begin_src csharp
+     using System;
+     using System.Runtime.InteropServices;
+
+     StringBuilder s = new StringBuilder (256);
+     GetWindowsDirectory (s, 256);
+     Console.WriteLine (s);
+
+     [DllImport("kernel32.dll")]
+     static extern int GetWindowsDirectory (StringBuilder sb, int maxChars);
+   #+end_src
+
+   ~StringBuilder~ is convinient, but ~char[]~ is more efficient.
+#+begin_src csharp
+  using System;
+  using System.Runtime.InteropServices;
+
+  char[] s = new char[256];
+  GetWindowsDirectory (s, 256);
+  string s1 = new string(s);
+  Console.WriteLine ($"The windows dir is: {s1}");
+
+  [DllImport ("kernel32.dll", CharSet = CharSet.Unicode)]
+  static extern int GetWindowsDirectory (char[] buffer, int maxChars);
+#+end_src
+
+*** Unix
+    #+begin_src csharp
+      var sb = new StringBuilder (256);
+      Console.WriteLine (getcwd (sb, sb.Capacity));
+
+      [DllImport("libc")]
+      static extern string getcwd (StringBuilder buf, int size);
+    #+end_src
+** Pass struct from unmanaged code
+*** Concept
+If you need to pass a (pointer-to) struct to a C function like:
+#+begin_src c
+  void GetSystemTime (LPSYSTEMTIME lpSystemTime);
+#+end_src
+
+And the struct to be passed has the following def:
+#+begin_src c
+  typedef struct _SYSTEMTIME {
+      WORD wYear;
+      WORD wMonth;
+      WORD wDayOfWeek;
+      WORD wDay;
+      WORD wHour;
+      WORD wMinute;
+      WORD wSecond;
+      WORD wMilliseconds;
+  } SYSTEMTIME, *PSYSTEMTIME;
+#+end_src
+
+You then need to first *define* a .NET Type that has the same structure.
+
+~LayoutKind.Sequential~ means that we want the fields *aligned sequentially* on
+pack-size boundaries (you’ll see what this means shortly), just as they would be
+in a C struct.
+
+ 1. *Field names* here are irrelevant.
+ 2. The *ordering* of fields is important.
+#+begin_src csharp
+  using System;
+  using System.Runtime.InteropServices;
+
+  [StructLayout(LayoutKind.Sequential)]
+  // ^^^ Instruct the marsheller how to map each field to its unmanaged
+  // counterpart
+  class SystemTime
+  {
+      public ushort Year;
+      public ushort Month;
+      public ushort DayOfWeek;
+      public ushort Day;
+      public ushort Hour;
+      public ushort Minute;
+      public ushort Second;
+      public ushort Milliseconds;
+  }
+#+end_src
+And now we can call
+#+begin_src csharp
+  SystemTime t = new SystemTime();
+  GetSystemTime (t);
+  Console.WriteLine (t.Year);
+
+  [DllImport("kernel32.dll")]
+  static extern void GetSystemTime (SystemTime t);
+#+end_src
+*** Windows
+So the full Program is
+#+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+
+
+SystemTime t = new SystemTime();
+GetSystemTime (t);
+Console.WriteLine (t.Year);
+
+[DllImport("kernel32.dll")]
+static extern void GetSystemTime (SystemTime t);
+
+[StructLayout(LayoutKind.Sequential)]
+    class SystemTime
+    {
+        public ushort Year;
+        public ushort Month;
+        public ushort DayOfWeek;
+        public ushort Day;
+        public ushort Hour;
+        public ushort Minute;
+        public ushort Second;
+        public ushort Milliseconds;
+    }
+
+#+end_src
+*** Unix
+#+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+
+Console.WriteLine ($"So the time is : {GetSystemTime()}");
+
+static DateTime GetSystemTime()
+{
+    DateTime startOfUnixTime =
+        new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+
+    Timespec tp = new Timespec();
+    int success = clock_gettime (0, ref tp);
+    if (success != 0) throw new Exception ("Error checking the time.");
+    return startOfUnixTime.AddSeconds (tp.tv_sec).ToLocalTime();
+}
+
+[DllImport("libc")]
+static extern int clock_gettime (int clk_id, ref Timespec tp);
+
+[StructLayout(LayoutKind.Sequential)]
+struct Timespec
+{
+    public long tv_sec;   /* seconds */
+    public long tv_nsec;  /* nanoseconds */
+}
+#+end_src
+** Pass Callback function to the unmanaged
+*** Problem
+Consider the following:
+#+begin_src c
+BOOL EnumWindows (WNDENUMPROC lpEnumFunc, LPARAM lParam);
+#+end_src
+
+~WNDENUMPROC~ is a callback that is fired with the handle of each window in
+sequence (or until the callback returns false). Here is its definition:
+
+#+begin_src c
+BOOL CALLBACK EnumWindowsProc (HWND hwnd, LPARAM lParam);
+#+end_src
+*** Solution 1: Pass a pointer to delegate
+#+begin_src csharp
+
+  using System;
+  using System.Runtime.CompilerServices;
+  using System.Runtime.InteropServices;
+
+  unsafe
+    {
+        EnumWindows (&PrintWindow, IntPtr.Zero);
+        //          ^^^^^^^^^^^^^ Call
+
+        [DllImport ("user32.dll")]
+        static extern int EnumWindows (
+            delegate* unmanaged <IntPtr, IntPtr, byte> hWnd, IntPtr lParam);
+        //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ a function(IntPtr,IntPtr) -> byte
+        [UnmanagedCallersOnly]
+        // ^^^^^^^^^^^^^^^^^^^---The following can only be used by Unmanaged code-> faster
+        static byte PrintWindow (IntPtr hWnd, IntPtr lParam)
+        {
+            Console.WriteLine (hWnd.ToInt64());
+            return 1;               //Return True
+        }
+    }
+
+#+end_src
+Notice that we’ve also changed the method’s return type from ~bool~ to ~byte~:
+
+This is because methods to which you apply ~[UnmanagedCallersOnly]~ can use only
+
+*blittable value* types
+
+in the signature.
+
+They are those the "primitive". These include
+1. float
+2. double
+3. structs that contain only blittable types.
+
+   The char type is also blittable, if part of a struct with a StructLayout
+   attribute specifying CharSet.Unicode:
+#+begin_src csharp
+[StructLayout (LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+#+end_src
+
+*** Solution 2: Pass as a delegate
+#+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+
+
+public class Test{
+
+    [DllImport("user32.dll")]
+    static extern int EnumWindows(CallBackPtr callPtr, int lPar);
+
+    static bool Report(int hwnd, int lParam)
+    {
+        Console.WriteLine("Window handle 是"+hwnd);
+        return true;
+    }
+    // -------------------------------------------------- 
+    delegate bool CallBackPtr(int hwnd, int lParam);
+    static readonly CallBackPtr callBackPtr = Report;
+    // ^^^^^^^^^^^^ use static readonly to avoid GC
+    static void Main() => EnumWindows(callBackPtr,0);
+}
+
+#+end_src
+** Field Offset: Simulate a C union
+#+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+
+NoteMessage n = new NoteMessage();
+
+Console.WriteLine ("NoteMessage is {0:x}",n.PackedMsg);    // 3302410
+
+n.Channel = 0xaa;
+n.Note = 0xbb;
+n.Velocity = 0xcc;
+Console.WriteLine ("NoteMessage is {0:x}",n.PackedMsg);    // 3302410
+
+n.PackedMsg = 0xaaddcc;
+Console.WriteLine ("NoteMessage is {0:x}",n.PackedMsg);    // 3302410
+Console.WriteLine ("Note is now: {0:x}", n.Note);         // 200
+
+[StructLayout (LayoutKind.Explicit)]
+public struct NoteMessage
+{
+    [FieldOffset(0)] public uint PackedMsg;    // 4 bytes long
+
+    [FieldOffset(0)] public byte Channel;      // FieldOffset also at 0
+    [FieldOffset(1)] public byte Note;
+    [FieldOffset(2)] public byte Velocity;
+}
+
+#+end_src
+** Shared Memory
+ #+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+using System.ComponentModel;
+using System.Threading;
+
+IntPtr root;
+const string name = "MyShare";
+using (SharedMem sm = new SharedMem (name, false, 1000))
+{
+    root = sm.Root;
+    Thread t = new Thread(fun);
+    t.Start();
+
+    Console.WriteLine($"root is {root}");
+    Console.WriteLine("Shared Memory named {0} Created (Press ENTER to quit)", name);
+    Console.ReadLine();         // Here's where we start a second app...
+
+}
+
+unsafe void fun(){
+    Console.WriteLine("Write a 2.");
+    byte * s = (byte *)root.ToPointer();
+    *s = 2;
+    Console.WriteLine("And Read a {0}", *s);
+}
+
+public sealed class SharedMem : IDisposable
+{
+  // Here we're using enums because they're safer than constants
+
+  enum FileProtection : uint      // constants from winnt.h
+  {
+    ReadOnly = 2,
+    ReadWrite = 4
+  }
+
+  enum FileRights : uint          // constants from WinBASE.h
+  {
+    Read = 4,
+    Write = 2,
+    ReadWrite = Read + Write
+  }
+
+  static readonly IntPtr NoFileHandle = new IntPtr (-1);
+
+  [DllImport ("kernel32.dll", SetLastError = true)]
+  static extern IntPtr CreateFileMapping (IntPtr hFile,
+                                          int lpAttributes,
+                                          FileProtection flProtect,
+                                          uint dwMaximumSizeHigh,
+                                          uint dwMaximumSizeLow,
+                                          string lpName);
+
+  [DllImport ("kernel32.dll", SetLastError=true)]
+  static extern IntPtr OpenFileMapping (FileRights dwDesiredAccess,
+                                        bool bInheritHandle,
+                                        string lpName);
+
+  [DllImport ("kernel32.dll", SetLastError = true)]
+  static extern IntPtr MapViewOfFile (IntPtr hFileMappingObject,
+                                      FileRights dwDesiredAccess,
+                                      uint dwFileOffsetHigh,
+                                      uint dwFileOffsetLow,
+                                      uint dwNumberOfBytesToMap);
+
+  [DllImport ("Kernel32.dll", SetLastError = true)]
+  static extern bool UnmapViewOfFile (IntPtr map);
+
+  [DllImport ("kernel32.dll", SetLastError = true)]
+  static extern int CloseHandle (IntPtr hObject);
+
+  IntPtr fileHandle, fileMap;
+
+  public IntPtr Root => fileMap;
+
+  public SharedMem (string name, bool existing, uint sizeInBytes)
+  {
+    if (existing)
+      fileHandle = OpenFileMapping (FileRights.ReadWrite, false, name);
+    else
+      fileHandle = CreateFileMapping (NoFileHandle, 0,
+                                      FileProtection.ReadWrite,
+                                      0, sizeInBytes, name);
+    if (fileHandle == IntPtr.Zero)
+      throw new Win32Exception();
+
+    // Obtain a read/write map for the entire file
+    fileMap = MapViewOfFile (fileHandle, FileRights.ReadWrite, 0, 0, 0);
+
+    if (fileMap == IntPtr.Zero)
+      throw new Win32Exception();
+  }
+
+  public void Dispose()
+  {
+    if (fileMap != IntPtr.Zero) UnmapViewOfFile (fileMap);
+    if (fileHandle != IntPtr.Zero) CloseHandle (fileHandle);
+    fileMap = fileHandle = IntPtr.Zero;
+  }
+}
+ #+end_src
+** Structure that can be mapped to Unmanaged memory
+   #+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+
+unsafe {
+
+    Console.WriteLine (sizeof (int)); // 4
+    Console.WriteLine (sizeof (char)); // 2
+    Console.WriteLine (sizeof (float)); // 4
+    Console.WriteLine (sizeof (MySharedData)); // 208
+
+    // Three way of Memory management:
+    Console.WriteLine("Method 1");
+    MySharedData d;
+    MySharedData* data = &d;       // Get the address of d
+    Changer.f1(data);
+    Changer.show(data);
+
+
+    Console.WriteLine("Method 3");
+    data = (MySharedData*)
+        Marshal.AllocHGlobal (sizeof (MySharedData)).ToPointer();
+    //          ^^^^^^^^^^^^ Alloc Heap Global Data
+    Changer.f1(data);
+    Changer.show(data);
+    Marshal.FreeHGlobal (new IntPtr (data));
+
+}
+
+
+
+[StructLayout (LayoutKind.Sequential)]
+unsafe struct MySharedData
+{
+    public int Value;           // 4
+    public char Letter;         // 2 (Align as 4)
+    public fixed float Numbers [50]; // 50*4 = 200
+    //     ^^^^^ a c-stype array(not a pointer to array as in C# anymore)
+}
+
+unsafe static class Changer {
+    public static void f1(MySharedData* data){
+        data->Value = 123;
+        data->Letter = 'X';
+        data->Numbers[10] = 1.45f;
+    }
+
+    public static void show(MySharedData* data){
+        Console.WriteLine("Showing Data:({0:5},{1:5},{2:5})",
+                          data->Value,data->Letter, data->Numbers[10]);
+    }
+}
+
+   #+end_src
+** Fixed unsafe array
+   The following example shows how to use a fixed array.
+
+   Q: Why we need the ~fixed~ keyword at all, if the ~message~ is already in the
+   unmanaged world?
+   A: Unsafe stuct and class can be used in a safe way as in
+   ~object o = new MySharedData();~.
+   In which we create a *boxed object on the heap*, which might be GC.
+   The compiler cannot assume that the members are not eligible for GC,
+   therefore the ~fixed~ keyword is needed.
+   
+#+begin_src csharp
+using System;
+using System.Runtime.InteropServices;
+
+MySharedData s;
+s.Message = "hi";
+Console.WriteLine($"Value in s.Message is {s.Message}");
+
+
+[StructLayout (LayoutKind.Sequential)]
+unsafe struct MySharedData
+{
+    // Allocate space for 200 chars (i.e., 400 bytes).
+        const int MessageSize = 200;
+    fixed char message [MessageSize];
+    // Hey CLR. Place this array as it is.
+
+    // One would most likely put this code into a helper class:
+    public string Message
+    {
+        get { fixed (char* cp = message) return new string (cp); }
+        set
+        {
+            fixed (char* cp = message) // Hey CLR. Do not move this object
+            {
+                int i = 0;
+                for (; i < value.Length && i < MessageSize - 1; i++)
+                    cp [i] = value [i];
+
+                // Add the null terminator
+                cp [i] = '\0';
+            }
+        }
+    }
+}
+
+#+end_src
+** Call Excel COM from Visual studio
+1. Start a new Project from VS.
+2. Add the following:
+#+begin_src csharp
+  using System;
+  using Excel = Microsoft.Office.Interop.Excel;
+
+  var excel = new Excel.Application();
+  excel.Visible = true;
+  Excel.Workbook workBook = excel.Workbooks.Add();
+  ((Excel.Range)excel.Cells[1, 1]).Font.FontStyle = "Bold";
+  ((Excel.Range)excel.Cells[1, 1]).Value2 = "Hello World";
+  workBook.SaveAs(@"C:\Users\congj\Desktop\temp.xlsx");
+#+end_src
+3. Then click Project> Add COM > Microsoft Excel Object Library 
+4. Run.
+*** Tidy Arguments
+    CLR helps you expand your argument list when calling to COM. So instead of
+    #+begin_src csharp
+      var missing = System.Reflection.Missing.Value;
+
+      workBook.SaveAs (@"C:\Users\congj\Desktop\temp.xlsx", missing, missing, missing, missing,
+                       missing, Excel.XlSaveAsAccessMode.xlNoChange, missing, missing,
+                       missing, missing, missing);
+    #+end_src
+    You can do
+#+begin_src csharp
+  workBook.SaveAs(@"C:\Users\congj\Desktop\temp.xlsx");
+#+end_src
+
+You can also do named argument
+#+begin_src csharp
+  workBook.SaveAs (@"c:\Users\congj\Desktop\temp.xlsx", Password:"foo");
+#+end_src
+*** Implicit reference
+    Some API (such as Word) use reference argument exclusively for
+    performance(Though the real performance gain is negligible). You you have to
+    pass arguments by reference which makes the code clumsy.
+
+    However, now with *implicit reference* you can do
+#+begin_src csharp
+  word.Open ("foo.doc");
+#+end_src
+Instead of
+    #+begin_src csharp
+      object filename = "foo.doc";
+      object notUsed1 = Missing.Value;
+      object notUsed2 = Missing.Value;
+      object notUsed3 = Missing.Value;
+      ...
+          Open (ref filename, ref notUsed1, ref notUsed2, ref notUsed3, ...);
+    #+end_src
+*** Indexer
+**** Use indexer
+     #+begin_src csharp
+       string s = "hello";
+       Console.WriteLine (s[0]); // 'h'
+       Console.WriteLine (s[3]); // 'l'
+
+       string s = null;
+       Console.WriteLine (s?[0]);  // Writes nothing; no error
+     #+end_src
+**** Write indexer
+#+begin_src csharp
+  Sentence s = new Sentence();
+  Console.WriteLine (s[3]);       // fox
+  s[3] = "kangaroo";
+  Console.WriteLine (s[3]);       // kangaroo
+
+  class Sentence
+  {
+      string[] words = "The quick brown fox".Split();
+
+      public string this [int wordNum]      // indexer
+      {
+          get { return words [wordNum];  }
+          set { words [wordNum] = value; }
+      }
+  }
+#+end_src
+**** Indexer with multiple args
+     #+begin_src csharp
+       public string this [int arg1, string arg2]
+       {
+           get { ... }  set { ... }
+       }
+     #+end_src
+**** ReadOnly Indexer
+     If you omit the set accessor, an indexer becomes read-only, and you can use
+     expression-bodied syntax to shorten its definition:
+#+begin_src csharp
+  public string this [int wordNum] => words [wordNum];
+#+end_src
+**** Indexer that accept range
+     #+begin_src csharp
+       Sentence s = new Sentence();
+       Console.WriteLine (s [^1]);         // fox  
+       string[] firstTwoWords = s [..2];   // (The, quick)
+     #+end_src
+     You need to have
+     #+begin_src csharp
+       public string this [Index index] => words [index];
+       public string[] this [Range range] => words [range];
+     #+end_src
+**** COM
+    The implicit reference allows you to *index the member* which is not allowed
+    in C#. Because ~ref~ and ~out~ are not supported by the C# indexer.
+    #+begin_src csharp
+myComObject.Foo [123] = "Hello";
+    #+end_src
+*** Dynamic Bining 
+    #+begin_src csharp
+      using System;
+      using Excel = Microsoft.Office.Interop.Excel;
+
+      Type excelAppType = Type.GetTypeFromProgID("Excel.Application", true);
+      dynamic excel = Activator.CreateInstance(excelAppType);
+      excel.Visible = true;
+      dynamic wb = excel.Workbooks.Add();
+      excel.Cells[1, 1].Value2 = "foo";
+    #+end_src
+*** Create COM from C#
+1. Create a new project with an interface an implementation in (MyLib.cs)
+#+begin_src powershell
+  dotnet new classlib -n MyLib2
+  cd MyLib2
+  #+end_src
+Change the ~Program.cs~ to the following:
+#+begin_src csharp
+  using System;
+  using System.Runtime.InteropServices;
+
+  namespace MyLib
+  {
+      [ComVisible(true)]
+      [Guid("226E5561-C68E-4B2B-BD28-25103ABCA3B1")]  // Change this GUID
+      [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+      public interface IServer
+      {
+          int Fibonacci();
+      }
+      [ComVisible(true)]
+      [Guid("2F7027D3-76DE-439F-B599-1FE740942109")]// Change this GUID
+      public class Server
+      {
+          public ulong Fibonacci(ulong whichTerm)
+          {
+              if (whichTerm < 1) throw new ArgumentException("...");
+              ulong a = 0;
+              ulong b = 1;
+              for (ulong i = 0; i < whichTerm; i++)
+              {
+                  ulong tmp = a;
+                  a = b;
+                  b = tmp + b;
+              }
+              return a;
+          }
+      }
+  }
+#+end_src
+Change the ~MyLib2.csproj~ to the following:
+#+begin_src xml
+  <Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      <TargetFramework>net5.0</TargetFramework>
+      <EnableComHosting>true</EnableComHosting>
+    </PropertyGroup>
+
+  </Project>
+
+#+end_src
+Run as Admin 
+#+begin_src powershell
+  dotnet publish --output Release
+  cd Release
+  regsvr32 MyLib2.comhost.dll
+  # Use the following to unregister
+  # regsvr32 /u MyLib2.comhost.dll
+      #+end_src
+**** Αccess COM from vbscript
+     Create the following in hi.vbs, and double click to run.
+     #+begin_src vbscript
+Dim obj
+Set obj = CreateObject("MyLib2.Server")
+
+result = obj.Fibonacci(12)
+Wscript.Echo result
+     #+end_src
+**** Framework and Core Not Compatible
+     Note that .NET Framework *cannot* be loaded into the same process as .NET 5
+     or .NET Core.
+
+     Therefore:
+
+     .NET 5 COM server <-x-> .NET Framework COM client process (vice versa).
+**** Unregistered COM ?
+     Unregistered COM needs an ~manifest~ file. Add the following to let
+     ~dotnet~ create a ~MyLib.X.manifest~ file

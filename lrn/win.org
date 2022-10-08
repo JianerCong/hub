@@ -1,0 +1,28 @@
+** Keys
+Virtual desktop:
+ + win-ctr-Left/Right :: switch between virtual desktop
+ + Win + CTRL + D :: Create a new desktop.
+ + Win + CTRL + F4:: Close the current desktop.
+** Windows terminal
+*** panes
+    + C-S-W :: close the pane
+    + M-S-+ :: split pane right
+    + M-S-- :: split pane below
+** excel
+*** Export csv but it's delimited by ";"
+    Something wrong with the system local
+   Control Panel > change data,time,number format > Additional settings
+*** VBA
+#+begin_src visualbasic
+Function incr(x)
+incr = x + 1
+End Function
+#+end_src
+** VS 
+*** add reference to csproj in other dir with msbuild?
+    #+begin_src pwsh
+ dotnet add reference ..\mylib\hi.csproj
+ msbuild -restore:true
+    #+end_src
+*** What does Add-Existing-Item in VS project explorer do ?
+    It just copy-paste the file you specified to the project folder..

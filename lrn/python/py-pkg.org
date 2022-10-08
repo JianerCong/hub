@@ -1,0 +1,487 @@
+** pkg
+*** pytest
+**** cmd-line
++ --setup-show :: see the execution order
++ --fixtures :: list fixtures and their origins
++ -s or --capture=no :: allow print statement
+**** fixture
+#+begin_src python
+  import pytest
+  @pytest.fixture()
+  def mydb():
+      db = openDb()
+      yield db
+      db.close()
+
+  def test_a(db):
+      assert db.size == 0
+#+end_src
+
+*** sympy
+**** install on ubuntu
+#+begin_src bash
+  sudo apt install python3-pip
+  sudo pip install sympy
+#+end_src
+**** Basic
+***** simplifying sqrt
+ #+begin_src python
+   sympy.sqrt(3)
+   sympy.sqrt(8)                   # 2*sqrt(2)
+ #+end_src
+***** expand and factor
+      #+begin_src python
+        x,y = symbols('x y')
+        e = x + 2 * x * y
+        e1 = expand(x * e)              # x^2 + 2 * x * y
+        e2 = factor(e1)                 # x*(x+2*y)
+      #+end_src
+***** limit , integrate, differentiate, solve
+ #+begin_src bash
+   from sympy import *
+   x = Symbol('x')                 # x
+   y = limit(sin(x)/x,x,0)         # 1
+   z = integrate(1/x,x)            # log(x)
+
+   a = Integral(cos(x)*exp(x),x)
+   # ⇒ Integral(exp(x)*cos(x), x)
+   e = Eq(a,a.doit())
+   # ⇒  Eq(Integral(exp(x)*cos(x), x), exp(x)*sin(x)/2 + exp(x)*cos(x)/2)
+
+   diff(sin(x) * exp(x), x)
+   # ⇒ exp(x) * sin(x) + exp(x) * cos(x)
+
+   solve(x**2 - 2,x)               # solve x^2 - 2 = 0
+ #+end_src
+***** solve differential equation y''-y=e^t
+      #+begin_src python
+        y = Function('y')
+        dsolve(Eq(
+            y(t).diff(t,t) - y(t),
+            exp(t)),y(t))
+      #+end_src
+***** Find eigenvalues
+      #+begin_src python
+        Matrix([[1,2],[2,2]]).eigenvals()
+      #+end_src
+***** Print in LaTeX
+ #+begin_src python
+   latex(Integral(
+       cos(x)**2,
+       (x,0,pi)
+   ))
+ #+end_src
+**** Symbols and assumption
+      #+begin_src python
+        x = symbols('x')
+        hi = symbols('hi')              # symbol can have more than 1 char
+        hi + 1                          # hi + 1
+
+        # plug in numbers
+        e = x + 1
+        e.subs(x,2)                     # ⇒ 3
+
+        # the equal sign
+        Eq(x + 1, 4)                    # ⇒ x + 1 = 4
+
+        # Make assumptions
+        y=symbols('y',positive=True)
+        a=symbols('a',real=True)
+        b=symbols('b',integer=True)
+      #+end_src
+***** Are two expressions equal
+ #+begin_src python
+   a = (x + 1) ** 2
+   b = x ** 2 + 2 * x + 1
+   simplify(a-b)                   # ⇒ 0
+   c = x ** 2 - 2 * x + 1
+   simplify(a-c)                   # ⇒ 4x
+
+   # Numerically equal
+   a = cos(x) ** 2 - sin(x) ** 2
+   b = cos(2*x)
+   a.equals(b)
+ #+end_src
+***** Fraction and Int
+Use ~Rational~ to init sympy fraction object
+#+begin_src python
+  type(Integer(1) + 1)            # sympy.int
+  type(1 + 1)                     # int
+  type(Integer(1) / Integer(3))   # sympy.rational
+  type(Rational(1,2))             # sympy.rational 1/2
+
+  # No
+  x + 1/2
+  # Yes
+  x + Rational(1,2)
+
+#+end_src
+**** simplification,expansion,...
+#+begin_src python
+  a,b=symbols('a b')
+  expand((a+b)**2)                # expand into additive terms
+
+  # Factor the additive terms
+  factor(x**2+2*x+1)
+
+  # Collect the additive terms as power of x
+  expr=x*y + x - 3 + 2*x**2 - z*x**2 + x**3
+  collect(expr,x)
+
+  # Cancel:
+  # The cancel() function will take any rational function and put it into the standard canonical form, p/q, where p and q are expanded polynomials with no common factors. The leading coefficients of p and q do not have denominators i.e., they are integers.
+
+  expr1=x**2+2*x+1
+  expr2=x+1
+  cancel(expr1/expr2)
+#+end_src
+**** Substitution 
+***** Basic
+       #+begin_src python
+         x,y,z = symbols("x y z")
+         e=cos(x)+1
+         e.subs(x,y)                     # cos(y)+1
+         e.subs(x,0)                     # 2
+
+         # Plug in expressions
+         e = x ** y
+         e = e.subs(y,x**y)              # x^(x^y)
+         e = e.subs(y,x**x)              # x^(x^(x^x))
+
+         # Substitute multiple values
+         e = x**3 + 4*x*y - z
+         e.subs([(x,2),(y,4),(z,0)])
+
+         # Example with list comprehension
+         # Turn:
+         #      x^4 - 4x^3 + 4x^2 -2x +3
+         # Into:
+         #      y^4 - 4x^3 + 4y^2 -2x +3
+
+         e = x**4 - 4*x**3 + 4*x**2 - 2*x + 3
+         r = [(x**i, y**i) for i in range(5) if i % 2 == 0]
+         e.subs(r)
+       #+end_src
+***** Expand trigonomitry
+      #+begin_src python
+        e = sin(2*x) + cos(2*x)
+        expand_trig(e)                  # 2sc+2c^2-1
+
+        # Expand only the sin(2x)
+        e.subs(sin(2*x),2*sin(x)*cos(x))  # 2cs+c2x
+      #+end_src
+***** string to symbol
+      #+begin_src python
+        s = 'x**2 + 3*x - 1/2'
+        e = sympify(s)
+        e.subs(x,2)
+      #+end_src
+**** Eval a float-point expression
+      #+begin_src python
+        e=sqrt(8)
+        e.evalf()                       # ⇒ 2.828
+        # eval to 100 digits
+        pi.evalf(100)
+
+        # plug-in numbers and eval
+        e = cos(2*x)
+        e.evalf(subs={x:2.4})
+
+        # evalf and roundoff error
+        one=cos(1)**2 + sin(1)**2
+        (one - 1).evalf()               # ⇒ -0e-124
+        (one - 1).evalf(chop=True)               # ⇒ 0
+
+      #+end_src
+**** Turn an expression into a function
+      #+begin_src python
+        import numpy as np
+        a = np.arrange(10)
+        e=sin(x)
+
+        # Turn it into a lambda using numpy
+        f = lambdify(x,e,"numpy")
+        f(a)
+
+        # using math
+        f = lambdify(x,e,"math")
+        f(a)
+
+        # using a custom function
+        def mysin(x):
+            return x
+        f = lambdify(x,e,{"sin":mysin})
+        f(a)
+      #+end_src
+**** Calculus
+***** Derivatives
+       #+begin_src python
+         # Basic
+         diff(cos(x),x)
+         diff(exp(x**2),x)
+         # Drive multiple times: (x^4)''' [two ways]
+         diff(x**4,x,x,x)
+         diff(x**4,x,3)
+
+         # Partial
+         diff(e,x,x,y,z)
+         diff(e,x,x,y,z,4)
+
+         # Method
+         e.diff(x,y,y,z,4)
+
+         # Unevaluated derivative
+         d = Derivative(e,x,y,y,z,4)
+         # Eval it
+         d.doit()
+       #+end_src
+***** Integrate
+       #+begin_src python
+         # indefinite
+         integrate(cos(x),x)
+         # definite
+         integrate(exp(-x),(x,0,oo))
+
+         # definite twice
+         integrate(exp(-x**2-y**2),
+                   (x,-oo,oo),
+                   (y,-oo,oo))
+
+         # Unevaluated
+         e = Integral(log(x)**2,x)
+         e.doit()
+       #+end_src
+***** DiracDelta function
+       #+begin_src python
+         DiracDelta(x**2+x-2).simplify(x)
+         solve(DiracDelta(x-1)/3 + DiracDelta(x+2)/3,x)
+         integrate(DiracDelta(x-1)/3 + DiracDelta(x+2)/3,x)
+         diff(DiracDelta(x-1)/3 + DiracDelta(x+2)/3,x)
+       #+end_src
+**** Solve
+***** Basic
+       #+begin_src python
+         # Two ways to solve x^2 = 1
+         solveset(Eq(x**2,1),x)
+         solveset(x**2 - 1,x)
+       #+end_src
+       The return valye for solveset can be
+       1. FiniteSet
+       2. Interval
+       3. ImageSet
+          #+begin_src python
+            solveset(x**2 - x ,x)
+            solveset(x-x,x,domain=S.Reals)
+            solveset(sin(x)-1,x,domain=S.Reals)
+          #+end_src
+***** System of linear equation (Possibly redundent)
+       #+begin_src python
+         # List of equations form
+         linsolve([x+y+z-1,x+y+2*z-2], (x,y,z))
+         # Matrix form
+         linsolve(Matrix(([1,1,1,1],[1,1,2,2])),
+                  (x,y,z))
+       #+end_src
+***** System of non-linear equation
+       #+begin_src python
+         nonlinsolve([x**2+1,y**2+1],[x,y])
+       #+end_src
+***** Differential Equation
+       #+begin_src python
+         from sympy import *
+         f,g = symbols('f g', cls = Function)
+         x = symbols('x')
+         d = Eq(f(x).diff(x,x)
+                - 2 * f(x).diff(x)
+                + f(x), sin(x))
+         r1 = dsolve(d,f(x))
+         # Specify initial condition
+         r2 = dsolve(d,func=f(x), ics={f(0):Rational(1,2),
+                                       f(pi/2):0})
+       #+end_src
+**** Matrix
+***** Create
+#+begin_src python
+  a = Matrix([[1,-1],[3,4],[0,4]])
+  b = Matrix([1,2,3])             # Column vector
+  c = eye(3)
+  d = eye(4)
+  e = zeros(2,3)
+  f = ones(3,2)
+  g = diag(1,2,3)
+#+end_src
+****** more on diag
+To create diagonal matrices, use diag. The arguments to diag can be either
+numbers or matrices. A number is interpreted as a 1×1 matrix. The matrices are
+stacked diagonally. The remaining elements are filled with 0s.
+#+begin_src python
+diag(-1, ones(2, 2), Matrix([5, 7, 5]))
+#+end_src
+****** Advanced create
+******* Create from function
+#+begin_src python
+  def f(i,j):
+      if i == j:
+          return 1
+      else:
+          return 0
+  Matrix(4, 4, f)
+  # [1  0  0  0]
+  # [          ]
+  # [0  1  0  0]
+  # [          ]
+  # [0  0  1  0]
+  # [          ]
+  # [0  0  0  1]
+  Matrix(3, 4, lambda i,j: 1 - (i+j) % 2)
+#+end_src
+***** get, set, remove rows
+#+begin_src python
+  M = Matrix([[1,2,3],[3,2,1]])
+  N = Matrix([0,1,1])
+
+  M * N
+  shape(M)                        # (2,3)
+  M.row(0)
+  M.col(-1)
+  # Matrix is mutable
+  M.col_del(0)                    # delete first col
+  M.row_del(1)                    # delete 2nd row
+
+  # *_insert are not modified in place.
+  M = M.row_insert(1,Matrix([[0,4]]))
+  M = M.col_insert(0,Matrix([1,-2]))
+
+  M[0,:]                          # first row
+  M[0,1]                          # element
+  M[0,:] / M[0,1]                 # a row
+  M[0,:]/=M[0,1]                  # modify row inplace
+#+end_src
+***** Methods
+#+begin_src python
+  M + N
+  M * N
+  3 * M
+  M ** 2                          # M * M
+  M ** -1                         # inverse
+  M.T                             # transpose
+  M.det()
+
+  # reduced row echelon form
+  M.rref()
+#+end_src
+***** concat
+#+begin_src python
+  # concat side-by-side
+  Matrix.hstack(eye(2), 2*eye(2))
+#+end_src
+*** seaborn
+**** install on ubuntu
+#+begin_src bash
+  sudo pip3 install seaborn
+  # seaborn
+  sudo pip3 --update numpy
+#+end_src
+**** first
+#+begin_src python
+# Import seaborn
+import seaborn as sns
+
+# Apply the default theme
+sns.set_theme()
+
+# Load an example dataset
+tips = sns.load_dataset("tips")
+
+# Create a visualization
+sns.relplot(
+    data=tips,
+    x="total_bill", y="tip", col="time",
+    hue="smoker", style="smoker", size="size",
+)
+#+end_src
+*** pandas
+**** create dataframe
+#+begin_src python
+  # from matrix
+  dates = pd.date_range("20130101", periods=6)
+  df = pd.DataFrame(np.random.randn(6, 4), index=dates, columns=list("ABCD"))
+  # from dic
+  df2 = pd.DataFrame(
+      {
+          "A": 1.0,
+          "B": pd.Timestamp("20130102"),
+          "C": pd.Series(1, index=list(range(4)), dtype="float32"),
+          "D": np.array([3] * 4, dtype="int32"),
+          "E": pd.Categorical(["test", "train", "test", "train"]),
+          "F": "foo",
+      }
+  )
+#+end_src
+**** select
+***** select coloumns
+#+begin_src python
+  # col A, col B
+  df.loc[:, ["A", "B"]]
+  # row 20130102 to 20130104, col A,B
+  df.loc["20130102":"20130104", ["A", "B"]]
+#+end_src
+**** write csv
+#+begin_src python
+df.to_csv("df.csv",index=False)
+#+end_src
+*** matplotlib
+**** point in polygon test
+#+begin_src python
+# Import seaborn
+import seaborn as sns
+import numpy as np
+import matplotlib.path as mp
+import pandas as pd
+
+pg=[[0,0],[0,5],[5,5],[5,0]]    # polygon point
+N=4
+L1=10
+L2=10
+xv,yv=np.meshgrid(np.linspace(0,L1,N),
+                  np.linspace(0,L2,N))
+
+def g(x):
+    return x.flatten()[:,np.newaxis]
+pt = np.hstack((g(xv),g(yv)))
+p = mp.Path(pg)
+f = p.contains_points(pt)
+
+df = pd.DataFrame({
+    "x": pt[:,0],
+    "y": pt[:,1],
+    "f": f
+})
+
+# Apply the default theme
+sns.set_theme()
+pl = sns.relplot(data=df,x="x",y="y",col="f")
+
+#+end_src
+*** numpy
+**** rand
+***** generate 10 from Normal(0,1)
+#+begin_src python
+  # Do this (new version)
+  from numpy.random import default_rng
+  rng = default_rng()             # Generator
+  vals = rng.standard_normal(10)
+  more_vals = rng.standard_normal(10)
+#+end_src
+***** draw three int
+#+begin_src python
+import numpy as np
+rng = np.random.default_rng(12345)
+rints = rng.integers(low=0, high=10, size=3) # 3 int from 0 to 10 inclusive
+rints
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "python"
+# End:

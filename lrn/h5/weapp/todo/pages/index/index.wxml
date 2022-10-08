@@ -1,0 +1,142 @@
+<view class="{{light ? 'page-light' : 'page'}}">
+
+    <t-popup visible="{{visible}}" zIndex="{{ 101 }}" overlayProps="{{ {zIndex: 100} }}"
+             bind:visible-change="onVisibleChange" placement="top">
+        <view class="menu">
+            <button class="btn" type="primary" plain="true" bindtap="switchLang">{{d['lang']}}</button>
+            <!-- <button class="btn" type="primary" plain="true" bindtap="switchTheme">☀️ | 🌓</button> -->
+            <button class="btn" type="primary" plain="true" bindtap="addThreeTodos"> 🎲</button>
+        </view>
+    </t-popup>
+
+    <!-- the drawer botton -->
+    <t-sticky offset-top="500">
+        <view class="fab" wx:if="{{!visible}}">
+            <view class="fab-text">
+                <t-icon bind:tap="openPopUp" name="ellipsis"></t-icon>
+            </view>
+        </view>
+    </t-sticky>
+
+    <!-- Input is {{input}} not updating? -->
+
+    <!-- the input box -->
+    <t-sticky>
+        <view class="container input-container">
+            <view class="input-box">
+                <view class="field">
+                    <input class="input" auto-focus
+                           bindinput="bindKeyInput"
+                           maxlength="10"
+                           model:value="{{input}}"
+                           placeholder="{{d['add_todo']}}"
+                    />
+                </view>
+                <view class="submit-button" bindtap="submit">
+                    <view class="submit-button-text">+</view>
+                </view>
+            </view>
+            <view class="progress-box">
+                <progress percent="{{progressPercentage}}" label="{{false}}" stroke-width="3"/>
+            </view>
+        </view>
+    </t-sticky>
+
+    <!-- add some space -->
+    <view style="height: 15vh;"></view>
+
+    <!-- display to todos -->
+    <view wx:for="{{todos}}" wx:for-index="index"
+          wx:for-item="todo"
+          wx:key="id">
+
+        <view class="container">
+            <view class="box todo-box-{{todo.id}}">
+                <!-- the default checker box will check it self -->
+                <!-- <checkbox class="checker-box-{{todo.id}}" data-id="{{todo.id}}"
+                     checked="{{todo.done}}" bindtap="tapToggleDone" /> -->
+                <view class="checker-box-{{todo.id}}" data-id="{{todo.id}}" bindtap="tapToggleDone">
+                    <view wx:if="{{todo.done}}">
+                        <t-icon name="check-rectangle-filled"  color="{{checker_color}}" size="30" ></t-icon>
+                    </view>
+                    <view wx:else>
+                        <t-icon name="rectangle"  size="30" color="{{checker_color}}"></t-icon>
+                    </view>
+                </view>
+
+                <!-- checked="" makes it unchecked -->
+                <view class="inner" bindtap="openDdlBox" data-id="{{todo.id}}">
+                    <view class="{{(todo.dueInDays < 0 ? 'overdue' : '') + ' ' + (todo.done ? 'crossed' : '') + ' ' + 'todo-text-' + todo.id }}">
+                        <!-- it can only bind one class at a time, but we can concat -->
+                        {{todo.name}}
+                    </view>
+
+
+                    <view wx:if="{{todo.dueInDays !== undefined }}" class="weak">
+                        <!-- Due in {{todo.dueInDays}} days -->
+                        {{todosDueString[todo.id]}}
+                    </view>
+                </view>
+                <!-- it looks like I have to use {{todo.id}} instead of {{id}} -->
+                <icon type="clear" data-id="{{todo.id}}" size="20" bindtap="tapRemoveTodo" color="{{checker_color}}"></icon>
+            </view>
+
+        </view>
+    </view>
+
+
+    <t-popup visible="{{ddlBoxVisible}}" zIndex="{{ 101 }}"
+             overlayProps="{{ {zIndex: 100} }}"  bind:visible-change="ddlCloseBox" placement="center">
+        <view class="ddlBox">
+            <view class="title">{{d['edit_this']}}</view>
+
+            <view class="input">
+                <view class="field-name"> <t-icon name="edit" size="25"></t-icon> </view>
+                <view class="field-value">
+                    <input bindinput="bindDdlNameInput"
+                           maxlength="10"
+                           model:value="{{ddlName}}"
+                    />
+                </view>
+                <view class="field-more-icon">
+                </view>
+            </view>
+
+            <view class="input">
+                <view class="field-name"> <t-icon name="time" size="25"></t-icon> </view>
+                <view class="field-value">
+                    <picker bindchange="bindPickerChange" value="{{ddlDisplayChoice}}" range="{{ddlDisplayChoices}}">
+                        {{ddlDisplayChoice}}
+                    </picker>
+                </view>
+                <view class="field-more-icon">
+                    <picker bindchange="bindPickerChange" value="{{ddlDisplayChoice}}" range="{{ddlDisplayChoices}}">
+                        <!-- make this a field too, because the picker component cannot display flex and grid ?
+                             So we kinda have to wrap both the name and this icon into a pick in order to make them both clickable.  -->
+                        >
+                    </picker>
+                </view>
+            </view>
+
+
+            <view class="input" wx:if="{{ddlChoice === 'pick_date' }}">
+                <view class="field-name"> </view>
+                <view class="field-value">
+                    <picker mode="date" value="{{customDate}}" start="2022-09-01" end="2023-01-01" bindchange="bindCustomDateChange">
+                        <view class="picker">
+                            {{customDate}}
+                        </view>
+                    </picker>
+                </view>
+                <view class="field-more-icon" bindtap="removeDdl">
+                    X
+                </view>
+            </view>
+
+            <view class="btn-group">
+                <button class="btn" type="primary" plain="true" bindtap="ddlSubmit"> O </button>
+                <button class="btn" type="default" plain="true" bindtap="ddlCloseBox"> X </button>
+            </view>
+        </view>
+    </t-popup>
+</view>

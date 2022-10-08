@@ -1,0 +1,10 @@
+{'Items': [
+        {'uid': {'S': 'user1'
+            }, 'text': {'S': 'aaa'
+            }
+        }
+    ], 'Count': 1, 'ScannedCount': 1, 'ResponseMetadata': {'RequestId': '1511bfeb-3661-409a-b48a-97013955a070', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Mon,
+            03 Oct 2022 09: 24: 19 GMT', 'content-type': 'application/x-amz-json-1.0', 'x-amz-crc32': '663807411', 'x-amzn-requestid': '1511bfeb-3661-409a-b48a-97013955a070', 'content-length': '79', 'server': 'Jetty(9.4.48.v20220622)'
+        }, 'RetryAttempts': 0
+    }
+}

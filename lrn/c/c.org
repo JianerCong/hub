@@ -1,0 +1,539 @@
+** Compiling
+*** compiling multiple source files
+    If we have the following two files.
+#+begin_src c
+/* call_me.c */
+#include <stdio.h>
+
+void call_me(){
+  printf("You rang sir?");
+}
+
+#+end_src
+
+#+begin_src c
+  /* hi.c */
+  void call_me();
+
+  int main(){
+    call_me();
+  }
+
+#+end_src
+
+We do
+#+begin_src bash
+  cc -c hi.c                      # ⇒ hi.o
+  cc -c call_me.c                 # ⇒ call_me.o
+  cc -o my_prog hi.o call_me.o    # ⇒ my_prog
+  my_prog                         # run
+#+end_src
+*** Link to library
+**** Link to library
+#+begin_src bash
+  cc -o prog m.o -lcurses      # link to libcurses.a in /usr/lib (known position)
+  cc -o prog m.o -lcurses -L/usr/junk/lib -lcrud # Also link to libcrud.a in /usr/junk/lib
+#+end_src
+**** Locate a library
+#+begin_src bash
+locate libcurses.a
+#+end_src
+**** Shared library
+***** What shared lib does it need?
+#+begin_src bash
+  ldd /bin/bash
+  # Who finds the shared library for exes
+  man ld.so
+
+  # How shared-library are located?
+  # It examines exe's `runtime library search path` (rpath)
+  # It then search the following path
+  cat /etc/ld.so.cache
+  # If you mannually change ^ file. Rebuild ld.so.cache file with
+  ldconfig -v
+#+end_src
+***** where are shared lib found
+#+begin_src bash
+  cat /etc/ld.so.conf
+  echo $LB_LIBRAR_PATH
+#+end_src
+***** ELF?
+Executable and Linkable format, the standard format used for executables and
+libraries on linux system.
+***** Inspect a file
+#+begin_src bash
+file m.exe
+ldd m.exe
+nm hi.so
+  #+end_src
+** lang
+*** bits
+  #+BEGIN_SRC c
+  #include <stdio.h>
+  #include <stdint.h>
+
+  int main(int argc, char *argv[]){
+    printf("In this system, we have \n"
+           "UINT8_MAX : %20d      INT8_MAX : %20d\n"
+           " INT8_MIN : %20d INT_FAST8_MIN : %20d\n",
+           UINT8_MAX, INT8_MAX, INT8_MIN, INT_FAST8_MIN);
+
+    printf("--------------------------------------------------\n");
+    uint8_t c = 1;
+    for (int i =1 ; i < 4; i++){
+      c <<= 1;
+      printf("1 left-shift %d times is %d \n",i,c);
+    }
+
+    printf("--------------------------------------------------\n");
+    c = 1;
+    for (int i =1 ; i < 4; i++){
+      c >>= 1;
+      printf("1 right-shift %d times is %d \n",i,c);
+    }
+
+    printf("A very fun way to set c to 255--------------------\n");
+    printf("Now c is %d \n", c);
+
+    /* push 8 zero */
+    for (int i = 0; i < 8; i++){
+      c <<= 1;
+      c |= 1;
+      printf("After %d th loop, c is %d\n" ,i,c);
+    }
+    printf("Now c is %d\n",c)
+    return 0;
+    }
+
+  #+END_SRC
+*** regex
+  #+BEGIN_SRC c
+  /**
+   * @file regex.c
+   * @author Jianer Cong
+   * @brief try regular expression
+   */
+
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <regex.h>
+  regex_t r; int i , v;
+
+
+  void report_comp(const int i, const char* p){
+    if (i==0){
+      printf("regular expression\" %s \"compiled successuly 🐸\n",p);
+    }else{
+      printf("regular expression\" %s \"didn't compile 😭\n",p);
+    }
+  }
+
+  void print_result(const int v, const char *s, const char *p){
+    if (v == 0){
+      printf("🐸\"%s\" matches \"%s\"\n",s,p);
+    }else if(v ==REG_NOMATCH){
+      printf("❄\"%s\" dosn't match \"%s\"\n",s,p);
+    }else{
+      printf("🤔error occurred when matching \"%s\" to \"%s\"\n",s,p);
+    }
+  }
+
+  #define NN "\\([0-9]\\{1,2\\}\\)"
+  void show_sub_str(const char * s, const size_t srt, const size_t end){
+    for (size_t j = srt; j < end; j++)
+      putchar(s[j]);
+  }
+
+  void show_opt(const char* s, regmatch_t *pmatch);
+  void try_optional_group(void){
+    char *s ,*p;
+    s = "00-11";
+    /* When REG_EXTENDED flag is set, the parenthesis need not to be quoted. */
+    p = "([0-9][0-9])-([0-9]{2})?";
+
+    i = regcomp(&r, p, REG_EXTENDED);
+    report_comp(i,p);
+    /* nmatch is The number of groups + 1 */
+    int nmatch = 2 + 1;
+    regmatch_t *pmatch = (regmatch_t *)malloc(nmatch * sizeof(regmatch_t));
+
+    v = regexec(&r,s,nmatch,pmatch,0);
+    print_result(v,s,p);
+    printf("Non-matching structure has value of -1:\n"
+           "When optional group exits.\n");
+    show_opt(s,pmatch);
+
+    s = "22-";
+    v = regexec(&r,s,nmatch,pmatch,0);
+    print_result(v,s,p);
+    printf("When optional group doesn't exits\n");
+    show_opt(s,pmatch);
+
+    free(pmatch);
+    regfree(&r);
+  }
+
+  void show_opt(const char* s, regmatch_t *pmatch){
+    printf("The matched string: ");
+    show_sub_str(s, pmatch[0].rm_so, pmatch[0].rm_eo);
+    putchar('\n');
+
+    printf("Month : ");
+    show_sub_str(s, pmatch[1].rm_so, pmatch[1].rm_eo);
+    if (pmatch[2].rm_so != -1){
+      printf("\n Date : ");
+      show_sub_str(s, pmatch[2].rm_so, pmatch[2].rm_eo);
+      putchar('\n');
+    }else{
+      printf("\n Date : Not given\n");
+    }
+  }
+
+  void try_grouping(void){
+    char *s = "My birthday is 2000-02-11";
+    char *p = "\\([0-9]\\{4\\}\\)-" NN "-" NN;
+
+    i = regcomp(&r, p, 0);
+    report_comp(i,p);
+    /* nmatch is The number of groups + 1 */
+    int nmatch = 3 + 1;
+    regmatch_t *pmatch = (regmatch_t *)malloc(nmatch * sizeof(regmatch_t));
+
+    v = regexec(&r,s,nmatch,pmatch,0);
+    print_result(v,s,p);
+
+    printf("The matched string: ");
+    show_sub_str(s, pmatch[0].rm_so, pmatch[0].rm_eo);
+
+    printf("\n\nSo you born in ");
+    show_sub_str(s, pmatch[1].rm_so, pmatch[1].rm_eo);
+
+    printf("\n And the month is ");
+    show_sub_str(s, pmatch[2].rm_so, pmatch[2].rm_eo);
+
+    printf("\n And the date is  ");
+    show_sub_str(s, pmatch[3].rm_so, pmatch[3].rm_eo);
+
+    putchar('\n');
+    regfree(&r);
+    free(pmatch);
+      }
+
+  #define TRY_MATCH(F) i = regcomp(&r, p, F);     \
+    report_comp(i,p);                             \
+    v = regexec(&r,s,0,NULL,0);                   \
+    print_result(v,s,p);                          \
+    regfree(&r)
+
+  /**
+   * @brief match regular expression.
+   * We got the posix readable re:
+   * [] : find any char and numbers specified between the bracket.
+   * [:digit:] : Find any digit.
+   * [:lower:] : lowercase alphabets.
+   * [:word:] : letters numbers and underscores
+   */
+  int main(int argc, char *argv[]){
+
+
+    char *s = "2000-02-11";
+    char *p = "2000-02-11";
+    TRY_MATCH(0);
+
+    /* p = "2000-02-[:number:]"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "23"; */
+    /* p = "[0-9]+"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "2000-02-11"; */
+    /* p = "[0-9]\\{4\\}-[0-9]\\{1,2\\}-[0-9]\\{1,2\\}"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "2000-02-1"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "200-02-11"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "gagaga"; */
+    /* p = "\\([a-z]\\{1,2\\}\\)\\1\\1"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "gogogo"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "hhh"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "ohhooh"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "hhhhh"; */
+    /* p = "h+"; */
+    /* printf("In Basic POSIX Regular Expression Set: \n\n"); */
+    /* TRY_MATCH(0); */
+    /* printf("In Extended POSIX Regular Expression Set: \n\n"); */
+    /* TRY_MATCH(REG_EXTENDED); */
+
+    /* s = "King Cobra"; */
+    /* p = "king cobra"; */
+    /* printf("Under case-insensitive match: \n\n"); */
+    /* TRY_MATCH(REG_ICASE); */
+
+    /* s = "127.33.2/24"; */
+    /* p = "^[0-9]\\{1,3\\}\\.[0-9]\\{1,3\\}\\.[0-9]\\{1,3\\}/[0-9]\\{1,2\\}$"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "1111.22.33/24"; */
+    /* TRY_MATCH(0); */
+
+    /* s = "1.2222.11/24"; */
+    /* TRY_MATCH(0); */
+
+    /* try_grouping(); */
+    try_optional_group();
+    return 0;
+    }
+
+  #+END_SRC
+*** sleep
+  #+BEGIN_SRC c
+  #include <stdio.h>
+
+  #ifdef _WIN32
+  #include <windows.h>
+  #else
+  #include <unistd.h>
+  #endif
+
+  #ifdef _WIN32
+  #include "C:\Users\congj\AppData\Roaming\Templates\mylib.h"
+  #else
+  #include "/home/me/Templates/mylib.h"
+  #endif
+
+  #define N 6
+
+  int main(int argc, char *argv[]){
+    char * c[N] = {
+                 "闇に輝く" S_BLUE "銀河よ、" S_NOR,
+                 "希望の光になりて",
+                 "我が僕に宿れ",
+                 "光の化身、ここに降臨。",
+                 "現われろ",
+                 S_CYAN "ギャラクシーアイズ　フォトン　ドラゴン" S_NOR
+    };
+    int n = N;
+
+    puts(c[N-(n--)]);
+    fflush(stdout);
+    for (; n > 0; n--){           /* stop when n = 1*/
+  #ifdef _WIN32
+      Sleep(3000);
+  #else
+      sleep(3);
+  #endif
+      puts(c[N-(n)]);
+      fflush(stdout);             /* flush output */
+    }
+    return 0;
+  }
+
+  #+END_SRC
+*** parse
+*** string 2 oct long
+ #+BEGIN_SRC c
+ /**
+  * @file strol.c
+  * @author Jianer Cong
+  * @brief tryout parsing octet
+  */
+
+ #include <stdio.h>
+ #include <stdlib.h>
+ typedef char uint8;
+
+ int main(int argc, char *argv[]){
+   if (argc < 2){
+     printf("Usage %s <oct number>\n", argv[0]);
+     /* exit(EXIT_FAILURE); */
+     return 1;
+   }
+
+   printf("Welcome 🐸, argc is %d argv[0] is %s and argv[1] is %s\n",
+          argc, argv[0], argv[1]);
+
+   char *e = NULL;
+   uint8 c = (uint8) strtol(argv[1],&e,8);
+   if (*e){
+     printf("Error parsing %s 😭\n",e);
+   }
+   printf("🐸 The octet parsed is %o, in decimal, it's %d\n",
+          c,c);
+
+   return 0;
+   }
+
+ #+END_SRC
+*** union
+  #+BEGIN_SRC c
+
+  #include <stdio.h>
+
+  union un {
+    char c;
+    double d;
+  };
+
+  int main(int argc, char *argv[]){
+    union un u1 = {.c = 'R'};
+    union un u2 = {.d = 2.2};
+    union un *pu1 = &u1;
+    printf("Should be 'R', it is %c\n", u1.c);
+    printf("Should be 'R', it is %c\n", pu1->c);
+    printf("Should be 2.2, it is %.1f\n", u2.d);
+    return 0;
+    }
+
+  #+END_SRC
+*** files
+**** simple write
+#+begin_src c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#ifdef _WIN32
+#include "C:\Users\congj\AppData\Roaming\Templates\mylib.h"
+#else
+#ifdef __arm__
+#include "/home/pi/Templates/mylib.h"
+#else
+#include "/home/me/Templates/mylib.h"
+#endif
+#endif
+
+_Bool is_read_writable(const char* fn){
+  printf("Tring to open file %s\n", fn);
+  FILE *fp = fopen(fn, "w+");
+  printf("fopen finished\n");
+  if(fp != NULL){
+    printf("open file: ok\n");
+    fclose(fp);
+    return true;
+  }else{
+    printf("failed to open file.\n");
+    return false;
+  }
+}
+
+void check_file(const char* filename){
+  printf("Maximum filename length: %d\n", FILENAME_MAX);
+  if (!is_read_writable(filename)){
+    printf("file %s is not read|writable\n", filename);
+    exit(1);
+  }else{
+    printf("file %s is read-writable\n", filename);
+  }
+}
+
+int main(int argc, char *argv[]){
+  const char* filename = "./my_generated.cpp";
+  remove(filename);
+  check_file(filename);
+  FILE *fp = fopen(filename, "w");
+  /* you should call
+     fflush() | fseek() | fsetpos() |
+     rewind() ...
+     after you write(), before you read()
+  */
+  fprintf(fp, "#include<iostream>\n"
+          "int main(){\n"
+          "std::cout << \"I am a generated cpp file.\" << std::endl}"
+          );
+  fclose(fp);
+  return 0;
+}
+
+#+end_src
+**** simple read-write
+#+begin_src c
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#ifdef _WIN32
+#include "C:\Users\congj\AppData\Roaming\Templates\mylib.h"
+#else
+#ifdef __arm__
+#include "/home/pi/Templates/mylib.h"
+#else
+#include "/home/me/Templates/mylib.h"
+#endif
+#endif
+
+void check_file(FILE *fp);
+void my_rewind(FILE *fp);
+void show_contents(FILE *fp);
+
+int main(int argc, char *argv[]){
+  const char* fname = "my_generated.cpp";
+  FILE *fp = fopen(fname, "w+"); /* trancate file before write */
+  check_file(fp);
+  fprintf(fp, "#include<iostream>\n"
+          "//Generated at %s\n"
+          "int main(){\n"
+          "\tstd::cout << \"I am the generated one 🐸.\"\n"
+          "\t          << std::endl;\n"
+          "return 0;"
+          "}", time_str());
+  printf("[%s] Contents written:\n", time_str());
+  my_rewind(fp);                   /* can also use rewind() */
+  show_contents(fp);
+  fclose(fp);
+  return 0;
+  }
+
+void check_file(FILE *fp){
+  if (fp == NULL){
+    printf("Failed to open file.\n");
+    exit(1);
+  }
+}
+
+void my_rewind(FILE *fp){
+  long offset = 0;
+  int origin = SEEK_SET;        /* the begining of the file */
+  fseek(fp, offset, origin);
+  printf("Current file position: %d\n",
+         ftell(fp)
+         );
+}
+
+void show_contents(FILE *fp){
+  int max = 500;
+  printf("Showing contents: \n\n");
+  for (int c = 0;((c = fgetc(fp)) != EOF) && max > 0;
+       max--){
+    fprintf(stdout, "%c", (char) c);
+  }
+  puts("");
+  if (max > 0 && !feof(fp)){
+    fprintf(stderr, "Error reading at max = %d\n", max);
+  }
+}
+#+end_src
+**** read-mode
+| mode | desc                                   |
+|------+----------------------------------------|
+| w+   | read/write create file if dosn't exist |
+| r+   | read/write error if file dosn't exist  |
+| a+   | read/write append if file dosn't exist |
+| x    | exclusive access                       |
+| b    | binary mode                            |
+* End
+# Local Variables:
+# org-what-lang-is-for: "c"
+# End:

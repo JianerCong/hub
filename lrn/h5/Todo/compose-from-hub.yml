@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+ mongo:
+  image: mongo
+  ports:
+  - 27017:27017
+
+ backend:
+  image: cccccje/todo-backend:v2.0.0
+  ports:
+  - 9001:9001
+  environment:
+    MONGO_HOST: mongo
+  depends_on:
+    - mongo
+
+ auth:
+  image: cccccje/todo-auth:v1.0.1
+  ports:
+  - 9002:9002

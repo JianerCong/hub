@@ -1,0 +1,35 @@
+** a Todo front end
+*** date structure
+The core state of the App is stored in a Vuex store. Configured in
+~src/store/index.js~. Important states are the followings:
+
+**** ~todos~
+This is where all the Todo items are stored, so it's the most important state
+(data) in the store. It's a ~Map~ object from JS's standard library. The key is
+the unique id of the Todo item, and the value is the actual Todo item object.
+
+***** Create,Read,Update,and Delete (CRUD) the items in ~todos~
+Use the following methods to access the ~todos~:
+
++ ~mutations~
+  + ~pushTodo(state,todo)~
+  + ~clearTodos(state)~
+  + ~removeTodo(state,id)~
+  + ~toggleDone(state,id)~
+
+To read the ~todos~, use either ~state.todos~ to get the ~Map~ data, or use the
+~state.getters.todosArray~ which is an alias to ~[...state.todos.values()]~
+
+***** The id of each Todo item
+Each time the ~pushTodo~ mutation is emitted (called), a unique id is generated
+for the item to be pushed. This id is assigned to the Todo item as an
+unenumerable property: ~_id~.
+
+To generate the unique id, the store keeps an internal counter: ~todo_id~,
+initially zero. Each time an item is pushed, this counter is assigned to the id,
+and then incremented. So the first item would get ~id=0~ and the next, ~id=1~.
+
+This implementation makes sure that the id of an item remains unchanged when
+some items are removed.
+
+When ~clearTodos~ mutation is emitted, this counter is reset to zero.

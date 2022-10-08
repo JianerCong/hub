@@ -1,0 +1,23 @@
+* KVM
+** minimal start-up
+#+begin_src bash
+  sudo apt install qemu-kvm virt-manager libvirt-daemon-system
+  sudo systemctl start libvirtd
+  sudo systemctl enable libvirtd
+#+end_src
+** virtual machine viewer
+#+begin_src bash
+  sudo apt install virt-viewer
+  virt-viewer <guestname>
+#+end_src
+** Default Kali login
+username:kali
+pswd:kali
+* Multipass
+https://multipass.run/
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

@@ -1,0 +1,18 @@
+{
+  "name": "todo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "vitest --ui"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "tdesign-miniprogram": "^0.21.1"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^0.23.4",
+    "vitest": "^0.23.4"
+  }
+}

@@ -1,0 +1,294 @@
+** css animation
+*** static transform
+#+begin_src css
+  /* basic transform */
+  .robot {
+      transform: rotate(45deg) scale(2) translate(100px, 200px);
+  }
+
+  /* transform in 3d */
+  body {
+      display: flex;
+      justify-content: center;
+      margin-top:3em;
+      background-color: #6F7295;
+      perspective: 1000px;
+  }
+  .robot {
+      transform: translate3d(100px, 200px, -100px);
+  }
+
+  /* make onhover to pointer */
+  button:hover {
+      cursor: pointer;
+  }
+#+end_src
+*** key frame animation
+**** basic + fill mode
+#+begin_src css
+  /* scale */
+  @keyframes scaleIn {
+      0% {transform: scale(0.2);}
+      85% {transform:scale(1.1);}
+      100% {transform:scale(1);}
+  }
+
+
+  h2 {
+      animation-name: scaleIn;
+      animation-duration: 2s;
+  }
+
+  /* set fill mode */
+  @keyframes scaleIn {
+      0% {transform: scale(0.2);}
+      85% {transform:scale(1.1);}
+      100% {transform:scale(1);}
+  }
+
+
+  h2 {
+      animation-name: scaleIn;
+      animation-duration: 2s;
+      animation-delay: 5s;
+      animation-fill-mode: backwards;
+  }
+#+end_src
+**** move and wiggle and repeat
+#+begin_src css
+
+
+/* move */
+@keyframes move {
+    0% {transform:translateX(0);}
+    100% {transform: translateX(900px);}
+}
+
+.robot {
+    animation-name: move;
+    animation-duration: 3s;
+}
+
+/* change transform-origin wiggle */
+@keyframes wiggle {
+    50% {
+        transform: translateX(10px) rotate(5deg);
+    }
+    0%, 100% {
+        transform: translateX(-10px) rotate(-5deg);
+    }
+}
+
+h2 {
+    transform-origin: 50% 0%;
+    animation: wiggle 0.6s infinite cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+
+#+end_src
+**** typing animation steps
+#+begin_src css
+/* typing animation: steps */
+h1 {
+    animation: typing 3s steps(14),
+               blinking 0.5s steps(1) infinite;
+    color: #433F55;
+    font-family: 'Fira Mono', monospace;
+    overflow: hidden; 
+    border-right: .15em solid #CE2D4F; 
+
+    white-space: nowrap; 
+    margin: 0 auto; 
+    letter-spacing: .15em; 
+
+}
+
+@keyframes typing {
+    0% {width:0px;} 100% {width: 100%;}}
+@keyframes blinking {
+    0%, 100% {border-color: transparent;}
+    50% {border-color: #CE2D4F;}
+}
+
+#+end_src
+**** let cloud fow: multiple assignment
+#+begin_src css
+  .cloud01 {
+    animation: float 25s linear infinite;
+  }
+
+  .cloud02 {
+    animation: float 30s 5s linear infinite backwards;
+  }
+
+  @keyframes float {
+    0% {
+      transform: translateX(-150px);
+    }
+    100% {
+      transform: translateX(820px);
+    }
+  }
+  /* other styles */
+  .wrap {
+      width: 800px;
+      height: 650px;
+      overflow: hidden;
+      position:relative;
+  }
+
+  .city, .cloud {position:absolute;}
+
+  .city {z-index:100;}
+
+  .cloud02 {top:76px;}
+  .cloud01 {top:30px;}
+
+  img.cloud {width:150px;}
+  .city img {width: 100%;}
+#+end_src
+**** play-state play animation on hover
+#+begin_src css
+.sticker {
+  animation: rotate 10s linear infinite;
+  animation-play-state: paused;
+}
+
+.sticker:hover {
+  animation-play-state: running;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+
+#+end_src
+**** animation delay: flip the letters
+#+begin_src css
+
+h2 {
+  margin:0;
+  font-size:7em;
+  font-weight: 900;
+  text-align:center;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+@keyframes flipUp {
+  from {transform:rotateX(90deg);}
+  to {transform: rotateX(0deg);}
+}
+
+@keyframes flipDown {
+  to{transform: rotateX(-180deg);}
+}
+
+span {
+  animation: flipUp 1s cubic-bezier(0.34, 1.56, 0.64, 1)  both, 
+            flipDown 1s cubic-bezier(0.34, 1.56, 0.64, 1) 2.75s forwards;
+  transform-origin: 55% 70%;          
+}
+
+span:nth-child(2) {
+  margin-right:0.15em;
+  animation-delay: 0.2s, 2.95s;
+}
+
+span:nth-child(3) {
+  margin-right:0.15em;
+  animation-delay: 0.4s, 3.15s;
+}
+
+span:nth-child(4) {
+  animation-delay: 0.6s, 3.35s;
+}
+
+span:nth-child(5) {
+  animation-delay: 0.8s, 3.55s;
+}
+
+span:nth-child(6) {
+  animation-delay: 1s, 3.75s;
+}
+
+span:nth-child(7) {
+  animation-delay: 1.2s, 3.95s;
+}
+#+end_src
+**** flip up and down
+#+begin_src css
+
+h2 {
+  margin:0;
+  font-size:7em;
+  font-weight: 900;
+  text-align:center;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+@keyframes flipUp {
+  from {transform:rotateX(90deg);}
+  to {transform:rotateX(0deg);}
+}
+
+@keyframes flipDown {
+  to {transform:rotateX(-180deg);}
+}
+
+@keyframes flick {
+  0%, 100% {
+    transform: rotateX(-180deg) rotateZ(0deg);
+    animation-timing-function: cubic-bezier(0.64, 0, 0.78, 0);
+  }
+  50% {
+    transform: rotateX(-180deg) rotateZ(10deg);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+span {
+  animation: flipUp 1s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+             flipDown 1s cubic-bezier(0.34, 1.56, 0.64, 1) 2.75s forwards;
+  transform-origin: 50% 70%;
+}
+
+span:nth-child(2) {
+  margin-right:0.15em;
+  animation-delay: 0.2s, 2.95s;
+}
+
+span:nth-child(3) {
+  margin-right:0.15em;
+  animation-delay: 0.4s, 3.15s;
+}
+
+span:nth-child(4) {
+  animation-delay: 0.6s, 3.35s;
+}
+
+span:nth-child(5) {
+  animation-delay:0.8s, 3.55s;
+}
+
+span:nth-child(6) {
+  animation-delay:1s, 3.75s;
+}
+
+span:nth-child(7) {
+  animation: flipUp 1s 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)  both, 
+            flipDown 1s 3.95s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+            flick .95s 4.95s linear forwards;
+}
+
+#+end_src
+* End
+
+
+# Local Variables:
+# org-what-lang-is-for: "css"
+# End:

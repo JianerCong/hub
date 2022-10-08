@@ -1,0 +1,16 @@
+# -*- org-enforce-todo-dependencies: t; -*-
+
+  
+# 🐸 Dosn't seems to block
+
+* TODO Blocked until (two) is done
+** DONE one
+** TODO two
+
+* Parent
+:PROPERTIES:
+:ORDERED:  t
+:END:
+** TODO a
+** TODO b, needs to wait for (a)
+** TODO c, needs to wait for (a) and (b)

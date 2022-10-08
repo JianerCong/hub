@@ -1,0 +1,19 @@
+** version
+*** I don't care about anything
++ *
++ x
+
+*** I don't care about minor:
++ 1
++ 1.x
++ ^1.0.4
+
+*** I don't care about patch:
++ 1.0
++ 1.0.x
++ ~1.0.4
+
+** packages
+
+*** remove packages from package.json
+npm uninstall --save <package_name>

@@ -1,0 +1,188 @@
+** pip
+#+begin_src bash
+  pip --version
+  sudo pip install camelcase
+  sudo pip uninstall camelcase
+  pip list
+  sudo pip --upgrade numpy
+#+end_src
+
+** use jupyter
+It was originally for IPython Qt Console, but as of IPython 4.0, the
+language-agnostic parts of the project including the qtconsole have moved to new
+projects under the name Jupyter.
+*** install and use on ubuntu
+#+begin_src bash
+  pip3 install traitlets=5.1.1
+  pip install notebook
+#+end_src
+*** install on windows
+#+begin_src powershell
+  # In Admin mode
+
+  pip install notebook
+  pip install pyqt5
+  pip install qtconsole
+  # After adding the path for jupyter in PATH
+
+  # Run
+  jupyter qtconsole
+#+end_src
+*** set color scheme
+[[https://libraries.io/pypi/jupyter_qtconsole_colorschemes]]
+#+begin_src bash
+  pip install jupyter_qtconsole_colorschemes
+#+end_src
+Add the following into the ~~/.jupyter/jupyter_qtconsole_config.py~
+#+begin_src bash
+color_theme = 'zenburn'  # specify color theme
+
+import pkg_resources
+c.JupyterQtConsoleApp.stylesheet = pkg_resources.resource_filename(
+    "jupyter_qtconsole_colorschemes", "{}.css".format(color_theme))
+
+c.JupyterWidget.syntax_style = color_theme
+#+end_src
+*** keys
++ C-S M :: show/hide menu bars
++ C Q :: quit
++ C-. :: restart kernel
+** ipython
+*** multilines
++ Esc Enter :: force executing cmd
++ Ctrl-o :: force inserting newline
+*** the four help-cmds
++ ? :: intro to ipython
++ %quickref :: Quick reference
++ help :: python
++ ?obj :: view an object
+*** completiong
+#+begin_src python
+data = ['Number of users', 123456]
+
+data[0].<tab>
+#+end_src
+*** magic functions
+**** What is line magic
+Line magics are prefixed with the % character and work much like OS command-line
+calls: they get as an argument the rest of the line, where arguments are passed
+without parentheses or quotes.
+**** Can I store line magic output?
+Lines magics can return results and can be used in the right hand side of an
+assignment
+**** What is cell magic
+Cell magics are prefixed with a double %%, and they are functions that get as an
+argument not only the rest of the line, but also the lines below it in a
+separate argument.
+**** Example: timeit
+The following examples show how to call the built-in ~%timeit~ magic, both in line
+and cell mode:
+#+begin_src python
+In [1]: %timeit range(1000)
+100000 loops, best of 3: 7.76 us per loop
+
+In [2]: %%timeit x = range(10000)
+...: max(x)
+...:
+1000 loops, best of 3: 223 us per loop
+
+#+end_src
+**** Run magic even ignoring the %
+You can always call magics using the % prefix, and if you’re calling a line
+magic on a line by itself, as long as the identifier is not defined in your
+namespace, you can omit even that:
+#+begin_src python
+run thescript.py
+#+end_src
+You can toggle this behavior by running the %automagic magic.
+**** Help
+Help me with
++ magic system :: %magic
++ somemagic  :: %somemagic
++ ls magic :: %lsmagic
+*** runing and editing
+#+begin_src python
+  %run hi.py
+  %edit hi.py
+#+end_src
+*** history
+Input and output history are kept in variables called ~In~ and ~Out~, keyed by
+the prompt numbers, e.g. ~In[4]~. The last three objects in output history are
+also kept in variables named ~_~, ~__~ and ~___~.
+*** system shell command
+To run any command at the system shell, simply prefix it with !, e.g.:
+#+begin_src python
+!ping www.bbc.co.uk
+#+end_src
+You can capture the output into a Python list, e.g.: files = !ls. To pass the
+values of Python variables or expressions to system commands, prefix them with
+$: !grep -rF $pattern ipython/* or wrap in {braces}.
+*** config
+**** create config file
+Much of IPython can be tweaked through configuration. To get started, use the
+command ~ipython profile create~ to produce the default config files. These will
+be placed in ~~/.ipython/profile_default~, and contain comments explaining what
+the various options do.
+#+begin_src powershell
+  ipython profile create
+  # [ProfileCreate] Generating default config file: WindowsPath('C:/Users/congj/.ipython/profile_default/ipython_config.py')
+  # [ProfileCreate] Generating default config file: WindowsPath('C:/Users/congj/.ipython/profile_default/ipython_kernel_config.py')
+#+end_src
+**** the configuration object ~c~
+You can then configure class attributes like this:
+#+begin_src python
+c.InteractiveShell.automagic = False    
+#+end_src
+**** example configuration file
+#+begin_src python
+  # sample ipython_config.py
+
+  c.TerminalIPythonApp.display_banner = True
+  c.InteractiveShellApp.log_level = 20
+  c.InteractiveShellApp.extensions = [
+      'myextension'
+  ]
+  c.InteractiveShellApp.exec_lines = [
+      'import numpy',
+      'import scipy'
+  ]
+  c.InteractiveShellApp.exec_files = [
+      'mycode.py',
+      'fancy.ipy'
+  ]
+  c.InteractiveShell.colors = 'LightBG'
+  c.InteractiveShell.xmode = 'Context'
+  c.TerminalInteractiveShell.confirm_exit = False
+  c.TerminalInteractiveShell.editor = 'nano'
+
+  c.PrefilterManager.multi_line_specials = True
+
+  c.AliasManager.user_aliases = [
+      ('la', 'ls -al')
+  ]
+#+end_src
+**** use a seperate profile
+#+begin_src bash
+  ipython profile create foo   # create the profile foo
+  ipython --profile=foo        # start IPython using the new profile
+  ipython locate profile foo
+#+end_src
+
+*** start-up files
+If you want some code to be run at the beginning of every IPython session, the
+easiest way is to add Python (.py) or IPython (.ipy) scripts to your
+~profile_default/startup/~ directory. Files here will be executed as soon as the
+IPython shell is constructed, before any other code or scripts you have
+specified. The files will be run in order of their names, so you can control the
+ordering with prefixes, like ~10-myimports.py~.
+*** as a shell
+    #+begin_src python
+      %cd c:/Users/congj/work
+      !dir
+    #+end_src
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

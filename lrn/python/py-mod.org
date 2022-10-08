@@ -1,0 +1,14 @@
+** Import and attributes
+file a.py
+#+begin_src python
+  def spam(text): # File b.py
+      print(text, 'spam')
+
+  import b # File a.py
+  b.spam('gumby') # Prints "gumby spam"
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "python"
+# End:

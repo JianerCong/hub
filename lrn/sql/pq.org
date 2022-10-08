@@ -1,0 +1,1040 @@
+** Install
+*** The simple way
+ #+BEGIN_SRC bash
+  apt-get install postgresql-12 
+ #+END_SRC
+** Packages
+ Ubuntu includes PostgreSQL by default. To install PostgreSQL on Ubuntu, use the apt-get (or other apt-driving) command:
+ apt-get install postgresql-12
+
+ The repository contains many different packages including third party addons.
+ The most common and important packages are (substitute the version number as
+ required):
+
+ | postgresql-client-12     | client libraries and client binaries                                                    |
+ | postgresql-12            | core database server                                                                    |
+ | postgresql-contrib-9.x   | additional supplied modules (part of the postgresql-xx package in version 10 and later) |
+ | libpq-dev                | libraries and headers for C language frontend development                               |
+ | postgresql-server-dev-12 | libraries and headers for C language backend development                                |
+ | pgadmin4                 | pgAdmin 4 graphical administration utility                                             |
+** Basic
+*** Set up env
+  If your server is remote, setup
+  #+BEGIN_SRC bash
+  PGHOST
+  PGPORT
+  #+END_SRC
+*** Login as postgres and register ~me~
+    Check postgresql status.
+#+BEGIN_SRC bash
+  # check status
+  service postgresql status
+#+END_SRC
+Two ways to enter the psql shell
+#+BEGIN_SRC bash
+  m1(){
+
+      sudo su postgres
+      # enter SQL shell
+      psql
+      # Then use \q or \?
+
+      # ....
+      # When you are done
+      # Welcome home
+      su me
+  }
+
+  m2(){
+      sudo -u postgres psql
+  }
+#+END_SRC
+Next in the SQL shell
+#+BEGIN_SRC sql
+  -- List all database q to quit
+  \l
+  -- check all users
+  \du
+  -- Change the password of "postgres"
+  ALTER USER postgres WITH PASSWORD 'my_password';
+  \q
+#+END_SRC
+*** Arch
+  + server ~postgres~
+    - manage database files
+    - accepts connections to the database from client
+    - perform database operations in behave of client
+  + client 
+    - Examples: (text-oriented tools, GUI, web server, specialized database
+      tools)
+*** Login as me and connect to a db
+#+BEGIN_SRC bash
+psql -U my_user -d mydb
+#+END_SRC
+
+*** Create a database
+ #+begin_src sql
+CREATE DATABASE mydb;
+ #+end_src
+*** Show databases, connect to database, show tables
+#+BEGIN_SRC sql
+  \l                              --show database
+  \l+
+  SELECT * FROM pg_database;
+  -- Connect to a database
+  \c mydb;
+  -- Show the tables
+  \dt
+
+#+END_SRC
+*** Which port is the pq runing on ?
+#+begin_src sql
+SELECT name, setting FROM pg_settings WHERE name = 'port';
+#+end_src
+*** Access the database
+#+BEGIN_SRC sql
+  SELECT version();
+  SELECT 2 + 2;
+#+END_SRC
+
+** 2 SQL
+*** 2.1 source a script
+#+BEGIN_SRC sql
+\i hi.sql;
+#+END_SRC
+*** 2.2 Concept
+1. Rows are not ordered.
+2. *Tables* are grouped into *databases*, and *a collection of databases*
+   managed by a single PostgreSQL server instance constitutes a *database
+   cluster*.
+*** 2.3+2.4 Create a table and Add rows
+1. SQL is case insensitive about key words and identifiers, except when
+   identifiers are double-quoted to preserve the case.
+#+BEGIN_SRC sql
+CREATE TABLE cities(
+  name varchar(80),
+  d date,
+  id int,
+  prep real,                    --precipitation
+  location point
+  );
+
+SELECT * FROM cities;
+-- name | d | id | prep | location
+-   ------+---+----+------+----------
+--   (0 rows)
+
+-- Insert row
+INSERT INTO cities VALUES ('Zhending', '2000-02-11',123, 2.2, '(0,0)');
+SELECT * FROM cities;
+-- name   |     d      | id  | prep | location
+--   ----------+------------+-----+------+----------
+--   Zhending | 2000-02-11 | 123 |  2.2 | (0,0)
+--   (1 row)
+
+-- Insert row but be explicit to the columns.
+INSERT INTO cities (name, d , prep, id, location)
+VALUES ('San Francisco', '2000-03-11', 2.2, 3, '(2,2)');
+
+-- Insert row but has missing values
+
+INSERT INTO cities (name, d , prep, location)
+VALUES ('Beijing', '2008-08-11', 3.3, '(3,4)');
+
+SELECT * FROM cities;
+
+DROP TABLE cities;
+
+
+#+END_SRC
+*** 2.5 Querying a Table
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+  name varchar(80),
+  id int,
+  x real
+);
+
+INSERT INTO df (name, id,x)
+VALUES ('a', 1,1.0);
+
+INSERT INTO df (name, id,x) VALUES ('b', 2, 2.0);
+INSERT INTO df (name, id,x) VALUES ('c', 3, 3.0);
+INSERT INTO df (name, id,x) VALUES ('a', 4, 2.0);
+
+SELECT * FROM df;
+-- name | id | x
+--   ------+----+---
+--   a    |  1 | 1
+--   b    |  2 | 2
+--   c    |  3 | 3
+--   a    |  4 | 2
+--   (4 rows)
+
+SELECT name, id*2 AS id_twice FROM df;
+-- name | id_twice
+--   ------+----------
+--   a    |        2
+--   b    |        4
+--   c    |        6
+--   (3 rows)
+
+SELECT * FROM df WHERE (name='a' OR name='c' ) AND x>1.0;
+-- name | id | x
+--   ------+----+---
+--   c    |  3 | 3
+--   a    |  4 | 2
+--   (2 rows)
+
+SELECT * FROM df ORDER BY name;
+-- name | id | x
+--   ------+----+---
+--   a    |  1 | 1
+--   a    |  4 | 2
+--   b    |  2 | 2
+--   c    |  3 | 3
+--   (4 rows)
+
+SELECT * FROM df ORDER BY name, -id;
+-- name | id | x 
+--   ------+----+---
+--   a    |  4 | 2
+--   a    |  1 | 1
+--   b    |  2 | 2
+--   c    |  3 | 3
+--   (4 rows)
+
+-- Get unique rows
+SELECT DISTINCT name FROM df;
+-- name
+--   ------
+--   a
+--   b
+--   c
+--   (3 rows)
+
+SELECT DISTINCT id FROM df ORDER BY id;
+-- id 
+--   ----
+--   1
+--   2
+--   3
+--   4
+--   (4 rows)
+
+DROP TABLE df;
+
+#+END_SRC
+*** 2.6 Joins between tables
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+  name varchar(80),
+  id int,
+  x real
+);
+
+
+INSERT INTO df (name, id,x) VALUES ('a', 1,1.0);
+INSERT INTO df (name, id,x) VALUES ('b', 2, 2.0);
+INSERT INTO df (name, id,x) VALUES ('c', 3, 3.0);
+INSERT INTO df (name, id,x) VALUES ('a', 4, 2.0);
+
+CREATE TABLE df2(
+  nam varchar(80),
+  y real
+);
+INSERT INTO df2 (nam,y) VALUES ('a', 10.0);
+INSERT INTO df2 (nam,y) VALUES ('b', 20.0);
+
+
+CREATE TABLE df3(
+  name varchar(80),
+  y real
+);
+INSERT INTO df3 (name,y) VALUES ('a', 10.0);
+INSERT INTO df3 (name,y) VALUES ('b', 20.0);
+
+SELECT * FROM df JOIN df2 ON name = nam;
+-- name | id | x | nam | y  
+--   ------+----+---+-----+----
+--   a    |  1 | 1 | a   | 10
+--   b    |  2 | 2 | b   | 20
+--   a    |  4 | 2 | a   | 10
+--   (3 rows)
+
+-- Resolve the name
+SELECT df.name, x, y FROM df JOIN df3 ON df.name = df3.name;
+-- name | x | y  
+--   ------+---+----
+--   a    | 1 | 10
+--   b    | 2 | 20
+--   a    | 2 | 10
+--   (3 rows)
+
+-- Outer join
+SELECT df.name, x, y FROM df LEFT OUTER JOIN df3 ON df.name = df3.name;
+-- name | x | y  
+--   ------+---+----
+--   a    | 1 | 10
+--   b    | 2 | 20
+--   c    | 3 |   
+--   a    | 2 | 10
+--   (4 rows)
+
+-- Self-Join
+SELECT d1.name AS d1_NAME, d1.x AS d1_X, d2.name AS d2_NAME, d2.x AS d2_X
+  FROM df d1 JOIN df d2 ON d1.x > d2.x;
+
+-- d1_name | d1_x | d2_name | d2_x
+--   ---------+------+---------+------
+--   b       |    2 | a       |    1
+--   c       |    3 | a       |    1
+--   c       |    3 | b       |    2
+--   c       |    3 | a       |    2
+--   a       |    2 | a       |    1
+--   (5 rows)
+
+
+
+DROP TABLE df;
+DROP TABLE df2;
+DROP TABLE df3;
+
+#+END_SRC
+*** 2.7 Aggregate functions
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+  name varchar(80),
+  id int,
+  x real
+);
+
+
+INSERT INTO df (name, id,x) VALUES ('a', 1,1.0);
+INSERT INTO df (name, id,x) VALUES ('b', 2, 2.0);
+INSERT INTO df (name, id,x) VALUES ('c', 3, 3.0);
+INSERT INTO df (name, id,x) VALUES ('a', 4, 2.0);
+
+SELECT max(id) FROM df;
+-- max 
+--   -----
+--   4
+--   (1 row)
+
+-- Who got the highest id?
+SELECT name FROM df WHERE id = (SELECT max(id) FROM df);
+-- name
+--   ------
+--   a
+--   (1 row)
+
+-- Group and summary
+SELECT name, max(x) FROM df GROUP BY name;
+-- name | max
+--   ------+-----
+--   a    |   2
+--   b    |   2
+--   c    |   3
+--   (3 rows)
+
+-- Get only rows whose name starts with 'S'
+
+CREATE TABLE df2(
+  name varchar(80),
+  id int,
+  x real
+);
+INSERT INTO df2 (name, id,x) VALUES ('Apple', 1,1.0);
+INSERT INTO df2 (name, id,x) VALUES ('Ajax', 2, 2.0);
+INSERT INTO df2 (name, id,x) VALUES ('Zexal', 3, 3.0);
+INSERT INTO df2 (name, id,x) VALUES ('Afanti', 4, 2.0);
+INSERT INTO df2 (name, id,x) VALUES ('Afanti', 4, 0.6);
+
+SELECT name , max(x)
+  FROM df2
+ WHERE name LIKE 'A%' -- Aggregate only rows whose name starts with A
+ GROUP BY name
+HAVING max(x) > 1.5;            --Show only rows after aggregation, whose max(x)
+                                --is larger than 1.5
+-- name  | max
+--   --------+-----
+--   Afanti |   2
+--   Ajax   |   2
+--   (2 rows)
+
+
+
+
+DROP TABLE df;
+DROP TABLE df2;
+
+#+END_SRC
+*** 2.8/2.9 Updates and Delete
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+  name varchar(80),
+  id int,
+  x real
+);
+
+
+INSERT INTO df (name, id,x) VALUES ('a', 1,1.0);
+INSERT INTO df (name, id,x) VALUES ('b', 2, 2.0);
+INSERT INTO df (name, id,x) VALUES ('c', 3, 3.0);
+INSERT INTO df (name, id,x) VALUES ('a', 4, 2.0);
+
+-- Increment all x in rows whose id >=3
+UPDATE df SET x = x + 1 WHERE id >= 4;
+
+SELECT * FROM df;
+-- name | id | x 
+--   ------+----+---
+--   a    |  1 | 1
+--   b    |  2 | 2
+--   c    |  3 | 3
+--   a    |  4 | 3
+--   (4 rows)
+
+-- Delete all row whose name is 'a'
+DELETE FROM df WHERE name = 'a';
+SELECT * FROM df;
+-- name | id | x 
+--   ------+----+---
+--   b    |  2 | 2
+--   c    |  3 | 3
+--   (2 rows)
+
+-- Empty the table
+DELETE FROM df;
+
+DROP TABLE df;
+
+#+END_SRC
+** 3 More
+*** 3.2 Views
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+  name varchar(80),
+  id int,
+  x real
+);
+
+
+INSERT INTO df (name, id,x) VALUES ('a', 1,1.0);
+INSERT INTO df (name, id,x) VALUES ('b', 2, 2.0);
+INSERT INTO df (name, id,x) VALUES ('c', 3, 3.0);
+INSERT INTO df (name, id,x) VALUES ('a', 4, 2.0);
+
+CREATE VIEW v AS
+  SELECT name, x FROM df;
+
+SELECT * FROM v;
+-- name | x 
+--   ------+---
+--   a    | 1
+--   b    | 2
+--   c    | 3
+--   a    | 2
+--   (4 rows)
+
+DROP VIEW v;
+DROP TABLE df;
+
+#+END_SRC
+*** 3.3 Foreign Keys
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+  name varchar(80) primary key,
+  id int,
+  x real
+);
+
+CREATE TABLE df2(
+  name varchar(80) references df(name), --You can only insert row whose name
+                                        --exists in df,name
+                                        id int
+);
+
+INSERT INTO df (name, id,x) VALUES ('a', 1,1.0);
+INSERT INTO df (name, id,x) VALUES ('b', 2, 2.0);
+INSERT INTO df (name, id,x) VALUES ('c', 3, 3.0);
+
+INSERT INTO df2 (name, id) VALUES ('a',1);
+INSERT INTO df2 (name, id) VALUES ('z', 2); --Error
+
+-- psql:hi.sql:19: ERROR: insert or update on table "df2" violates foreign key
+--   constraint "df2_name_fkey" DETAIL: Key (name)=(z) is not present in table
+--   "df".
+
+
+DROP TABLE df2;
+DROP TABLE df;
+
+#+END_SRC
+*** 3.4 Atomic (Transaction)
+#+BEGIN_SRC sql
+  CREATE TABLE df(x int);
+
+
+  BEGIN;
+  INSERT INTO df (x) VALUES (1);
+  INSERT INTO df (x) VALUES (2);
+  INSERT INTO df (x) VALUES (3);
+  COMMIT;
+
+
+  BEGIN;
+  INSERT INTO df (x) VALUES (4);
+  INSERT INTO df (x) VALUES (5);
+  INSERT INTO df (x) VALUES (6/0);
+  COMMIT;
+
+  SELECT * FROM df;
+  -- x 
+  --   ---
+  --   1
+  --   2
+  --   3
+  --   (3 rows)
+
+  -- Use save-points
+  BEGIN;
+  INSERT INTO df (x) VALUES (4);
+  SAVEPOINT my_save_point;
+  INSERT INTO df (x) VALUES (5);
+  INSERT INTO df (x) VALUES (6/0);
+  ROLLBACK TO my_save_point;      --trigger this
+  COMMIT;                         --back to begin
+                                  -- x 
+                                  --   ---
+                                  --   1
+                                  --   2
+                                  --   3
+                                  --   4
+                                  --   (4 rows)
+
+  SELECT * FROM df;
+
+  DROP TABLE df;
+#+END_SRC
+*** 3.5 Window functions
+#+BEGIN_SRC sql
+CREATE TABLE df(
+  name varchar(20),
+  atk int,
+  attr varchar(20)
+);
+
+INSERT INTO df (name, atk , attr) VALUES ('Blue Eyes', 3000, 'Dragon');
+INSERT INTO df (name, atk , attr) VALUES ('Red Eyes', 2400, 'Dragon');
+INSERT INTO df (name, atk , attr) VALUES ('Galaxy Eyes', 3000, 'Dragon');
+INSERT INTO df (name, atk , attr) VALUES ('Kulibal', 300, 'Demon');
+INSERT INTO df (name, atk , attr) VALUES ('Demon"s Summon', 2500, 'Demon');
+INSERT INTO df (name, atk , attr) VALUES ('E-HERO Rock Giya', 2100, 'Demon');
+
+SELECT name ,atk, avg(atk) OVER (PARTITION BY attr) FROM df;
+
+-- name       | atk  |          avg
+--   ------------------+------+-----------------------
+--   Kulibal          |  300 | 1633.3333333333333333
+--   Demon"s Summon   | 2500 | 1633.3333333333333333
+--        E-HERO Rock Giya | 2100 | 1633.3333333333333333
+--        Blue Eyes        | 3000 | 2800.0000000000000000
+--        Red Eyes         | 2400 | 2800.0000000000000000
+--        Galaxy Eyes      | 3000 | 2800.0000000000000000
+--        (6 rows)
+
+-- Rank them
+SELECT name ,atk, attr, rank() OVER (PARTITION BY attr ORDER BY atk DESC) FROM df;
+-- name       | atk  |  attr  | rank
+--   ------------------+------+--------+------
+--   Demon"s Summon   | 2500 | Demon  |    1
+--        E-HERO Rock Giya | 2100 | Demon  |    2
+--        Kulibal          |  300 | Demon  |    3
+--        Blue Eyes        | 3000 | Dragon |    1
+--        Galaxy Eyes      | 3000 | Dragon |    1
+--        Red Eyes         | 2400 | Dragon |    3
+
+-- Mean of all
+SELECT name, atk, avg(atk) OVER () FROM df;
+-- name       | atk  |          avg
+--   ------------------+------+-----------------------
+--   Blue Eyes        | 3000 | 2216.6666666666666667
+--   Red Eyes         | 2400 | 2216.6666666666666667
+--   Galaxy Eyes      | 3000 | 2216.6666666666666667
+--   Kulibal          |  300 | 2216.6666666666666667
+--   Demon"s Summon   | 2500 | 2216.6666666666666667
+--        E-HERO Rock Giya | 2100 | 2216.6666666666666667
+
+-- Accumulate (OVER works from the first (lowest) to the current)
+SELECT name, atk, avg(atk) OVER (ORDER BY atk) FROM df;
+-- name       | atk  |          avg          
+--   ------------------+------+-----------------------
+--   Kulibal          |  300 |  300.0000000000000000
+--   E-HERO Rock Giya | 2100 | 1200.0000000000000000
+--   Red Eyes         | 2400 | 1600.0000000000000000
+--   Demon"s Summon   | 2500 | 1825.0000000000000000
+--        Blue Eyes        | 3000 | 2216.6666666666666667
+--        Galaxy Eyes      | 3000 | 2216.6666666666666667
+--        (6 rows)
+
+-- Filter the output (select the top attackers)
+SELECT name, atk, attr
+  FROM (SELECT name, atk, attr, rank() OVER
+                 (PARTITION BY attr
+                 ORDER BY atk DESC)
+                 AS rk FROM df)
+         AS df2
+         WHERE rk < 2;
+-- name      | atk  |  attr  
+--   ----------------+------+--------
+--   Demon"s Summon | 2500 | Demon
+--        Blue Eyes      | 3000 | Dragon
+--        Galaxy Eyes    | 3000 | Dragon
+--        (3 rows)
+
+-- Reuse windows
+SELECT name, attr, max(atk) OVER w, avg(atk) OVER w
+  FROM df WINDOW w AS (PARTITION BY attr ORDER BY atk DESC);
+-- name       |  attr  | max  |          avg          
+--   ------------------+--------+------+-----------------------
+--   Demon"s Summon   | Demon  | 2500 | 2500.0000000000000000
+--        E-HERO Rock Giya | Demon  | 2500 | 2300.0000000000000000
+--        Kulibal          | Demon  | 2500 | 1633.3333333333333333
+--        Blue Eyes        | Dragon | 3000 | 3000.0000000000000000
+--        Galaxy Eyes      | Dragon | 3000 | 3000.0000000000000000
+--        Red Eyes         | Dragon | 3000 | 2800.0000000000000000
+
+DROP TABLE df;
+
+#+END_SRC
+*** 3.6 Inheritance
+** 3.5 More from online
+*** Primary Key
+#+begin_src sql
+-- method 1
+CREATE TABLE df (
+  id INTEGER PRIMARY KEY,
+  nam TEXT
+  );
+-- method 2
+CREATE TABLE df2(
+  id int,
+  nam TEXT,
+  CONSTRAINT df2_pkey PRIMARY KEY (id) --Add a named constraint
+  );
+-- method 3
+CREATE TABLE df3(
+  id int,
+  nam TEXT
+  );
+ALTER TABLE df3 ADD PRIMARY KEY (id);
+
+/*
+  Add an automatic incremented primary key
+ */
+CREATE TABLE df4(
+  nam TEXT
+  );
+ALTER TABLE df4 ADD COLUMN ID SERIAL PRIMARY KEY;
+INSERT INTO df4 (nam) VALUES ('a');
+INSERT INTO df4 (nam) VALUES ('b');
+INSERT INTO df4 (nam) VALUES ('c');
+-- SELECT id,nam FROM df4;
+
+-- Remove the "named" primary key constraint
+ALTER TABLE df2 DROP CONSTRAINT df2_pkey;
+-- Use \d df2 to see the constraint name
+
+#+end_src
+** 4 SQL syntex
+*** 4.1 Lexical structure
+**** 4.1.2.3 string
+#+BEGIN_SRC sql
+-- string constant
+SELECT 'a'
+         'b';
+-- is equivalent to
+SELECT 'ab';
+-- but SELECT 'a' 'b';                 --is error
+SELECT E'I have a new line \n here';
+SELECT $$ I'm a simple string. You're not. $$;
+-- Use tag to enclose string
+SELECT $mytag$
+         I'm a simple string. You're not.
+         $mytag$;
+-- bit string can only contain 0 and 1
+SELECT B'01011';
+-- hex string
+SELECT X'1FF';                  --000111111111
+
+#+END_SRC
+**** 4.1.2.4 digits
+#+BEGIN_SRC sql
+-- string constant
+
+SELECT 42;
+SELECT 3.5;
+SELECT 4.;
+SELECT .001;
+SELECT 5e2;
+SELECT 1.925e-3;
+
+SELECT REAL '1.23';  -- string style;
+SELECT 1.23::REAL ; -- PostgreSQL (historical) style;
+
+#+END_SRC
+**** 4.1.2.5 Bit-string Constant
+#+begin_src sql
+SELECT B'1001';                 -- 1001
+SELECT X'1FF';                  --⇒ 000111111111
+#+end_src
+**** 4.1.2.6 Numeric Constants
+#+begin_src sql
+SELECT 1;
+SELECT 1.2;
+SELECT 1.;
+SELECT  .01;
+SELECT 5e2;
+SELECT 1.2e-3;
+
+#+end_src
+**** 4.1.2.7 type cast
+#+BEGIN_SRC sql
+-- Use one of the three:
+-- type 'string'
+--   'string'::type
+--   CAST ( 'string' AS type )
+
+SELECT point '(0,0)';
+SELECT '(0,0)'::point;
+SELECT CAST ('(0,0)' AS point);
+
+#+END_SRC
+**** 4.1.3 operator
+     
+
+*** Functions
+**** Copy
+***** try 1
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+    name varchar(80),
+    id int
+  );
+
+INSERT INTO df (name, id)
+            VALUES ('a', 1);
+
+-- If you do :
+-- COPY df FROM '/home/me/Templates/lrn/pq/hi.txt';
+
+-- You get:
+-- psql:hi.sql:10: ERROR: must be superuser or a member of the
+-- pg_read_server_files role to COPY from a file
+
+COPY df TO STDOUT;
+-- a	1
+
+-- DELIMITER:
+
+-- The default is a tab character in text format, a comma in CSV format. This
+-- must be a single one-byte character. This option is not allowed when using
+-- binary format.
+
+
+DROP TABLE df;
+#+END_SRC
+***** before try 2
+#+BEGIN_SRC bash
+sudo -u postgres psql
+GRANT pg_read_server_files TO me;
+\q
+psql
+#+END_SRC
+***** try 2
+#+BEGIN_SRC sql
+
+CREATE TABLE df(
+    name varchar(80),
+    id int
+  );
+
+INSERT INTO df (name, id)
+            VALUES ('a', 1);
+
+-- If you do :
+COPY df FROM '/home/me/Templates/lrn/pq/hi.txt' WITH DELIMITER ',';
+
+-- You get:
+-- psql:hi.sql:10: ERROR: must be superuser or a member of the
+-- pg_read_server_files role to COPY from a file
+
+SELECT * FROM df;
+
+
+DROP TABLE df;
+
+-- Output
+-- CREATE TABLE
+--   INSERT 0 1
+--   COPY 3
+--   name | id 
+--   ------+----
+--   a    |  1
+--   b    |  2
+--   c    |  3
+--   d    |  4
+--   (4 rows)
+
+--   DROP TABLE
+
+#+END_SRC
+** 22 Database roles
+*** What is a role?
+One or a group of database users.
+*** What can a role do?
+1. Own database objects (e.g. tables and functions)
+2. Assign privileges on those obj to other roles to control *who has access to
+   which obj*
+3. grant _membership_
+*** Create role
+**** Through SQL
+#+BEGIN_SRC sql
+  CREATE ROLE user1;
+  DROP ROLE user1;
+  -- Or
+  CREATE USER me WITH PASSWORD '516826';
+  -- Add attributes
+  ALTER USER me WITH SUPERUSER;
+
+  -- Delete user
+  DROP USER me;
+
+#+END_SRC
+
+**** Through cmd
+#+BEGIN_SRC bash
+createuser user1
+dropuser user1
+#+END_SRC
+
+*** What are the existing roles ?
+#+BEGIN_SRC sql
+SELECT rolname FROM pg_roles
+\du
+#+END_SRC
+*** 22.2 Role Attributes
+A database role can have a number of attributes.
+
+**** Attributes types
+***** login
+
+ Only with this Attribute can you login. 
+ To create a role with login privilege, use either:
+
+ #+BEGIN_SRC sql
+ CREATE ROLE name LOGIN;
+ CREATE USER name;
+ #+END_SRC
+
+ (CREATE USER is equivalent to CREATE ROLE except that CREATE USER includes LOGIN
+ by default, while CREATE ROLE does not.)
+
+***** superuser
+ Bypass all permission checks, except for LOGIN.
+ #+BEGIN_SRC sql
+ CREATE ROLE me2 SUPERUSER;
+ #+END_SRC
+It is good practice to create a role that has the CREATEDB and CREATEROLE
+privileges, but is not a superuser, and then use this role for all routine
+management of databases and roles.
+
+This approach avoids the dangers of operating as a superuser for tasks that do
+not really require it.
+***** database creation
+ The ability to create database
+ #+BEGIN_SRC sql
+ CREATE ROLE me3 CREATEDB;
+ #+END_SRC
+***** role creation
+ The ability to create, drop and alter roles and membership. Need superuser in
+ order to alter superuser.
+
+ #+BEGIN_SRC sql
+ CREATE ROLE me4 CREATEROLE;
+ #+END_SRC 
+***** init replication
+      Useless without LOGIN
+ #+BEGIN_SRC sql
+ CREATE ROLE me5 REPLICATION LOGIN;
+ #+END_SRC
+***** password
+ Some database requires password on connection
+ #+BEGIN_SRC sql
+ CREATE ROLE me6 PASSWORD '516826';
+ #+END_SRC
+**** When I login, set the var as this
+#+BEGIN_SRC sql
+  -- Set enable_indexscan to OFF when login as myname (role-local variable?)
+  ALTER ROLE myname SET enable_indexscan TO off;
+  -- Unset
+  ALTER ROLE myname RESET enable_indexscan;
+#+END_SRC
+**** Modify attributes afterwards
+#+BEGIN_SRC sql
+  -- Change password
+  ALTER ROLE davide WITH PASSWORD 'hu8jmn3';
+  -- Remove password
+  ALTER ROLE davide WITH PASSWORD NULL;
+  -- Make the password expire on May 4... UTC+1
+  ALTER ROLE chris VALID UNTIL 'May 4 12:00:00 2015 +1';
+  -- Make the password valid forever
+  ALTER ROLE fred VALID UNTIL 'infinity';
+
+  -- Now you can create database and roles.
+  ALTER ROLE miriam CREATEROLE CREATEDB;
+
+  -- Set role-variable for him
+  ALTER ROLE worker_bee SET maintenance_work_mem = 100000;
+#+END_SRC
+***** synopsis
+ALTER ROLE role_specification [ WITH ] option [ ... ]
+
+where option can be:
+
+      SUPERUSER | NOSUPERUSER
+    | CREATEDB | NOCREATEDB
+    | CREATEROLE | NOCREATEROLE
+    | INHERIT | NOINHERIT
+    | LOGIN | NOLOGIN
+    | REPLICATION | NOREPLICATION
+    | BYPASSRLS | NOBYPASSRLS
+    | CONNECTION LIMIT connlimit
+    | [ ENCRYPTED ] PASSWORD 'password' | PASSWORD NULL
+    | VALID UNTIL 'timestamp'
+
+ALTER ROLE name RENAME TO new_name
+
+ALTER ROLE { role_specification | ALL } [ IN DATABASE database_name ] SET configuration_parameter { TO | = } { value | DEFAULT }
+ALTER ROLE { role_specification | ALL } [ IN DATABASE database_name ] SET configuration_parameter FROM CURRENT
+ALTER ROLE { role_specification | ALL } [ IN DATABASE database_name ] RESET configuration_parameter
+ALTER ROLE { role_specification | ALL } [ IN DATABASE database_name ] RESET ALL
+
+where role_specification can be:
+
+    role_name
+  | CURRENT_ROLE
+  | CURRENT_USER
+  | SESSION_USER
+*** 22.3 Role membership
+**** Group
+Usually a group is a role without LOGIN attributes.
+#+BEGIN_SRC sql
+  CREATE ROLE my_group;
+  GRANT my_group TO me;
+  REVOKE my_group FROM me;
+#+END_SRC
+**** Some restrictions
+1. You can grant group roles to group roles (there isn't any distinction between
+   group roles and non-group roles)
+2. You cannot setup circular roles.
+**** What can you do as a group member?
+1. You can ~SET ROLE~ to become the group in this session. From this point on,
+   everything you do is considered to be done by the group.
+2. If the member roles has the ~INHERIT~ attributes, then they automatically
+   inherits the privileges
+**** Example
+     First we create the players.
+#+BEGIN_SRC sql
+  CREATE ROLE joe LOGIN INHERIT;  --create the user joe
+  CREATE ROLE admin NOINHERIT;--create the group
+  CREATE ROLE wheel NOINHERIT;
+  GRANT admin TO joe;
+  GRANT wheel TO admin;
+#+END_SRC
+Next if we log in as joe
+#+BEGIN_SRC sql
+  -- Now I have privileges of joe and admin(because joe has INHERIT), but not
+  -- wheel(because admin is NOINHERIT)
+
+  SET ROLE admin;
+  -- Now I am an admin (not joe anymore)
+
+  SET ROLE wheel;
+  -- Now I am a wheel (not admin or joe anymore)
+
+  -- Doing any of the following turns me back into joe.
+  SET ROLE joe;
+  SET ROLE NONE;
+  RESET ROLE;
+#+END_SRC
+***** SQL user vs role
+In SQL standard, there're 
+1. roles :: corresponds to the roles with ~INHERIT~ (default)
+2. users :: corresponds to the roles with ~NOINHERIT~
+**** Special privileges
+LOGIN, SUPERUSERS, CREATEDB,..etc are *special privileges* and can not be
+inherited. Use ~SET ROLE~ explicitly to access em.
+
+
+Continuing the above example, we might choose to grant CREATEDB and CREATEROLE
+to the admin role. Then a session connecting as role joe would not have these
+privileges immediately, only after doing SET ROLE admin.
+**** Drop roles
+#+BEGIN_SRC sql
+DROP ROLE my_group;
+#+END_SRC
+*** 22.5 Predefined Roles
+**** Lists
+Role 	Allowed Access
+***** pg_read_all_data
+Read all data (tables, views, sequences), as if having SELECT rights on those
+objects, and USAGE rights on all schemas, even without having it explicitly.
+This role does not have the role attribute BYPASSRLS set. If RLS is being used,
+an administrator may wish to set BYPASSRLS on roles which this role is GRANTed
+to.
+***** pg_write_all_data
+Write all data (tables, views, sequences), as if having INSERT, UPDATE, and
+DELETE rights on those objects, and USAGE rights on all schemas, even without
+having it explicitly. This role does not have the role attribute BYPASSRLS set.
+If RLS is being used, an administrator may wish to set BYPASSRLS on roles which
+this role is GRANTed to.
+***** pg_read_all_settings
+Read all configuration variables, even those normally visible only to
+superusers.
+***** pg_read_all_stats
+Read all pg_stat_* views and use various statistics related extensions, even
+those normally visible only to superusers.
+***** pg_stat_scan_tables
+Execute monitoring functions that may take ACCESS SHARE locks on tables,
+potentially for a long time.
+***** pg_monitor
+Read/execute various monitoring views and functions. This role is a member of
+pg_read_all_settings, pg_read_all_stats and pg_stat_scan_tables.
+***** pg_database_owner
+None. Membership consists, implicitly, of the current database owner.
+***** pg_signal_backend
+Signal another backend to cancel a query or terminate its session.
+***** pg_read_server_files
+Allow reading files from any location the database can access on the server with
+COPY and other file-access functions.
+***** pg_write_server_files
+Allow writing to files in any location the database can access on the server
+with COPY and other file-access functions.
+***** pg_execute_server_program
+Allow executing programs on the database server as the user the database runs as
+with COPY and other functions which allow executing a server-side program.
+**** Who can ~GRANT~ them ?
+Administrators (including roles that have the CREATEROLE privilege) 
+
+# Local Variables:
+# org-what-lang-is-for: "sql"
+# End:

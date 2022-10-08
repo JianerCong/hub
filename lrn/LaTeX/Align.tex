@@ -1,0 +1,73 @@
+\documentclass{article}
+\title{hi}
+\author{Jianer Cong}
+\date{\today}
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+\begin{document}
+\maketitle
+\section{math}
+
+\subsection{Integral}\label{sec:int}
+Integral \(\int_{a}^{b} x^2 \,dx\) inside text.
+Integral centered:
+\[ \int_{a}^{b} x^2 \,dx \]
+Multiple integral
+\begin{gather*}
+  \iint_V \mu(u,v) \,du\,dv
+  \\
+  \iiint_V \mu(u,v,w) \,du\,dv\,dw
+  \\
+  \iiiint_V \mu(t,u,v,w) \,dt\,du\,dv\,dw
+  \\
+  \idotsint_V \mu(u_1,\dots,u_k) \,du_1 \dots du_k
+\end{gather*}
+
+Contour Integral
+\[
+  \oint_V f(s) \,ds
+\]
+Sum $\sum_{n=1}^{\infty} 2^{-n} = 1$ inside text
+\[ \sum_{n=1}^{\infty} 2^{-n} = 1 \]
+Product $\prod_{i=a}^{b} f(i)$ inside text
+\[ \prod_{i=a}^{b} f(i) \]
+Limit $\lim_{x\to\infty} f(x)$ inside text
+\[ \lim_{x\to\infty} f(x) \]
+
+\subsection{Aligning}\label{sec:ali}%
+\begin{equation} \label{eq1}
+  \begin{split}
+    A & = \frac{\pi r^2}{2} \\
+    & = \frac{1}{2} \pi r^2
+  \end{split}
+\end{equation}
+
+A single equation:
+\begin{equation} \label{eu_eqn}
+  e^{\pi i} + 1 = 0
+\end{equation}
+The beautiful equation\ref{eu_eqn} is known as the Euler equation.
+
+A Multi-line equation
+\begin{multline*}
+  p(x) = 3x^6 + 14x^5y + 590x^4y^2 + 19x^3y^3\\ 
+  - 12x^2y^4 - 12xy^5 + 2y^6 - a^3b^3
+\end{multline*}
+
+Align
+\begin{align*} 
+  2x - 5y &=  8 \\ 
+  3x + 9y &=  -12
+\end{align*}
+Align more than one:
+\begin{align*}
+  x&=y           &  w &=z              &  a&=b+c\\
+  2x&=-y         &  3w&=\frac{1}{2}z   &  a&=b\\
+  -4 + 5x&=2+y   &  w+2&=-1+w          &  ab&=cb
+\end{align*}
+Gather
+\begin{gather*} 
+  2x - 5y =  8 \\ 
+  3x^2 + 9y =  3a + c
+\end{gather*}
+\end{document}
