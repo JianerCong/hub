@@ -1,31 +1,10 @@
 * Math
 ** TODO Analysis
-** TODO TeX
 ** TODO Topo
+** TODO Algebra
 * Eng
-** TODO Emacs Lisp
-** TODO ygo c++
-*** TODO Cmake
-How the build binery tree works?
-*** TODO Core logic
-**** TODO Timing
- The hierachy of timing as object.
-*** TODO UI
-**** TODO Qt
-**** TODO ncurses.h
-*** TODO Database
-**** TODO PostgresQL
-     How to store card info in Database.
-*** TODO Network
-**** TODO Download Data
-     How to download card data from web by sending REST request.
-**** TODO Server Client
- How to start a server that allows users to play games through network.
-*** TODO Concurrency
+** DONE Emacs Lisp
 ** TODO Embedded
  How they program for Arm9 (3ds)
 ** TODO circuit and digital system
-** TODO Tidy the room
-*** TODO tidy the .el file in this folder
-*** TODO tidy the mylib* C-library
 * 善终如始 则无败事。
