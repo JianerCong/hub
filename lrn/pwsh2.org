@@ -20,6 +20,35 @@
   # Get the dependent services
   gsv "WinRM" -RequiredServices
   #+end_src
+** Resolve-DnsName
+#+begin_src powershell
+  Resolve-DnsName -Name www.bing.com
+  # resolve dnsName against server at 10.0.0.1
+  Resolve-DnsName -Name www.bing.com -Server 10.0.0.1
+  # ask for only A-type record
+  Resolve-DnsName -Name www.bing.com -Type A
+ #+end_src
+** RestfulAPI
+#+begin_src powershell
+  # GET
+  Invoke-RestMethod -Uri http://localhost:8080/albums
+
+  $Url = "http://localhost:8080/albums"
+  $Body = @{
+      id = '4'
+      title='my posted item'
+      artist='A4'
+      price=4.44
+  }
+  # POST
+  Invoke-RestMethod -Method 'Post' -Uri $url -Body (ConvertTo-Json $body)
+
+  # curl http://localhost:8080/albums \
+  #   --include \
+  #   --header "Content-Type: application/json" \
+  #   --request "POST" \
+  #   --data "{'id': '4','title': 'item','artist': 'A4','price': 4.44}"
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "powershell"
