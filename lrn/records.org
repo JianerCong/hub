@@ -3,33 +3,26 @@
 #+LATEX: \tcblower{}
 https://learning.oreilly.com/library/view/javascript-the-definitive/9781491952016/
 #+LATEX: \end{mybox}\begin{myitems}
-+ 15.4 Scripting CSS
-  + 15.4.1 CSS Classes
-  + 15.4.2 Inline Styles
-  + 15.4.3 Computed Styles
-  + 15.4.4 Scripting Stylesheets
-  + 15.4.5 CSS Animations and Events
++ 15.6 Web Components
+  + 15.6.1 Using Web Components
+  + 15.6.2 HTML Templates
+  + 15.6.3 Custom Elements
+#+LATEX: \end{myitems}
+
+#+LATEX: \begin{mybox}
+** TypeScript Handbook
+#+LATEX: \tcblower{}
+https://www.typescriptlang.org/assets/typescript-handbook.pdf
+#+LATEX: \end{mybox}\begin{myitems}
 + 15.5 Document Geometry and Scrolling
   + 15.5.1 Document Coordinates and Viewport Coordinates
-  + 15.5.2 Querying the Geometry of an Element
-  + 15.5.3 Determining the Element at a Point
-  + 15.5.4 Scrolling
-  + 15.5.5 Viewport Size, Content Size, and Scroll Position
 #+LATEX: \end{myitems}
 
 除此之外，还有在leetcode(https://leetcode.com)刷题。
 
-* Old
-#+LATEX: \begin{mybox}
-** Django Tutorial
-#+LATEX: \tcblower{}
-https://docs.djangoproject.com/en/4.0/intro/tutorial01/
-#+LATEX: \end{mybox}\begin{myitems}
-+ 3.1 Overview
-+ 3.2 Writing more views
-#+LATEX: \end{myitems}
 * Fetch the titles
 
+** JS
 #+begin_src js
   let c1, a
   c1 = document.getElementsByClassName("TOCTitle--fFPXo");
@@ -47,23 +40,20 @@ https://docs.djangoproject.com/en/4.0/intro/tutorial01/
   }
   console.log(a)
 #+end_src
-
-
-For MDN
+** TS
 #+begin_src js
-  //let c1,a
-  c1 = document.getElementsByClassName("document-toc-link");
-  c1.length
-  a = ""
+  let items, j, k, out, title
 
-  for (let h of c1){
-        s = h.innerText
-        a += s + "\n"
-        //console.log(h.firstElementChild.innerHTML)
-        //if (h.firstElementChild.firstChild)
-    }
-    console.log(a)
-  /*  
+  items = document.querySelectorAll('.handbook-toc nav ul li')
+  j = 1, k = 1
+  title = document.querySelector('h1').innerText
 
-  ,*/
+  out = `+ ${j} title \n`
+  for (let i of items) {
+    out += `  + ${j}.${k++} ${i.innerText}` + '\n'
+    // console.log(out)
+  }
+  console.log(out)
+
+
 #+end_src
