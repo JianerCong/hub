@@ -1,0 +1,31 @@
+** mongo uri password
+Special char in uri should be quoted:
+
+| char | in uri |
+|------+--------|
+| @    | %40    |
+|      |        |
+** mongosh
+#+begin_src js
+  // display the  db you are using
+  db
+  // switch to db
+  use <database>
+
+  // insert something
+  use mydb
+  db.users.insertMany([
+    {name: "张1", age: 5},
+    {name: "李2", age: 90}
+  ])
+
+  // get all name==<...>
+  db.users.find({name: "张1"})
+#+end_src
+** lambda 连不了VPC mongo？
+给default Role（角色） 加 mongodbFullAccess 权限
+
+mango在不同的VPC
+mongo: vpc-bp1r3emkpyx71byx91wwq
+my-switch-1: vpc-bp1uoz6xag0f2kfswkevs
+
