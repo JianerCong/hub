@@ -16,6 +16,13 @@
   def test_a(db):
       assert db.size == 0
 #+end_src
+**** pytest-watch
+#+begin_src bash
+  pip install pytest-watch
+  cd dir1
+  ptw
+
+#+end_src
 
 *** sympy
 **** install on ubuntu
