@@ -50,6 +50,7 @@ function got{
            "t"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\h5\weapp\todo'
            "l"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn'
            "w"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\h5\weapp'
+           "p"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\python\pymongo'
           }
     $h
     $x = read-host "enter your key"
