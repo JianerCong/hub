@@ -1,0 +1,32 @@
+** run, check and stop the service
+*** start and stop service
+#+begin_src powershell
+  gsv "*mongo*"
+  # Do it in admin shell
+  Stop-Service -Name "MySQL80"
+    #+end_src
+*** show listening ports
+#+begin_src powershell
+  Get-NetTCPConnection | Where-Object {$_.State -eq "Listen"}
+  Get-NetTCPConnection -State Listen,Established
+
+#+end_src
+** mongosh
+#+begin_src powershell
+  use myDb
+  db.myTable.insertMany([
+                            {
+                                name: 'aaa',
+                                value: 123
+                            },
+                            {
+                                name: 'bbb',
+                                value: 456
+                            }
+                        ]
+                       )
+#+end_src
+* Last
+# Local Variables:
+# org-what-lang-is-for: "powershell"
+# End:

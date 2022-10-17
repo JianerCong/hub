@@ -954,7 +954,7 @@ Windows
 | root pswd            |  516826 |
 | Windows Service Name | MySQL80 |
 *** Start and stop services
-    #+begin_src powershell
+#+begin_src powershell
       gsv "*SQL*"
       # Do it in admin shell
       Stop-Service -Name "MySQL80"
