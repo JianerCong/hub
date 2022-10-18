@@ -17,3 +17,11 @@ Invoke-RestMethod -uri ("$url" + '?name=张1')
 
 # Test the local server --------------------------------------------------
 Invoke-RestMethod -uri ("http://localhost:8080/test" + '?code=123')
+
+
+# See the result
+$res = (Invoke-RestMethod -uri ("http://localhost:8080/test" + '?code=a1'))
+$res
+$res.todos
+
+ConvertTo-Json $res.todos

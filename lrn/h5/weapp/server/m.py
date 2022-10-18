@@ -17,8 +17,6 @@ class hi:
     def GET(self):
         return 'aaa'
 
-
-
 class m1:
     print('initializing m1:')
     ok = False
