@@ -1,47 +1,116 @@
-
+import web
 import json
-import requests
-# in the terminal, cd into src/ dir then do
-# pip3 install requests -t .
 
-## handle code 2 openid --------------------------------------------------
-# def my_get_handler(qs):
-#     CODE = qs.get('code',None)
-#     if not CODE:
-#         return json.dumps({'msg': 'code queryParam not given', 'ok': False})
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
-#     APPID = 'wxd36a15e00824bc27'
-#     SECRET ='319971ca171aa327' + 'f0bbbf9cae50c7e8'
-#     url = f'https://api.weixin.qq.com/sns/jscode2session?appid={APPID}&secret={SECRET}&js_code={CODE}&grant_type=authorization_code'
-
-#     result = requests.get(url)
-#     if not result.ok:
-#         return json.dumps({'msg': 'failed to get ID from API', 'ok': False})
-
-#     result = json.loads(result.content)
-#     print(f'result: {result}')
-#     if 'openid' in result:
-#         return(json.dumps({'openid': result['openid'] , 'ok': True}))
-#     return(json.dumps({'msg': 'Failed to get openid from serverr', 'ok': False}))
+urls = (
+    '/', 'hi',
+    '/test', 'm1',
+    '/json', 'serveJSON',
+    '/q', 'query',
+)
 
 
-## handle communicate with aws
-def my_get_handler(qs):
-    url = ' https://p4wu7p30di.execute-api.eu-west-2.amazonaws.com/dev/myFirstPyFunction'
-    result = requests.get(url)
-    if not result.ok:
-        return json.dumps({'msg': 'failed to get from remote API', 'ok': False})
-    result = json.loads(result.content)
-    print(f'result: {result}')
 
-    # return(json.dumps({'msgFromAWS': result}))
-    return(json.dumps({'msgFromAWS': '--'}))
+class hi:
+    def GET(self):
+        return 'aaa'
 
-def main_handler(event, context):
-    print('Received event: ' + json.dumps(event, indent = 2))
-    # print('Received context: ' + str(context))
-    if event.get('httpMethod',None) == 'GET':
-        return my_get_handler(event['queryString'])
-    else:
-        return json.dumps({'msg': 'aaa for POST request'})
 
+
+class m1:
+    print('initializing m1:')
+    ok = False
+    if not ok:
+        print('initializing client')
+        client = MongoClient('mongodb://localhost:27017/')
+        try:
+            # The ping command is cheap and does not require auth.
+            print('\nconnecting to db: ',end='')
+            client.admin.command('ping')
+            print("❄ Okay ")
+        except ConnectionFailure:
+            print("😭 Server not available")
+            exit()
+        ok = True
+
+    # Method 1: open-close conn evry time--------------------------------------------------
+    # def __init__(self):
+    #     client = MongoClient('mongodb://localhost:27017/')
+    #     try:
+    #         # The ping command is cheap and does not require auth.
+    #         print('\nconnecting to db: ',end='')
+    #         client.admin.command('ping')
+    #         print("❄ Okay ")
+    #     except ConnectionFailure:
+    #         print("😭 Server not available")
+
+    #     self.client = client
+    #     self.df = client.myDb.myTable
+
+    # def __del__(self):
+    #     print('closing db')
+    #     self.client.close()
+
+    # Method 2: use a global client --------------------------------------------------
+    def __init__(self):
+        self.df = m1.client.myDb.myTable
+
+    def GET(self):
+        query_dict = web.input(_method='get')
+        if 'code' not in query_dict:
+            return json.dumps({'ok': False, 'msg': 'code not given in query param'})
+
+        # res = []
+        # openid = 0
+
+        code = query_dict['code']
+        openid = self.code2id(code)
+
+        # get the data from client
+        res = self.df.find_one({'openid':openid})
+        if res == None:
+            res = []
+
+        return json.dumps({'ok': True, 'openid': openid, 'todos': res})
+
+
+
+
+    def code2id(self, code):
+        print(f'converting code {code} to openid')
+        # calls Wechat API here...
+        # ...
+        openid = code
+
+        return openid
+
+class serveJSON:
+    def GET(self):
+        d = {'one':1,'two':2}
+        web.header('Content-Type', 'application/json')
+        return json.dumps(d)
+
+    def POST(self):
+        data = web.data()
+        web.header('Content-Type', 'application/json')
+        print(f'Data recieved: {json.loads(data)}')
+        return json.dumps({'msg':'Okay'})
+
+class query:
+    def GET(self):
+        query_dict = web.input(_method='get')
+        print(f'query_dict: {query_dict}')
+        print(f"is a in the query param?: {'a' in query_dict}")
+        print(f'a is : {query_dict.get("a", "NOT FOUND")}')
+        return 'ok'
+
+
+if __name__ == '__main__':
+
+    app = web.application(urls, globals())
+    app.run()
+    # web.py is smart enough to run the code below
+    print('closing connection')
+    m1.client.close()

@@ -13,3 +13,7 @@ Invoke-RestMethod -Method 'Post' -Uri ("$url" + '/json') -Body (ConvertTo-Json $
 # test pymongo
 $url = "https://their-mtemplate-myservice-gttkrqfcfp.cn-hangzhou.fcapp.run"
 Invoke-RestMethod -uri ("$url" + '?name=张1')
+
+
+# Test the local server --------------------------------------------------
+Invoke-RestMethod -uri ("http://localhost:8080/test" + '?code=123')

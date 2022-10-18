@@ -10,8 +10,7 @@ Page({
       success: (res)=>{
         console.log(`got code: ${res.code}`);
         let o = {
-          url : 'https://service-400bq5xk-1314230580.gz.apigw.tencentcs.com/test/my-python-function?code=' +
-          res.code,
+          url : 'http://localhost:8080/',
           success: (res) => {
             console.log(`Got data ${res.data}`);
           },
