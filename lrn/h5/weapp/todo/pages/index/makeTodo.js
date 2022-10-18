@@ -15,6 +15,7 @@ function dateDiffInDays(a, b) {
 }
 
 function makeTodo(name, done=false, ddl = undefined) {
+  // The output of this function is used in 'pushTodo'
   // ddl is passed to new Date(ddl)
   let todo = {name, done};
   if (ddl) {
@@ -32,10 +33,23 @@ function makeTodo(name, done=false, ddl = undefined) {
                                 get() {
                                   return dateDiffInDays(new Date(), this.ddl);
                                 }
-                              }
+                              },
                             }
                            );
   }
+
+  // Define the todo to upload
+  Object.defineProperties(todo,
+                          {
+                            "todoToUpload":
+                            {
+                              get() {
+                                return {name: this.name, done: this.done, ddl: this.ddlString || ''};
+                              }
+                            }
+                          }
+                         );
+
   return todo;
 }
 

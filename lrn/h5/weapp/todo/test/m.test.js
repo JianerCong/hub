@@ -74,6 +74,14 @@ describe('drawer behaviour', () => {
 });
 
 const DAY = 1e3 * 3600 * 24;
+test('todoToUpload', () => {
+  let todo = makeTodo('a1', false, Date.now() + 2*DAY);
+  let toUpload = todo.todoToUpload;
+  expect(toUpload.name).toBe('a1');
+  expect(toUpload.done).toBe(false);
+  expect(toUpload.ddl).toBe(todo.ddlString);
+});
+
 describe('Basic todo behaviour', () => {
   test('initial todos', () => {
     let td = makePageReady(todoObj);
@@ -117,7 +125,6 @@ describe('Basic todo behaviour', () => {
     expect(td.data.todos[0]).toMatchObject({name:'a1', done:false});
     expect(td.data.input).toEqual('');
   });
-
   test('removeTodo', () => {
     let td = makePageReady(todoObj);
 
@@ -161,6 +168,24 @@ describe('Basic todo behaviour', () => {
       {name: 'something', done: true, id: id0},
       {name: 'a2', done: false, id: id1},
     ]);
+  });
+
+  test('todosToUpload' ,() => {
+    let td = makePageReady(todoObj);
+
+    let date = new Date(Date.now() + 2 * DAY);
+    td.pushTodo(makeTodo('a0'));
+    td.pushTodo(makeTodo('a1', true));
+    td.pushTodo(makeTodo('a2', true, Date.now() + 2 * DAY));
+
+    let d =  date.toISOString().substring(0, 10);
+
+    expect(td.todosToUpload()).toEqual([
+      {name: 'a0', done: false, ddl: ''},
+      {name: 'a1', done: true, ddl: ''},
+      {name: 'a2', done: true, ddl: d},
+    ]);
+
   });
 });
 
@@ -230,7 +255,7 @@ describe('ddlSubmit', () => {
       expect(newTodo.dueInDays).toBeUndefined();
     } else {
       expect(newTodo.dueInDays).toBe(nDays2);
-}
+    }
   });
 });
 

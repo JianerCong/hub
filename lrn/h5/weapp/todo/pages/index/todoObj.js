@@ -459,9 +459,21 @@ let todoObj = {
       // for testing only
       const DAY = 1e3 * 3600 * 24;
       this.pushTodo(makeTodo('a1'));
-      this.pushTodo(makeTodo('a2', true));
+      this.pushTodo(makeTodo('a2',true));
       this.pushTodo(makeTodo('a3',false, Date.now() + 2 * DAY));
       this.pushTodo(makeTodo('a4',false, Date.now() - 2 * DAY));
+    },
+
+    todosToUpload() {
+      let tu;
+      if (this.m.todos.size === 0) {
+        tu = [];
+      } else {
+        // the array of  todos
+        tu = [...this.m.todos.values()].
+              map( o => o.todoToUpload);
+      }
+      return tu;
     },
   }
 
