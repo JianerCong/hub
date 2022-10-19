@@ -39,6 +39,7 @@ class m1:
     def GET(self):
         query_dict = web.input(_method='get')
         if 'code' not in query_dict:
+            print(f'code没给')
             return json.dumps({'ok': False, 'msg': 'code not given in query param'})
 
         # Get the openid------------------------------------
@@ -61,7 +62,8 @@ class m1:
 
     def POST(self):
         # --------------------------------------------------
-        data = web.data()
+        data = json.loads(web.data())
+        print(f'Data recieved {data}')
         if 'openid' not in data or 'todos' not in data:
             return json.dumps({'ok': False, 'msg': '`openid` or `todos` not given in the data'})
 
@@ -81,8 +83,6 @@ class m1:
 
 
         self.df.replace_one(filter={'openid': openid}, replacement=item,upsert=True)
-
-        print(f'Data recieved: {json.loads(data)}')
 
         web.header('Content-Type', 'application/json')
         return json.dumps({'ok':True})

@@ -16,12 +16,27 @@ Invoke-RestMethod -uri ("$url" + '?name=张1')
 
 
 # Test the local server --------------------------------------------------
-Invoke-RestMethod -uri ("http://localhost:8080/test" + '?code=123')
-
+$url = "http://localhost:8080/test"
+Invoke-RestMethod -uri ("$url" + '?code=123')
 
 # See the result
-$res = (Invoke-RestMethod -uri ("http://localhost:8080/test" + '?code=a1'))
+$res = (Invoke-RestMethod -uri ("$url" + '?code=a1'))
 $res
 $res.todos
 
 ConvertTo-Json $res.todos
+
+# Post an item
+$body = @{
+    openid = 'a2'
+    todos = (
+        @{name = 't1'
+          done = $true
+          ddl = '2022-11-11'},
+        @{name = 't2'
+          done = $false
+          ddl = '2022-10-11'}
+    )
+}
+ConvertTo-Json $body
+Invoke-RestMethod -Method 'Post' -Uri ("$url") -Body (ConvertTo-Json $body)
