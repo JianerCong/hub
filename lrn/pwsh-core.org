@@ -1,4 +1,9 @@
 * Pwsh
+** Format number
+#+begin_src powershell
+  “{0:N2}” -f ((5/21)*100)
+  “{0:X}” -f (52)
+#+end_src
 ** Date
 ** Jobs
 *** Start a named job

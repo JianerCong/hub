@@ -13,14 +13,14 @@ let todoObj = {
 
   observers: {
     'ddlChoiceIndex' : function(ddlChoiceIndex) {
-      console.log(`ddlChoiceIndex changed`);
+      //console.log(`ddlChoiceIndex changed`);
       this.setData({
         ddlChoice: this.data.ddlChoices[ddlChoiceIndex],
       });
     },
 
     'lang' : function(lang) {
-      console.log(`lang changed to ${lang}`);
+      //console.log(`lang changed to ${lang}`);
       // the dict
       let d = {};
       let m = this.m.dict;
@@ -65,6 +65,7 @@ let todoObj = {
 
     // progressPercentage
     'todos' : function(todos) {
+        console.log(`todo changed, now the todo to upload is\n ${JSON.stringify(this.todosToUpload())}`)
       let p = 0;
       if (todos.length > 0) {
         let done = 0;
@@ -72,6 +73,11 @@ let todoObj = {
         p = 100 *  done / todos.length;
       };
       this.setData({progressPercentage: Math.round(p)});
+
+      // upload the todo
+      if (this.m.openid !== '' && this.m.startSubmitting){
+        this.remotePostTodos()
+      }
 },
 
   },
@@ -82,6 +88,7 @@ let todoObj = {
       this.m = {
         todos: new Map(),
         todoId: 0,
+        startSubmitting : false,
 
         dict: new Map (Object.entries(
           {
@@ -108,13 +115,12 @@ let todoObj = {
           }))
       };
 
-
-
       // init the render data: this triggers the obervers
       this.setData({
         // todo related
         input: '',
         todos: [],
+        openid: '',
         activeValues: [0],
 
 
@@ -127,6 +133,75 @@ let todoObj = {
 
         lang: 'en',
       });
+
+      // Get the remote api
+      console.log(`Getting remote todos.`);
+      this.remoteGetTodosAndOpenid();
+
+    } ,
+    remotePostTodos(){
+        let o = {
+            url : 'https://myfunction-myservice-cgsyqncxvc.cn-hangzhou.fcapp.run/',
+            data : {
+              openid: this.data.openid,
+              todos: this.todosToUpload()
+            },
+            method: 'POST',
+            success: (res) => {
+              let data = res.data 
+              console.log(`Got data ${JSON.stringify(data)}`);
+              if (data.ok) {
+                console.log('Data submited')
+              } else {
+                console.log('error: ' + data.msg)
+              }
+            },
+            fail: () => {console.log(`failed`);}
+          };
+          wx.request(o);
+    },
+    remoteGetTodosAndOpenid() {
+        wx.showLoading({
+            title: '加载中',
+          });
+        wx.login({
+            success: (res)=>{
+              console.log(`got code: ${res.code}`);
+              let o = {
+                url : 'https://myfunction-myservice-cgsyqncxvc.cn-hangzhou.fcapp.run/?code=' + res.code,
+                success: (res) => {
+                  let data = res.data 
+                  console.log(`   Got data ${JSON.stringify(data)}`);
+                  if (data.ok) {
+                      console.log('Setting data')
+                    this.setData({openid: data.openid});
+                    let todos = data.todos
+                    for (let todo of todos) {
+                        //console.log(`Setting todo ${JSON.stringify(todo)}`)
+                        let name = todo.name;
+                        let done = todo.done;
+                        let ddl = todo.ddl === '' ? undefined : todo.ddl;
+
+                        this.pushTodo(makeTodo(name=name, done=done,ddl = ddl)) ;
+                    }
+                    this.m.startSubmitting = true 
+                    console.log("Now it's ready to submit")
+                  } else {
+                    console.log('error: ' + data.msg)
+                  }
+                  wx.hideLoading()
+                },
+                fail: () => {
+                    console.log(`failed`);
+                    wx.hideLoading()
+                }
+              };
+              wx.request(o);
+            },
+            fail: () => {
+              console.warn(`failed to get login info.`);
+              wx.hideLoading()
+            }});
     },
 
     dueString(d, dc) {

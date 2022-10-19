@@ -13,6 +13,7 @@ todoObj.behaviors =  [Behavior(sideBarObj),];
 
 let p = new Object(todoObj);
 const DEV = false;
+const ONLINE = true;
 if (DEV) {
   // for dev only, add some todos for show
   p.setData = function(o) {
@@ -27,7 +28,6 @@ if (DEV) {
   p.pushTodo(makeTodo('a1'));
   p.pushTodo(makeTodo('a2', true));
   p.pushTodo(makeTodo('a3',false, Date.now() + 2 * DAY));
-  p.pushTodo(makeTodo('a4',false, Date.now() - 2 * DAY));
   delete p.setData;       // important, don't play with it's internal framework
 }
 

@@ -2,7 +2,7 @@ import { assert, expect, test ,describe, beforeEach} from 'vitest';
 
 import {sideBarObj} from '../pages/index/sideBarObj.js';
 import {todoObj, makeTodo} from '../pages/index/todoObj.js';
-
+todoObj.methods.remoteGetTodosAndOpenid = () => {console.log('skipped')};
 
 test.skip('Math.sqrt()', () => {
   expect(Math.sqrt(4)).toBe(2);

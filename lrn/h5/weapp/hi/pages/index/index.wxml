@@ -1,1 +1,3 @@
 <!--index.wxml-->
+<button bindtap="addOne">add</button>
+<button bindtap="submit">submit</button>
