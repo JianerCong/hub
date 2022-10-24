@@ -36,3 +36,49 @@ End Function
 1. Find the model and series number of the laptop.
 2. Go to the MSI official website, download and install the *NVIDIA graphics
    driver* for this model and series.
+** PS
+*** tutorial
+**** UI
++ Menu bar :: very top.
++ Options bar :: underneath the menu bar. *Options for the current tools*
++ Tools panel  :: left. tools for editing and creating images
++ Panels :: right. Color, Layers,.. find the full list of panels under the
+  Window menu.
++ Document window :: middle.
++ Close image :: File > Close
+**** basic command
++ Zoom :: [Z] 右拉放大左拉放小
++ Pan :: [H] ⇒ hand
++ Undo ::  C-z
+**** Change image size
+***** resize and image
++ Menu > Image > Image Size
++ Change width and height
++ Select _Resample_ to change the number of pixels in the images.
+***** set the resolution
++ Menu > Image > Image Size
++ Change the width and height to inches
++ Deselect _Resample_ to preserve the original number of image pixels
++ _Resolution_, number of _pixels per inch_ (PPI) = 300
++ [OK]
+***** Crop
++ [C] ⇒ crop
++ drag the border to change the boder
++ drag inside the border to *move*
++ drag outside the border to *rotate*
++ [Enter] or click the checker to complete the crop
+***** Expand the canvas
++ Image > Canvas Size
++ Enter the amount in (pixels for web | inches for print)
++ select _Relative_, and then select an anchor point in the canvas diagram. The
+  arrows point to the sides where the canvas will be added.
++ [OK]
+**** Layer
+***** understand layers
++ Layers are in _Layers_ panel, if the panel is not visible, choose *Window >
+  Layers*
++ A layer must be selected in order to make changes to it. In the _Layers_
+  panel, click pnce to the right of a layer name to select that layer. To add
+  more layers to your selection, hold [Ctrl] as you click other layers.
+***** layer basics
++ 
