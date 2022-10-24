@@ -26,3 +26,13 @@ End Function
     #+end_src
 *** What does Add-Existing-Item in VS project explorer do ?
     It just copy-paste the file you specified to the project folder..
+** Windows troubleshoot
+*** msi电脑外接显示器没反应
+
+概述： 尝试用HDMI线外接笔记本电脑到显示器，但检测不到。
+换了一个笔记本电脑连接却发现可以说明显示器没有坏而且input接口没有坏。
+
+解决方案：
+1. Find the model and series number of the laptop.
+2. Go to the MSI official website, download and install the *NVIDIA graphics
+   driver* for this model and series.
