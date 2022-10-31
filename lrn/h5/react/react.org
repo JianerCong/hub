@@ -1,0 +1,10 @@
+** setup
+#+begin_src bash
+  npx create-react-app my-app
+  cd my-app
+  npm start
+#+end_src
+** Setup
+#+begin_src bash
+  npm create vite@latest
+#+end_src

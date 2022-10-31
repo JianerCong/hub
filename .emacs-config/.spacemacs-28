@@ -38,6 +38,7 @@ This function should only modify configuration layer settings."
      cmake
      html
      javascript
+     typescript
      python
      ;; I have manually installed auctex on linux
 

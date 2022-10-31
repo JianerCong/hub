@@ -15,8 +15,8 @@ s_nor="\e[0m"
 # • 37 – Light gray
 
 # It seems like the the new prompt should start in a new line
-# export PS1="${s_blue} [$msg]\u@\h \w ${s_nor} \$ "
-export PS1="\e[0;32m [$msg] \w \e[0m \$\n"
+# export PS1="\e[0;32m [$msg] \w \e[0m \$\n"
+export PS1="\e[0;32m [$msg] \$\e[0m "
 # ${s_gray}\nNow it's \D{%Ec} $s_green\n    \u@\h \w${s_nor}\n"
 
 # https://en.cppreference.com/w/c/chrono/strftime
