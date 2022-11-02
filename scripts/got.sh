@@ -5,7 +5,7 @@ declare -A addr
 h=$HOME
 
 addr["l"]="$h/Templates/lrn/"
-addr["r"]="$h/Templates/lrn/h5/react/my-vite-react-ts/"
+addr["r"]="$h/Templates/lrn/h5/react/menu-app"
 addr["w"]="/home/me/work/lcode/"
 
 {
