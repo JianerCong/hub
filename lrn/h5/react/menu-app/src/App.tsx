@@ -10,7 +10,8 @@ function MenuItem(props) {
     return (
         <div>
             {props.name} | {props.price} | {props.count} |
-            <button onClick={props.add}>+</button> | <button onClick={props.minus}>-</button>
+            <button onClick={props.add}>+</button>
+        | <button onClick={props.minus}>-</button>
         </div>
     )
 }
@@ -38,17 +39,50 @@ class menuItem {
 
 
 function Menu(props) {
-    const menu = new Map(
+    const m = new Map(
         [
-            ['egg', {price: 1.1}],
-            ['apple', {price: 2.2}],
-            ['wheat', {price: 3.3}],
-            ['tomato', {price: 4.4}],
+            ['egg', new menuItem(1.1)],
+            ['apple', new menuItem(2.2)],
+            ['wheat', new menuItem(3.3)],
+            ['tomato', new menuItem(4.4)],
         ]
     );
 
-    const items = menu.map(
-        (item: menuItem) => <div key={item.name}>{item.name} | {item.price}</div>
+    const [menu, setMenu] = useState(m);
+
+    const items = [];
+    menu.forEach(
+        (item , name) => items.push(<MenuItem key={name} name={name}
+                                   price={item.price} count={item.count}
+                                   add={() => {
+                                       console.log(`Adding ${name}`);
+                                       // clone the menu
+                                       const menu2 = Object.assign(m);
+
+                                           // Add to the item
+                                           let i = menu2.get(name);
+                                           i.add();
+                                           menu2.set(name,i);
+
+                                           // Update the menu
+                                           setMenu(menu2);
+                                   }}
+
+            minus={() => {
+                console.log(`Minusing ${name}`);
+
+                //    // clone the menu
+                //    const menu2 = Object.assign(m);
+
+                //    // Minus to the item
+                //    let i = menu2.get(name);
+                //    i.minus();
+                                    //    menu2.set(name,i);
+
+                                    //    // Update the menu
+                                    //    setMenu(menu2);
+
+                                   }}/>)
     );
 
     return (
@@ -63,11 +97,10 @@ function App() {
 
   return (
     <div className="App">
-        {/* <Menu/> */}
-    <MenuItem name="egg" price={1.1} count={count}
-              add={() => setCount(count + 1) }
-              minus={() => setCount(count - 1) }
-    />
+        <Menu/>
+        {/* <MenuItem name="egg" price={1.1} count={count}
+            add={() => setCount(count + 1) }
+            minus={() => setCount(count - 1) } /> */}
     </div>
   )
 }
