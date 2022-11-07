@@ -10,7 +10,7 @@
 #+end_src
 *** add vitest
 #+begin_src bash
-  npm install vitest @vitest/ui happy-dom jsdom vito react-test-renderer --save-dev
+  npm install @types/jest vitest @vitest/ui happy-dom jsdom vito react-test-renderer --save-dev
 #+end_src
 vitest.config.ts
 #+begin_src javascript
@@ -33,7 +33,7 @@ Add scripts
     "test": "vitest",
     "test:ui": "vitest --ui"
   },
-  #+end_src
+#+end_src
 
 * End
 
