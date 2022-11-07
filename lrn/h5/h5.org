@@ -1,5 +1,6 @@
-** css animation
-*** static transform
+** Animation
+*** css animation
+**** static transform
 #+begin_src css
   /* basic transform */
   .robot {
@@ -23,8 +24,8 @@
       cursor: pointer;
   }
 #+end_src
-*** key frame animation
-**** basic + fill mode
+**** key frame animation
+***** basic + fill mode
 #+begin_src css
   /* scale */
   @keyframes scaleIn {
@@ -54,7 +55,7 @@
       animation-fill-mode: backwards;
   }
 #+end_src
-**** move and wiggle and repeat
+***** move and wiggle and repeat
 #+begin_src css
 
 
@@ -86,7 +87,7 @@ h2 {
 
 
 #+end_src
-**** typing animation steps
+***** typing animation steps
 #+begin_src css
 /* typing animation: steps */
 h1 {
@@ -111,7 +112,7 @@ h1 {
 }
 
 #+end_src
-**** let cloud fow: multiple assignment
+***** let cloud fow: multiple assignment
 #+begin_src css
   .cloud01 {
     animation: float 25s linear infinite;
@@ -147,7 +148,7 @@ h1 {
   img.cloud {width:150px;}
   .city img {width: 100%;}
 #+end_src
-**** play-state play animation on hover
+***** play-state play animation on hover
 #+begin_src css
 .sticker {
   animation: rotate 10s linear infinite;
@@ -166,7 +167,7 @@ h1 {
 
 
 #+end_src
-**** animation delay: flip the letters
+***** animation delay: flip the letters
 #+begin_src css
 
 h2 {
@@ -219,7 +220,7 @@ span:nth-child(7) {
   animation-delay: 1.2s, 3.95s;
 }
 #+end_src
-**** flip up and down
+***** flip up and down
 #+begin_src css
 
 h2 {
@@ -286,6 +287,12 @@ span:nth-child(7) {
 }
 
 #+end_src
+*** greensock
+**** install
+Use CDN link.
+#+begin_src bash
+  npm install --save @types/greensock
+#+end_src
 ** frontend tooling
 *** eslint
 #+begin_src bash
@@ -311,6 +318,49 @@ Config
     }
   }
 #+end_src
+*** sass
+#+begin_src bash
+  npm install -g sass
+  sass style.sass style.css --watch
+#+end_src
+** React
+*** setup
+#+begin_src bash
+  npx create-react-app my-app
+  cd my-app
+  npm start
+#+end_src
+*** Setup with vite
+#+begin_src bash
+  npm create vite@latest
+#+end_src
+**** add vitest
+#+begin_src bash
+  npm install @types/jest vitest @vitest/ui happy-dom jsdom vito react-test-renderer --save-dev
+#+end_src
+vitest.config.ts
+#+begin_src javascript
+/// <reference types="vitest" />
+
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+  },
+})
+
+#+end_src
+Add scripts
+#+begin_src json
+  "scripts": {
+    "coverage": "vitest run --coverage",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
+  },
+#+end_src
+
 * End
 
 
