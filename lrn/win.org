@@ -181,4 +181,43 @@ affecting the rest of the image.
 + select the layer above, change the blend-mode from the drop-down menu to
   _overlay_.
 ***** Add an object to an image with a layer mask
-+ 
++ start with two layers
++ In the _Layers_ panel, make sure the top layer is selected.
++ Select the top layer, at the bottom of layer panel > Add layer mask.
++ The layer mask determines what part of the linked layer is visible and what
+  part is hidden. White on the mask represents areas that are visible. Black on
+  the mask represents areas that are hidden.
++ In the Tools panel, select the Brush tool. With the mask selected (by clicking
+  on the mask thumbnail in the Layers panel), paint with black or white to make
+  areas of the linked layer hidden or visible.
+***** Replace a background using layer mask
++ Start with two layers
++ [W] ⇒ Quick Select the object on the top layer
++ At the bottom of the _Layers panel_, click the _Add layer mask_ icon.
++ The mask is hiding everything except what you selected.
+**** Apply filters
+***** using the Filter Gallery
++ Select an layer
++ Filter > Filter Gallery
+***** Blur an image with Smart Filters
++ select a layer
++ Fiter > Convert for Smart Filters ⇒ this converts the layer into a layer that
+  will support re-editable filters.
++ With the same layer selected, choose Filter > Blur > Gaussian Blur.
+*** medium tut
+**** design for mobile and web using artboards
++ Layer > new > artboard
+**** curvature tool
++ [P] ⇒ open curvature pen tool. (underneath the pen tool)
++ Click the Path Options button (gear icon) in the Options bar. Adjust path
+  Thickness and Color.
++ Rubber-Band=True lets you previsualize a path on your cursor's movement.
+
++ click to add control point
++ double click to add corner point point, shift-click to create 45-90 corner.
++ [Esc] to complete an open path
++ click and drag on a point to move it
+
++ switch between control point and corner point :: double-click on the point
+
++ path are under the path tab of the layer panel.
