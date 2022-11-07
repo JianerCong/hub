@@ -5,14 +5,8 @@ declare -A addr
 h=$HOME
 
 addr["l"]="$h/Templates/lrn/"
-addr["c"]="/home/me/Templates/lrn/c/"
-addr["cpp"]="/home/me/Templates/lrn/cpp/"
+addr["r"]="$h/Templates/lrn/h5/react/menu-app"
 addr["w"]="/home/me/work/lcode/"
-addr["t"]="/home/me/work/ses/cw2r/"
-addr["i"]="/home/me/work/ide/gsa/r/"
-addr["o"]="/home/me/Templates/lrn/org/"
-addr["v"]="/home/me/Downloads/Intro-to-Vue-3"
-addr["f"]="/home/me/Downloads/learning-area/css/styling-boxes"
 
 {
     for s in "${!addr[@]}"; do
