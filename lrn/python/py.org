@@ -154,11 +154,15 @@ exec(open('filename').read())
       import locale
       local.getpreferredencoding()    # 'cp1252' on windows
     #+end_src
-** string
+** string and numbers
 #+begin_src python
   a = 'Apple'
   b = 1.23
   m = '%s costs %d USD' % (a,b)
+
+  # binary format
+  bin(5)                          # 0b101
+  bin(5).replace('0b','')         # 101
 #+end_src
 Reverse string.
 
@@ -184,6 +188,9 @@ print(txt)
   bob2 = dict(zip(['name', 'job', 'age'], ['Bob', 'dev', 40])) # Zipping
   bob1 = dict(name='Bob', job='dev', age=40) # Keywords
 
+  for k in sorted(d.keys()):
+    print(k)
+
   # delete a key
   bob1.pop('name')
 #+end_src
@@ -192,6 +199,13 @@ print(txt)
   thisset = set(("apple", "banana", "cherry")) # note the double round-brackets
   myset = {"apple", "banana", "cherry"}
   thisset = {"apple", "banana", "cherry", "apple"}  # duplicated vals are ignored
+
+  m = set({})
+  m.add(1)
+  1 in m                          # True
+  m.discard(1)
+  1 in m                          # False
+  len(0)                          # 0
  #+end_src
 ** work with file
 *** write to file
