@@ -348,6 +348,63 @@ res = functools.reduce(lambda x, y: x + y,
 # print result
 print("String after reverse sorting : " + str(res))
 #+end_src
+*** list
+**** delete
+#+begin_src python
+  myList = [‘a’ , ‘b’ , ‘c’ , ‘d’ , ‘e’ , ‘f’ , ‘g’ , ‘h’ , ‘i’ , ‘j’ , ‘k’ , ‘l’]
+  #delete the third item (index = 2)
+  del myList[2]
+  print (myList)
+  # => [‘a’, ‘b’, ‘d’, ‘e’, ‘f’, ‘g’, ‘h’, ‘i’, ‘j’, ‘k’, ‘l’]
+
+  #delete items from index 1 to 5-1 --------------------------------------------------
+  del myList[1:5]
+  print (myList)
+  # => [‘a’, ‘g’, ‘h’, ‘i’, ‘j’, ‘k’, ‘l’]
+  #delete items from index 0 to 3-1 --------------------------------------------------
+  del myList [ :3]
+  print (myList)
+  # => [‘i’, ‘j’, ‘k’, ‘l’]
+  #delete items from index 2 to end --------------------------------------------------
+  del myList [2:]
+  print (myList)
+  # => [‘i’, ‘j’]
+#+end_src
+**** insert
+#+begin_src python
+
+
+  myList = [‘a’ , ‘b’ , ‘c’ , ‘d’]
+  ‘c’ in myList
+  myList = [‘a’ , ‘b’ , ‘c’ , ‘d’ , ‘e’]
+  myList.insert(1, ‘Hi’)
+  print (myList)
+  # => [‘a’, ‘Hi’, ‘b’, ‘c’, ‘d’, ‘e’]
+
+  #+end_src
+**** pop()
+#+begin_src python
+  myList = [‘a’ , ‘b’ , ‘c’ , ‘d’ , ‘e’]
+  #remove the third item
+  member = myList.pop(2)
+  print (member)
+  # => c
+  print (myList)
+  # => [‘a’, ‘b’, ‘d’, ‘e’]
+
+  #remove the last item
+  member = myList.pop( )
+  print (member)
+  # => e
+  print (myList)
+  # => [‘a’, ‘b’, ‘d’]
+#+end_src
+**** index()
+#+begin_src python
+  l = [10,20]
+  l.index(20)                      # 1
+#+end_src
+
 ** work with file
 *** write to file
 #+begin_src python
