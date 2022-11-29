@@ -5,9 +5,10 @@ declare -A addr
 h=$HOME
 
 addr["l"]="$h/Templates/lrn/"
-addr["r"]="$h/Templates/lrn/h5/react/menu-app"
-addr["n"]="$h/Templates/lrn/h5/react/react-native"
-addr["w"]="/home/me/work/lcode/"
+addr["p"]="$h/Templates/lrn/tex/prog/"
+addr["r"]="$h/Templates/lrn/h5/react/menu-app/"
+addr["n"]="$h/Templates/lrn/h5/react/react-native/"
+addr["w"]="/home/me/work/lcode/newcode/"
 
 {
     for s in "${!addr[@]}"; do

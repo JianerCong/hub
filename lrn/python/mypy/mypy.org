@@ -6,12 +6,51 @@
 #+end_src
 ** Basic usage
 #+begin_src python
-  def greeting(name: str) -> str:
-      return 'Hello ' + name
+   # For most types, just use the name of the type
+  x: int = 1
+  x: float = 1.0
+  x: bool = True
+  x: str = "test"
+  x: bytes = b"test"
 
-  print(greeting('Yo'))
-  print(greeting(4))              # Error
+  # For collections on Python 3.9+, the type of the collection item is in brackets
+  x: list[int] = [1]
+  x: set[int] = {6, 7}
 
+  # For mappings, we need the types of both keys and values
+  x: dict[str, float] = {"field": 2.0}  # Python 3.9+
+
+  # For tuples of fixed size, we specify the types of all the elements
+  x: tuple[int, str, float] = (3, "yes", 7.5)  # Python 3.9+
+
+  # For tuples of variable size, we use one type and ellipsis
+  x: tuple[int, ...] = (1, 2, 3)  # Python 3.9+
+
+  # On Python 3.8 and earlier, the name of the collection type is
+  # capitalized, and the type is imported from the 'typing' module
+  from typing import List, Set, Dict, Tuple
+  x: List[int] = [1]
+  x: Set[int] = {6, 7}
+  x: Dict[str, float] = {"field": 2.0}
+  x: Tuple[int, str, float] = (3, "yes", 7.5)
+  x: Tuple[int, ...] = (1, 2, 3)
+
+  from typing import Union, Optional
+
+  # On Python 3.10+, use the | operator when something could be one of a few types
+  x: list[int | str] = [3, 5, "test", "fun"]  # Python 3.10+
+  # On earlier versions, use Union
+  x: list[Union[int, str]] = [3, 5, "test", "fun"]
+
+  # Use Optional[X] for a value that could be None
+  # Optional[X] is the same as X | None or Union[X, None]
+  x: Optional[str] = "something" if some_condition() else None
+  # Mypy understands a value can't be None in an if-statement
+  if x is not None:
+      print(x.upper())
+  # If a value can never be None due to some invariants, use an assert
+  assert x is not None
+  print(x.upper())
 #+end_src
 ** More function signature
 *** Mark the "void" function
@@ -104,7 +143,7 @@ def greeting(name: Optional[str] = None) -> str:
     return 'Hello, ' + name
 
     #+end_src
-*** declear global object type
+*** declear global object type, dict
 #+begin_src python
 # If you're using Python 3.9+
 my_global_dict: dict[int, float] = {}

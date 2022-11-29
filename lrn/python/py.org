@@ -6,6 +6,11 @@ s = subprocess.check_output(['cat','/etc/issue'],stderr=subprocess.STDOUT)
 print(s.decode().strip())
 
 #+end_src
+** function
+#+begin_src python
+x = lambda a : a + 10
+print(x(5))
+#+end_src
 ** yaml
 #+begin_src yaml
   rest:
@@ -155,6 +160,7 @@ exec(open('filename').read())
       local.getpreferredencoding()    # 'cp1252' on windows
     #+end_src
 ** string and numbers
+*** basic
 #+begin_src python
   a = 'Apple'
   b = 1.23
@@ -163,9 +169,10 @@ exec(open('filename').read())
   # binary format
   bin(5)                          # 0b101
   bin(5).replace('0b','')         # 101
+  # pad with 0
+  bin(1).replace('0b','').zfill(4)  # 0001
 #+end_src
 Reverse string.
-
 In this particular example, the slice statement [::-1] means start at the end of
 the string and end at position 0, move with the step -1, negative one, which
 means one step backwards.
@@ -173,6 +180,64 @@ means one step backwards.
 txt = "Hello World" [::-1]
 print(txt) 
 #+end_src
+*** parse
+#+begin_src python
+  int('101', 2)                   # ⇒ 5
+  int('f',16)                     # ⇒ 15
+  int('ff',16)                    # ⇒ 255
+#+end_src
+*** format
+#+begin_src python
+  '%x' % 12                       # c
+  '%X' % 12                       # C
+#+end_src
+*** re
+**** re.match: match from beginning
+If zero or more characters at the *beginning* of string match the regular
+expression pattern, return a corresponding match object.
+
+Return ~None~ if the string does not match the pattern; note that this is
+different from a zero-length match.
+#+begin_src python
+  bool(re.match('A','A1'))        # True
+  bool(re.match('1','A1'))        # False
+#+end_src
+**** re.search: contains the pattern
+Scan through string looking for the *first location* where the regular expression
+pattern produces a match, and return a corresponding match object.
+#+begin_src python
+  import re
+
+  step = 'A1'
+  m = re.search('^([A-Z])([0-9]{1,2})$',step)
+  if m:
+      print(f'{m.group(1)}, {m.group(2)}')
+  else:
+      print('Not valid')
+      # A, 1
+  m.groups()                      # ('A','1')
+    #+end_src
+
+Return ~None~ if no position in the string matches the pattern; note that this is
+different from finding a zero-length match at some point in the string.
+**** re.fullmatch(pattern,string)
+match the whole string ⇒ Match Object
+#+begin_src python
+  import re
+
+  s = 'abcde'
+  bool(re.fullmatch('bc',s))      # False
+  bool(re.fullmatch('abcde',s))   # True
+    #+end_src
+**** re.sub(pattern, replacement, string): replace regexp
+replace regexp
+#+begin_src python
+  re.sub(r'def\s+([a-zA-Z_][a-zA-Z_0-9]*)\s*\(\s*\):',
+         r'static PyObject*\npy_\1(void)\n{',
+         'def myfunc():')
+  'static PyObject*\npy_myfunc(void)\n{'
+       #+end_src
+
 ** collections
 *** dic
 #+begin_src python
@@ -207,6 +272,82 @@ print(txt)
   1 in m                          # False
   len(0)                          # 0
  #+end_src
+*** ordered dict
+#+begin_src python
+  # A Python program to demonstrate working of OrderedDict
+  from collections import OrderedDict
+
+  print("This is a Dict:\n")
+  d = {}
+  d['a'] = 1
+  d['b'] = 2
+  d['c'] = 3
+  d['d'] = 4
+
+  for key, value in d.items():
+    print(key, value)
+  # a 1
+  # c 3
+  # b 2
+  # d 4
+
+  print("\nThis is an Ordered Dict:\n")
+  od = OrderedDict()
+  od['a'] = 1
+  od['b'] = 2
+  od['c'] = 3
+  od['d'] = 4
+
+  for key, value in od.items():
+    print(key, value)
+  This is a Dict:
+
+  # This is an Ordered Dict:
+  # a 1
+  # b 2
+  # c 3
+  # d 4
+#+end_src
+*** sorted
+#+begin_src python
+
+  L = ["cccc", "b", "dd", "aaa"]
+  print("Normal sort :", sorted(L))
+  print("Sort with len :", sorted(L, key=len))
+
+  # Normal sort : ['aaa', 'b', 'cccc', 'dd']
+  # Sort with len : ['b', 'dd', 'aaa', 'cccc']
+
+
+  x = [2, 8, 1, 4, 6, 3, 7]
+  print("Sorted List returned :", sorted(x))
+  print("Reverse sort :", sorted(x, reverse=True))
+  print("\nOriginal list not modified :", x)
+  # Sorted List returned : [1, 2, 3, 4, 6, 7, 8]
+  # Reverse sort : [8, 7, 6, 4, 3, 2, 1]
+
+  # Original list not modified : [2, 8, 1, 4, 6, 3, 7]
+#+end_src
+*** functools
+**** reduce: reverse sort a string
+#+begin_src python
+
+# import the module
+import functools
+# initializing string
+test_string = "geekforgeeks"
+  
+# printing original string
+print("The original string : " + str(test_string))
+  
+# using sorted() + reduce() + lambda
+# Reverse Sort a String
+res = functools.reduce(lambda x, y: x + y,
+                       sorted(test_string, 
+                              reverse=True))
+# print result
+print("String after reverse sorting : " + str(res))
+#+end_src
 ** work with file
 *** write to file
 #+begin_src python
