@@ -109,6 +109,29 @@ def greeting(name: Optional[str] = None) -> str:
 # If you're using Python 3.9+
 my_global_dict: dict[int, float] = {}
 #+end_src
+*** 3.10
+#+begin_src python
+  # Instead of
+  # def f(list: List[Union[int, str]], param: Optional[int]) -> Union[float, str]
+  def f(list: List[int | str], param: int | None) -> float | str:
+      pass
+
+  f([1, "abc"], None)
+
+  # Instead of typing.List[typing.Union[str, int]]
+  typing.List[str | int]
+  list[str | int]
+
+  # Instead of typing.Dict[str, typing.Union[int, float]]
+  typing.Dict[str, int | float]
+  dict[str, int | float]
+  The existing typing.Union and | syntax should be equivalent.
+
+  int | str == typing.Union[int, str]
+
+  typing.Union[int, int] == int
+  int | int == int
+#+end_src
 ** Use stubs for types in a package
 "stub" for a pkg is like the header file
 

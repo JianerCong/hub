@@ -49,6 +49,10 @@
   #   --request "POST" \
   #   --data "{'id': '4','title': 'item','artist': 'A4','price': 4.44}"
 #+end_src
+** unzip files
+#+begin_src powershell
+Expand-Archive -LiteralPath <ZipFilePath> -DestinationPath <DestinationPath>
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "powershell"
