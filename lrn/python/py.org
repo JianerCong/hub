@@ -1,3 +1,8 @@
+** sleep
+#+begin_src python
+  import time
+  time.sleep(4)                   # 4 sec
+#+end_src
 ** subprocess
 #+begin_src python
 import subprocess

@@ -392,7 +392,6 @@ for key in sorted(db):
   db['Sue Jones'] = sue # Assign to key to update in shelve
   db.close() # Close after making changes
 #+end_src
-** 29 Class Coding Details
 ** dataclass
 *** basic
 The dataclass() decorator will add various “dunder” methods to the class.
