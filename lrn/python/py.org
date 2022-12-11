@@ -242,6 +242,14 @@ replace regexp
          'def myfunc():')
   'static PyObject*\npy_myfunc(void)\n{'
        #+end_src
+**** match object
+#+begin_src python
+  r = re.search('abc','abcyyyyabc')
+  r.pos                           # 0
+  r.start()                       # 0
+  r.end()                         # 3
+  r.span()                        # (0,3)
+#+end_src
 
 ** collections
 *** dic

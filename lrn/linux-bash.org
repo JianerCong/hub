@@ -437,15 +437,24 @@ https://tmuxcheatsheet.com/
 ** session
 #+begin_src bash
   tmux
-  tmux new -s mysession
-  tmux kill-session -t mysession
+  tmux new -s mysession           # new a session
+  tmux kill-session -t mysession  # kill <mysession>
   tmux kill-session -a            # kill all but current
-  tmux ls
-  tmux attach
-  tmux a -t mysession
+
+  tmux ls                         # ls all sessions
+  tmux attach                     # attach to last session
+  tmux a
+  tmux a -t mysession             # attach to mysession
+
+  C-b d                           # detach from session
+  :attach -d
+  C-b $                           # rename session
 #+end_src
-Rename session: C-b $
-Detach from session : C-b 
+** copy mode
++ C-b ] :: enter
++ q :: quit
++ arrow-keys :: move
++ page-up/down :: ~
 ** Windows
 create : c
 rename: ,
@@ -457,7 +466,6 @@ previous/next: n/p
 + vertically :: "
 + move to  :: <- ->
 + resize ::  <--> (holding ctrl)
-
 
 * End
 # Local Variables:

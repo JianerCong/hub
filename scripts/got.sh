@@ -8,7 +8,7 @@ addr["l"]="$h/Templates/lrn/"
 addr["p"]="$h/Templates/lrn/tex/prog/"
 addr["r"]="$h/Templates/lrn/h5/react/menu-app/"
 addr["n"]="$h/Templates/lrn/h5/react/react-native/"
-addr["w"]="/home/me/work/lcode/newcode/"
+addr["w"]="/home/me/work/lcode/"
 
 {
     for s in "${!addr[@]}"; do
