@@ -47,9 +47,9 @@ function cpdir {($pwd).tostring() | set-clipboard}
 function got{
     write-host "Where to go ?"
     $h = @{
-           "t"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\h5\weapp\todo'
            "l"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn'
-           "w"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\h5\weapp'
+           "t"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\h5\weapp\todo'
+           "w"  = 'C:\Users\congj\work\lcode\newcode'
            "p"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\python\pymongo'
           }
     $h
@@ -161,5 +161,5 @@ function pspf{
 }
 
 function pyenv {
-    . C:\Users\congj\myGlobalEnv\Scripts\Activate.ps1
+    . C:\Users\congj\myGlobalEnvZ\Scripts\Activate.ps1
 }

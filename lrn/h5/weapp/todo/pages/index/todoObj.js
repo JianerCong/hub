@@ -65,7 +65,7 @@ let todoObj = {
 
     // progressPercentage
     'todos' : function(todos) {
-        console.log(`todo changed, now the todo to upload is\n ${JSON.stringify(this.todosToUpload())}`)
+      console.log(`todo changed, now the todo to upload is\n ${JSON.stringify(this.todosToUpload())}`);
       let p = 0;
       if (todos.length > 0) {
         let done = 0;
@@ -76,10 +76,9 @@ let todoObj = {
 
       // upload the todo
       if (this.m.openid !== '' && this.m.startSubmitting){
-        this.remotePostTodos()
+        this.remotePostTodos();
       }
 },
-
   },
 
   methods: {
@@ -123,6 +122,9 @@ let todoObj = {
         openid: '',
         activeValues: [0],
 
+        // has backend
+        HAS_BACKEND: false,
+
 
         // to change the detail editor
         ddlBoxVisible: false,
@@ -140,7 +142,8 @@ let todoObj = {
 
     } ,
     remotePostTodos(){
-        let o = {
+        if (this.HAS_BACKEND) {
+         let o = {
             url : 'https://myfunction-myservice-cgsyqncxvc.cn-hangzhou.fcapp.run/',
             data : {
               openid: this.data.openid,
@@ -158,9 +161,13 @@ let todoObj = {
             },
             fail: () => {console.log(`failed`);}
           };
-          wx.request(o);
+          wx.request(o);           
+        } else {
+            console.log('Backend DOWN skipping remote POST')
+        }
     },
     remoteGetTodosAndOpenid() {
+        if (this.HAS_BACKEND) {
         wx.showLoading({
             title: '加载中',
           });
@@ -194,14 +201,18 @@ let todoObj = {
                 fail: () => {
                     console.log(`failed`);
                     wx.hideLoading()
-                }
+                },
               };
               wx.request(o);
             },
             fail: () => {
               console.warn(`failed to get login info.`);
               wx.hideLoading()
-            }});
+            }});            
+        } else {
+            console.log('Backend DOWN skipping remote GET')
+        }
+
     },
 
     dueString(d, dc) {

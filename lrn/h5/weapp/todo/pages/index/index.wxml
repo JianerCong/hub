@@ -32,7 +32,7 @@
                            placeholder="{{d['add_todo']}}"
                     />
                 </view>
-                <view class="submit-button" bindtap="submit">
+                <view class="submit-button" bindtap="submit" wx:if="{{input !== ''}}">
                     <view class="submit-button-text">+</view>
                 </view>
             </view>
