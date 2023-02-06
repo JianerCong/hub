@@ -1,4 +1,23 @@
 * Pwsh
+** string
+*** substring 
+#+begin_src powershell
+  "ShellGeek".Substring(0,5)      #first 5 chars
+
+  $url = "https://192.168.0.1:5001"  
+  # last 4 char
+  $url.Substring($url.Length-4)  
+
+
+
+
+  # Change all .wav to .mp3
+  $n = ls *.wav | ForEach-Object -Process {$_.Name.Substring(0,$_.Name.Length-4)}
+  foreach ($x in $n) {
+      echo "lame $x"
+      lame "$x.wav" "$x.mp3"
+  }
+#+end_src
 ** Format number
 #+begin_src powershell
   “{0:N2}” -f ((5/21)*100)
