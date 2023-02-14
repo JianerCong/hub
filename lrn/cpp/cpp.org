@@ -12,6 +12,104 @@ int main ()
   return 0;
 }
 #+end_src
+*** substring
+#+begin_src c++
+// string::substr
+#include <iostream>
+#include <string>
+
+int main ()
+{
+  std::string str="We think in generalities, but we live in details.";
+                                           // (quoting Alfred N. Whitehead)
+
+  std::string str2 = str.substr (3,5);     // "think"
+
+  std::size_t pos = str.find("live");      // position of "live" in str
+
+  std::string str3 = str.substr (pos);     // get from "live" to the end
+
+  std::cout << str2 << ' ' << str3 << '\n';
+
+  return 0;
+}
+#+end_src
+*** erase
+*** char in string
+#+begin_src c++
+// CPP program to demonstrate working of strchr()
+#include <iostream>
+#include <cstring>
+using namespace std;
+// Driver code
+int main()
+{
+    char str[] = "My name is Ayush";
+    char ch = 'A', ch2 = 'z';
+    if (strchr(str, ch) != NULL)
+        cout << ch << " "
+             << "is present in string" << endl;
+    else
+        cout << ch << " "
+             << "is not present in string" << endl;
+    if (strchr(str, ch2) != NULL)
+        cout << ch2 << " "
+             << "is present in string" << endl;
+    else
+        cout << ch2 << " "
+             << "is not present in string" << endl;
+    return 0;
+}
+#+end_src
+A is present in string
+z is not present in string
+*** regex
+#+begin_src c++
+  #include <iostream>
+  #include <iterator>
+  #include <string>
+  #include <regex>
+
+  int main()
+  {
+    // --------------------------------------------------
+    // Match or not
+    std::string s = "Some people, when confronted with a problem, think "
+      "\"I know, I'll use regular expressions.\" "
+      "Now they have two problems.";
+
+    std::regex self_regex("REGULAR EXPRESSIONS",
+                          std::regex_constants::ECMAScript | std::regex_constants::icase);
+    if (std::regex_search(s, self_regex)) {
+      std::cout << "Text contains the phrase 'regular expressions'\n";
+    }
+
+    // --------------------------------------------------
+    // find_all
+    std::regex word_regex("(\\w+)");
+    auto words_begin = std::sregex_iterator(s.begin(), s.end(), word_regex);
+    auto words_end = std::sregex_iterator();
+
+    std::cout << "Found "
+              << std::distance(words_begin, words_end)
+              << " words\n";
+
+    const int N = 6;
+    std::cout << "Words longer than " << N << " characters:\n";
+    for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+      std::smatch match = *i;
+      std::string match_str = match.str();
+      if (match_str.size() > N) {
+        std::cout << "  " << match_str << '\n';
+      }
+    }
+
+    // replace regexp
+    std::regex long_word_regex("(\\w{7,})");
+    std::string new_s = std::regex_replace(s, long_word_regex, "[$&]");
+    std::cout << new_s << '\n';
+  }
+#+end_src
 ** Move
 *** forward
  Trun into rvalue if possible.
@@ -344,6 +442,25 @@ void report_bad_file(string s){
 
 #+END_SRC
 ** Vector
+*** init
+#+begin_src c++
+// CPP program to initialize a vector like
+// an array.
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main()
+{
+	vector<int> vect{ 10, 20, 30 };
+
+	for (int x : vect)
+		cout << x << " ";
+
+	return 0;
+}
+
+#+end_src
 *** erase
 #+BEGIN_SRC c++
 // erasing from vector
@@ -378,6 +495,91 @@ int main ()
 }
 
 #+END_SRC
+*** lcode
+#+begin_src c++
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
+#include <cstdio>
+#include <iostream>
+#include <string>
+#include <stack>
+#include <vector>
+
+using std::string;
+using std::vector;
+using std::cout;
+
+
+// convert to vector to string
+#include <sstream>
+string v2s(vector<int> vec){
+  // the vector-to-string
+  std::stringstream ss;
+  for(int i =0;i<vec.size();i++)
+    { if(i != 0)
+        { ss<<", ";
+        }
+      ss<< vec[i];
+    }
+  return ss.str();
+}
+
+#include <algorithm>            // for std::reverse
+using std::reverse;
+class Solution {
+public:
+  void nextPermutation(vector<int>& nums) {
+    int L = nums.size();
+    for (int i=L-2;i>-1;i--){
+      if (nums[i] < nums[i+1]){
+        int j = i + 1;
+
+        while (j < (L - 1) && (nums[j+1] > nums[i])){
+          j++;
+        }
+
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+
+
+        // Reverse the tail-values
+        // j = 1;
+        // while((L - j) - (i+j) > 0){
+        //   temp = nums[i+j];
+        //   nums[i+j] = nums[L-j];
+        //   nums[L-j] = temp;
+        //   j++;
+        // }
+        reverse(nums.begin()+i+1, nums.end());
+
+        return;
+      }
+    }
+
+    reverse(nums.begin(),nums.end());
+  }
+};
+
+int main(int argc, char *argv[]){
+  Solution S;
+
+  vector<int> nums{3,2,1};
+  vector<int> nums2{1,2,3};
+
+  S.nextPermutation(nums);
+  printf("Should be %s \n it's %s \n", v2s(nums).c_str(), v2s(nums2).c_str());
+
+
+  return 0;
+}
+
+#+end_src
 ** List
 *** basic
 #+begin_src c++
