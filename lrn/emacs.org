@@ -1,5 +1,8 @@
 * Emac
 ** regex
+*** useful query replace
+in: #print(f'\(.*\)')
+out: printf("\1\\n");
 *** basic
  .        any character (but newline)
   *        previous character or group, repeated 0 or more time
@@ -215,4 +218,6 @@ C-x C-k C-a
 C-x C-k C-f
 
     Specify the format for inserting the keyboard macro counter (kmacro-set-format). 
+** mark
++ C-x C-x :: exchange-point-and-mark
 
