@@ -23,6 +23,7 @@ target_link_libraries(M PUBLIC ${EXTRA_LIBS})
 
 target_include_directories(M PUBLIC
   "${PROJECT_BINARY_DIR}"       #where the m.h is created
+  # compared to tut02, we can safely remove the EXTRA_INCLUDES variable
   )
 
 # run the M target with arguments "1" (ALL means always build this target)

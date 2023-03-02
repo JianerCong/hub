@@ -39,7 +39,8 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     CACHE PATH "${PROJECT_SOURCE_DIR}/cache" FORCE)
 endif()
 
-add_custom_target(my_report ALL echo 🐸 The install prefix is ${CMAKE_INSTALL_PREFIX})
+#add_custom_target(my_report ALL echo 🐸 The install prefix is ${CMAKE_INSTALL_PREFIX})
+message(STAYUS "The install prefix is ${CMAKE_INSTALL_PREFIX}")
 install(TARGETS mylib DESTINATION lib)
 install(FILES mylib/mylib.h DESTINATION include)
 # When installing FILES, the File names given as relative paths are interpreted

@@ -580,6 +580,56 @@ int main(int argc, char *argv[]){
 }
 
 #+end_src
+*** iterator and distance
+#+begin_src c++
+  #include <cstdio>
+  #include <vector>
+
+  using std::vector;
+
+  int main(){
+    vector<int> v({1,2,3});
+
+    auto p1 = v.begin();
+    auto p2 = v.end();
+    printf("*p1 is %d\n",*p1);//1
+    printf("*(p2 - 1) is %d\n",*(p2 - 1)); // 3
+    // Note: long int
+    printf("*(p2 - p1) is %ld\n",p2 - p1); // 3
+  }
+
+#+end_src
+*** find
+#+begin_src c++
+// CPP program to illustrate
+// std::find
+// CPP program to illustrate
+// std::find
+#include<bits/stdc++.h>
+
+int main ()
+{
+	std::vector<int> vec { 10, 20, 30, 40 };
+	// Element to be searched
+	int ser = 30;
+
+	// std::find function call
+	std::vector<int>::iterator it =  std::find (vec.begin(), vec.end(), ser);
+	if (it != vec.end())
+    {
+      std::cout << "Element " << ser <<" found at position : " ;
+      std::cout << it - vec.begin() << " (counting from zero) \n" ;
+    }
+	else
+		std::cout << "Element not found.\n\n";
+
+	return 0;
+}
+// Output: 
+// Original vector : 10 20 30 40
+// Element 30 found at position : 2 (counting from zero)
+
+#+end_src
 ** List
 *** basic
 #+begin_src c++

@@ -27,6 +27,11 @@ int main(int argc, char *argv[]){
   int x = 2;
 #endif
 
-  cout << "2 - 1 is " << x << endl;
+  if (x == 1){
+    cout << "mylib [yes]\n";
+  }else{
+    cout << "mylib [no]\n";
+  }
+
   return 0;
 }

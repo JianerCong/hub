@@ -8,7 +8,7 @@
 
 (define-skeleton c-say
   "say something "
-  > "printf(" _ ");")
+  > "P(\"" _ "\");")
 
 
 (define-skeleton c-big-comment
@@ -23,7 +23,7 @@
   "insert a block that will be run when DEBUG is defined"
   nil
    "#ifdef DEBUG" \n
-  _
+   "#define P(...) printf(__VA_ARGS__)" \n
    "#endif")
 
 (define-skeleton c-define-PAUSE
@@ -62,9 +62,6 @@ s if not found."
 (load (concat path-template "alist-to-menu.el")) ;t
 (load (concat path-template "do2-skl.el")) ;t
 (load (concat path-template "delete-and-handle-choice.el")) ;t
-
-
-
 
 
 
