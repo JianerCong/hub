@@ -1,1 +1,0 @@
-* TODO Write the report_bad_file() in file3.cpp

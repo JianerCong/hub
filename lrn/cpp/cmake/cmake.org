@@ -479,6 +479,51 @@ function(format_it fmt s npad out)
 
 
   #+end_src
+** book
+*** first step
+**** script
+#+begin_src cmake
+# An example of a script
+
+cmake_minimum_required(VERSION 3.20.0)
+
+message("Hello world")
+
+file(WRITE Hello.txt "I am writing to a file")
+#+end_src
+run a script
+#+begin_src bash
+cmake -P script.cmake
+#+end_src
+**** Util module
+Modules are written in the CMake language and contain macro definitions,
+variables, and commands that perform all kinds of functions use
+~include(<module>)~.
+**** Find-modules
+CMake provides over 150 modules that are able to locate different packages in
+the system.e.g. ~FindCURL~ module searches cURL and defines
+following variables:
++ CURL_FOUND
++ CURL_INCLUDE_DIRS
++ CURL_INCLUDE_LIBRARIES
++ CURL_VERSION_STRING.
+
+*** lang
+**** comment
+#+begin_src cmake
+
+  #[=[
+
+  bracket comment
+
+  #]=]
+#+end_src
+
+*** Link
+Building a correctly linked executable heavily depends on a valid configuration
+(and taking care of such minute details as position-independent code (PIC).
+
+We'll learn about another nuisance of linking – the One Definition Rule (ODR).
 * End
 
 

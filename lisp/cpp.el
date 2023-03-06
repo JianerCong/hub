@@ -64,6 +64,7 @@
         ("c" . "<cstdlib>")
         ("ct" . "<ctime>")
         ("ci" . "<cstdio>")
+        ("ex" . "<stdexcept>")
         )
       )
 

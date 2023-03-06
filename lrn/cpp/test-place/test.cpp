@@ -1,27 +1,31 @@
-// CPP program to illustrate
-// std::find
-// CPP program to illustrate
-// std::find
-#include<bits/stdc++.h>
+// #define BOOST_TEST_MAIN
+#define BOOST_TEST_MODULE MyTest
+#include <boost/test/unit_test.hpp>
+#include <stdexcept>
 
-int main ()
-{
-	std::vector<int> vec { 10, 20, 30, 30, 40 };
-	// Element to be searched
-	int ser = 30;
 
-	// std::find function call
-	std::vector<int>::iterator it =  std::find (vec.begin(), vec.end(), ser);
-	if (it != vec.end())
-    {
-      std::cout << "Element " << ser <<" found at position : " ;
-      std::cout << it - vec.begin() << " (counting from zero) \n" ;
-    }
-	else
-		std::cout << "Element not found.\n\n";
+BOOST_AUTO_TEST_CASE(test_1) {
+  BOOST_CHECK_NE(2,1);          // 2 != 1
+} // BOOST_AUTO_TEST_CASE(test_no_1)
 
-	return 0;
+void f(){
+  throw std::runtime_error("hi");
 }
-// Output: 
-// Original vector : 10 20 30 40
-// Element 30 found at position : 2 (counting from zero)
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  BOOST_CHECK_THROW(f(), std::runtime_error);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_equal) {
+  BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_error) {
+  BOOST_ERROR("this should give error ❄");
+}
+
+
+BOOST_AUTO_TEST_CASE(test_fail) {
+  BOOST_FAIL("this should give fatal error ❄");
+}

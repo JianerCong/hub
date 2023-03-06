@@ -1,5 +1,6 @@
-** string
-*** length
+** Cpp
+*** string
+**** length
 #+begin_src c++
 // string::length
 #include <iostream>
@@ -12,7 +13,7 @@ int main ()
   return 0;
 }
 #+end_src
-*** substring
+**** substring
 #+begin_src c++
 // string::substr
 #include <iostream>
@@ -34,8 +35,8 @@ int main ()
   return 0;
 }
 #+end_src
-*** erase
-*** char in string
+**** erase
+**** char in string
 #+begin_src c++
 // CPP program to demonstrate working of strchr()
 #include <iostream>
@@ -63,7 +64,7 @@ int main()
 #+end_src
 A is present in string
 z is not present in string
-*** regex
+**** regex
 #+begin_src c++
   #include <iostream>
   #include <iterator>
@@ -110,8 +111,8 @@ z is not present in string
     std::cout << new_s << '\n';
   }
 #+end_src
-** Move
-*** forward
+*** Move
+**** forward
  Trun into rvalue if possible.
  #+BEGIN_SRC c++
  // forward example
@@ -146,7 +147,7 @@ z is not present in string
    return 0;
  }
  #+END_SRC
-*** move
+**** move
  #+BEGIN_SRC c++
  // move example
  #include <utility>      // std::move
@@ -191,8 +192,8 @@ z is not present in string
  // BB is :
 
  #+END_SRC
-** Template
-*** Cannot initiate template (ld cannot find class)
+*** Template
+**** Cannot initiate template (ld cannot find class)
 [[https://stackoverflow.com/questions/8752837/undefined-reference-to-template-class-constructor]]
 Why:
 
@@ -208,7 +209,7 @@ Solution:
   template void MyFunc<std::string>(int x);  // Explicitly compile the template class for
                                       // float
 #+end_src
-*** Explicit specialization
+**** Explicit specialization
 Calling convention:
 non-template > explicit specialization > template
 #+begin_src c++
@@ -220,8 +221,8 @@ non-template > explicit specialization > template
 
   void f(myclass2 &, myclass2 &); // non-template function
 #+end_src
-** File
-*** simple
+*** File
+**** simple
 #+BEGIN_SRC c++
 /**
  * @file file.cpp
@@ -266,7 +267,7 @@ int main(int argc, char *argv[]){
   }
 
 #+END_SRC
-*** readline
+**** readline
 #+BEGIN_SRC c++
 /**
  * @file file2.cpp
@@ -315,7 +316,7 @@ int main(int argc, char *argv[]){
   }
 
 #+END_SRC
-*** skip comments
+**** skip comments
 #+BEGIN_SRC c++
 /**
  * @file file3.cpp
@@ -441,8 +442,8 @@ void report_bad_file(string s){
 
 
 #+END_SRC
-** Vector
-*** init
+*** Vector
+**** init
 #+begin_src c++
 // CPP program to initialize a vector like
 // an array.
@@ -461,7 +462,7 @@ int main()
 }
 
 #+end_src
-*** erase
+**** erase
 #+BEGIN_SRC c++
 // erasing from vector
 
@@ -495,7 +496,7 @@ int main ()
 }
 
 #+END_SRC
-*** lcode
+**** lcode
 #+begin_src c++
 
 #ifdef _WIN32
@@ -580,7 +581,7 @@ int main(int argc, char *argv[]){
 }
 
 #+end_src
-*** iterator and distance
+**** iterator and distance
 #+begin_src c++
   #include <cstdio>
   #include <vector>
@@ -599,7 +600,7 @@ int main(int argc, char *argv[]){
   }
 
 #+end_src
-*** find
+**** find
 #+begin_src c++
 // CPP program to illustrate
 // std::find
@@ -630,8 +631,8 @@ int main ()
 // Element 30 found at position : 2 (counting from zero)
 
 #+end_src
-** List
-*** basic
+*** List
+**** basic
 #+begin_src c++
 #include <algorithm>
 #include <iostream>
@@ -662,7 +663,7 @@ int main()
 }
 
 #+end_src
-*** random access
+**** random access
 #+BEGIN_SRC c++
 // list::begin
 #include <iostream>
@@ -682,7 +683,7 @@ int main ()
   return 0;
 }
 #+END_SRC
-** map
+*** map
    #+begin_src c++
 /**
  * @file umap.cpp
@@ -736,7 +737,7 @@ int main(int argc, char *argv[]){
   }
 
    #+end_src
-** iomanip
+*** iomanip
  #+begin_src c++
 #include <iostream>
 #include <string>
@@ -800,8 +801,8 @@ int main(int argc, char *argv[]){
 }
 
  #+end_src
-** functions
-*** lambdas
+*** functions
+**** lambdas
 #+begin_src c++
 #include <iostream>
 #include <string>
@@ -821,7 +822,7 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
-*** call list of function
+**** call list of function
 #+begin_src c++
 #include <iostream>
 #include <cstdio>
@@ -856,7 +857,7 @@ int main ()
 }
 
 #+end_src
-*** variadic arguments
+**** variadic arguments
 #+begin_src c++
 #include <stdio.h>
 #include <stdarg.h>
@@ -891,7 +892,7 @@ int main(void)
 }
 
 #+end_src
-*** vprintf
+**** vprintf
 #+begin_src c++
 /* vprintf example */
 #include <stdio.h>
@@ -914,7 +915,7 @@ int main ()
 }
 
 #+end_src
-*** vsprintf
+**** vsprintf
 #+begin_src c++
 /* vsprintf example */
 #include <stdio.h>
@@ -937,9 +938,9 @@ int main ()
 }
 
 #+end_src
-** class
-*** Inheritance
-**** Call base class method
+*** class
+**** Inheritance
+***** Call base class method
 #+begin_src c++
 #include <iostream>
 #include <string>
@@ -980,7 +981,7 @@ int main(int argc, char *argv[]){
   return 0;
   }
 #+end_src
-**** inheriting an exception
+***** inheriting an exception
 #+begin_src csharp
 #include <iostream>
 #include <stdexcept>
@@ -1015,13 +1016,13 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
-** Exception
+*** Exception
 1. domain_error
 2. invalid_argument
 3. length_error
 4. out_of_bounds
-** namespace and header
-*** hi.cpp
+*** namespace and header
+**** hi.cpp
 #+begin_src c++
 #include "hi.h"
 
@@ -1042,7 +1043,7 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
-*** hi.h
+**** hi.h
 #+begin_src c++
 #include <iostream>
 #include <cstdio>
@@ -1058,7 +1059,7 @@ namespace my_namespace{
 
 
 #+end_src
-*** global namespace
+**** global namespace
 How to refer to the global namespace
 #+begin_src c++
 bool isGood(){ return_if_it_is_good;}
@@ -1068,7 +1069,7 @@ int a;
 bool isGood(){return ::isGood(a);}
 }
 #+end_src
-** Time
+*** Time
 #+begin_src c++
 #include <ctime>
 #include <iostream>
@@ -1094,7 +1095,7 @@ int main()
 }
 
 #+end_src
-** sleep
+*** sleep
 #+begin_src c++
   #ifdef _WIN32
   #include <Windows.h>
@@ -1103,6 +1104,295 @@ int main()
   #endif
   // unsigned sleep(unsigned seconds);
 
+
+#+end_src
+** Boost
+*** hi
+**** install
+#+begin_src bash
+  sudo apt search libboost
+  sudo apt install libboost-all-dev
+#+end_src
+**** cpp
+#+begin_src c++
+  #include <iostream>
+  #include <boost/array.hpp>
+  using std::cout;
+
+  int main ()
+  {
+    boost::array<int,4> a = {{10, 20, 30, 30}};
+    cout << "a[0]=" << a[0];
+
+    return 0;
+  }
+  // Output:
+  // a[0]=10
+  #+end_src
+**** CMakeLists.txt
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+# set the project name and version
+project(Hi VERSION 1.0)
+
+# find_package(Boost CONFIG REQUIRED)
+# add the executable
+
+add_executable(myexe test.cpp)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
+#+end_src
+*** test
+**** hi
+***** cmdline options
+#+begin_src c++
+The program 'myexe' is a Boost.Test module containing unit tests.
+
+  Usage
+    myexe [Boost.Test argument]... [-- [custom test module argument]...]
+
+  Use
+      myexe --help
+  or  myexe --help=<parameter name>
+  for detailed help on Boost.Test parameters.
+
+
+  Command line flags:
+   The command line flags of Boost.Test are listed below. All parameters are
+   optional. You can specify parameter value either as a command line argument or
+   as a value of its corresponding environment variable. If a flag is specified as
+   a command line argument and an environment variable at the same time, the
+   command line takes precedence. The command line argument support name guessing,
+   and works with shorter names as long as those are not ambiguous.
+
+   All the arguments after the '--' are ignored by Boost.Test.
+
+  Environment variables:
+   Every argument listed below may also be set by a corresponding
+   environmentvariable. For an argument '--argument_x=<value>', the corresponding
+   environment variable is 'BOOST_TEST_ARGUMENT_X=value
+
+  The following parameters are supported:
+
+  auto_start_dbg
+    Automatically attaches debugger in case of system level failure (signal).
+    --auto_start_dbg[=<boolean value>]
+    -d[ <boolean value>]
+
+  break_exec_path
+    For the exception safety testing allows to break at specific execution path.
+    --break_exec_path=<value>
+
+  build_info
+    Displays library build information.
+    --build_info[=<boolean value>]
+    -i[ <boolean value>]
+
+  catch_system_errors
+    Allows to switch between catching and ignoring system errors (signals).
+    --[no_]catch_system_errors[=<boolean value>]
+    -s[ <boolean value>]
+
+  color_output
+    Enables color output of the framework log and report messages.
+    --[no_]color_output[=<boolean value>]
+    -x[ <boolean value>]
+
+  detect_fp_exceptions
+    Enables/disables floating point exceptions traps.
+    --[no_]detect_fp_exceptions[=<boolean value>]
+
+  detect_memory_leaks
+    Turns on/off memory leaks detection (optionally breaking on specified alloc
+    order number).
+    --detect_memory_leaks[=<alloc order number>]
+
+  help
+    Help for framework parameters.
+    --help[=<parameter name>]
+
+  list_content
+    Lists the content of test tree - names of all test suites and test cases.
+    --list_content[=<HRF|DOT>]
+
+  list_labels
+    Lists all available labels.
+    --list_labels[=<boolean value>]
+
+  log_format
+    Specifies log format.
+    --log_format=<HRF|CLF|XML|JUNIT>
+    -f <HRF|CLF|XML|JUNIT>
+
+  log_level
+    Specifies the logging level of the test execution.
+    --log_level=<all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
+    -l <all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
+
+  log_sink
+    Specifies log sink: stdout (default), stderr or file name.
+    --log_sink=<stderr|stdout|file name>
+    -k <stderr|stdout|file name>
+
+  logger
+    Specifies log level and sink for one or several log format
+    --logger=log_format,log_level,log_sink[:log_format,log_level,log_sink]
+
+  output_format
+    Specifies output format (both log and report).
+    --output_format=<HRF|CLF|XML>
+    -o <HRF|CLF|XML>
+
+  random
+    Allows to switch between sequential and random order of test units execution.
+    Optionally allows to specify concrete seed for random number generator.
+    --random[=<seed>]
+
+  report_format
+    Specifies the test report format.
+    --report_format=<HRF|CLF|XML>
+    -m <HRF|CLF|XML>
+
+  report_level
+    Specifies test report level.
+    --report_level=<confirm|short|detailed|no>
+    -r <confirm|short|detailed|no>
+
+  report_memory_leaks_to
+    File where to report memory leaks to.
+    --report_memory_leaks_to=<file name>
+
+  report_sink
+    Specifies report sink: stderr(default), stdout or file name.
+    --report_sink=<stderr|stdout|file name>
+    -e <stderr|stdout|file name>
+
+  result_code
+    Disables test modules's result code generation.
+    --[no_]result_code[=<boolean value>]
+    -c[ <boolean value>]
+
+  run_test
+    Filters which tests to execute.
+    --run_test=<test unit filter>
+    -t <test unit filter>
+
+  save_pattern
+    Allows to switch between saving or matching test pattern file.
+    --save_pattern[=<boolean value>]
+
+  show_progress
+    Turns on progress display.
+    --show_progress[=<boolean value>]
+    -p[ <boolean value>]
+
+  usage
+    Short message explaining usage of Boost.Test parameters.
+    -?[ <boolean value>]
+
+  use_alt_stack
+    Turns on/off usage of an alternative stack for signal handling.
+    --[no_]use_alt_stack[=<boolean value>]
+
+  version
+    Prints Boost.Test version and exits.
+    --version[ <boolean value>]
+
+  wait_for_debugger
+    Forces test module to wait for button to be pressed before starting test run.
+    --wait_for_debugger[=<boolean value>]
+    -w[ <boolean value>]
+
+    #+end_src
+***** CMake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+find_package(Boost CONFIG REQUIRED
+  unit_test_framework)
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+***** cpp
+#+begin_src c++
+// #define BOOST_TEST_MODULE test_module_name
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  BOOST_CHECK(1 == 1);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  BOOST_CHECK(2 == 1);
+}
+
+
+#+end_src
+**** test-not-equal
+***** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+find_package(Boost CONFIG REQUIRED
+  unit_test_framework)
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+***** cpp
+#+begin_src c++
+// #define BOOST_TEST_MAIN
+#define BOOST_TEST_MODULE MyTest
+#include <boost/test/unit_test.hpp>
+#include <stdexcept>
+
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  BOOST_CHECK_NE(2,1);          // 2 != 1
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+void f(){
+  throw std::runtime_error("hi");
+}
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  BOOST_CHECK_THROW(f(), std::runtime_error);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_equal) {
+  BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_error) {
+  BOOST_ERROR("this should give error ❄");
+}
+
+
+BOOST_AUTO_TEST_CASE(test_fail) {
+  BOOST_FAIL("this should give fatal error ❄");
+}
 
 #+end_src
 * End
