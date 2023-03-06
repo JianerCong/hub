@@ -94,7 +94,7 @@ volumes:
   todo-mysql-data:
   #+end_src
 ** Python tut 2
-*** Build the image
+*** Build the image from Dockerfile
 #+begin_src bash
   docker build --tag my-py-docker .
   docker images
@@ -108,7 +108,6 @@ volumes:
  <image tag>
 #+begin_src bash
   docker run -dp 8000:5000 --name my-server my-py-docker
-
 #+end_src
 *** list stop start remove
 #+begin_src bash
@@ -331,6 +330,39 @@ sudo minikube start
   kubectl get services --namespace=kube-system core-dns
   # ⇒ not found
   #+end_src
+** minimum
+*** Dockerfile
+#+begin_src docker
+FROM ubuntu:18.04
+
+# Install dependencies
+RUN apt-get update && \
+ apt-get -y install apache2
+
+# Install apache and write hello world message
+RUN echo 'Hello World!' > /var/www/html/index.html
+
+# Configure apache
+RUN echo '. /etc/apache2/envvars' > /root/run_apache.sh && \
+ echo 'mkdir -p /var/run/apache2' >> /root/run_apache.sh && \
+ echo 'mkdir -p /var/lock/apache2' >> /root/run_apache.sh && \ 
+ echo '/usr/sbin/apache2 -D FOREGROUND' >> /root/run_apache.sh && \ 
+ chmod 755 /root/run_apache.sh
+
+EXPOSE 80
+
+CMD /root/run_apache.sh
+#+end_src
+*** compose
+#+begin_src bash
+services:
+ server:
+  build:
+   context: .
+  ports:
+  - 8001:80
+
+    #+end_src
 
 * End
 

@@ -496,6 +496,30 @@ viously listed in the try statement.
   except: # Handle all other exceptions
       ...
 #+end_src
+** asyncio
+*** hi
+#+begin_src python
+  import asyncio
+
+  async def main():
+      print('Hello ...')
+      await asyncio.sleep(1)
+      print('... World!')
+
+  asyncio.run(main())
+
+#+end_src
+*** return hello
+#+begin_src python
+  import asyncio
+
+  async def main():
+      print('Hello ...')
+      x = await asyncio.sleep(10, result='hello')
+      print(f'... World! x={x}')
+
+  asyncio.run(main())
+#+end_src
 * End
 
 # Local Variables:

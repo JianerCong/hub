@@ -111,8 +111,6 @@ sudo parted -l
 sudo visudo
 *** Cannot find path
 Add the link in /usr/bin
-** date
-** 
 * System
 ** users
 #+begin_src bash
