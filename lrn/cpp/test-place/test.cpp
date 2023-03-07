@@ -1,14 +1,16 @@
 #include <iostream>
-#include <format>
-// #include <fmt/format.h>
+#include <rocksdb/db.h>
 
 using std::cout;
 using std::string;
-// using fmt::format;
 
 int main(){
-  string s{"aaa"};
-  int g{123};
+  rocksdb::DB* db;
+  rocksdb::Options options;
+  options.create_if_missing = true;
+  rocksdb::Status status = rocksdb::DB::Open(options, "/tmp/testdb", &db);
+  assert(status.ok());
+  cout << status.ToString();
 
-  cout << format("aaa={},123={}\n",s,g);
+  delete db;
 }

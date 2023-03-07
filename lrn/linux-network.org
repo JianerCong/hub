@@ -170,7 +170,6 @@
   This means we look up /etc/hosts before we call the dns. 
   ~Usually LAN hosts are in /etc/hosts~
 
-
 ***** DNS cache
   I am runing DNS cache if I can find 127.0.0.53 or 127.0.0.1 in /etc/resolv.conf
 ***** zero-configuration name service
@@ -243,7 +242,7 @@
      additional info.
   3. Finally, the host can fill-out the interface-part of the address.
 
-**** Linux as a router
+**** Linux as a router [enable network formarding]
  #+begin_src bash
  #! /bin/bash
  ip route show
@@ -353,6 +352,37 @@ through port 8000
 
 In this laptop's browser: > localhost:8000
 In other laptop's browser: > 10.0.0.1:8000
+** OpenSSL
+*** hi
+Server
+#+begin_src bash
+  # End 1 (will be 10.200.0.1, waiting for ..02)
+  openssl \
+      --ifconfig 10.200.0.1 10.200.0.2 \
+      --dev tun \
+      --daemon --log /var/log/my-vpn1.log
+  # Enable IP-forwarding
+  # Enable simple routing
+  sysctl -w net.ipv4.ip_forward=1
+  # Check
+  sysctl net.ipv4.ip_forward
+
+  # How to enable these upon boot
+  cat /etc/sysctl.conf
+  cat /etc/sysctl.d
+  # Make sure there's a route back to end2 on the end1 LAN
+  route add -net 10.200.0.0/24 gw <lan-IP-of-end1>
+
+  
+  # End 2 (will be 10.200.0.2, waiting for ..01)
+  openssl \
+      --ifconfig 10.200.0.2 10.200.0.1 \
+      --dev tun \
+      --remote <remote-public-ip> \
+      --daemon --log /var/log/my-vpn2.log
+  # At end 2, route these subnet to end 1
+  ip route add 20.205.243.166 via 10.200.0.1 # google
+#+end_src
 ** Nginx
 *** install
 #+begin_src bash

@@ -526,7 +526,7 @@ Building a correctly linked executable heavily depends on a valid configuration
 
 We'll learn about another nuisance of linking – the One Definition Rule (ODR).
 
-*** specify C++ version
+*** specify C++ standard fs
 #+begin_src cmake
 cmake_minimum_required(VERSION 3.10)
 

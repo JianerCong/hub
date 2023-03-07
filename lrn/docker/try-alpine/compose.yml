@@ -2,5 +2,5 @@ services:
  server:
   build:
    context: .
-  # ports:
+   # ports:
   # - 8001:80                     # port-on-me:port-on-container

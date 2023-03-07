@@ -416,6 +416,11 @@ git reset hi.c
 #+begin_src bash
   date +%Y-%m-%d
 #+end_src
+** openssl
+*** check sha1
+#+begin_src bash
+  openssl sha1 hi.txt
+#+end_src
 * Tmux
 https://tmuxcheatsheet.com/
 ** basic
