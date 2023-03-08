@@ -247,7 +247,7 @@
  #! /bin/bash
  ip route show
  # Enable simple routing
- sysctl -w net.ipv4.ip_forward=1
+ sudo sysctl -w net.ipv4.ip_forward=1
  # Check
  sysctl net.ipv4.ip_forward
 
@@ -256,6 +256,11 @@
  cat /etc/sysctl.d
 
  #+end_src
+
+**** Trace the route
+#+begin_src bash
+  tracepath -b  39.156.66.10
+#+end_src
 **** The ipv4 private address space
  + 10.0.0.0/8
  + 192.168.0.0/16
@@ -352,37 +357,159 @@ through port 8000
 
 In this laptop's browser: > localhost:8000
 In other laptop's browser: > 10.0.0.1:8000
-** OpenSSL
-*** hi
+** OpenVPN
+*** hi [failed to connect to AWS internet gateway?]
 Server
 #+begin_src bash
+
   # End 1 (will be 10.200.0.1, waiting for ..02)
-  openssl \
+  sudo openvpn \
       --ifconfig 10.200.0.1 10.200.0.2 \
-      --dev tun \
-      --daemon --log /var/log/my-vpn1.log
+      --dev tun
+  # use the following to daemonize(make background) it
+      # --daemon --log /var/log/my-vpn1.log
+  ip a show                       # show the tun0 device
+  ss -tulp                        # show the listening openvpn port UDP1194
+  # Note: Enable the UDP1194-port in AWS
   # Enable IP-forwarding
   # Enable simple routing
-  sysctl -w net.ipv4.ip_forward=1
+  sudo sysctl -w net.ipv4.ip_forward=1
   # Check
-  sysctl net.ipv4.ip_forward
+  sudo sysctl net.ipv4.ip_forward
+  sudo sysctl -p
 
-  # How to enable these upon boot
-  cat /etc/sysctl.conf
-  cat /etc/sysctl.d
   # Make sure there's a route back to end2 on the end1 LAN
-  route add -net 10.200.0.0/24 gw <lan-IP-of-end1>
+  LAN_IP_OF_END1="172.31.55.181"
+  THIS_ROUTER="172.31.48.1"
+  # make this a getway of 10.200.0.0/24
+  sudo ip route add 10.200.0.0/24 via $THIS_ROUTER
+  sudo ip route add 10.200.0.0/24 via $LAN_IP_OF_END1
+  ip route                        # show
 
-  
+
+
+  # Clean-up Use the following to delete
+  sudo pkill openvpn              # stop the vpn
+  sudo ip route del 10.200.0.0/24 via $THIS_ROUTER
+
+
+  remote_ip="ec2-34-232-66-175.compute-1.amazonaws.com"
   # End 2 (will be 10.200.0.2, waiting for ..01)
-  openssl \
+  sudo openvpn \
       --ifconfig 10.200.0.2 10.200.0.1 \
       --dev tun \
-      --remote <remote-public-ip> \
-      --daemon --log /var/log/my-vpn2.log
+      --remote $remote_ip
+      # --daemon --log /var/log/my-vpn2.log
+
   # At end 2, route these subnet to end 1
-  ip route add 20.205.243.166 via 10.200.0.1 # google
+  x=$(host www.google.com)
+  x=${x/www.google.com has address }      # address of google
+  echo $x
+  sudo ip route add 142.251.42.228 via 10.200.0.1 # google
+#+end_
+*** aws vpn end point
+**** make certificate and key
+***** Make certificate
+To generate the server and client certificates and
+keys and upload them to ACM (Amazon certificate
+manager).
+#+begin_src bash
+  git clone https://github.com/OpenVPN/easy-rsa.git
+  cd easy-rsa/easyrsa3
+  # initialize a new PKI env
+  ./easyrsa init-pki
+  # build a new CA
+  ./easyrsa build-ca nopass
+  # generate the server certificate and key
+  ./easyrsa build-server-full server nopass
+  # Generate the client certificate and key. Make sure to save the client
+  # certificate and the client private key because you will need them when you
+  # configure the client.
+  ./easyrsa build-client-full client1.domain.tld nopass
+
 #+end_src
+You can optionally repeat this step for each
+client (end user) that requires a client
+certificate and key.
+***** copy to folders
+Copy the server certificate and key and the client
+certificate and key to a custom folder and then
+navigate into the custom folder.
+#+begin_src bash
+  f="/home/me/secret/my-keys"
+  mkdir $f
+  cp pki/ca.crt $f
+  cp pki/issued/server.crt $f
+  cp pki/private/server.key $f
+  cp pki/issued/client1.domain.tld.crt ~/custom_folder
+  cp pki/private/client1.domain.tld.key $f
+  cd $f
+#+end_src
+***** Upload to AWS ACM
+You do not necessarily need to upload the client
+certificate to ACM.
+
+If the server and client certificates have been
+issued by the same Certificate Authority (CA), you
+can use the *server certificate ARN* for both
+server and client when you create the Client *VPN
+endpoint*.
+**** Create client vpn end-point
+Client IPv4 = 10.0.0.0/22
+Authentication options = mutual authentication
+Other VPN port = 1194
+**** Associate a network
+Target network association >> Associate target
+network
+
+VPC = my-only-vpc
+subnet = us-east-1e
+
+When you associate the first subnet with the
+Client VPN endpoint, the following happens:
+
+
++ The state of the Client VPN endpoint changes to
+available. Clients can now establish a VPN
+connection, but they cannot access any resources
+in the VPC until you add the authorization rules.
+
++ The local route of the VPC is automatically
+  added to the Client VPN endpoint route table.
+
++ The VPC's default security group is
+  automatically applied for the Client VPN
+  endpoint.
+**** Add an authorization rule for the VPC
+Grant Authorization rules
+destination network to enable access = <private
+CIDR of VPC>
+**** Provide access to internet
+Route Table > Create Route
+Route destination = 0.0.0.0/0
+Subnetid = subnet-06...
+Description = Access to internet
+**** Verify security group
++ Make sure the outbound rule to allow all to
+  0.0.0.0/0
++ That the security groups for the resources in
+  your VPC have a rule that allows access from the
+  security group that's applied to the Client VPN
+  endpoint (in this case the default VPC security
+  group). This enables your clients to access the
+  resources in your VPC.
+**** Download the client VPN endpoint config file
++ Download the [client_configuration] file
++ Put in the certificate
+  #+begin_src bash
+<cert>
+Contents of client certificate (.crt) file
+</cert>
+
+<key>
+Contents of private key (.key) file
+</key>
+  #+end_src
 ** Nginx
 *** install
 #+begin_src bash
