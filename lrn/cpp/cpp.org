@@ -1143,7 +1143,7 @@ add_executable(myexe test.cpp)
 # cmake .. && cmake --build .
 add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
 #+end_src
-*** test
+*** unit-test
 **** hi
 ***** cmdline options
 #+begin_src c++
@@ -1395,6 +1395,11 @@ BOOST_AUTO_TEST_CASE(test_fail) {
 }
 
 #+end_src
+*** log
++ Backend :: decide where the data is written.
+  ~boost::log::sinks::text_ostream_backend~ is initialized with a stream of type
+  ~std::ostream~ and writes log entries to it.
++ Frontend :: connection between core and a backend. (Filters are here)
 ** rocksdb
 #+begin_src bash
   sudo apt update

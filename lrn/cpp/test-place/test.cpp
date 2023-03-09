@@ -1,16 +1,13 @@
 #include <iostream>
-#include <rocksdb/db.h>
-
+#include <boost/array.hpp>
 using std::cout;
-using std::string;
 
-int main(){
-  rocksdb::DB* db;
-  rocksdb::Options options;
-  options.create_if_missing = true;
-  rocksdb::Status status = rocksdb::DB::Open(options, "/tmp/testdb", &db);
-  assert(status.ok());
-  cout << status.ToString();
+int main ()
+{
+  boost::array<int,4> a = {{10, 20, 30, 30}};
+  cout << "a[0]=" << a[0];
 
-  delete db;
+  return 0;
 }
+// Output:
+// a[0]=10

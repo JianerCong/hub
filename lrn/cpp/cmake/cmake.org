@@ -590,6 +590,18 @@ add_executable(myexe test.cpp)
 # cmake .. && cmake --build .
 add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
 #+end_src
+** ctest
+# cmake ..
+# cmake --build .
+# ctest -N                        #show what tests to run(no run)
+# ctest                           #run all tests
+# ctest -V                        #run all (verbosely)
+# ctest -R Runs                   #run the test match(regex) "Run"
+
+Specify test-dir
+#+begin_src bash
+ctest --test-dir rock-storage/ -N
+#+end_src
 * End
 
 

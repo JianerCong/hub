@@ -382,6 +382,11 @@ f1.o f2.o:
 #     echo $@
 #+END_SRC
 ** git
+*** git log
+Show relative date
+#+begin_src bash
+  git log -n 3 --relative-date --all
+#+end_src
 *** .gitignore
 Must be added explicitly with
 #+BEGIN_SRC bash
