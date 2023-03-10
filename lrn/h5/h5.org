@@ -360,7 +360,9 @@ Add scripts
     "test:ui": "vitest --ui"
   },
 #+end_src
-
+** three.js
+Render <- (Camera, Renderer) it renders the portion of 3D scene that is inside
+the _frustum_ of the camera as a 2D image to a canvas.
 * End
 
 

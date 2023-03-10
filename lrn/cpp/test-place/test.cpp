@@ -1,13 +1,30 @@
+#include <boost/log/common.hpp>
+#include <boost/log/sinks.hpp>
+#include <boost/log/sources/logger.hpp>
+// #include <boost/utility/empty_deleter.hpp>
+#include <boost/shared_ptr.hpp>
 #include <iostream>
-#include <boost/array.hpp>
-using std::cout;
 
-int main ()
-{
-  boost::array<int,4> a = {{10, 20, 30, 30}};
-  cout << "a[0]=" << a[0];
+using namespace boost::log;
+int main(){
+  typedef sinks::asynchronous_sink<sinks::text_ostream_backend>
+    text_sink;
+  boost::shared_ptr<text_sink> sink =
+    boost::make_shared<text_sink>();
 
-  return 0;
+  boost::shared_ptr<std::ostream> stream {
+    &std::clog                 // standard output stream for logging
+    ,boost::null_deleter()
+    // ,boost::empty_deleter
+  };
+
+  // access the backend through locked_backend()
+  sink->locked_backend()->add_stream(stream);
+
+  core::get()->add_sink(sink);
+  // default log connects it self to core.
+  sources::logger lg;
+  BOOST_LOG(lg) << "aaa";
+
+  sink->flush();
 }
-// Output:
-// a[0]=10
