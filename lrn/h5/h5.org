@@ -363,6 +363,380 @@ Add scripts
 ** three.js
 Render <- (Camera, Renderer) it renders the portion of 3D scene that is inside
 the _frustum_ of the camera as a 2D image to a canvas.
+*** install
+#+begin_src bash
+  npm add three
+  npm add lil-gui
+#+end_src
+*** hi
+#+begin_src html
+  <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="webgl-output"></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
+
+#+end_src
+#+begin_src javascript
+  import * as THREE from 'three';
+
+  function init() {
+    // create a scene, that will hold all our elements such as objects, cameras and lights.
+    const scene = new THREE.Scene();
+    // create a camera, which defines where we're looking at.
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // create a render and set the size
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(new THREE.Color(0x000000));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    // create the ground plane --------------------------------------------------
+    const planeGeometry = new THREE.PlaneGeometry(60, 20, 10, 10);
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 15;
+    plane.position.y = 0;
+    plane.position.z = 0;
+    // add the plane to the scene
+    scene.add(plane);
+
+    // create a cube --------------------------------------------------
+    const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+    const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.castShadow = true;
+    // position the cube
+    cube.position.x = -4;
+    cube.position.y = 3;
+    cube.position.z = 0;
+    // add the cube to the scene
+    scene.add(cube);
+
+    // position and point the camera to the center of the scene
+    camera.position.x = -30;
+    camera.position.y = 40;
+    camera.position.z = 30;
+    camera.lookAt(scene.position);
+
+    // add subtle ambient lighting
+    const ambienLight = new THREE.AmbientLight(0xaaaaaa);
+    scene.add(ambienLight);
+    // add the output of the renderer to the html element
+    document.getElementById("webgl-output").appendChild(renderer.domElement);
+
+
+    // render --------------------------------------------------
+    render();
+    var step = 0;                 // use var to make it global
+    function render() {
+
+      // render using requestAnimationFrame
+      requestAnimationFrame(render);
+      renderer.render(scene, camera);
+    }
+  }
+
+  init();
+#+end_src
+*** gui and stats
+there is a <div id=web-gl-output>
+#+begin_src js
+  import * as THREE from 'three';
+
+  import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+  import {GUI} from 'lil-gui';
+
+  import Stats from 'three/examples/jsm/libs/stats.module';
+
+  function init() {
+    const stats = new Stats();
+    document.body.appendChild(stats.dom);
+    // create a scene, that will hold all our elements such as objects, cameras and lights.
+    const scene = new THREE.Scene();
+    // create a camera, which defines where we're looking at.
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // create a render and set the size
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(new THREE.Color(0x000000));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    // create the ground plane --------------------------------------------------
+    const planeGeometry = new THREE.PlaneGeometry(60, 20, 1, 1);
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 15;
+    plane.position.y = 0;
+    plane.position.z = 0;
+    // add the plane to the scene
+    scene.add(plane);
+
+    // create a cube --------------------------------------------------
+    const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+    const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.castShadow = true;
+    // position the cube
+    cube.position.x = -4;
+    cube.position.y = 3;
+    cube.position.z = 0;
+    // add the cube to the scene
+    scene.add(cube);
+
+    // sphere --------------------------------------------------
+    const sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
+    const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x7777ff });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    // position the sphere
+    sphere.position.x = 20;
+    sphere.position.y = 0;
+    sphere.position.z = 2;
+    sphere.castShadow = true;
+
+    // add the sphere to the scene
+    scene.add(sphere);
+
+    // position and point the camera to the center of the scene
+    camera.position.x = -30;
+    camera.position.y = 40;
+    camera.position.z = 30;
+    camera.lookAt(scene.position);
+
+    // add subtle ambient lighting
+    const ambienLight = new THREE.AmbientLight(0x353535);
+    scene.add(ambienLight);
+
+    // add spotlight for the shadows
+    const spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(-10, 20, -5);
+    spotLight.castShadow = true;
+    scene.add(spotLight);
+
+    // add the output of the renderer to the html element
+    document.getElementById("webgl-output").appendChild(renderer.domElement);
+
+    // GUI --------------------------------------------------
+    const controls = {
+      rotationSpeed : 0.01,
+      bouncingSpeed : 0.01,
+    };
+    const gui = new GUI();
+    gui.add(controls, 'rotationSpeed', 0, 0.05,0.01);
+    gui.add(controls, 'bouncingSpeed', 0, 0.05,0.01);
+
+    // orbit --------------------------------------------------
+    const o = new OrbitControls(camera,renderer.domElement);
+
+
+
+
+    // render --------------------------------------------------
+    render();
+    var step = 0;                 // use var to make it global
+    function render() {
+      // update the stats and the controls
+      stats.update();
+
+      // rotate the cube around its axes
+      cube.rotation.x += controls.rotationSpeed;
+      cube.rotation.y += controls.rotationSpeed;
+      cube.rotation.z += controls.rotationSpeed;
+
+      // bounce the sphere up and down
+      step += controls.bouncingSpeed;
+      sphere.position.x = 20 + (10 * (Math.cos(step)));
+      sphere.position.y = 2 + (10 * Math.abs(Math.sin(step)));
+
+      // render using requestAnimationFrame
+      requestAnimationFrame(render);
+      renderer.render(scene, camera);
+    }
+  }
+
+  init();
+#+end_src
+*** sky
+https://github.com/loginov-rocks/three-sky
+#+begin_src bash
+npm install three three-sky
+#+end_src
+#+begin_src html
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - shaders - sky sun shader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - sky + sun shader
+		</div>
+
+		<!-- Import maps polyfill -->
+		<!-- Remove this when import maps will be widely supported -->
+		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { Sky } from 'three/addons/objects/Sky.js';
+
+			let camera, scene, renderer;
+
+			let sky, sun;
+
+			init();
+			render();
+
+			function initSky() {
+
+				// Add Sky
+				sky = new Sky();
+				sky.scale.setScalar( 450000 );
+				scene.add( sky );
+
+				sun = new THREE.Vector3();
+
+				/// GUI
+
+				const effectController = {
+					turbidity: 10,
+					rayleigh: 3,
+					mieCoefficient: 0.005,
+					mieDirectionalG: 0.7,
+					elevation: 2,
+					azimuth: 180,
+					exposure: renderer.toneMappingExposure
+				};
+
+				function guiChanged() {
+
+					const uniforms = sky.material.uniforms;
+					uniforms[ 'turbidity' ].value = effectController.turbidity;
+					uniforms[ 'rayleigh' ].value = effectController.rayleigh;
+					uniforms[ 'mieCoefficient' ].value = effectController.mieCoefficient;
+					uniforms[ 'mieDirectionalG' ].value = effectController.mieDirectionalG;
+
+					const phi = THREE.MathUtils.degToRad( 90 - effectController.elevation );
+					const theta = THREE.MathUtils.degToRad( effectController.azimuth );
+
+					sun.setFromSphericalCoords( 1, phi, theta );
+
+					uniforms[ 'sunPosition' ].value.copy( sun );
+
+					renderer.toneMappingExposure = effectController.exposure;
+					renderer.render( scene, camera );
+
+				}
+
+				const gui = new GUI();
+
+				gui.add( effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( guiChanged );
+				gui.add( effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged );
+				gui.add( effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( guiChanged );
+				gui.add( effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( guiChanged );
+				gui.add( effectController, 'elevation', 0, 90, 0.1 ).onChange( guiChanged );
+				gui.add( effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged );
+				gui.add( effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged );
+
+				guiChanged();
+
+			}
+
+			function init() {
+
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 100, 2000000 );
+				camera.position.set( 0, 100, 2000 );
+
+				scene = new THREE.Scene();
+
+				const helper = new THREE.GridHelper( 10000, 2, 0xffffff, 0xffffff );
+				scene.add( helper );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 0.5;
+				document.body.appendChild( renderer.domElement );
+
+				const controls = new OrbitControls( camera, renderer.domElement );
+				controls.addEventListener( 'change', render );
+				//controls.maxPolarAngle = Math.PI / 2;
+				controls.enableZoom = false;
+				controls.enablePan = false;
+
+				initSky();
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				render();
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+
+</html>
+
+#+end_src
+** nvm
+#+begin_src bash
+  nvm use 16
+  node -v
+  nvm use 14
+  node -v
+  nvm install 12
+  node -v
+#+end_src
+** vite
+npm create vite@latest
 * End
 
 

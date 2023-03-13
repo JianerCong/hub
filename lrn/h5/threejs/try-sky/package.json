@@ -1,5 +1,5 @@
 {
-  "name": "hi",
+  "name": "try-sky",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,7 @@
     "vite": "^4.1.0"
   },
   "dependencies": {
-    "lil-gui": "^0.18.1",
-    "three": "^0.150.1"
+    "three": "^0.150.1",
+    "three-sky": "^1.1.3"
   }
 }
