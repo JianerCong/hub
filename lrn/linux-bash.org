@@ -382,6 +382,8 @@ f1.o f2.o:
 #     echo $@
 #+END_SRC
 ** git
+*** undo
+git commit --amend
 *** git log
 Show relative date
 #+begin_src bash

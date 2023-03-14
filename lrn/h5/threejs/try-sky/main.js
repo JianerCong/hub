@@ -5,15 +5,17 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 
-let camera, scene, renderer;
+import { AddWater } from './public/water-material';
+console.log(`${Reflect.isExtensible(THREE)}`);
+// THREE = AddWater(THREE);
 
+let camera, scene, renderer;
 let sky, sun;
 
 init();
 render();
 
 function initSky() {
-
 	// Add Sky
 	sky = new Sky();
 	sky.scale.setScalar( 450000 );
@@ -52,6 +54,26 @@ function initSky() {
 	guiChanged();
 }
 
+function initSea(){
+  console.log('sea initialized');
+  let n = 500;
+  const g = new THREE.BoxGeometry(n,n,n);
+  const m = new THREE.MeshBasicMaterial({
+    color: 0x001e0f,
+    opacity: 0.5,
+    transparent:true,
+    side: THREE.DoubleSide,
+  });
+
+  const sea = new THREE.Mesh(g,m);
+  sea.position.y = -n/2;
+  // sea.rotation.set(Math.PI/-2, 0 ,0);
+  scene.add(sea);
+}
+
+function initSeaSurface(){
+  console.log('initializing sea surface');
+}
 
 function onWindowResize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
@@ -66,7 +88,6 @@ function render() {
 }
 
 function init() {
-
   /* aspect ratio, near, far */
 	camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 2000 );
 	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
@@ -95,6 +116,6 @@ function init() {
 	controls.enablePan = false;
 
 	initSky();
+  initSea();
 	window.addEventListener( 'resize', onWindowResize );
-
 }
