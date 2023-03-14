@@ -15,11 +15,13 @@ async function init() {
   setup_defaults();
 
   init_light();
-	initSky();
+	let sky = initSky();
   initSea();
-  await load_submarine();
+  await get_submarines();
 
   add_helpers_orbit();
+  const gui = new GUI();
+  configGUI(gui,sky);
 	window.addEventListener( 'resize', onWindowResize );
 
   render();
@@ -39,7 +41,40 @@ async function load_submarine(){
     ch.material = mat;
   }
                );
+  return m;
+}
+
+async function get_submarines(){
+  let L = 50;
+  let s = 1.2;                    // the scale of smaller submarine
+  let m = await load_submarine();
+
   scene.add(m);
+
+  // let smaller = [];
+  // Method 1: just clone --------------------------------------------------
+  for (let i of [-1,1]){
+    for (let j of [-1,1]){
+      let m1 = m.clone();
+      m1.position.set(i*L,0,j*L);
+      // smallers.push(m1);
+      m1.scale.set(s,s,s);
+      scene.add(m1);
+    }
+  }
+
+  // [BETA] Method 2: instanced-mesh --------------------------------------------------
+  // const m2 = new THREE.InstancedMesh(m.geometry, m.material,4);
+  // let count = 0;
+  // for (let i of [-1,1]){
+  //   for (let j of [-1,1]){
+  //     const matrix = new THREE.Matrix4();
+  //     matrix.makeTranslation(i*L,0,j*L);
+  //     m2.setMatrixAt(count,matrix);
+  //     count += 1;
+  //   }
+  // }
+  // scene.add(m2);
 }
 
 function initSky() {
@@ -50,36 +85,34 @@ function initSky() {
 
 	sun = new THREE.Vector3();
 
-	/// GUI
-	const effectController = {
-		turbidity: 2,
-		rayleigh: 3,
-		mieCoefficient: 0.005,
-		mieDirectionalG: 0.7,
-		elevation: 2,
-		azimuth: -160,
-		exposure: renderer.toneMappingExposure
-	};
+  return sky;
+}
+
+function configGUI(gui,sky){
+  /// GUI
+  const effectController = {
+	  elevation: 2,
+	  azimuth: -160,
+	  exposure: renderer.toneMappingExposure
+  };
+
 	function guiChanged() {
 		const uniforms = sky.material.uniforms;
-
 		const phi = THREE.MathUtils.degToRad( 90 - effectController.elevation );
 		const theta = THREE.MathUtils.degToRad( effectController.azimuth );
-
 		sun.setFromSphericalCoords( 1, phi, theta );
-
 		uniforms[ 'sunPosition' ].value.copy( sun );
 
 		renderer.toneMappingExposure = effectController.exposure;
-		renderer.render( scene, camera );
+    render();
 
 	}
-	const gui = new GUI();
 	gui.add( effectController, 'elevation', 0, 90, 0.1 ).onChange( guiChanged );
 	gui.add( effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged );
 	gui.add( effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged );
 	guiChanged();
 }
+
 function initSea(){
   console.log('sea initialized');
   let n = 500;
@@ -99,16 +132,16 @@ function initSea(){
   scene.add(sea);
 }
 
-
 function init_light(){
   // add subtle ambient lighting
   const ambienLight = new THREE.AmbientLight(0xffffff);
   scene.add(ambienLight);
   // add spotlight for the shadows
-  // const spotLight = new THREE.SpotLight(0xffffff);
-  // spotLight.position.set(-10, 20, -5);
-  // spotLight.castShadow = true;
-  // scene.add(spotLight);
+  const spotLight = new THREE.SpotLight(0xffffff);
+  spotLight.position.set(0, 10000, 0);
+  spotLight.castShadow = true;
+  scene.add(spotLight);
+
 }
 
 function onWindowResize() {
