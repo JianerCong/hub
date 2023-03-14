@@ -5,21 +5,25 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader';
+import Stats from 'three/examples/jsm/libs/stats.module';
 
-let camera, scene, renderer;
+let camera, scene, renderer, stats;
 let sky, sun;
+let functionsToRender = [];
 
 init();
 
 async function init() {
+  setup_stats();
   setup_defaults();
 
   init_light();
 	let sky = initSky();
   initSea();
-  await get_submarines();
+  let submarines = await get_submarines();
 
   add_helpers_orbit();
+  setup_selector(submarines);
   const gui = new GUI();
   configGUI(gui,sky);
 	window.addEventListener( 'resize', onWindowResize );
@@ -27,42 +31,34 @@ async function init() {
   render();
 }
 
-async function load_submarine(){
-  let mat = new THREE.MeshPhongMaterial({color: 0x666666});
-  let l = new OBJLoader();
-
-  let m = await l.loadAsync('./public/submarine.obj');
-  let s = 2;
-  m.scale.set(s,s,s);
-  // m.translate()
-  visitChildren(m, (ch) => {
-    ch.recieveShadow = true;
-    ch.castShadow = true;
-    ch.material = mat;
-  }
-               );
-  return m;
-}
-
 async function get_submarines(){
+  const g = new THREE.Group();
+  console.log(`Adding submarines`);
   let L = 50;
   let s = 1.2;                    // the scale of smaller submarine
   let m = await load_submarine();
+  m.name = '主潜艇';
+  g.add(m);
 
-  scene.add(m);
-
-  // let smaller = [];
+  let submarines = [m];
   // Method 1: just clone --------------------------------------------------
+  let n = 1;
   for (let i of [-1,1]){
     for (let j of [-1,1]){
       let m1 = m.clone();
       m1.position.set(i*L,0,j*L);
-      // smallers.push(m1);
+      m1.name = `小潜艇${n}号`;
+      submarines.push(m1);
       m1.scale.set(s,s,s);
-      scene.add(m1);
+      g.add(m1);
+      n++;
     }
   }
+  g.name = '潜艇group';
 
+  scene.add(g);
+  console.log(g);
+  return g.children;
   // [BETA] Method 2: instanced-mesh --------------------------------------------------
   // const m2 = new THREE.InstancedMesh(m.geometry, m.material,4);
   // let count = 0;
@@ -75,8 +71,60 @@ async function get_submarines(){
   //   }
   // }
   // scene.add(m2);
+
+  async function load_submarine(){
+    let mat = new THREE.MeshPhongMaterial({color: 0x666666});
+
+    // use model --------------------------------------------------
+    // let l = new OBJLoader();
+    // let m = await l.loadAsync('./public/submarine.obj');
+    // let s = 2;
+    // m.scale.set(s,s,s);
+    // // m.translate()
+    // visitChildren(m, (ch) => {ch.recieveShadow = true; ch.castShadow = true; ch.material = mat;});
+
+    // DEBUG: use cube --------------------------------------------------
+    let  n = 10;
+    const geom = new THREE.BoxGeometry(n,n,n);
+    let m = new THREE.Mesh(geom, mat);
+
+    return m;
+  }
 }
 
+let pointer,raycaster, intersects;
+let intersected = null;
+function setup_selector(objs){
+  // let objs = scene.getObjectByName('group').children;
+  // console.log(`setting up selector for ${JSON.stringify(objs[0])}`);
+  console.log(objs);
+  raycaster = new THREE.Raycaster();
+
+  pointer = {x: -1, y: -1};
+  document.addEventListener('click', (event) => {
+    console.log('.');
+    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    render();
+  });
+
+  functionsToRender.push(()=>{
+    if (raycaster) {
+      // console.log(`got raycaster`);
+      raycaster.setFromCamera(pointer, camera);
+      intersects = raycaster.intersectObjects(objs,false);
+      if (intersects.length > 0) {
+        console.log(intersects[0].object.name);
+      }
+    }
+  });
+}
+
+function setup_stats(){
+  stats = new Stats();
+  functionsToRender.push(()=>{stats.update();});
+  document.body.appendChild(stats.dom);
+}
 function initSky() {
 	// Add Sky
 	sky = new Sky();
@@ -105,7 +153,6 @@ function configGUI(gui,sky){
 
 		renderer.toneMappingExposure = effectController.exposure;
     render();
-
 	}
 	gui.add( effectController, 'elevation', 0, 90, 0.1 ).onChange( guiChanged );
 	gui.add( effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged );
@@ -153,6 +200,9 @@ function onWindowResize() {
 }
 function render() {
 	renderer.render( scene, camera );
+  for (let fn of functionsToRender){
+    fn();
+}
 }
 function setup_defaults(){
   /* aspect ratio, near, far */
