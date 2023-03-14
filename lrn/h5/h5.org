@@ -1,3 +1,10 @@
+** Q&A
+*** 404 favicon?
+Add the following tag in the ~<head>~
+#+begin_src html
+    <link rel="icon" href="./public/favicon.ico" type="image/x-icon">
+#+end_src
+
 ** Animation
 *** css animation
 **** static transform
