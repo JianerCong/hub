@@ -46,29 +46,62 @@ async function start_movie({g1,g2}){
   // console.log(g1);
 
   // subtitle
+  const subtitle_transition_ms = 1000;
   const cav = document.querySelector('#webgl-output');
-  console.log('The canvas');
-  console.log(cav);
-  const para = document.createElement('p');
+  // console.log('The canvas');
+  // console.log(cav);
+  let para = document.createElement('p');
   para.id = "subtitle";
-  para.textContent = 'aaaaaa.';
   cav.appendChild(para);
 
+  para.textContent = '1.中继器受到组队命令';
+  await subtitle_on(para);
+  console.log("I'm between subtitles'");
+  await subtitle_off(para);
 
-  // move little subs--------------------------------------------------
-  let small_submarines = g1.children.slice(1).concat(g2.children.slice(1));
-  console.log(small_submarines);
 
-  let ani_small_submarines = [];
-  let ms = 10000;
-  for (let s of small_submarines){
-    // console.log(s);
-    ani_small_submarines.push(new TWEEN.Tween(s.position)
-                              .to({x: s.userData.myX, y: s.userData.myY, z: s.userData.myZ,},ms)
-                              .easing(TWEEN.Easing.Quadratic.Out));
-  }
-  await play_these(ani_small_submarines);
+  para.textContent = '4.完成组队命令';
+  await subtitle_on(para);
+  await move_small_submarines();
+  await subtitle_off(para);
   console.log('done');
+
+  async function move_small_submarines(){
+    // move little subs--------------------------------------------------
+    let small_submarines = g1.children.slice(1).concat(g2.children.slice(1));
+    console.log(small_submarines);
+
+    let ani_small_submarines = [];
+    let ms = 10000;
+    for (let s of small_submarines){
+      // console.log(s);
+      ani_small_submarines.push(new TWEEN.Tween(s.position)
+                                .to({x: s.userData.myX, y: s.userData.myY, z: s.userData.myZ,},ms)
+                                .easing(TWEEN.Easing.Quadratic.Out));
+    }
+    await play_these(ani_small_submarines);
+}
+
+  async function subtitle_on(para,ms=subtitle_transition_ms){
+    // use tween
+    let o = {opacity: 0};
+    let fade_in = new TWEEN.Tween(o)
+        .to({opacity:1},ms).onUpdate((obj)=>{
+          para.style.opacity = `${obj.opacity}`;
+        });
+    return play_this(fade_in);
+}
+
+  async function subtitle_off(para,ms=subtitle_transition_ms){
+    // use tween
+    let o = {opacity: 1};
+    let fade_in = new TWEEN.Tween(o)
+        .to({opacity:0},ms).onUpdate((obj)=>{
+          para.style.opacity = `${obj.opacity}`;
+        });
+    return play_this(fade_in);
+  }
+
 
   async function play_these(ts){
     return Promise.all(ts.map(play_this));

@@ -1,13 +1,37 @@
-** Q&A
-*** 404 favicon?
+** CSS
+*** flex
+#+begin_src sass
+  .box
+    display: flex
+    align-items: center
+    justify-content: space-around
+
+  #webgl-output
+    min-height: 400px
+    width: 80%
+    position: relative
+
+  /* #three-output
+  /*   position: relative
+
+  #subtitle
+    position: absolute
+    color: white
+    bottom: 10%
+    right: 20%
+    /* z-index: 99999
+#+end_src
+** JS
+*** Q&A
+**** 404 favicon?
 Add the following tag in the ~<head>~
 #+begin_src html
     <link rel="icon" href="./public/favicon.ico" type="image/x-icon">
 #+end_src
 
-** Animation
-*** css animation
-**** static transform
+*** Animation
+**** css animation
+***** static transform
 #+begin_src css
   /* basic transform */
   .robot {
@@ -31,8 +55,8 @@ Add the following tag in the ~<head>~
       cursor: pointer;
   }
 #+end_src
-**** key frame animation
-***** basic + fill mode
+***** key frame animation
+****** basic + fill mode
 #+begin_src css
   /* scale */
   @keyframes scaleIn {
@@ -62,7 +86,7 @@ Add the following tag in the ~<head>~
       animation-fill-mode: backwards;
   }
 #+end_src
-***** move and wiggle and repeat
+****** move and wiggle and repeat
 #+begin_src css
 
 
@@ -94,7 +118,7 @@ h2 {
 
 
 #+end_src
-***** typing animation steps
+****** typing animation steps
 #+begin_src css
 /* typing animation: steps */
 h1 {
@@ -119,7 +143,7 @@ h1 {
 }
 
 #+end_src
-***** let cloud fow: multiple assignment
+****** let cloud fow: multiple assignment
 #+begin_src css
   .cloud01 {
     animation: float 25s linear infinite;
@@ -155,7 +179,7 @@ h1 {
   img.cloud {width:150px;}
   .city img {width: 100%;}
 #+end_src
-***** play-state play animation on hover
+****** play-state play animation on hover
 #+begin_src css
 .sticker {
   animation: rotate 10s linear infinite;
@@ -174,7 +198,7 @@ h1 {
 
 
 #+end_src
-***** animation delay: flip the letters
+****** animation delay: flip the letters
 #+begin_src css
 
 h2 {
@@ -227,7 +251,7 @@ span:nth-child(7) {
   animation-delay: 1.2s, 3.95s;
 }
 #+end_src
-***** flip up and down
+****** flip up and down
 #+begin_src css
 
 h2 {
@@ -294,14 +318,14 @@ span:nth-child(7) {
 }
 
 #+end_src
-*** greensock
-**** install
+**** greensock
+***** install
 Use CDN link.
 #+begin_src bash
   npm install --save @types/greensock
 #+end_src
-*** tween
-**** install and use
+**** tween
+***** install and use
 download and build from github
 #+begin_src bash
   git clone https://github.com/tweenjs/tween.js
@@ -314,7 +338,7 @@ Use
 #+begin_src js
 import TWEEN from './public/tween.esm.js';
 #+end_src
-**** basic
+***** basic
 #+begin_src js
   var position = {x: 100, y: 0}
   // Create a tween for position first
@@ -335,7 +359,7 @@ import TWEEN from './public/tween.esm.js';
     console.log(object.x)
   })
 #+end_src
-**** with three.js
+***** with three.js
 
 #+begin_src js
   var tween = new TWEEN.Tween(cube.position).to({x: 100, y: 100, z: 100}, 10000).start()
@@ -348,7 +372,7 @@ import TWEEN from './public/tween.esm.js';
     threeRenderer.render(scene, camera)
   }
 #+end_src
-**** update
+***** update
 #+begin_src js
   const tween = new TWEEN.Tween(someObject, false).to(/*...*/).start()
   // add to default group = false
@@ -358,7 +382,7 @@ import TWEEN from './public/tween.esm.js';
     requestAnimationFrame(animate)
   }
 #+end_src
-**** control
+***** control
 #+begin_src js
   tween.stop();
 
@@ -377,7 +401,7 @@ import TWEEN from './public/tween.esm.js';
   tween.repeatDelay(500)          // 1-do-0.5-do-0.5-do-...
   tween.start()
 #+end_src
-**** group
+***** group
 #+begin_src js
 var groupA = new TWEEN.Group()
 var groupB = new TWEEN.Group()
@@ -396,7 +420,7 @@ groupA.removeAll() // only removes tweenA
 groupB.removeAll() // only removes tweenB
 TWEEN.removeAll() // only removes tweenC
 #+end_src
-**** easing functions
+***** easing functions
 #+begin_src js
 tween.easing(TWEEN.Easing.Quadratic.In)
 #+end_src
@@ -409,7 +433,7 @@ Elastic, Back and Bounce,
 and then by the easing type:
 
 In, Out and InOut.
-**** Callbacks
+***** Callbacks
 #+begin_src js
   var trickyObjTween = new TWEEN.Tween({
     propertyA: trickyObj.getPropertyA(),
@@ -428,12 +452,12 @@ In, Out and InOut.
 
   // onComplete, onStop, onRepeat
   #+end_src
-** frontend tooling
-*** eslint
+*** frontend tooling
+**** eslint
 #+begin_src bash
   npm init @eslint/config
 #+end_src
-*** eslint react hook plugin
+**** eslint react hook plugin
 #+begin_src bash
 npm install eslint-plugin-react-hooks --save-dev
 #+end_src
@@ -453,23 +477,23 @@ Config
     }
   }
 #+end_src
-*** sass
+**** sass
 #+begin_src bash
   npm install -g sass
   sass style.sass style.css --watch
 #+end_src
-** React
-*** setup
+*** React
+**** setup
 #+begin_src bash
   npx create-react-app my-app
   cd my-app
   npm start
 #+end_src
-*** Setup with vite
+**** Setup with vite
 #+begin_src bash
   npm create vite@latest
 #+end_src
-**** add vitest
+***** add vitest
 #+begin_src bash
   npm install @types/jest vitest @vitest/ui happy-dom jsdom vito react-test-renderer --save-dev
 #+end_src
@@ -495,15 +519,15 @@ Add scripts
     "test:ui": "vitest --ui"
   },
 #+end_src
-** three.js
+*** three.js
 Render <- (Camera, Renderer) it renders the portion of 3D scene that is inside
 the _frustum_ of the camera as a 2D image to a canvas.
-*** install
+**** install
 #+begin_src bash
   npm add three
   npm add lil-gui
 #+end_src
-*** hi
+**** hi
 #+begin_src html
   <!DOCTYPE html>
 <html lang="en">
@@ -585,7 +609,7 @@ the _frustum_ of the camera as a 2D image to a canvas.
 
   init();
 #+end_src
-*** load OBJ file
+**** load OBJ file
 #+begin_src js
   import * as THREE from 'three';
 
@@ -727,7 +751,7 @@ export const visitChildren = (object, fn) => {
 }
 
 #+end_src
-*** gui orbit template
+**** gui orbit template
 #+begin_src js
 import * as THREE from 'three';
 
@@ -827,7 +851,7 @@ function init() {
 init();
 
 #+end_src
-*** gui and stats
+**** gui and stats
 there is a <div id=web-gl-output>
 #+begin_src js
   import * as THREE from 'three';
@@ -947,7 +971,7 @@ there is a <div id=web-gl-output>
 
   init();
 #+end_src
-*** sky
+**** sky
 https://github.com/loginov-rocks/three-sky
 #+begin_src bash
 npm install three three-sky
@@ -1103,7 +1127,7 @@ npm install three three-sky
 </html>
 
 #+end_src
-*** material list
+**** material list
 + ~THREE.MeshLambertMaterial~: A material for rough-looking surfaces
 + ~THREE.MeshPhongMaterial~: A material for shiny-looking surfaces
 + ~THREE.MeshToonMaterial~: Renders the mesh in a cartoon-like fashion
@@ -1113,7 +1137,7 @@ npm install three three-sky
   many different kinds of surfaces
 + ~THREE.MeshPhysicalMaterial~: Similar to THREE.MeshStandardMaterial but provides
   additional properties for more real-world-like surfaces
-** nvm
+*** nvm
 #+begin_src bash
   nvm use 16
   node -v
@@ -1122,19 +1146,19 @@ npm install three three-sky
   nvm install 12
   node -v
 #+end_src
-** vite
+*** vite
 npm create vite@latest
-** typescript
-*** install
+*** typescript
+**** install
 #+begin_src bash
 npm install -g typescript
 
 #+end_src
-*** run the compiler
+**** run the compiler
 #+begin_src bash
   tsc *.ts --watch
 #+end_src
-*** tsconfig.json
+**** tsconfig.json
 #+begin_src js
 {
   "compilerOptions": {
@@ -1150,7 +1174,7 @@ npm install -g typescript
   ]
 }
 #+end_src
-*** add recommanded tsconfig
+**** add recommanded tsconfig
 #+begin_src bash
 npm install --save-dev @tsconfig/recommended
 #+end_src
@@ -1165,12 +1189,12 @@ extends
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
 #+end_src
-*** get to know a new lib
+**** get to know a new lib
 #+begin_src js
 npm i --save-dev @types/three
 #+end_src
-** DOM
-*** basic
+*** DOM
+**** basic
 #+begin_src js
   const sect = document.querySelector('section');
   const para = document.createElement('p');
