@@ -1,0 +1,17 @@
+#webgl-output {
+  min-height: 400px;
+  width: 80%;
+  position: relative;
+}
+
+/* #three-output */
+/*   position: relative */
+#subtitle {
+  position: absolute;
+  color: white;
+  bottom: 10%;
+  right: 20%;
+  /* z-index: 99999 */
+}
+
+/*# sourceMappingURL=style.css.map */

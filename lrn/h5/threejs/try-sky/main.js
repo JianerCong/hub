@@ -1,129 +1,172 @@
 console.log('main.js loaded');
 import * as THREE from 'three';
+import './style.css';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader';
 import Stats from 'three/examples/jsm/libs/stats.module';
+import TWEEN from './public/tween.esm.js';
 
 let camera, scene, renderer, stats;
 let sky, sun;
-let functionsToRender = [];
+let onRenders = [];
+const L = 50;
 
 init();
 
 async function init() {
-  setup_stats();
+  // setup_stats();
   setup_defaults();
 
   init_light();
 	let sky = initSky();
   initSea();
-  let submarines = await get_submarines();
+  let {g1,g2} = await get_submarines();
 
   add_helpers_orbit();
-  setup_selector(submarines);
-  const gui = new GUI();
-  configGUI(gui,sky);
+  // configGUI(new GUI(),sky);
 	window.addEventListener( 'resize', onWindowResize );
+  render();
 
+  await start_movie({g1,g2});
+}
+
+function animate(time) {
+	requestAnimationFrame(animate);
+	TWEEN.update(time);
   render();
 }
 
-async function get_submarines(){
+
+async function start_movie({g1,g2}){
+	requestAnimationFrame(animate);
+  console.log('Movie started');
+  // console.log(g1);
+
+  // subtitle
+  const cav = document.querySelector('#webgl-output');
+  console.log('The canvas');
+  console.log(cav);
+  const para = document.createElement('p');
+  para.id = "subtitle";
+  para.textContent = 'aaaaaa.';
+  cav.appendChild(para);
+
+
+  // move little subs--------------------------------------------------
+  let small_submarines = g1.children.slice(1).concat(g2.children.slice(1));
+  console.log(small_submarines);
+
+  let ani_small_submarines = [];
+  let ms = 10000;
+  for (let s of small_submarines){
+    // console.log(s);
+    ani_small_submarines.push(new TWEEN.Tween(s.position)
+                              .to({x: s.userData.myX, y: s.userData.myY, z: s.userData.myZ,},ms)
+                              .easing(TWEEN.Easing.Quadratic.Out));
+  }
+  await play_these(ani_small_submarines);
+  console.log('done');
+
+  async function play_these(ts){
+    return Promise.all(ts.map(play_this));
+  }
+
+  async function play_this(t){
+    // console.log('play');
+    return new Promise((resolve, reject) =>{
+      t.start().onComplete(resolve);
+    });
+  }
+}
+
+async function get_submarine_group(){
   const g = new THREE.Group();
-  console.log(`Adding submarines`);
-  let L = 50;
+  // console.log(`Adding submarines`);
   let s = 1.2;                    // the scale of smaller submarine
   let m = await load_submarine();
   m.name = '主潜艇';
   g.add(m);
 
-  let submarines = [m];
+  // let submarines = [m];
   // Method 1: just clone --------------------------------------------------
   let n = 1;
   for (let i of [-1,1]){
     for (let j of [-1,1]){
       let m1 = m.clone();
-      m1.position.set(i*L,0,j*L);
-      m1.name = `小潜艇${n}号`;
-      submarines.push(m1);
+      m1.translateX(i*L);
+      m1.translateZ(j*L);
+      m1.translateY(-L);
+
+      // store the right values
+      m1.userData.myX = m1.position.x;
+      m1.userData.myY = m1.position.y;
+      m1.userData.myZ = m1.position.z;
+
+      let random_amount = 0.5*L;
+      // Add some randomness to position
+      m1.position.addScaledVector(
+        new THREE.Vector3(
+          Math.random(),
+          Math.random(),
+          Math.random(),
+        ),
+        L
+      );
+
+      m1.name = `小潜艇`;
+      // submarines.push(m1);
       m1.scale.set(s,s,s);
       g.add(m1);
       n++;
     }
   }
-  g.name = '潜艇group';
-
-  scene.add(g);
-  console.log(g);
-  return g.children;
-  // [BETA] Method 2: instanced-mesh --------------------------------------------------
-  // const m2 = new THREE.InstancedMesh(m.geometry, m.material,4);
-  // let count = 0;
-  // for (let i of [-1,1]){
-  //   for (let j of [-1,1]){
-  //     const matrix = new THREE.Matrix4();
-  //     matrix.makeTranslation(i*L,0,j*L);
-  //     m2.setMatrixAt(count,matrix);
-  //     count += 1;
-  //   }
-  // }
-  // scene.add(m2);
+  return g;
 
   async function load_submarine(){
     let mat = new THREE.MeshPhongMaterial({color: 0x666666});
 
     // use model --------------------------------------------------
-    // let l = new OBJLoader();
-    // let m = await l.loadAsync('./public/submarine.obj');
-    // let s = 2;
-    // m.scale.set(s,s,s);
-    // // m.translate()
-    // visitChildren(m, (ch) => {ch.recieveShadow = true; ch.castShadow = true; ch.material = mat;});
+    let l = new OBJLoader();
+    let m = await l.loadAsync('./public/submarine.obj');
+    let s = 2;
+    m.scale.set(s,s,s);
+    // m.translate()
+    visitChildren(m, (ch) => {ch.recieveShadow = true; ch.castShadow = true; ch.material = mat;});
 
     // DEBUG: use cube --------------------------------------------------
-    let  n = 10;
-    const geom = new THREE.BoxGeometry(n,n,n);
-    let m = new THREE.Mesh(geom, mat);
+    // let  n = 10;
+    // const geom = new THREE.BoxGeometry(n,n,n);
+    // let m = new THREE.Mesh(geom, mat);
 
     return m;
   }
 }
 
-let pointer,raycaster, intersects;
-let intersected = null;
-function setup_selector(objs){
-  // let objs = scene.getObjectByName('group').children;
-  // console.log(`setting up selector for ${JSON.stringify(objs[0])}`);
-  console.log(objs);
-  raycaster = new THREE.Raycaster();
+// Out of the region, it will be cropped.
+async function get_submarines(){
+  let g1 = await get_submarine_group();
+  g1.translateX(-2*L);
+  g1.name = '潜艇1群';
+  let g2 = g1.clone();
+  g2.translateX(4*L);
+  g1.name = '潜艇2群';
 
-  pointer = {x: -1, y: -1};
-  document.addEventListener('click', (event) => {
-    console.log('.');
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    render();
-  });
+  scene.add(g1);
+  scene.add(g2);
+  // console.log(g1);
+  return {g1,g2};
 
-  functionsToRender.push(()=>{
-    if (raycaster) {
-      // console.log(`got raycaster`);
-      raycaster.setFromCamera(pointer, camera);
-      intersects = raycaster.intersectObjects(objs,false);
-      if (intersects.length > 0) {
-        console.log(intersects[0].object.name);
-      }
-    }
-  });
 }
+
 
 function setup_stats(){
   stats = new Stats();
-  functionsToRender.push(()=>{stats.update();});
+  onRenders.push(()=>{stats.update();});
   document.body.appendChild(stats.dom);
+
 }
 function initSky() {
 	// Add Sky
@@ -132,8 +175,17 @@ function initSky() {
 	scene.add( sky );
 
 	sun = new THREE.Vector3();
+	const uniforms = sky.material.uniforms;
+	const phi = THREE.MathUtils.degToRad( 90 - 2 );
+	const theta = THREE.MathUtils.degToRad( -160);
+	sun.setFromSphericalCoords( 1, phi, theta );
+	uniforms[ 'sunPosition' ].value.copy( sun );
+	renderer.toneMappingExposure =  renderer.toneMappingExposure;
 
   return sky;
+}
+
+function initSun() {
 }
 
 function configGUI(gui,sky){
@@ -191,37 +243,58 @@ function init_light(){
 
 }
 
+
 function onWindowResize() {
-	camera.aspect = window.innerWidth / window.innerHeight;
+
+  let div = document.querySelector("#webgl-output");
+  // console.log(div.getBoundingClientRect().width);
+  // console.log(div.getBoundingClientRect().height);
+  let w = div.getBoundingClientRect().width;
+  let h = div.getBoundingClientRect().height;
+
+	camera.aspect = w / h;
 	camera.updateProjectionMatrix();
 
-	renderer.setSize( 0.1 * window.innerWidth, 0.1* window.innerHeight );
+	renderer.setSize( w, h );
 	render();
 }
+
 function render() {
 	renderer.render( scene, camera );
-  for (let fn of functionsToRender){
+  for (let fn of onRenders){
     fn();
 }
 }
 function setup_defaults(){
+  let div = document.querySelector("#webgl-output");
+  let w = div.getBoundingClientRect().width;
+  let h = div.getBoundingClientRect().height;
+  console.log(`w=${w},h=${h}`);
+
   /* aspect ratio, near, far */
-	camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 2000 );
+	camera = new THREE.PerspectiveCamera( 60, w/h, 0.1, 2000 );
 	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
 	scene = new THREE.Scene();
   // render setting and add to
 	renderer = new THREE.WebGLRenderer();
 	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.outputEncoding = THREE.sRGBEncoding;
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	renderer.toneMappingExposure = 0.5;
-	document.body.appendChild( renderer.domElement );
+	// document.body.appendChild( renderer.domElement );
+
+  // Out of the region, it will be cropped.
+	// renderer.setSize( window.innerWidth, window.innerHeight);
+	renderer.setSize(w,h);
+  let dom = renderer.domElement;
+  // console.log(dom);
+  dom.id = "three-output";
+  div.appendChild(dom);
 }
 
 function add_helpers_orbit(){
   // helpers
-	const grid_helper = new THREE.GridHelper( 100, 4, 0xffffff, 0xffffff );
+	const grid_helper = new THREE.GridHelper( 300, 6, 0xffffff, 0xffffff );
 	scene.add( grid_helper );
   const axes_helper = new THREE.AxesHelper(50);
 	scene.add( axes_helper );

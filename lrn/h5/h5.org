@@ -300,6 +300,134 @@ Use CDN link.
 #+begin_src bash
   npm install --save @types/greensock
 #+end_src
+*** tween
+**** install and use
+download and build from github
+#+begin_src bash
+  git clone https://github.com/tweenjs/tween.js
+  cd tween.js
+  npm i .
+  npm run build
+  cp dist/tween.es.js <your-project-dir>
+#+end_src
+Use
+#+begin_src js
+import TWEEN from './public/tween.esm.js';
+#+end_src
+**** basic
+#+begin_src js
+  var position = {x: 100, y: 0}
+  // Create a tween for position first
+  var tween = new TWEEN.Tween(position)
+  // Then tell the tween we want to animate the x property over 1000 milliseconds
+  tween.to({x: 200}, 1000)
+  // And set it to start
+  tween.start()
+  animate()
+  function animate() {
+    requestAnimationFrame(animate)
+    // [...]
+    TWEEN.update()
+    // [...]
+  }
+  // the onUpdate callback
+  tween.onUpdate(function (object) {
+    console.log(object.x)
+  })
+#+end_src
+**** with three.js
+
+#+begin_src js
+  var tween = new TWEEN.Tween(cube.position).to({x: 100, y: 100, z: 100}, 10000).start()
+
+  animate()
+
+  function animate() {
+    requestAnimationFrame(animate)
+    TWEEN.update()                // no need to do onUpdate()
+    threeRenderer.render(scene, camera)
+  }
+#+end_src
+**** update
+#+begin_src js
+  const tween = new TWEEN.Tween(someObject, false).to(/*...*/).start()
+  // add to default group = false
+
+  function animate(time) {
+    tween.update(time)
+    requestAnimationFrame(animate)
+  }
+#+end_src
+**** control
+#+begin_src js
+  tween.stop();
+
+  // chain
+  tweenA.chain(tweenB)
+  tweenA.chain(tweenB, tweenC)
+
+  tween.repeat(10) // repeats 10 times after the first tween and stops
+  tween.yoyo(true).repeat(10) // repeats 10 times after the first tween and stops
+  tween.repeat(Infinity) // repeats forever
+
+  tween.delay(1000)
+  tween.start()
+
+  tween.delay(1000)
+  tween.repeatDelay(500)          // 1-do-0.5-do-0.5-do-...
+  tween.start()
+#+end_src
+**** group
+#+begin_src js
+var groupA = new TWEEN.Group()
+var groupB = new TWEEN.Group()
+
+var tweenA = new TWEEN.Tween({x: 1}, groupA).to({x: 10}, 100).start()
+
+var tweenB = new TWEEN.Tween({x: 1}, groupB).to({x: 10}, 100).start()
+
+var tweenC = new TWEEN.Tween({x: 1}).to({x: 10}, 100).start()
+
+groupA.update() // only updates tweenA
+groupB.update() // only updates tweenB
+TWEEN.update() // only updates tweenC
+
+groupA.removeAll() // only removes tweenA
+groupB.removeAll() // only removes tweenB
+TWEEN.removeAll() // only removes tweenC
+#+end_src
+**** easing functions
+#+begin_src js
+tween.easing(TWEEN.Easing.Quadratic.In)
+#+end_src
+There are a few existing easing functions provided with tween.js. They are
+grouped by the type of equation they represent:
+
+Linear, Quadratic, Cubic, Quartic, Quintic, Sinusoidal, Exponential, Circular,
+Elastic, Back and Bounce,
+
+and then by the easing type:
+
+In, Out and InOut.
+**** Callbacks
+#+begin_src js
+  var trickyObjTween = new TWEEN.Tween({
+    propertyA: trickyObj.getPropertyA(),
+    propertyB: trickyObj.getPropertyB(),
+  })
+      .to({propertyA: 100, propertyB: 200})
+      .onUpdate(function (object) {
+        object.setA(object.propertyA)
+        object.setB(object.propertyB)
+      })
+
+  var tween = new TWEEN.Tween(obj).to({x: 100}).onStart(function () {
+    sound.play()
+  })
+
+
+  // onComplete, onStop, onRepeat
+  #+end_src
 ** frontend tooling
 *** eslint
 #+begin_src bash
@@ -1021,6 +1149,49 @@ npm install -g typescript
     "scripts/**/*"
   ]
 }
+#+end_src
+*** add recommanded tsconfig
+#+begin_src bash
+npm install --save-dev @tsconfig/recommended
+#+end_src
+extends
+#+begin_src js
+{
+  "extends": "@tsconfig/node12/tsconfig.json",
+  "compilerOptions": {
+    "preserveConstEnums": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
+#+end_src
+*** get to know a new lib
+#+begin_src js
+npm i --save-dev @types/three
+#+end_src
+** DOM
+*** basic
+#+begin_src js
+  const sect = document.querySelector('section');
+  const para = document.createElement('p');
+  para.textContent = 'We hope you enjoyed the ride.';
+  sect.appendChild(para);
+  const text = document.createTextNode(' — the premier source for web development knowledge.');
+  const linkPara = document.querySelector('p');
+  linkPara.appendChild(text);
+  sect.appendChild(linkPara);
+  sect.removeChild(linkPara);
+  linkPara.remove();
+  linkPara.parentNode.removeChild(linkPara);
+
+  // Styles
+  para.style.color = 'white';
+  para.style.backgroundColor = 'black';
+  para.style.padding = '10px';
+  para.style.width = '250px';
+  para.style.textAlign = 'center';
+
+  para.setAttribute('class', 'highlight');
 #+end_src
 * End
 
