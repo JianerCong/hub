@@ -1,6 +1,5 @@
-console.log('main.js loaded');
+console.log('scene2.js loaded');
 import * as THREE from 'three';
-import './style.css';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import TWEEN from './public/tween.esm.js';
@@ -59,15 +58,56 @@ async function start_movie(g1){
   cav.appendChild(para);
 
   // await play_section(para,'1.组队已经完成，准备接受指令', async () => establish_team(scene,g1,render));
-  // para.textContent = '2.中继点受到任务指令及地点';
-  // await subtitle_on(para);
-  // await get_destination(g1);
-  // await subtitle_off(para);
+  // await play_section(para, '2.中继点收到任务指令及地点',
+  //                    async () =>
+  //                     get_destination(g1)
+  //                   );
 
-  para.textContent = '3.中继点被分配为导航角色';
+  await play_section(para,
+                     '3.中继点被分配为导航角色并执行导航',
+                     async () =>
+                     navigate_there(g1)
+                    );
+
+  para.textContent = '4.到达任务执行地，中继点分配任务角色';
   await subtitle_on(para);
 
-  let ms = 3000;
+  await establish_team(scene,g1,render);
+  for (let [i,sub] of g1.children.slice(1).entries()){
+    let theta = Math.PI * Math.random() * 0.5; // a random accute angle
+
+    let v = new THREE.Vector3(); // position of this submarine
+    sub.getWorldPosition(v);
+
+    let a;                      // angle to change
+    if (i == 0){
+      a = -Math.PI/2 - theta;
+    }else if (i == 1){
+      a = -theta;
+    } else if (i == 2){
+      a = -2* Math.PI + Math.PI/2 + theta; // make it rotate smaller
+    }else if (i == 3){
+      a = theta;
+    } else {
+      throw new Error("Error");
+    }
+    console.log(sub.rotation);
+
+    let t = new TWEEN.Tween(sub.rotation).to({y: a},500);
+    await play_this(t);
+    // console.log(sub.rotation);
+}
+
+
+
+  await subtitle_off(para);
+
+  console.log('done');
+
+}
+
+async function navigate_there(g1){
+  let ms = 1000;
 
   let ts = [];
   for (let sub of g1.children){
@@ -75,19 +115,15 @@ async function start_movie(g1){
         .to({y:-0.5*Math.PI},ms)
         .easing(TWEEN.Easing.Quadratic.InOut)
         .delay(0.5 * ms * Math.random())
-        ;
+    ;
     ts.push(t);
-}
+  }
   await play_these(ts);
 
   let t = new TWEEN.Tween(g1.position)
-      .to({x: -4*L},5000)
+      .to({x: -4*L},1000)
       .easing(TWEEN.Easing.Quadratic.InOut);
   await play_this(t);
-  await subtitle_off(para);
-
-  console.log('done');
-
 }
 
 async function get_destination(g1){
@@ -114,6 +150,7 @@ async function get_destination(g1){
   await play_this(t);
   m.removeFromParent();
 }
+
 
 async function get_submarine_group(){
   const g = new THREE.Group();
