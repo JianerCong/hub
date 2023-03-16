@@ -54,22 +54,126 @@ async function start_movie({g1,g2}){
   para.id = "subtitle";
   cav.appendChild(para);
 
-  para.textContent = '1.中继器受到组队命令';
+  // move little subs--------------------------------------------------
+  let small_submarines = g1.children.slice(1).concat(g2.children.slice(1));
+  // console.log('小潜艇群');
+  // console.log(small_submarines);
+
+  // await play_section('1.中继器通过卫星受到组队命令',async () => await recieve_signals());
+  // await play_section('2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines));
+  // await play_section('3.执行组队命令',async () => await move_small_submarines(small_submarines));
+
+  para.textContent = '4.完成组队';
   await subtitle_on(para);
-  console.log("I'm between subtitles'");
+  const geom = new THREE.SphereGeometry(5,8,8);
+  const mat = new THREE.MeshPhongMaterial({color: 0x3333ff * Math.random(),});
+  let m = new THREE.Mesh(geom,mat);
+
+  let main_position = new THREE.Vector3();
+  g1.children[0].getWorldPosition(main_position);    // position of main submarine
+  m.position.copy(main_position);
+  scene.add(m);
+  // r,width-seg,height-seg
+
+  let sub = g1.children.slice(1)[0];
+  let o = {t:0};
+  const ms = 1000;
+
+  let v;
+  sub.getWorldPosition(v);    // position of this small sub
+  // animate
+  let t = new TWEEN.Tween(o).to({t:1},ms).repeat(3)
+      .onUpdate(()=>{
+        m.position.lerpVectors(main_position,v,o.t);
+        render();
+      });
+  play_this(t);
+
   await subtitle_off(para);
 
-
-  para.textContent = '4.完成组队命令';
-  await subtitle_on(para);
-  await move_small_submarines();
-  await subtitle_off(para);
   console.log('done');
 
-  async function move_small_submarines(){
-    // move little subs--------------------------------------------------
-    let small_submarines = g1.children.slice(1).concat(g2.children.slice(1));
-    console.log(small_submarines);
+  async function make_signals(small_submarines){
+    const g = new THREE.TorusGeometry(10,1,10,50);
+    // radius,tube r_sag, t_sag, arc
+
+    // // create a small donut around a submarine
+    // let sub = small_submarines[0];
+
+    // animate
+    const N = 10;
+    const ms = 1000;
+    const DELAY = 500;
+    // let t = new TWEEN.Tween(s.scale).to({x:N,y:N},ms).repeat(3);
+    // await play_this(t);
+    // s.removeFromParent();
+    let ts = [];
+    for (let sub of small_submarines){
+      const m = new THREE.MeshPhongMaterial({color: 0x3333ff * Math.random(),});
+      let s0 = new THREE.Mesh(g,m);  // signal
+      s0.rotateX(0.5*Math.PI);
+
+      let v = new THREE.Vector3;
+      sub.getWorldPosition(v);
+      s0.position.copy(v);
+
+      scene.add(s0);
+
+      // animate
+      let t = new TWEEN.Tween(s0.scale).to({x:N,y:N},ms)
+          .repeat(3)
+          .delay(DELAY*Math.random());
+      ts.push(
+        new Promise((res, rej)=>{
+          t.start().onComplete(
+            () => {
+              s0.removeFromParent();
+              res();
+            }
+          );
+        }));
+    }
+    return Promise.all(ts);
+}
+
+  async function play_section(t,fn){
+    para.textContent = t;
+    await subtitle_on(para);
+    await fn();
+    await subtitle_off(para);
+  }
+
+  async function recieve_signals(){
+    // Create the signal mesh
+    const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
+    // radius,tube r_sag, t_sag, arc
+    const m = new THREE.MeshLambertMaterial({
+      color: 0xaa330a0a,
+      opacity: 0.7,
+      transparent: true
+    });
+    let s = new THREE.Mesh(g,m);  // signal
+    s.translateY(3*L);            // move to sky
+    s.rotateZ(Math.PI);
+
+    let s2 = s.clone();           // right signal
+
+    s.translateX(-2*L);
+    s2.translateX(2*L);
+
+    scene.add(s);
+    scene.add(s2);
+
+
+    let ms = 500;
+    let t = new TWEEN.Tween(s.position).to({y:10},ms).repeat(3);
+    let t2 = new TWEEN.Tween(s2.position).to({y:10},ms).repeat(3);
+    await play_these([t,t2]);
+    s.removeFromParent();
+    s2.removeFromParent();
+}
+
+  async function move_small_submarines(small_submarines){
 
     let ani_small_submarines = [];
     let ms = 10000;
@@ -302,7 +406,7 @@ function setup_defaults(){
   let div = document.querySelector("#webgl-output");
   let w = div.getBoundingClientRect().width;
   let h = div.getBoundingClientRect().height;
-  console.log(`w=${w},h=${h}`);
+  // console.log(`w=${w},h=${h}`);
 
   /* aspect ratio, near, far */
 	camera = new THREE.PerspectiveCamera( 60, w/h, 0.1, 2000 );

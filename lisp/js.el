@@ -8,7 +8,8 @@
 
 (define-abbrev-table 'js2-mode-abbrev-table
   '(
-    ("hh" "hihi")
+    ("cst" "const")
+    ("th" "THREE")
     ("func" "" (lambda () (skeleton-insert '(nil "function(" _ ")"))))
     )) 
 
