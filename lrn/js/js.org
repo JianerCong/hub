@@ -13,15 +13,16 @@
 ** lang
 *** Promise
 #+begin_src js
-const myPromise = new Promise((resolve, reject) => {resolve(123);});
-myPromise.then((r) => console.log(`then got ${r}`));
+  const myPromise = new Promise((resolve, reject) => {resolve(123);});
+  myPromise.then((r) => console.log(`then got ${r}`));
 
-const g = async () => {
-  let r = await new Promise((resolve, reject) => {resolve(123);});
-  console.log(`await got ${r}`);
-};
-g();
+  const g = async () => {
+    let r = await new Promise((resolve, reject) => {resolve(123);});
+    console.log(`await got ${r}`);
+  };
+  g();
 
+  let [value1, value2] = await Promise.all([getJSON(url1), getJSON(url2)]);
 #+end_src
 * End
 

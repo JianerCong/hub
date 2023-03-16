@@ -59,39 +59,48 @@ async function start_movie({g1,g2}){
   // console.log('小潜艇群');
   // console.log(small_submarines);
 
-  // await play_section('1.中继器通过卫星受到组队命令',async () => await recieve_signals());
-  // await play_section('2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines));
-  // await play_section('3.执行组队命令',async () => await move_small_submarines(small_submarines));
+  await play_section('1.中继器通过卫星受到组队命令',async () => await recieve_signals());
+  await play_section('2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines));
+  await play_section('3.执行组队命令',async () => await move_small_submarines(small_submarines));
 
   para.textContent = '4.完成组队';
   await subtitle_on(para);
-  const geom = new THREE.SphereGeometry(5,8,8);
-  const mat = new THREE.MeshPhongMaterial({color: 0x3333ff * Math.random(),});
-  let m = new THREE.Mesh(geom,mat);
-
-  let main_position = new THREE.Vector3();
-  g1.children[0].getWorldPosition(main_position);    // position of main submarine
-  m.position.copy(main_position);
-  scene.add(m);
-  // r,width-seg,height-seg
-
-  let sub = g1.children.slice(1)[0];
-  let o = {t:0};
-  const ms = 1000;
-
-  let v;
-  sub.getWorldPosition(v);    // position of this small sub
-  // animate
-  let t = new TWEEN.Tween(o).to({t:1},ms).repeat(3)
-      .onUpdate(()=>{
-        m.position.lerpVectors(main_position,v,o.t);
-        render();
-      });
-  play_this(t);
-
-  await subtitle_off(para);
+  await Promise.all([establish_team(g1), establish_team(g2)]);
+  // await subtitle_off(para);
 
   console.log('done');
+
+  async function establish_team(g1){
+    const geom = new THREE.SphereGeometry(2,8,8);
+    const mat = new THREE.MeshPhongMaterial({color: 0x3333ff * Math.random(),});
+
+    let v0 = new THREE.Vector3();
+    g1.children[0].getWorldPosition(v0);    // position of main submarine
+
+    let ts = [];
+    for (let sub of g1.children.slice(1)){
+      let m = new THREE.Mesh(geom,mat);
+      m.position.copy(v0);
+      scene.add(m);
+      // r,width-seg,height-seg
+
+      // let sub = g1.children.slice(1)[0];
+      let o = {t:0};
+      const ms = 800;
+
+      let v = new THREE.Vector3();
+      sub.getWorldPosition(v);    // position of this small sub
+      // animate
+      let t = new TWEEN.Tween(o).to({t:1},ms)
+          .repeat(3).yoyo(true)
+          .onUpdate(()=>{
+            m.position.lerpVectors(v0,v,o.t);
+            render();
+          });
+      ts.push(t);
+    }
+    await play_these(ts);
+}
 
   async function make_signals(small_submarines){
     const g = new THREE.TorusGeometry(10,1,10,50);
@@ -122,7 +131,8 @@ async function start_movie({g1,g2}){
       // animate
       let t = new TWEEN.Tween(s0.scale).to({x:N,y:N},ms)
           .repeat(3)
-          .delay(DELAY*Math.random());
+          .delay(DELAY*Math.random())
+        .easing(TWEEN.Easing.Quadratic.InOut);
       ts.push(
         new Promise((res, rej)=>{
           t.start().onComplete(
@@ -148,7 +158,7 @@ async function start_movie({g1,g2}){
     const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
     // radius,tube r_sag, t_sag, arc
     const m = new THREE.MeshLambertMaterial({
-      color: 0xaa330a0a,
+      color: 0xaa330a,
       opacity: 0.7,
       transparent: true
     });
@@ -176,11 +186,14 @@ async function start_movie({g1,g2}){
   async function move_small_submarines(small_submarines){
 
     let ani_small_submarines = [];
-    let ms = 10000;
+    let ms = 5000;
     for (let s of small_submarines){
       // console.log(s);
       ani_small_submarines.push(new TWEEN.Tween(s.position)
                                 .to({x: s.userData.myX, y: s.userData.myY, z: s.userData.myZ,},ms)
+                                .easing(TWEEN.Easing.Quadratic.Out));
+      ani_small_submarines.push(new TWEEN.Tween(s.rotation)
+                                .to({y: 0},ms)
                                 .easing(TWEEN.Easing.Quadratic.Out));
     }
     await play_these(ani_small_submarines);
@@ -252,6 +265,7 @@ async function get_submarine_group(){
         ),
         L
       );
+      m1.rotation.y = Math.PI * Math.random();
 
       m1.name = `小潜艇`;
       // submarines.push(m1);
@@ -313,7 +327,7 @@ function initSky() {
 
 	sun = new THREE.Vector3();
 	const uniforms = sky.material.uniforms;
-	const phi = THREE.MathUtils.degToRad( 90 - 2 );
+	const phi = THREE.MathUtils.degToRad( 90 - 0 );
 	const theta = THREE.MathUtils.degToRad( -160);
 	sun.setFromSphericalCoords( 1, phi, theta );
 	uniforms[ 'sunPosition' ].value.copy( sun );
@@ -410,7 +424,7 @@ function setup_defaults(){
 
   /* aspect ratio, near, far */
 	camera = new THREE.PerspectiveCamera( 60, w/h, 0.1, 2000 );
-	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 150, 160, 300 );/* x,y,z  (left, up, front)*/
 	scene = new THREE.Scene();
   // render setting and add to
 	renderer = new THREE.WebGLRenderer();
@@ -431,10 +445,10 @@ function setup_defaults(){
 
 function add_helpers_orbit(){
   // helpers
-	const grid_helper = new THREE.GridHelper( 300, 6, 0xffffff, 0xffffff );
-	scene.add( grid_helper );
-  const axes_helper = new THREE.AxesHelper(50);
-	scene.add( axes_helper );
+	// const grid_helper = new THREE.GridHelper( 300, 6, 0xffffff, 0xffffff );
+	// scene.add( grid_helper );
+  // const axes_helper = new THREE.AxesHelper(50);
+	// scene.add( axes_helper );
   /* listen to 'change */
 	const controls = new OrbitControls( camera, renderer.domElement );
 	controls.addEventListener( 'change', render );
