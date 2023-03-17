@@ -1,6 +1,5 @@
-console.log('main.js loaded');
+console.log('scene1 loaded');
 import * as THREE from 'three';
-import './style.css';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import TWEEN from './public/tween.esm.js';
@@ -18,6 +17,7 @@ import {establish_team,
         setup_stats,
         setup_defaults,
         register_to_button,
+        make_signals,
        } from './my_utils.js';
 
 let camera, scene, renderer;
@@ -65,7 +65,7 @@ async function start_movie({g1,g2}){
   // console.log(small_submarines);
 
   await play_section(para,'1.中继器通过卫星受到组队命令',async () => await recieve_signals());
-  await play_section(para,'2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines));
+  await play_section(para,'2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines,scene));
   await play_section(para,'3.执行组队命令',async () => await move_small_submarines(small_submarines));
 
   para.textContent = '4.完成组队';
@@ -75,49 +75,6 @@ async function start_movie({g1,g2}){
 
   console.log('done');
 
-  async function make_signals(small_submarines){
-    const g = new THREE.TorusGeometry(10,1,10,50);
-    // radius,tube r_sag, t_sag, arc
-
-    // // create a small donut around a submarine
-    // let sub = small_submarines[0];
-
-    // animate
-    const N = 10;
-    const ms = 1000;
-    const DELAY = 500;
-    // let t = new TWEEN.Tween(s.scale).to({x:N,y:N},ms).repeat(3);
-    // await play_this(t);
-    // s.removeFromParent();
-    let ts = [];
-    for (let sub of small_submarines){
-      const m = new THREE.MeshPhongMaterial({color: 0x3333ff * Math.random(),});
-      let s0 = new THREE.Mesh(g,m);  // signal
-      s0.rotateX(0.5*Math.PI);
-
-      let v = new THREE.Vector3;
-      sub.getWorldPosition(v);
-      s0.position.copy(v);
-
-      scene.add(s0);
-
-      // animate
-      let t = new TWEEN.Tween(s0.scale).to({x:N,y:N},ms)
-          .repeat(3)
-          .delay(DELAY*Math.random())
-          .easing(TWEEN.Easing.Quadratic.InOut);
-      ts.push(
-        new Promise((res, rej)=>{
-          t.start().onComplete(
-            () => {
-              s0.removeFromParent();
-              res();
-            }
-          );
-        }));
-    }
-    return Promise.all(ts);
-  }
 
   async function recieve_signals(){
     // Create the signal mesh
@@ -211,8 +168,6 @@ async function get_submarine_group(){
   return g;
 }
 
-
-// Out of the region, it will be cropped.
 async function get_submarines(){
   let g1 = await get_submarine_group();
   g1.translateX(-3*L);

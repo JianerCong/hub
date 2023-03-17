@@ -1,4 +1,4 @@
-console.log('scene2.js loaded');
+console.log('scene2 loaded');
 import * as THREE from 'three';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
@@ -25,7 +25,7 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(2,init);
-init();
+// init();
 // for now, we play scene 2 by default, comment out the above line on export.
 // Maybe it's more reasonable to play scene 1 on launch.
 

@@ -107,7 +107,7 @@ function add_helpers_orbit(camera, renderer, render,scene, L){
 }
 
 function initSea(scene){
-  console.log('sea initialized');
+  // console.log('sea initialized');
   let n = 500;
   const g = new THREE.CylinderGeometry(n,n,n);
   // const m = new THREE.MeshBasicMaterial({
@@ -242,6 +242,51 @@ function register_to_button(n,init_fn,){
   });
 }
 
+async function make_signals(small_submarines,scene){
+  const g = new THREE.TorusGeometry(10,1,10,50);
+  // radius,tube r_sag, t_sag, arc
+
+  // // create a small donut around a submarine
+  // let sub = small_submarines[0];
+
+  // animate
+  const N = 10;
+  const ms = 1000;
+  const DELAY = 500;
+  // let t = new TWEEN.Tween(s.scale).to({x:N,y:N},ms).repeat(3);
+  // await play_this(t);
+  // s.removeFromParent();
+  let ts = [];
+  for (let sub of small_submarines){
+    const m = new THREE.MeshPhongMaterial({color: 0x3333ff * Math.random(),});
+    let s0 = new THREE.Mesh(g,m);  // signal
+    s0.rotateX(0.5*Math.PI);
+
+    let v = new THREE.Vector3;
+    sub.getWorldPosition(v);
+    s0.position.copy(v);
+
+    scene.add(s0);
+
+    // animate
+    let t = new TWEEN.Tween(s0.scale).to({x:N,y:N},ms)
+        .repeat(3)
+        .delay(DELAY*Math.random())
+        .easing(TWEEN.Easing.Quadratic.InOut);
+    ts.push(
+      new Promise((res, rej)=>{
+        t.start().onComplete(
+          () => {
+            s0.removeFromParent();
+            res();
+          }
+        );
+      }));
+  }
+  return Promise.all(ts);
+}
+
+
 export {establish_team, subtitle_on, subtitle_off,
         play_this, play_these, play_section,visitChildren,
 
@@ -254,5 +299,7 @@ export {establish_team, subtitle_on, subtitle_off,
         load_submarine,
         setup_stats,
         setup_defaults,
-        register_to_button
+        register_to_button,
+
+        make_signals
        }
