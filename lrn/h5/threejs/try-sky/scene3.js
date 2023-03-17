@@ -26,10 +26,10 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(3,init);
-init();
+// init();
 
 async function init() {
-  setup_stats(onRenders);
+  // setup_stats(onRenders);
 
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
@@ -60,49 +60,63 @@ async function start_movie({g1,g2}){
   let para = document.createElement('p');
   para.id = "subtitle";
   cav.appendChild(para);
+  let sub;
 
   // move little subs--------------------------------------------------
-  // para.textContent = '1.组队已经完成';
-  // await subtitle_on(para);
-  // await Promise.all([establish_team(scene,g1,render), establish_team(scene,g2,render)]);
-  // await subtitle_off(para);
+  para.textContent = '1.组队已经完成';
+  await subtitle_on(para);
+  await Promise.all([
+    establish_team(scene,g1.children[0],g1.children.slice(1),render),
+    establish_team(scene,g2.children[0],g2.children.slice(1),render),
+  ]);
+  await subtitle_off(para);
 
 
-  // para.textContent = '2.某个航行器发现目标';
-  // await subtitle_on(para);
-  // let sub = g2.children[2];
-  // await emit_signal(sub);
-  // await subtitle_off(para);
+  para.textContent = '2.某个航行器发现目标';
+  await subtitle_on(para);
+  sub = g2.children[2];
+  await emit_signal(sub);
+  await subtitle_off(para);
 
-  // para.textContent = '3.发现目标后，航行器节点共识目标信息，并向中继器节点上传信息。';
-  // await subtitle_on(para);
-  // await make_signals(g2.children.slice(1),scene);
-  // await subtitle_off(para);
+  para.textContent = '3.发现目标后，航行器节点共识目标信息，并向中继器节点上传信息。';
+  await subtitle_on(para);
+  await make_signals(g2.children.slice(1),scene);
+  await subtitle_off(para);
 
-  // para.textContent = '4.中继节点向岸上传输信息，接受新指令';
-  // await subtitle_on(para);
-  // await send_signal_up();
-  // await recieve_signals(4*L, scene);
-  // await subtitle_off(para);
+  para.textContent = '4.中继节点向岸上传输信息，接受新指令';
+  await subtitle_on(para);
+  await send_signal_up();
+  await recieve_signals(4*L, scene);
+  await subtitle_off(para);
 
 
-  // para.textContent = '5.中继节点共识新任务';
-  // await subtitle_on(para);
-  // let two_submarines = [g1.children[0], g2.children[0]];
-  // await make_signals(two_submarines,scene,500,2);
-  // await subtitle_off(para);
+  para.textContent = '5.中继节点共识新任务';
+  await subtitle_on(para);
+  let two_submarines = [g1.children[0], g2.children[0]];
+  await make_signals(two_submarines,scene,500,2);
+  await subtitle_off(para);
 
-  // para.textContent = '6.其他集群指定某个下属航行器作为导航，前往任务目的地支援任务集群';
-  // await subtitle_on(para);
-  // await move_to_task(g1);
-  // await subtitle_off(para);
+  para.textContent = '6.其他集群指定某个下属航行器作为导航，前往任务目的地支援任务集群';
+  await subtitle_on(para);
+  await move_to_task(g1);
+  await subtitle_off(para);
 
   para.textContent = '7.任务航行器受到干扰，通过动态重构，重新组网；';
   await subtitle_on(para);
-  let sub = g2.children[2];
+  sub = g2.children[2];     // the sub that recieved the disturbance.
   await recieve_disturbance(sub);
-
+  await make_signals(g1.children.slice(1).concat(
+    g2.children[1], g2.children.slice(3)),scene);
+  // all small submarine but g2[2]
   await subtitle_off(para);
+
+  para.textContent = '8.部分航行器改变集群，重新组网，分配角色后继续执行任务；';
+  await subtitle_on(para);
+  await establish_team(scene, g2.children[0],
+                       g2.children.slice(3).concat(g2.children[1],
+                                                   g1.children[4]),render);
+  // await subtitle_off(para);
+
 
   console.log('done');
 }
@@ -131,15 +145,14 @@ async function recieve_disturbance(sub){
 }
 
 async function move_to_task(g1){
-  let ms = 1000;
-
+  let ms = 3000;
   // Rotate the navigating submarine
   let sub = g1.children[4];
   let t = new TWEEN.Tween(sub.rotation)
       .to({y:0.5*Math.PI},ms)
       .easing(TWEEN.Easing.Quadratic.InOut);
   await play_this(t);
-  await make_signals([sub],scene,500,1);
+  await make_signals([sub],scene,1000,1);
 
   // Rotate the rest of group
   let ts = [];
@@ -155,7 +168,7 @@ async function move_to_task(g1){
 
   // Move the whole group
   t = new TWEEN.Tween(g1.position)
-    .to({x: 0},1000)
+    .to({x: 0},5000)
     .easing(TWEEN.Easing.Quadratic.InOut);
   await play_this(t);
 
@@ -177,7 +190,7 @@ async function send_signal_up(){
 
   scene.add(s);
 
-  let ms = 500;
+  let ms = 1000;
   let t = new TWEEN.Tween(s.position).to({y:100},ms).repeat(3);
   await play_this(t);
 

@@ -25,7 +25,7 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(2,init);
-// init();
+init();
 // for now, we play scene 2 by default, comment out the above line on export.
 // Maybe it's more reasonable to play scene 1 on launch.
 
@@ -44,10 +44,10 @@ register_to_button(2,init);
 // });
 
 async function init() {
-  setup_stats(onRenders);
+  // setup_stats(onRenders);
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
-	camera.position.set( 0, 400, 0 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
@@ -75,7 +75,8 @@ async function start_movie(g1){
   para.id = "subtitle";
   cav.appendChild(para);
 
-  await play_section(para,'1.组队已经完成，准备接受指令', async () => establish_team(scene,g1,render));
+  await play_section(para,'1.组队已经完成，准备接受指令', async () =>
+    establish_team(scene,g1.children[0],g1.children.slice(1),render));
   await play_section(para, '2.中继点收到任务指令及地点',
                      async () =>
                       get_destination(g1)
@@ -89,6 +90,7 @@ async function start_movie(g1){
 
   para.textContent = '4.到达任务执行地，中继点分配任务角色';
   await subtitle_on(para);
+  await establish_team(scene,g1.children[0],g1.children.slice(1),render);
   await distribute_task(g1);
   await subtitle_off(para);
 
@@ -102,6 +104,7 @@ async function start_movie(g1){
 }
 
 async function start_task(g1){
+  let ts = [];
   for (let sub of g1.children.slice(1)){
     // console.log(sub.rotation);
     let dv = new THREE.Vector3();
@@ -114,13 +117,14 @@ async function start_task(g1){
       x:v0.x,
       y:v0.y,
       z:v0.z,
-    },500);
-    await play_this(t);
+    },1500);
+    ts.push(t);
   }
+  await play_these(ts);
 }
 
 async function distribute_task(g1){
-  await establish_team(scene,g1,render);
+  let ts = [];
   for (let [i,sub] of g1.children.slice(1).entries()){
     let theta = Math.PI * Math.random() * 0.5; // a random accute angle
 
@@ -141,14 +145,15 @@ async function distribute_task(g1){
     }
     // console.log(sub.rotation);
 
-    let t = new TWEEN.Tween(sub.rotation).to({y: a},500);
-    await play_this(t);
+    let t = new TWEEN.Tween(sub.rotation).to({y: a},2000);
+    ts.push(t);
     sub.userData.a = a;
   }
+  await play_these(ts);
 }
 
 async function navigate_there(g1){
-  let ms = 1000;
+  let ms = 4000;
 
   let ts = [];
   for (let sub of g1.children){
@@ -162,7 +167,7 @@ async function navigate_there(g1){
   await play_these(ts);
 
   let t = new TWEEN.Tween(g1.position)
-      .to({x: -4*L},1000)
+      .to({x: -4*L},8000)
       .easing(TWEEN.Easing.Quadratic.InOut);
   await play_this(t);
 }

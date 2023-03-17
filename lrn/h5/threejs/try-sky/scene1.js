@@ -28,7 +28,7 @@ const L = 50;
 register_to_button(1,init);
 
 async function init() {
-  setup_stats(onRenders);
+  // setup_stats(onRenders);
 
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
@@ -71,7 +71,10 @@ async function start_movie({g1,g2}){
 
   para.textContent = '4.完成组队';
   await subtitle_on(para);
-  await Promise.all([establish_team(scene,g1,render), establish_team(scene,g2,render)]);
+  await Promise.all([
+    establish_team(scene,g1.children[0],g1.children.slice(1),render),
+    establish_team(scene,g2.children[0],g2.children.slice(1),render),
+  ]);
   // await subtitle_off(para);
 
   console.log('done');

@@ -2,16 +2,19 @@ import TWEEN from './public/tween.esm.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as THREE from 'three';
 
-async function establish_team(scene,g1,render){
+async function establish_team(scene,main_sub, small_subs,render){
   const geom = new THREE.SphereGeometry(2,8,8);
-  const mat = new THREE.MeshPhongMaterial({color: 0x3333aa + 0x330033 * Math.random(),});
+  const mat = new THREE.MeshPhongMaterial({color:
+                                           0xaa0000
+                                           + 0x00ffff * Math.random() * 0.3
+                                           ,});
 
   let v0 = new THREE.Vector3();
-  g1.children[0].getWorldPosition(v0);    // position of main submarine
+  main_sub.getWorldPosition(v0);    // position of main submarine
 
   let ts = [];
   let balls = [];
-  for (let sub of g1.children.slice(1)){
+  for (let sub of small_subs){
     let m = new THREE.Mesh(geom,mat);
     m.position.copy(v0);
     scene.add(m);
@@ -37,7 +40,6 @@ async function establish_team(scene,g1,render){
   await play_these(ts);
   balls.forEach((m) => m.removeFromParent());
 }
-
 
 const subtitle_transition_ms = 1000;
 
@@ -95,9 +97,10 @@ function visitChildren(object, fn){
 function add_helpers_orbit(camera, renderer, render,scene, L){
   // helpers
 	const grid_helper = new THREE.GridHelper( L * 12, 12, 0xffffff, 0xffffff );
-	scene.add( grid_helper );
+	// scene.add( grid_helper );
   const axes_helper = new THREE.AxesHelper(50);
-	scene.add( axes_helper );
+	// scene.add( axes_helper );
+
   /* listen to 'change */
 	const controls = new OrbitControls( camera, renderer.domElement );
 	controls.addEventListener( 'change', render );
@@ -113,7 +116,7 @@ function initSea(scene){
   // const m = new THREE.MeshBasicMaterial({
   // const m = new THREE.MeshPhysicalMaterial({
   const m = new THREE.MeshToonMaterial({
-    color: 0x001e0f,
+    color: 0x001e1f,
     opacity: 0.5,
     transparent:true,
     side: THREE.DoubleSide,
@@ -308,7 +311,7 @@ async function recieve_signals(X,scene){
   scene.add(s2);
 
 
-  let ms = 500;
+  let ms = 1000;
   let t = new TWEEN.Tween(s.position).to({y:10},ms).repeat(3);
   let t2 = new TWEEN.Tween(s2.position).to({y:10},ms).repeat(3);
   await play_these([t,t2]);
