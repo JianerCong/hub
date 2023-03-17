@@ -18,6 +18,7 @@ import {establish_team,
         setup_defaults,
         register_to_button,
         make_signals,
+        recieve_signals,
        } from './my_utils.js';
 
 let camera, scene, renderer;
@@ -64,7 +65,7 @@ async function start_movie({g1,g2}){
   // console.log('小潜艇群');
   // console.log(small_submarines);
 
-  await play_section(para,'1.中继器通过卫星受到组队命令',async () => await recieve_signals());
+  await play_section(para,'1.中继器通过卫星受到组队命令',async () => await recieve_signals(3*L,scene));
   await play_section(para,'2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines,scene));
   await play_section(para,'3.执行组队命令',async () => await move_small_submarines(small_submarines));
 
@@ -74,38 +75,6 @@ async function start_movie({g1,g2}){
   // await subtitle_off(para);
 
   console.log('done');
-
-
-  async function recieve_signals(){
-    // Create the signal mesh
-    const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
-    // radius,tube r_sag, t_sag, arc
-    const m = new THREE.MeshLambertMaterial({
-      color: 0xaa330a,
-      opacity: 0.7,
-      transparent: true
-    });
-    let s = new THREE.Mesh(g,m);  // signal
-    s.translateY(3*L);            // move to sky
-    s.rotateZ(Math.PI);
-
-    let s2 = s.clone();           // right signal
-
-    s.translateX(-3*L);
-    s2.translateX(3*L);
-
-    scene.add(s);
-    scene.add(s2);
-
-
-    let ms = 500;
-    let t = new TWEEN.Tween(s.position).to({y:10},ms).repeat(3);
-    let t2 = new TWEEN.Tween(s2.position).to({y:10},ms).repeat(3);
-    await play_these([t,t2]);
-    s.removeFromParent();
-    s2.removeFromParent();
-  }
-
   async function move_small_submarines(small_submarines){
 
     let ani_small_submarines = [];

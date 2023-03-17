@@ -18,7 +18,7 @@ import {establish_team,
         setup_defaults,
         register_to_button,
         make_signals,
-
+        recieve_signals,
        } from './my_utils.js';
 
 let camera, scene, renderer;
@@ -79,9 +79,89 @@ async function start_movie({g1,g2}){
   // await make_signals(g2.children.slice(1),scene);
   // await subtitle_off(para);
 
-  para.textContent = '4.中继节点向岸上传输信息，接受新指令';
-  await subtitle_on(para);
+  // para.textContent = '4.中继节点向岸上传输信息，接受新指令';
+  // await subtitle_on(para);
+  // await send_signal_up();
+  // await recieve_signals(4*L, scene);
+  // await subtitle_off(para);
 
+
+  // para.textContent = '5.中继节点共识新任务';
+  // await subtitle_on(para);
+  // let two_submarines = [g1.children[0], g2.children[0]];
+  // await make_signals(two_submarines,scene,500,2);
+  // await subtitle_off(para);
+
+  // para.textContent = '6.其他集群指定某个下属航行器作为导航，前往任务目的地支援任务集群';
+  // await subtitle_on(para);
+  // await move_to_task(g1);
+  // await subtitle_off(para);
+
+  para.textContent = '7.任务航行器受到干扰，通过动态重构，重新组网；';
+  await subtitle_on(para);
+  let sub = g2.children[2];
+  await recieve_disturbance(sub);
+
+  await subtitle_off(para);
+
+  console.log('done');
+}
+
+async function recieve_disturbance(sub){
+  const g = new THREE.TorusGeometry(10,1,10,50);
+  const m = new THREE.MeshPhongMaterial({color: 0xff3333});
+  let s0 = new THREE.Mesh(g,m);  // signal
+  s0.rotateX(0.5*Math.PI);
+
+  let N = 10;
+  let v = new THREE.Vector3;
+  sub.getWorldPosition(v);
+  s0.position.copy(v);
+  s0.scale.x = N;
+  s0.scale.y = N;
+
+  scene.add(s0);
+
+  // animate
+  let t = new TWEEN.Tween(s0.scale).to({x:1,y:1},1000)
+      .repeat(2)
+      .easing(TWEEN.Easing.Quadratic.InOut);
+  await play_this(t);
+  s0.removeFromParent();
+}
+
+async function move_to_task(g1){
+  let ms = 1000;
+
+  // Rotate the navigating submarine
+  let sub = g1.children[4];
+  let t = new TWEEN.Tween(sub.rotation)
+      .to({y:0.5*Math.PI},ms)
+      .easing(TWEEN.Easing.Quadratic.InOut);
+  await play_this(t);
+  await make_signals([sub],scene,500,1);
+
+  // Rotate the rest of group
+  let ts = [];
+  for (let sub of g1.children.slice(0,4)){
+    let t = new TWEEN.Tween(sub.rotation)
+        .to({y:0.5*Math.PI},ms)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .delay(0.5 * ms * Math.random())
+    ;
+    ts.push(t);
+  }
+  await play_these(ts);
+
+  // Move the whole group
+  t = new TWEEN.Tween(g1.position)
+    .to({x: 0},1000)
+    .easing(TWEEN.Easing.Quadratic.InOut);
+  await play_this(t);
+
+}
+
+async function send_signal_up(){
   // Create the signal mesh
   const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
   // radius,tube r_sag, t_sag, arc
@@ -102,9 +182,7 @@ async function start_movie({g1,g2}){
   await play_this(t);
 
   s.removeFromParent();
-  await subtitle_off(para);
 
-  console.log('done');
 }
 
 async function emit_signal(sub){
@@ -145,7 +223,7 @@ async function get_submarine_group(scale=1){
       m1.translateX(scale * i*L);
       m1.translateZ(scale * j*L);
       // for debug purpose,
-      // m1.translateY(-L);
+      m1.translateY(-L);
 
 
       let random_amount = 0.5*L;
@@ -179,9 +257,9 @@ async function get_submarines(){
   // add some randomness to group1
   for (let sub of g2.children.slice(1)){
     // console.log(sub);
-    // sub.position.addScaledVector(new THREE.Vector3(Math.random(), Math.random(), Math.random(),), 0.5 * L);
-    // sub.rotation.y = 2 * Math.PI * Math.random();
-    // sub.rotation.x = 0.2 * Math.PI * Math.random();
+    sub.position.addScaledVector(new THREE.Vector3(Math.random(), Math.random(), Math.random(),), 0.5 * L);
+    sub.rotation.y = 2 * Math.PI * Math.random();
+    sub.rotation.x = 0.2 * Math.PI * Math.random();
 }
 
 

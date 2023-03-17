@@ -242,7 +242,7 @@ function register_to_button(n,init_fn,){
   });
 }
 
-async function make_signals(small_submarines,scene){
+async function make_signals(small_submarines,scene,ms=1000,repeat=3,DELAY=500){
   const g = new THREE.TorusGeometry(10,1,10,50);
   // radius,tube r_sag, t_sag, arc
 
@@ -251,8 +251,6 @@ async function make_signals(small_submarines,scene){
 
   // animate
   const N = 10;
-  const ms = 1000;
-  const DELAY = 500;
   // let t = new TWEEN.Tween(s.scale).to({x:N,y:N},ms).repeat(3);
   // await play_this(t);
   // s.removeFromParent();
@@ -270,7 +268,7 @@ async function make_signals(small_submarines,scene){
 
     // animate
     let t = new TWEEN.Tween(s0.scale).to({x:N,y:N},ms)
-        .repeat(3)
+        .repeat(repeat)
         .delay(DELAY*Math.random())
         .easing(TWEEN.Easing.Quadratic.InOut);
     ts.push(
@@ -283,11 +281,44 @@ async function make_signals(small_submarines,scene){
         );
       }));
   }
+
   return Promise.all(ts);
 }
 
 
-export {establish_team, subtitle_on, subtitle_off,
+async function recieve_signals(X,scene){
+  // Create the signal mesh
+  const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
+  // radius,tube r_sag, t_sag, arc
+  const m = new THREE.MeshLambertMaterial({
+    color: 0xaa330a,
+    opacity: 0.7,
+    transparent: true
+  });
+  let s = new THREE.Mesh(g,m);  // signal
+  s.translateY(2*X);            // move to sky
+  s.rotateZ(Math.PI);
+
+  let s2 = s.clone();           // right signal
+
+  s.translateX(-X);
+  s2.translateX(X);
+
+  scene.add(s);
+  scene.add(s2);
+
+
+  let ms = 500;
+  let t = new TWEEN.Tween(s.position).to({y:10},ms).repeat(3);
+  let t2 = new TWEEN.Tween(s2.position).to({y:10},ms).repeat(3);
+  await play_these([t,t2]);
+  s.removeFromParent();
+  s2.removeFromParent();
+}
+
+
+export {
+  establish_team, subtitle_on, subtitle_off,
         play_this, play_these, play_section,visitChildren,
 
         initSea,
@@ -301,5 +332,6 @@ export {establish_team, subtitle_on, subtitle_off,
         setup_defaults,
         register_to_button,
 
-        make_signals
+        make_signals,
+        recieve_signals,
        }
