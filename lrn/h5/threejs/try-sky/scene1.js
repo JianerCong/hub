@@ -17,13 +17,14 @@ import {establish_team,
         load_submarine,
         setup_stats,
         setup_defaults,
+        register_to_button,
        } from './my_utils.js';
 
 let camera, scene, renderer;
 let onRenders = [];
 const L = 50;
 
-init();
+register_to_button(1,init);
 
 async function init() {
   setup_stats(onRenders);

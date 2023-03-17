@@ -1217,6 +1217,29 @@ npm i --save-dev @types/three
 
   para.setAttribute('class', 'highlight');
 #+end_src
+**** Event
+#+begin_src js
+  // Dispatch a custom event so the UI knows we are busy
+  document.dispatchEvent(new CustomEvent("busy", { detail: true }));
+  // Perform a network operation
+  fetch(url)
+    .then(handleNetworkResponse)
+    .catch(handleNetworkError)
+    .finally(() => {
+      // After the network request has succeeded or failed, dispatch
+      // another event to let the UI know that we are no longer busy.
+      document.dispatchEvent(new CustomEvent("busy", { detail: false }));
+    });
+  // Elsewhere, in your program you can register a handler for "busy" events
+  // and use it to show or hide the spinner to let the user know.
+  document.addEventListener("busy", (e) => {
+    if (e.detail) {
+      showSpinner();
+    } else {
+      hideSpinner();
+    }
+  });
+#+end_src
 * End
 
 

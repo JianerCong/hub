@@ -11,6 +11,7 @@
     ("cst" "const")
     ("th" "THREE")
     ("tv" "THREE.Vector3")
+    ("tw" "TWEEN.Tween")
     ("func" "" (lambda () (skeleton-insert '(nil "function(" _ ")"))))
     )) 
 

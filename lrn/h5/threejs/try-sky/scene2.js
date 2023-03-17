@@ -16,17 +16,35 @@ import {establish_team,
         load_submarine,
         setup_stats,
         setup_defaults,
+
+        register_to_button,
        } from './my_utils.js';
 
 let camera, scene, renderer;
 let onRenders = [];
 const L = 25;
 
+register_to_button(2,init);
 init();
+// for now, we play scene 2 by default, comment out the above line on export.
+// Maybe it's more reasonable to play scene 1 on launch.
+
+//// the following is refactored into above function
+// let b = document.querySelector("#my-button-2");
+// b.addEventListener("click", () => {
+//   let b = document.querySelector("#three-output");
+//   if (b) {
+//     let s = document.querySelector("#subtitle");
+//     s.remove();
+//     console.log('Removing existing scene');
+//     b.remove();
+//   }
+//   console.log("Playing scene 2");
+//   init();
+// });
 
 async function init() {
   setup_stats(onRenders);
-
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
 	camera.position.set( 0, 400, 0 );/* x,y,z  (left, up, front)*/
@@ -57,11 +75,11 @@ async function start_movie(g1){
   para.id = "subtitle";
   cav.appendChild(para);
 
-  // await play_section(para,'1.组队已经完成，准备接受指令', async () => establish_team(scene,g1,render));
-  // await play_section(para, '2.中继点收到任务指令及地点',
-  //                    async () =>
-  //                     get_destination(g1)
-  //                   );
+  await play_section(para,'1.组队已经完成，准备接受指令', async () => establish_team(scene,g1,render));
+  await play_section(para, '2.中继点收到任务指令及地点',
+                     async () =>
+                      get_destination(g1)
+                    );
 
   await play_section(para,
                      '3.中继点被分配为导航角色并执行导航',
@@ -71,7 +89,37 @@ async function start_movie(g1){
 
   para.textContent = '4.到达任务执行地，中继点分配任务角色';
   await subtitle_on(para);
+  await distribute_task(g1);
+  await subtitle_off(para);
 
+  para.textContent = '5.任务角色分配完毕，开始执行任务';
+  await subtitle_on(para);
+  await start_task(g1);
+  await subtitle_off(para);
+
+  console.log('done');
+
+}
+
+async function start_task(g1){
+  for (let sub of g1.children.slice(1)){
+    // console.log(sub.rotation);
+    let dv = new THREE.Vector3();
+    let R = 0.8 * L * Math.random(); // distance to move
+    dv.setFromCylindricalCoords(R,sub.userData.a,0);
+    let v0 = sub.position.clone(); // destination
+    v0.add(dv);
+
+    let t = new TWEEN.Tween(sub.position).to({
+      x:v0.x,
+      y:v0.y,
+      z:v0.z,
+    },500);
+    await play_this(t);
+  }
+}
+
+async function distribute_task(g1){
   await establish_team(scene,g1,render);
   for (let [i,sub] of g1.children.slice(1).entries()){
     let theta = Math.PI * Math.random() * 0.5; // a random accute angle
@@ -91,19 +139,12 @@ async function start_movie(g1){
     } else {
       throw new Error("Error");
     }
-    console.log(sub.rotation);
+    // console.log(sub.rotation);
 
     let t = new TWEEN.Tween(sub.rotation).to({y: a},500);
     await play_this(t);
-    // console.log(sub.rotation);
-}
-
-
-
-  await subtitle_off(para);
-
-  console.log('done');
-
+    sub.userData.a = a;
+  }
 }
 
 async function navigate_there(g1){
