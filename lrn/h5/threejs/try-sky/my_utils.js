@@ -368,6 +368,7 @@ async function recieve_signals(X,scene){
     color: 0xaa330a,
     opacity: 0.7,
     // transparent: true
+    emissive: 0xffffff,
   });
   let s = new THREE.Mesh(g,m);  // signal
   s.translateY(2*X);            // move to sky
