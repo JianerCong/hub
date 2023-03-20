@@ -45,9 +45,11 @@ import * as THREE from 'three';
 
 async function establish_team(scene,main_sub, small_subs,render){
   const mat = new THREE.MeshPhongMaterial({color:
-                                           0xaa0000
-                                           + 0x00ffff * Math.random() * 0.3
-                                           ,});
+                                           0x3333ff,
+                                           // + 0x00ffff * Math.random() * 0.3,
+                                           opacity: 0.8,
+                                           blending: THREE.AdditiveBlending,
+                                           });
 
   let v0 = new THREE.Vector3();
   main_sub.getWorldPosition(v0);    // position of main submarine
@@ -126,9 +128,9 @@ function visitChildren(object, fn){
 function add_helpers_orbit(camera, renderer, render,scene, L){
   // helpers
 	const grid_helper = new THREE.GridHelper( L * 12, 12, 0xffffff, 0xffffff );
-	// scene.add( grid_helper );
+	scene.add( grid_helper );
   const axes_helper = new THREE.AxesHelper(50);
-	// scene.add( axes_helper );
+	scene.add( axes_helper );
 
   /* listen to 'change */
 	const controls = new OrbitControls( camera, renderer.domElement );
@@ -145,10 +147,13 @@ function initSea(scene){
   // const m = new THREE.MeshBasicMaterial({
   // const m = new THREE.MeshPhysicalMaterial({
   const m = new THREE.MeshToonMaterial({
-    color: 0x001e1f,
-    opacity: 0.5,
+    color: 0x00211a,
+    opacity: 0.7,
     transparent:true,
     side: THREE.DoubleSide,
+    // blending: THREE.AdditiveBlending,
+    // blending: THREE.MultiplyBlending,
+    // depth: THREE.AlwaysDepth
   });
 
   const sea = new THREE.Mesh(g,m);
@@ -223,6 +228,39 @@ async function load_submarine(){
   return m;
 }
 
+async function load_satellite(H,scene){
+  let mat = new THREE.MeshPhongMaterial({color: 0x666666});
+
+  // use model --------------------------------------------------
+  let l = new OBJLoader();
+  let m = await l.loadAsync('./public/satellite.obj');
+  let s = 0.5;
+  m.scale.set(s,s,s);
+  visitChildren(m, (ch) => {ch.recieveShadow = true; ch.castShadow = true; ch.material = mat;});
+
+  // DEBUG: use cube --------------------------------------------------
+  // let  n = 10;
+  // const geom = new THREE.BoxGeometry(n,n,n);
+  // let m = new THREE.Mesh(geom, mat);
+  m.rotateY(Math.PI);
+  m.position.set(0,0,s*260);
+
+
+  // A group for translating the origin
+  const g = new THREE.Group();
+  g.add(m);
+
+  g.position.set(0,H,0);
+  // g.rotateX(-Math.PI*0.5);
+
+  let t = new TWEEN.Tween(g.rotation).to({z:Math.PI*2},10000).repeat(Infinity).start();
+  let t2 = new TWEEN.Tween(g.rotation).to({y:Math.PI*2},20000).repeat(Infinity).start();
+  let t3 = new TWEEN.Tween(g.rotation).to({x:Math.PI*2},40000).repeat(Infinity).start();
+  scene.add(g);
+
+  return g;
+}
+
 import Stats from 'three/examples/jsm/libs/stats.module';
 function setup_stats(onRenders){
   let stats = new Stats();
@@ -288,7 +326,11 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=3,DELAY=500){
   // s.removeFromParent();
   let ts = [];
   for (let sub of small_submarines){
-    const m = new THREE.MeshPhongMaterial({color: 0x3333ff * Math.random(),});
+    const m = new THREE.MeshPhongMaterial({
+      color: 0x3333ff * Math.random(),
+      opacity: 0.7,
+      transparent: true,
+    });
     let s0 = new THREE.Mesh(g,m);  // signal
     s0.rotateX(0.5*Math.PI);
 
@@ -325,7 +367,7 @@ async function recieve_signals(X,scene){
   const m = new THREE.MeshLambertMaterial({
     color: 0xaa330a,
     opacity: 0.7,
-    transparent: true
+    // transparent: true
   });
   let s = new THREE.Mesh(g,m);  // signal
   s.translateY(2*X);            // move to sky
@@ -360,6 +402,7 @@ export {
         initSky,
         makeOnWindowResize,
         load_submarine,
+        load_satellite,
         setup_stats,
         setup_defaults,
         register_to_button,

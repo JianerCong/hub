@@ -13,7 +13,10 @@ import {establish_team,
         init_light,
         initSky,
         makeOnWindowResize,
+
         load_submarine,
+        load_satellite,
+
         setup_stats,
         setup_defaults,
         register_to_button,
@@ -26,13 +29,14 @@ let onRenders = [];
 const L = 50;
 
 register_to_button(1,init);
+init();
 
 async function init() {
   // setup_stats(onRenders);
 
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
-	camera.position.set( 0, 100, 300 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 0, 300, 300 );/* x,y,z  (left, up, front)*/
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
@@ -60,21 +64,59 @@ async function start_movie({g1,g2}){
   para.id = "subtitle";
   cav.appendChild(para);
 
+  let sat = await load_satellite(4*L,scene);
+  const createPoints = () => {
+    console.log(`creating points`);
+    const points = [];
+
+    for (let x = -15; x < 15; x++) {
+      for (let y = -10; y < 10; y++) {
+        let point = new THREE.Vector3(L * x / 4, L * y / 4, 0);
+        points.push(point);
+      }
+    }
+
+    // points.push(sat.position.clone());
+
+    const colors = new Float32Array(points.length * 3);
+    points.forEach((e, i) => {
+       // console.log(e);
+      const c = new THREE.Color(Math.random() * 0xffffff);
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    });
+
+    const geom = new THREE.BufferGeometry().setFromPoints(points);
+    geom.setAttribute('color', new THREE.BufferAttribute(colors, 3, true));
+
+    console.log(geom);
+    return geom;
+  };
+
+  let mat = new THREE.PointsMaterial({ size: 2,
+                                       vertexColors: true,
+                                       sizeAttenuation: true,
+                                       color: 0xffffff });
+  let m = new THREE.Mesh(createPoints(),mat);
+  scene.add(m);
+
+
   // move little subs--------------------------------------------------
   let small_submarines = g1.children.slice(1).concat(g2.children.slice(1));
   // console.log('小潜艇群');
   // console.log(small_submarines);
 
   await play_section(para,'1.中继器通过卫星受到组队命令',async () => await recieve_signals(3*L,scene));
-  await play_section(para,'2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines,scene));
-  await play_section(para,'3.执行组队命令',async () => await move_small_submarines(small_submarines));
+  // await play_section(para,'2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines,scene));
+  // await play_section(para,'3.执行组队命令',async () => await move_small_submarines(small_submarines));
 
-  para.textContent = '4.完成组队';
-  await subtitle_on(para);
-  await Promise.all([
-    establish_team(scene,g1.children[0],g1.children.slice(1),render),
-    establish_team(scene,g2.children[0],g2.children.slice(1),render),
-  ]);
+  // para.textContent = '4.完成组队';
+  // await subtitle_on(para);
+  // await Promise.all([
+  //   establish_team(scene,g1.children[0],g1.children.slice(1),render),
+  //   establish_team(scene,g2.children[0],g2.children.slice(1),render),
+  // ]);
   // await subtitle_off(para);
 
   console.log('done');
@@ -96,6 +138,7 @@ async function start_movie({g1,g2}){
 }
 
 async function get_submarine_group(){
+
   const g = new THREE.Group();
   // console.log(`Adding submarines`);
   let s = 1.2;                    // the scale of smaller submarine
