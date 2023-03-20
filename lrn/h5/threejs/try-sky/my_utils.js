@@ -2,8 +2,48 @@ import TWEEN from './public/tween.esm.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as THREE from 'three';
 
+// async function establish_team_old(scene,main_sub, small_subs,render){
+//   // const geom = new THREE.SphereGeometry(2,8,8);
+//   const mat = new THREE.MeshPhongMaterial({color:
+//                                            0xaa0000
+//                                            + 0x00ffff * Math.random() * 0.3
+//                                            ,});
+
+//   let v0 = new THREE.Vector3();
+//   main_sub.getWorldPosition(v0);    // position of main submarine
+
+//   let ts = [];
+//   let balls = [];
+//   for (let sub of small_subs){
+//     // let m = new THREE.Mesh(geom,mat);
+//     // m.position.copy(v0);
+//     // scene.add(m);
+//     // r,width-seg,height-seg
+
+//     // let sub = g1.children.slice(1)[0];
+//     let o = {t:0};
+//     const ms = 800;
+
+//     let v = new THREE.Vector3();
+//     sub.getWorldPosition(v);    // position of this small sub
+
+//     // // animate
+//     // let t = new TWEEN.Tween(o).to({t:1},ms)
+//     //     .repeat(3).yoyo(true)
+//     //     .onUpdate(()=>{
+//     //       m.position.lerpVectors(v0,v,o.t);
+//     //       render();
+//     //     });
+//     // ts.push(t);
+
+//     // balls.push(m);
+//   }
+
+//   // await play_these(ts);
+//   // balls.forEach((m) => m.removeFromParent());
+// }
+
 async function establish_team(scene,main_sub, small_subs,render){
-  const geom = new THREE.SphereGeometry(2,8,8);
   const mat = new THREE.MeshPhongMaterial({color:
                                            0xaa0000
                                            + 0x00ffff * Math.random() * 0.3
@@ -15,30 +55,19 @@ async function establish_team(scene,main_sub, small_subs,render){
   let ts = [];
   let balls = [];
   for (let sub of small_subs){
-    let m = new THREE.Mesh(geom,mat);
-    m.position.copy(v0);
-    scene.add(m);
-    // r,width-seg,height-seg
-
     // let sub = g1.children.slice(1)[0];
     let o = {t:0};
     const ms = 800;
 
     let v = new THREE.Vector3();
     sub.getWorldPosition(v);    // position of this small sub
-    // animate
-    let t = new TWEEN.Tween(o).to({t:1},ms)
-        .repeat(3).yoyo(true)
-        .onUpdate(()=>{
-          m.position.lerpVectors(v0,v,o.t);
-          render();
-        });
-    ts.push(t);
 
-    balls.push(m);
+    let tube_geom = new THREE.TubeGeometry(
+      new THREE.LineCurve3(v0,v)
+);
+    let tube = new THREE.Mesh(tube_geom,mat);
+    scene.add(tube);
   }
-  await play_these(ts);
-  balls.forEach((m) => m.removeFromParent());
 }
 
 const subtitle_transition_ms = 1000;

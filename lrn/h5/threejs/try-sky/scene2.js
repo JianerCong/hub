@@ -77,27 +77,28 @@ async function start_movie(g1){
 
   await play_section(para,'1.组队已经完成，准备接受指令', async () =>
     establish_team(scene,g1.children[0],g1.children.slice(1),render));
-  await play_section(para, '2.中继点收到任务指令及地点',
-                     async () =>
-                      get_destination(g1)
-                    );
 
-  await play_section(para,
-                     '3.中继点被分配为导航角色并执行导航',
-                     async () =>
-                     navigate_there(g1)
-                    );
+  // await play_section(para, '2.中继点收到任务指令及地点',
+  //                    async () =>
+  //                     get_destination(g1)
+  //                   );
 
-  para.textContent = '4.到达任务执行地，中继点分配任务角色';
-  await subtitle_on(para);
-  await establish_team(scene,g1.children[0],g1.children.slice(1),render);
-  await distribute_task(g1);
-  await subtitle_off(para);
+  // await play_section(para,
+  //                    '3.中继点被分配为导航角色并执行导航',
+  //                    async () =>
+  //                    navigate_there(g1)
+  //                   );
 
-  para.textContent = '5.任务角色分配完毕，开始执行任务';
-  await subtitle_on(para);
-  await start_task(g1);
-  await subtitle_off(para);
+  // para.textContent = '4.到达任务执行地，中继点分配任务角色';
+  // await subtitle_on(para);
+  // await establish_team(scene,g1.children[0],g1.children.slice(1),render);
+  // await distribute_task(g1);
+  // await subtitle_off(para);
+
+  // para.textContent = '5.任务角色分配完毕，开始执行任务';
+  // await subtitle_on(para);
+  // await start_task(g1);
+  // await subtitle_off(para);
 
   console.log('done');
 
