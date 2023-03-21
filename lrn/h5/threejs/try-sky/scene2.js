@@ -47,7 +47,8 @@ async function init() {
   // setup_stats(onRenders);
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
-	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 0, 500, 0 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 0, 0, 300 );/* x,y,z  (left, up, front)*/
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
@@ -75,19 +76,21 @@ async function start_movie(g1){
   para.id = "subtitle";
   cav.appendChild(para);
 
-  await play_section(para,'1.组队已经完成，准备接受指令', async () =>
-    establish_team(scene,g1.children[0],g1.children.slice(1),render));
+  // para.textContent = '1.组队已经完成，准备接受指令';
+  // await subtitle_on(para);
+  // await establish_team(scene,g1.children[0],g1.children.slice(1),render);
+  // await subtitle_off(para);
 
   // await play_section(para, '2.中继点收到任务指令及地点',
   //                    async () =>
   //                     get_destination(g1)
   //                   );
 
-  // await play_section(para,
-  //                    '3.中继点被分配为导航角色并执行导航',
-  //                    async () =>
-  //                    navigate_there(g1)
-  //                   );
+  await play_section(para,
+                     '3.中继点被分配为导航角色并执行导航',
+                     async () =>
+                     navigate_there(g1)
+                    );
 
   // para.textContent = '4.到达任务执行地，中继点分配任务角色';
   // await subtitle_on(para);
@@ -153,8 +156,10 @@ async function distribute_task(g1){
   await play_these(ts);
 }
 
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+
 async function navigate_there(g1){
-  let ms = 4000;
+  let ms = 500;
 
   let ts = [];
   for (let sub of g1.children){
@@ -167,37 +172,79 @@ async function navigate_there(g1){
   }
   await play_these(ts);
 
-  let t = new TWEEN.Tween(g1.position)
-      .to({x: -4*L},8000)
-      .easing(TWEEN.Easing.Quadratic.InOut);
+  // let t = new TWEEN.Tween(g1.position)
+  //     .to({x: -4*L},8000)
+  //     .easing(TWEEN.Easing.Quadratic.InOut);
+  // await play_this(t);
+
+  let o = {t:0};
+
+  let l = -8*L;
+  let sub = g1.children[1];
+  sub.userData.oldX = sub.position.x;
+  sub.userData.oldY = sub.position.y;
+  console.log(sub.position);
+  const A = 0.5*L;
+  const n = 2;
+
+  console.log(sub.rotation);
+  let t = new TWEEN.Tween(o)
+      .to({t:1},4000)
+      .onUpdate(function(o){
+        sub.position.x = sub.userData.oldX + o.t*l;
+        sub.position.y = sub.userData.oldY + A*Math.sin(2*Math.PI*o.t*n);
+        sub.rotation.z = Math.PI * o.t;
+      }).repeat(Infinity)
+  ;
+  const controls = new TransformControls(camera, renderer.domElement);
+  controls.attach(sub);
+  scene.add(controls);
   await play_this(t);
 }
+
+// async function get_destination(g1){
+//   let dest = -4*L;
+
+//   // add a small ball m
+//   const geom = new THREE.SphereGeometry(2,8,8);
+//   const mat = new THREE.MeshPhongMaterial({color: 0xff2211});
+//   let m = new THREE.Mesh(geom,mat); // small ball
+//   scene.add(m);
+
+//   let v0 = new THREE.Vector3();
+//   g1.children[0].getWorldPosition(v0);    // position of main submarine
+//   // console.log(g1.children[0]);
+//   let v = new THREE.Vector3(dest, 0,0);
+//   let o = {t:0};
+//   let ms = 500;
+//   let t = new TWEEN.Tween(o).to({t:1},ms)
+//       .repeat(3)
+//       .onUpdate(()=>{
+//         m.position.lerpVectors(v0,v,o.t);
+//         render();
+//       });
+//   await play_this(t);
+//   m.removeFromParent();
+// }
 
 async function get_destination(g1){
   let dest = -4*L;
+  const map = new THREE.TextureLoader().load( './public/location_masked.png' );
+  const material = new THREE.SpriteMaterial( { map: map,
+                                               color: 0xffffff,
+                                               opacity: 0
+                                             } );
+  const m = new THREE.Sprite( material );
 
-  // add a small ball m
-  const geom = new THREE.SphereGeometry(2,8,8);
-  const mat = new THREE.MeshPhongMaterial({color: 0xff2211});
-  let m = new THREE.Mesh(geom,mat); // small ball
-  scene.add(m);
+  m.scale.set(20, 20, 1);
+  m.position.set(dest,10,0);
+  scene.add( m );
 
-  let v0 = new THREE.Vector3();
-  g1.children[0].getWorldPosition(v0);    // position of main submarine
-  // console.log(g1.children[0]);
-  let v = new THREE.Vector3(dest, 0,0);
-  let o = {t:0};
-  let ms = 500;
-  let t = new TWEEN.Tween(o).to({t:1},ms)
-      .repeat(3)
-      .onUpdate(()=>{
-        m.position.lerpVectors(v0,v,o.t);
-        render();
-      });
+  // yoyo=ture makes the number of repeat matters ⇒
+  // odd ⇒ 有，even ⇒ 无
+  let t = new TWEEN.Tween(m.material).to({opacity:1},500).repeat(5).yoyo(true);
   await play_this(t);
-  m.removeFromParent();
 }
-
 
 async function get_submarine_group(){
   const g = new THREE.Group();
@@ -222,7 +269,7 @@ async function get_submarine_group(){
       m1.userData.myY = m1.position.y;
       m1.userData.myZ = m1.position.z;
 
-      m1.name = `小潜艇`;
+      m1.name = `小潜艇${n}`;
       // submarines.push(m1);
       m1.scale.set(s,s,s);
       g.add(m1);

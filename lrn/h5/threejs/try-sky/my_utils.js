@@ -43,7 +43,8 @@ import * as THREE from 'three';
 //   // balls.forEach((m) => m.removeFromParent());
 // }
 
-async function establish_team(scene,main_sub, small_subs,render){
+async function establish_team(scene,main_sub, small_subs,render,fade_out=true){
+
   const mat = new THREE.MeshPhongMaterial({color:
                                            0x3333ff,
                                            // + 0x00ffff * Math.random() * 0.3,
@@ -52,12 +53,14 @@ async function establish_team(scene,main_sub, small_subs,render){
                                            emissive: 0xffffff,
                                            emissiveIntensity:0,
                                            });
-
   let v0 = new THREE.Vector3();
   main_sub.getWorldPosition(v0);    // position of main submarine
 
+  let fades = [];
+  let fades_fn = [];
+
   let ts = [];
-  let balls = [];
+  let tubes = [];
   for (let sub of small_subs){
     // let sub = g1.children.slice(1)[0];
     let o = {t:0};
@@ -73,19 +76,27 @@ async function establish_team(scene,main_sub, small_subs,render){
 
     let tube = new THREE.Mesh(tube_geom,mat);
     let t = new TWEEN.Tween(tube.material).to({emissiveIntensity:1,opacity:1},500).repeat(4).yoyo(true);
+
+    // fade out
+    if (fade_out){
+      fades.push(new TWEEN.Tween(tube.material).to({emissiveIntensity:0,opacity:0},500));
+      fades_fn.push(()=> tube.removeFromParent());
+    }
+
     scene.add(tube);
     ts.push(t);
+    tubes.push(tube);
   }
 
   // the nearby submarines
   console.log(small_subs);
-  let m = [1,3,2,0];            // the entries to connect
+  let m = [1,3,0,2];            // the entries to connect
   for (let i = 0;i < m.length; i++){
     let i_next = m[i];
 
-    console.log(`\ni_next: ${i_next}`);
-    console.log(small_subs[i].position);
-    console.log(small_subs[i_next].position);
+    // console.log(`\ni_next: ${i_next}`);
+    // console.log(small_subs[i].position);
+    // console.log(small_subs[i_next].position);
 
     let v = new THREE.Vector3();
     small_subs[i].getWorldPosition(v);    // position of this small sub
@@ -99,11 +110,25 @@ async function establish_team(scene,main_sub, small_subs,render){
     );
     let tube = new THREE.Mesh(tube_geom,mat);
     let t = new TWEEN.Tween(tube.material).to({emissiveIntensity:1,opacity:1},500).repeat(4).yoyo(true);
+
+    // fade out
+    if (fade_out){
+      fades.push(new TWEEN.Tween(tube.material).to({emissiveIntensity:0,opacity:0},500));
+      fades_fn.push(()=> tube.removeFromParent());
+    }
+
     scene.add(tube);
     ts.push(t);
+    tubes.push(tube);
   }
 
   await play_these(ts);
+  if (fade_out) {
+    await play_these(fades, fades_fn);
+  }
+
+  // return  these tubes, can be deleted
+  return tubes;
 }
 
 const subtitle_transition_ms = 1000;
