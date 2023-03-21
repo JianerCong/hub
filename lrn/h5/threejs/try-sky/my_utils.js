@@ -47,8 +47,10 @@ async function establish_team(scene,main_sub, small_subs,render){
   const mat = new THREE.MeshPhongMaterial({color:
                                            0x3333ff,
                                            // + 0x00ffff * Math.random() * 0.3,
-                                           opacity: 0.8,
+                                           opacity: 0,
                                            blending: THREE.AdditiveBlending,
+                                           emissive: 0xffffff,
+                                           emissiveIntensity:0,
                                            });
 
   let v0 = new THREE.Vector3();
@@ -63,13 +65,45 @@ async function establish_team(scene,main_sub, small_subs,render){
 
     let v = new THREE.Vector3();
     sub.getWorldPosition(v);    // position of this small sub
+    let tube_geom = new THREE.TubeGeometry(
+      new THREE.LineCurve3(v0,v),
+      1,                       // tabular segment
+      1,                        // radius
+    );
+
+    let tube = new THREE.Mesh(tube_geom,mat);
+    let t = new TWEEN.Tween(tube.material).to({emissiveIntensity:1,opacity:1},500).repeat(4).yoyo(true);
+    scene.add(tube);
+    ts.push(t);
+  }
+
+  // the nearby submarines
+  console.log(small_subs);
+  let m = [1,3,2,0];            // the entries to connect
+  for (let i = 0;i < m.length; i++){
+    let i_next = m[i];
+
+    console.log(`\ni_next: ${i_next}`);
+    console.log(small_subs[i].position);
+    console.log(small_subs[i_next].position);
+
+    let v = new THREE.Vector3();
+    small_subs[i].getWorldPosition(v);    // position of this small sub
+    let v1 = new THREE.Vector3();
+    small_subs[i_next].getWorldPosition(v1);    // position of this small sub
 
     let tube_geom = new THREE.TubeGeometry(
-      new THREE.LineCurve3(v0,v)
-);
+      new THREE.LineCurve3(v,v1),
+      1,                       // tabular segment
+      1,                        // radius
+    );
     let tube = new THREE.Mesh(tube_geom,mat);
+    let t = new TWEEN.Tween(tube.material).to({emissiveIntensity:1,opacity:1},500).repeat(4).yoyo(true);
     scene.add(tube);
+    ts.push(t);
   }
+
+  await play_these(ts);
 }
 
 const subtitle_transition_ms = 1000;
@@ -95,17 +129,33 @@ async function subtitle_off(para,ms=subtitle_transition_ms){
 }
 
 
-async function play_these(ts){
-  return Promise.all(ts.map(play_this));
+async function play_these(ts,fns=null){
+  // fns: onComplete functions.
+  // console.log(`play_these called,fns is ${fns}`);
+  if (fns){
+    return Promise.all(ts.map((e,i) => play_this(e,fns[i])));
+  }else{
+    // console.log('no fns supplied');
+    return Promise.all(ts.map((e,i) => play_this(e))); // by default, i is passed to play_this's second arg
+}
 }
 
-async function play_this(t){
-  // console.log('play');
-  return new Promise((resolve, reject) =>{
-    t.start().onComplete(resolve);
-  });
+async function play_this(t, fn=null){
+  // console.log(`play with fn=${fn}`);
+  if (fn){
+    return new Promise((resolve, reject) =>{
+      t.start().onComplete(()=>{
+        fn();
+        resolve();
+      });
+    });
+  }else{
+    // console.log('no fn supplied');
+    return new Promise((resolve, reject) =>{
+      t.start().onComplete(resolve);
+    });
 }
-
+}
 
 async function play_section(para,t,fn){
   para.textContent = t;
@@ -361,7 +411,14 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=3,DELAY=500){
 
 
 async function recieve_signals(X,scene){
-  // Create the signal mesh
+  // X: the x-coordinates of the recieving submarines
+  const L = 50;
+  const H = 4* L;
+
+  const v0 = new THREE.Vector3(0,H,0);
+  const v1 = new THREE.Vector3(X,0,0);
+  const v2 = new THREE.Vector3(-X,0,0);
+
   const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
   // radius,tube r_sag, t_sag, arc
   const m = new THREE.MeshLambertMaterial({
@@ -371,24 +428,53 @@ async function recieve_signals(X,scene){
     emissive: 0xffffff,
   });
   let s = new THREE.Mesh(g,m);  // signal
-  s.translateY(2*X);            // move to sky
-  s.rotateZ(Math.PI);
 
-  let s2 = s.clone();           // right signal
+  s.position.copy(v0);            // move to the satellite position
+  s.lookAt(v1);                   // look at the v1 position
+  s.rotateY(Math.PI/2);
+  s.rotateZ(Math.PI/2);
 
-  s.translateX(-X);
-  s2.translateX(X);
-
-  scene.add(s);
-  scene.add(s2);
+  let s2 = new THREE.Mesh(g,m);           // right signal
+  s2.position.copy(v0);            // move to the satellite position
+  s2.lookAt(v2);                   // look at the v2 position
+  s2.rotateY(Math.PI/2);
+  s2.rotateZ(Math.PI/2);
 
 
   let ms = 1000;
-  let t = new TWEEN.Tween(s.position).to({y:10},ms).repeat(3);
-  let t2 = new TWEEN.Tween(s2.position).to({y:10},ms).repeat(3);
-  await play_these([t,t2]);
-  s.removeFromParent();
-  s2.removeFromParent();
+  const N = 2;                  // the number of wav per ms
+  let fns = [];
+  let ts = [];
+  // Create the signal mesh
+  for (let i = 0; i < N;i++){
+    // --------------------------------------------------
+
+    let s0 = s.clone();
+    let s20 = s2.clone();
+
+    s0.material.color = new THREE.Color(0xffffff * Math.random());
+
+    let t = new TWEEN.Tween(s0.position).to(v1,ms).repeat(2);
+    let t2 = new TWEEN.Tween(s20.position).to(v2,ms).repeat(2);
+
+    let d = i*ms/N;
+
+    // scene.add(s0);
+    // scene.add(s2);
+    t.onStart(()=>{scene.add(s0);});
+    t2.onStart(()=>{scene.add(s20);});
+
+    t.delay(d).repeatDelay(0);
+    t2.delay(d).repeatDelay(0);
+
+    ts.push(t,t2);
+    fns.push(
+      () => {s0.removeFromParent();},
+      () => {s20.removeFromParent();},
+    );
+}
+  await play_these(ts,fns);
+
 }
 
 

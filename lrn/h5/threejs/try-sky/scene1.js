@@ -29,7 +29,7 @@ let onRenders = [];
 const L = 50;
 
 register_to_button(1,init);
-init();
+// init();
 
 async function init() {
   // setup_stats(onRenders);
@@ -65,41 +65,6 @@ async function start_movie({g1,g2}){
   cav.appendChild(para);
 
   let sat = await load_satellite(4*L,scene);
-  const createPoints = () => {
-    console.log(`creating points`);
-    const points = [];
-
-    for (let x = -15; x < 15; x++) {
-      for (let y = -10; y < 10; y++) {
-        let point = new THREE.Vector3(L * x / 4, L * y / 4, 0);
-        points.push(point);
-      }
-    }
-
-    // points.push(sat.position.clone());
-
-    const colors = new Float32Array(points.length * 3);
-    points.forEach((e, i) => {
-       // console.log(e);
-      const c = new THREE.Color(Math.random() * 0xffffff);
-      colors[i * 3] = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
-    });
-
-    const geom = new THREE.BufferGeometry().setFromPoints(points);
-    geom.setAttribute('color', new THREE.BufferAttribute(colors, 3, true));
-
-    console.log(geom);
-    return geom;
-  };
-
-  let mat = new THREE.PointsMaterial({ size: 2,
-                                       vertexColors: true,
-                                       sizeAttenuation: true,
-                                       color: 0xffffff });
-  let m = new THREE.Mesh(createPoints(),mat);
-  scene.add(m);
 
 
   // move little subs--------------------------------------------------
