@@ -25,7 +25,7 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(2,init);
-init();
+// init();
 // for now, we play scene 2 by default, comment out the above line on export.
 // Maybe it's more reasonable to play scene 1 on launch.
 
@@ -47,8 +47,9 @@ async function init() {
   // setup_stats(onRenders);
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
-	camera.position.set( 0, 500, 0 );/* x,y,z  (left, up, front)*/
-	camera.position.set( 0, 0, 300 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
+	// camera.position.set( 0, 500, 0 );/* x,y,z  (left, up, front)*/
+	// camera.position.set( 0, 0, 300 );/* x,y,z  (left, up, front)*/
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
@@ -76,15 +77,15 @@ async function start_movie(g1){
   para.id = "subtitle";
   cav.appendChild(para);
 
-  // para.textContent = '1.组队已经完成，准备接受指令';
-  // await subtitle_on(para);
-  // await establish_team(scene,g1.children[0],g1.children.slice(1),render);
-  // await subtitle_off(para);
+  para.textContent = '1.组队已经完成，准备接受指令';
+  await subtitle_on(para);
+  await establish_team(scene,g1.children[0],g1.children.slice(1),render);
+  await subtitle_off(para);
 
-  // await play_section(para, '2.中继点收到任务指令及地点',
-  //                    async () =>
-  //                     get_destination(g1)
-  //                   );
+  await play_section(para, '2.中继点收到任务指令及地点',
+                     async () =>
+                      get_destination(g1)
+                    );
 
   await play_section(para,
                      '3.中继点被分配为导航角色并执行导航',
@@ -92,16 +93,16 @@ async function start_movie(g1){
                      navigate_there(g1)
                     );
 
-  // para.textContent = '4.到达任务执行地，中继点分配任务角色';
-  // await subtitle_on(para);
-  // await establish_team(scene,g1.children[0],g1.children.slice(1),render);
-  // await distribute_task(g1);
-  // await subtitle_off(para);
+  para.textContent = '4.到达任务执行地，中继点分配任务角色';
+  await subtitle_on(para);
+  await establish_team(scene,g1.children[0],g1.children.slice(1),render);
+  await distribute_task(g1);
+  await subtitle_off(para);
 
-  // para.textContent = '5.任务角色分配完毕，开始执行任务';
-  // await subtitle_on(para);
-  // await start_task(g1);
-  // await subtitle_off(para);
+  para.textContent = '5.任务角色分配完毕，开始执行任务';
+  await subtitle_on(para);
+  await start_task(g1);
+  await subtitle_off(para);
 
   console.log('done');
 
@@ -156,10 +157,10 @@ async function distribute_task(g1){
   await play_these(ts);
 }
 
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+// import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 async function navigate_there(g1){
-  let ms = 500;
+  let ms = 2000;
 
   let ts = [];
   for (let sub of g1.children){
@@ -172,34 +173,39 @@ async function navigate_there(g1){
   }
   await play_these(ts);
 
-  // let t = new TWEEN.Tween(g1.position)
-  //     .to({x: -4*L},8000)
-  //     .easing(TWEEN.Easing.Quadratic.InOut);
-  // await play_this(t);
+  ts = [];
+
+
+  ms = 8000;
+  let t = new TWEEN.Tween(g1.position)
+      .to({x: -4*L},ms)
+      .easing(TWEEN.Easing.Quadratic.InOut);
+  ts.push(t);
 
   let o = {t:0};
 
-  let l = -8*L;
-  let sub = g1.children[1];
-  sub.userData.oldX = sub.position.x;
-  sub.userData.oldY = sub.position.y;
-  console.log(sub.position);
-  const A = 0.5*L;
-  const n = 2;
+  for (let sub of g1.children.slice(1)){
+    sub.userData.oldY = sub.position.y;
+    // console.log(sub.position);
+    const A = 0.5*L;
+    const n = 2;
 
-  console.log(sub.rotation);
-  let t = new TWEEN.Tween(o)
-      .to({t:1},4000)
-      .onUpdate(function(o){
-        sub.position.x = sub.userData.oldX + o.t*l;
-        sub.position.y = sub.userData.oldY + A*Math.sin(2*Math.PI*o.t*n);
-        sub.rotation.z = Math.PI * o.t;
-      }).repeat(Infinity)
-  ;
-  const controls = new TransformControls(camera, renderer.domElement);
-  controls.attach(sub);
-  scene.add(controls);
-  await play_this(t);
+    let t = new TWEEN.Tween(o)
+        .to({t:1},ms)
+        .onUpdate(function(o){
+          // sub.position.x = sub.userData.oldX + o.t*l;
+          sub.position.y = sub.userData.oldY + A*Math.sin(2*Math.PI*o.t*n);
+        }).delay(0.1*ms*Math.random())
+        .easing(TWEEN.Easing.Quadratic.InOut);
+    ;
+    // const controls = new TransformControls(camera, renderer.domElement);
+    // controls.attach(sub);
+    // scene.add(controls);
+    // play_this(t);
+
+    ts.push(t);
+  }
+  await play_these(ts);
 }
 
 // async function get_destination(g1){

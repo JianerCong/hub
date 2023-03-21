@@ -21,7 +21,7 @@ import {establish_team,
         setup_defaults,
         register_to_button,
         make_signals,
-        recieve_signals,
+        recieve_signals_from_sat,
        } from './my_utils.js';
 
 let camera, scene, renderer;
@@ -72,17 +72,17 @@ async function start_movie({g1,g2}){
   // console.log('小潜艇群');
   // console.log(small_submarines);
 
-  await play_section(para,'1.中继器通过卫星受到组队命令',async () => await recieve_signals(3*L,scene));
-  // await play_section(para,'2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines,scene));
-  // await play_section(para,'3.执行组队命令',async () => await move_small_submarines(small_submarines));
+  await play_section(para,'1.中继器通过卫星受到组队命令',async () => await recieve_signals_from_sat(3*L,scene));
+  await play_section(para,'2.p2p身份认证，通过后入网并共识',async () => await make_signals(small_submarines,scene));
+  await play_section(para,'3.执行组队命令',async () => await move_small_submarines(small_submarines));
 
-  // para.textContent = '4.完成组队';
-  // await subtitle_on(para);
-  // await Promise.all([
-  //   establish_team(scene,g1.children[0],g1.children.slice(1),render),
-  //   establish_team(scene,g2.children[0],g2.children.slice(1),render),
-  // ]);
-  // await subtitle_off(para);
+  para.textContent = '4.完成组队';
+  await subtitle_on(para);
+  await Promise.all([
+    establish_team(scene,g1.children[0],g1.children.slice(1),render),
+    establish_team(scene,g2.children[0],g2.children.slice(1),render),
+  ]);
+  await subtitle_off(para);
 
   console.log('done');
   async function move_small_submarines(small_submarines){

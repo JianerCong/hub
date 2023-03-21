@@ -89,7 +89,7 @@ async function establish_team(scene,main_sub, small_subs,render,fade_out=true){
   }
 
   // the nearby submarines
-  console.log(small_subs);
+  // console.log(small_subs);
   let m = [1,3,0,2];            // the entries to connect
   for (let i = 0;i < m.length; i++){
     let i_next = m[i];
@@ -387,7 +387,7 @@ function register_to_button(n,init_fn,){
   });
 }
 
-async function make_signals(small_submarines,scene,ms=1000,repeat=3,DELAY=500){
+async function make_signals(small_submarines,scene,ms=1000,repeat=2,DELAY=500){
   const g = new THREE.TorusGeometry(10,1,10,50);
   // radius,tube r_sag, t_sag, arc
 
@@ -402,9 +402,10 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=3,DELAY=500){
   let ts = [];
   for (let sub of small_submarines){
     const m = new THREE.MeshPhongMaterial({
-      color: 0x3333ff * Math.random(),
-      opacity: 0.7,
-      transparent: true,
+      color: 0xffffff * Math.random(),
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      emissive: 0xaaaaaa,
     });
     let s0 = new THREE.Mesh(g,m);  // signal
     s0.rotateX(0.5*Math.PI);
@@ -435,15 +436,8 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=3,DELAY=500){
 }
 
 
-async function recieve_signals(X,scene){
-  // X: the x-coordinates of the recieving submarines
-  const L = 50;
-  const H = 4* L;
-
-  const v0 = new THREE.Vector3(0,H,0);
-  const v1 = new THREE.Vector3(X,0,0);
-  const v2 = new THREE.Vector3(-X,0,0);
-
+async function get_signals(scene,v0,v1,ms=1000,N=3){
+  console.log('getting signals');
   const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
   // radius,tube r_sag, t_sag, arc
   const m = new THREE.MeshLambertMaterial({
@@ -451,6 +445,7 @@ async function recieve_signals(X,scene){
     opacity: 0.7,
     // transparent: true
     emissive: 0xffffff,
+    // needsUpdate:true,
   });
   let s = new THREE.Mesh(g,m);  // signal
 
@@ -459,45 +454,43 @@ async function recieve_signals(X,scene){
   s.rotateY(Math.PI/2);
   s.rotateZ(Math.PI/2);
 
-  let s2 = new THREE.Mesh(g,m);           // right signal
-  s2.position.copy(v0);            // move to the satellite position
-  s2.lookAt(v2);                   // look at the v2 position
-  s2.rotateY(Math.PI/2);
-  s2.rotateZ(Math.PI/2);
 
+    let fns = [];
+    let ts = [];
+    // Create the signal mesh
+    for (let i = 0; i < N;i++){
+      // --------------------------------------------------
+      let s0 = s.clone();
 
-  let ms = 1000;
-  const N = 2;                  // the number of wav per ms
-  let fns = [];
-  let ts = [];
-  // Create the signal mesh
-  for (let i = 0; i < N;i++){
-    // --------------------------------------------------
+      s0.material.color = new THREE.Color(0xffffff * Math.random());
 
-    let s0 = s.clone();
-    let s20 = s2.clone();
+      let t = new TWEEN.Tween(s0.position).to(v1,ms).repeat(2);
+      let d = i*ms/N;
 
-    s0.material.color = new THREE.Color(0xffffff * Math.random());
+      // scene.add(s0);
+      // scene.add(s2);
+      t.onStart(()=>{scene.add(s0);});
+      t.delay(d).repeatDelay(0);
 
-    let t = new TWEEN.Tween(s0.position).to(v1,ms).repeat(2);
-    let t2 = new TWEEN.Tween(s20.position).to(v2,ms).repeat(2);
-
-    let d = i*ms/N;
-
-    // scene.add(s0);
-    // scene.add(s2);
-    t.onStart(()=>{scene.add(s0);});
-    t2.onStart(()=>{scene.add(s20);});
-
-    t.delay(d).repeatDelay(0);
-    t2.delay(d).repeatDelay(0);
-
-    ts.push(t,t2);
-    fns.push(
-      () => {s0.removeFromParent();},
-      () => {s20.removeFromParent();},
-    );
+      ts.push(t);
+      fns.push(() => {s0.removeFromParent();});
+  }
+  return {ts,fns};
 }
+
+async function recieve_signals_from_sat(X,scene){
+  const L = 50;
+  const H = 4* L;
+
+  const v0 = new THREE.Vector3(0,H,0);
+  const v1 = new THREE.Vector3(X,0,0);
+  const v2 = new THREE.Vector3(-X,0,0);
+
+  let o1 = await get_signals(scene,v0,v1);
+  let o2 = await get_signals(scene,v0,v2);
+  let ts = o1.ts.concat(o2.ts);
+  let fns = o1.fns.concat(o2.fns);
+  // console.log(ts);
   await play_these(ts,fns);
 
 }
@@ -520,5 +513,6 @@ export {
         register_to_button,
 
         make_signals,
-        recieve_signals,
+        recieve_signals_from_sat,
+  get_signals,
        }
