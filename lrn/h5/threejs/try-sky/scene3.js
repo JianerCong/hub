@@ -14,6 +14,8 @@ import {establish_team,
         initSky,
         makeOnWindowResize,
         load_submarine,
+        load_satellite,
+
         setup_stats,
         setup_defaults,
         register_to_button,
@@ -35,7 +37,7 @@ async function init() {
 
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
-	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 0, 100, 300 );/* x,y,z  (left, up, front)*/
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
@@ -53,6 +55,7 @@ async function init() {
 async function start_movie({g1,g2}){
 	requestAnimationFrame(animate);
   console.log('Movie started');
+  let sat = await load_satellite(4*L,scene);
   // console.log(g1);
 
   // subtitle
@@ -80,22 +83,18 @@ async function start_movie({g1,g2}){
   // await emit_signal(sub);
   // await subtitle_off(para);
 
-  para.textContent = '3.发现目标后，航行器节点共识目标信息。由里中继器最近的航行器向中继器节点上传信息。';
-  await subtitle_on(para);
-  await make_signals(g2.children.slice(1),scene);
-
-  
-  const v0 = g2.children[0].position.clone();
-  const v1 = g2.children[3].position.clone();
-  
-  await subtitle_off(para);
-
-  // para.textContent = '4.中继节点向岸上传输信息，接受新指令';
+  // para.textContent = '3.发现目标后，航行器节点共识目标信息。由离中继器最近的航行器向中继器节点上传信息。';
   // await subtitle_on(para);
-  // await send_signal_up();
-  // await recieve_signals_from_sat(4*L, scene);
+  // await make_signals(g2.children.slice(1),scene);
+  // await cross_signal(g2.children[0],g2.children[3]);
   // await subtitle_off(para);
 
+  para.textContent = '4.中继节点向岸上传输信息，接受新指令';
+  await subtitle_on(para);
+  await send_signal(sat,g2.children[0]);
+
+  await recieve_signals_from_sat(4*L, scene, 4*L);
+  await subtitle_off(para);
   // para.textContent = '5.中继节点共识新任务';
   // await subtitle_on(para);
   // let two_submarines = [g1.children[0], g2.children[0]];
@@ -201,28 +200,14 @@ async function move_to_task(g1){
 
 }
 
-async function send_signal_up(){
-  // Create the signal mesh
-  const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
-  // radius,tube r_sag, t_sag, arc
-  const m = new THREE.MeshLambertMaterial({
-    color: 0xaa330a,
-    opacity: 0.7,
-    transparent: true
-  });
+async function send_signal(m1,m2){
+  const v0 = new THREE.Vector3();
+  m1.getWorldPosition(v0);
+  const v1 = new THREE.Vector3();
+  m2.getWorldPosition(v1);
 
-  let s = new THREE.Mesh(g,m);  // signal
-  // s.translateY(4*L);            // move to sky
-  s.translateX(4*L);            // move to sky
-
-  scene.add(s);
-
-  let ms = 1000;
-  let t = new TWEEN.Tween(s.position).to({y:100},ms).repeat(3);
-  await play_this(t);
-
-  s.removeFromParent();
-
+  const {ts,fns} = await get_signals(scene,v1,v0,1000,2);
+  await play_these(ts,fns);
 }
 
 async function emit_signal(sub){
@@ -314,6 +299,16 @@ async function get_submarines(){
   return {g1,g2};
 }
 
+async function cross_signal(m1,m2){
+  const v0 = new THREE.Vector3();
+  m1.getWorldPosition(v0);
+  const v1 = new THREE.Vector3();
+  m2.getWorldPosition(v1);
+
+  const {ts,fns} = await get_signals(scene,v1,v0,1000,2);
+  const o2 = await get_signals(scene,v0,v1,1000,2,0x0033aa);
+  await play_these(ts.concat(o2.ts),fns.concat(o2.fns));
+}
 
 function render() {renderer.render( scene, camera ); for (let fn of onRenders){fn();}}
 function animate(time) {requestAnimationFrame(animate); TWEEN.update(time); render();}

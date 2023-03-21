@@ -436,15 +436,15 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=2,DELAY=500){
 }
 
 
-async function get_signals(scene,v0,v1,ms=1000,N=3){
+async function get_signals(scene,v0,v1,ms=1000,N=3,col=0xaa330a){
   console.log('getting signals');
   const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
   // radius,tube r_sag, t_sag, arc
   const m = new THREE.MeshLambertMaterial({
-    color: 0xaa330a,
+    color: col,
     opacity: 0.7,
     // transparent: true
-    emissive: 0xffffff,
+    emissive: col,
     // needsUpdate:true,
   });
   let s = new THREE.Mesh(g,m);  // signal
@@ -462,8 +462,6 @@ async function get_signals(scene,v0,v1,ms=1000,N=3){
       // --------------------------------------------------
       let s0 = s.clone();
 
-      s0.material.color = new THREE.Color(0xffffff * Math.random());
-
       let t = new TWEEN.Tween(s0.position).to(v1,ms).repeat(2);
       let d = i*ms/N;
 
@@ -478,9 +476,7 @@ async function get_signals(scene,v0,v1,ms=1000,N=3){
   return {ts,fns};
 }
 
-async function recieve_signals_from_sat(X,scene){
-  const L = 50;
-  const H = 4* L;
+async function recieve_signals_from_sat(X,scene,H=200){
 
   const v0 = new THREE.Vector3(0,H,0);
   const v1 = new THREE.Vector3(X,0,0);
