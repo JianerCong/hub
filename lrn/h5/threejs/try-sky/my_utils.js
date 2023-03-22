@@ -285,16 +285,26 @@ function makeOnWindowResize(camera,renderer, render){
 }
 
 import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader';
+import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader';
 async function load_submarine(){
-  let mat = new THREE.MeshPhongMaterial({color: 0x666666});
+
+
+  let mtlLoader = new MTLLoader();
+  const materials = await mtlLoader.loadAsync('./public/submarine.mtl');
+  // let mat = new THREE.MeshPhongMaterial({color: 0x666666});
 
   // use model --------------------------------------------------
   let l = new OBJLoader();
+  await l.setMaterials(materials);
   let m = await l.loadAsync('./public/submarine.obj');
   let s = 2;
   m.scale.set(s,s,s);
   // m.translate()
-  visitChildren(m, (ch) => {ch.recieveShadow = true; ch.castShadow = true; ch.material = mat;});
+  visitChildren(m, (ch) => {
+    ch.recieveShadow = true;
+    ch.castShadow = true;
+    // ch.material = mat;
+  });
 
   // DEBUG: use cube --------------------------------------------------
   // let  n = 10;
@@ -403,7 +413,7 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=2,DELAY=500){
   for (let sub of small_submarines){
     const m = new THREE.MeshPhongMaterial({
       color: 0xffffff * Math.random(),
-      opacity: 0.5,
+      opacity: 0.8,
       blending: THREE.AdditiveBlending,
       emissive: 0xaaaaaa,
     });
@@ -417,10 +427,10 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=2,DELAY=500){
     scene.add(s0);
 
     // animate
-    let t = new TWEEN.Tween(s0.scale).to({x:N,y:N},ms)
+    let t = new TWEEN.Tween(s0).to({scale: {x:N,y:N},material: {opacity:0}},ms)
         .repeat(repeat)
         .delay(DELAY*Math.random())
-        .easing(TWEEN.Easing.Quadratic.InOut);
+        .easing(TWEEN.Easing.Quadratic.In);
     ts.push(
       new Promise((res, rej)=>{
         t.start().onComplete(
@@ -437,7 +447,7 @@ async function make_signals(small_submarines,scene,ms=1000,repeat=2,DELAY=500){
 
 
 async function get_signals(scene,v0,v1,ms=1000,N=3,col=0xaa330a){
-  console.log('getting signals');
+  // console.log('getting signals');
   const g = new THREE.TorusGeometry(10,1,10,6,Math.PI);
   // radius,tube r_sag, t_sag, arc
   const m = new THREE.MeshLambertMaterial({
@@ -445,7 +455,7 @@ async function get_signals(scene,v0,v1,ms=1000,N=3,col=0xaa330a){
     opacity: 0.7,
     // transparent: true
     emissive: col,
-    // needsUpdate:true,
+    blending: THREE.AdditiveBlending
   });
   let s = new THREE.Mesh(g,m);  // signal
 
@@ -462,7 +472,7 @@ async function get_signals(scene,v0,v1,ms=1000,N=3,col=0xaa330a){
       // --------------------------------------------------
       let s0 = s.clone();
 
-      let t = new TWEEN.Tween(s0.position).to(v1,ms).repeat(2);
+      let t = new TWEEN.Tween(s0).to({position:v1, material:{opacity:0}},ms).repeat(2);
       let d = i*ms/N;
 
       // scene.add(s0);
