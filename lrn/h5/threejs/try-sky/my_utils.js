@@ -1,7 +1,6 @@
 import TWEEN from './public/tween.esm.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as THREE from 'three';
-import {Water} from './my-water-cls';
 
 
 // async function establish_team_old(scene,main_sub, small_subs,render){
@@ -217,7 +216,15 @@ function add_helpers_orbit(camera, renderer, render,scene, L){
 	controls.enablePan = false;
 }
 
+import {myShaderLibWater} from './my-water-cls';
 function initSea(scene, renderer, camera ,onRenders){
+  var mirrorShader = myShaderLibWater;
+  var mirrorUniforms = THREE.UniformsUtils.clone(mirrorShader.uniforms);
+
+	let waterNormals = new THREE.TextureLoader().load('./public/waternormals.jpg');
+	waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+  let r = 8;
+  waterNormals.repeat.set(r,r);
 
   // console.log('sea initialized');
   let n = 500;
@@ -226,18 +233,48 @@ function initSea(scene, renderer, camera ,onRenders){
   // const m = new THREE.MeshPhysicalMaterial({
   const m = new THREE.MeshToonMaterial({
     color: 0x00211a,
-    opacity: 0.7,
+    opacity: 0.5,
     transparent:true,
-    side: THREE.DoubleSide,
+    // side: THREE.DoubleSide,
+    normalMap : waterNormals,
     // blending: THREE.AdditiveBlending,
     // blending: THREE.MultiplyBlending,
     // depth: THREE.AlwaysDepth
   });
 
+  const m2 = new THREE.MeshToonMaterial({
+    color: 0x00211a,
+    opacity: 0.2,
+    transparent:true,
+    side: THREE.DoubleSide,
+  });
+
+  let o = 10;
+  m.normalScale.set(o,o); 
+  m.needsUpdate = true;
+
+
+  const seaBase = new THREE.Mesh(g,m2);
   const sea = new THREE.Mesh(g,m);
+
   sea.position.y = -n/2;
+  seaBase.position.y = -n/2;
+
   // sea.rotation.set(Math.PI/-2, 0 ,0);
+  // moving sea
+  new TWEEN.Tween(sea.material).to(
+    {
+      normalMap :{offset: {x: 1}}
+    },20000)
+      .repeat(Infinity).start();
+  new TWEEN.Tween(sea.material).to(
+    {
+      normalScale:{x:0.6*o,y:0.6*o},
+    },5000)
+      .repeat(Infinity).yoyo(true).start();
+
   scene.add(sea);
+  scene.add(seaBase);
 
 }
 

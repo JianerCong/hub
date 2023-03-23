@@ -357,4 +357,4 @@ class Water extends THREE.Object3D {
   }
 }
 
-export {Water}
+export {myShaderLibWater,Water}

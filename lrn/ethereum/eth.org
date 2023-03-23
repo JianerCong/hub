@@ -1,4 +1,11 @@
 ** install
+*** geth: the Go ethereum 
+#+begin_src bash
+  sudo add-apt-repository -y ppa:ethereum/ethereum
+  sudo apt-get update
+  sudo apt-get install ethereum
+#+end_src
+*** truffle & ganache
 #+begin_src bash
   npm install -g truffle
   truffle
@@ -6,6 +13,62 @@
   # a personal blockchain for rapid dev of Eth and COrda distrubuted app
   npm install -g ganache
   # generates 10 accounts and key pairs
+#+end_src
+**** local ganache
+ganache v7.7.7 (@ganache/cli: 0.8.6, @ganache/core: 0.8.6)
+Starting RPC server
+
+Available Accounts
+==================
+(0) 0x795d61b6C470B236250f3DC37F61100a939DB6A6 (1000 ETH)
+(1) 0x56CceEEc93F871dC49f3927939178782FcB909dE (1000 ETH)
+(2) 0x63CbA99952B78426d01e5FA22b88d2d50f1636Fb (1000 ETH)
+(3) 0xD421E61d4d268Fdb38166E38be3C7641dE42F6b2 (1000 ETH)
+(4) 0xCD4c7cA61F70CcF392BA72d18F0b33bed044a726 (1000 ETH)
+(5) 0xF29a684e51125f65f40C7A74aB9bd8874113557D (1000 ETH)
+(6) 0xe571a3A1dC8238A0D4C7D3a84eBc64Aa9F4B29b8 (1000 ETH)
+(7) 0x6fc5EB9e91822F9ba97b961933B7659B99F0618f (1000 ETH)
+(8) 0x200E41D93904Da9955ea92FC8801365D26F61CB3 (1000 ETH)
+(9) 0x8eca171094a01515195Fc4b47fDA7891825c4bF8 (1000 ETH)
+
+Private Keys
+==================
+(0) 0x711ef4d8bc956cce36e36a776e74d827e9f09ba7775a78cd393ae155838b3fd0
+(1) 0x3964faf97c0d0fca0f4f7395c67adc5f7cf6f7d0204fbd68cbbc87b951176ed4
+(2) 0x23520f60d8b8e47c9a37414197795078a0f2443e4058865f710c361de390c47e
+(3) 0x52b5bc0cbdb52ce83844006b756d2731b1208767327a234e20c9434d876d1c7b
+(4) 0xdf81d90d81120693ff873c3904f263affd3a9b8d39292c58514494e42af7899e
+(5) 0x6474440aad133535d6371dca3c7461f339fdd43ad92420eea843298e18ff0951
+(6) 0x952b7c26363552bf9660888c4bcba49d3b6824d0723863ac3032ff7db8a76207
+(7) 0x40ab05e9706c41d9f411dd31013ebf82f68ea0d21e3f821cd0f9b3f3c9369ffa
+(8) 0x467073e8685244fc0eee6913aa408cff110bd4e8896931767dfa2e0e8cf3d03b
+(9) 0x3b5e52ceec88a49cca4f20f253effb98acc5e01cbb6a870b80a379bd62ff56c2
+
+HD Wallet
+==================
+Mnemonic:      museum nuclear coyote poverty choice success truck flavor tuna coil hub plastic
+Base HD Path:  m/44'/60'/0'/0/{account_index}
+
+Default Gas Price
+==================
+2000000000
+
+BlockGas Limit
+==================
+30000000
+
+Call Gas Limit
+==================
+50000000
+
+Chain Id
+==================
+1337
+
+#+begin_src js
+  personal.newAccount()
+  // phrase=51682651
+  // 0x41cf2f4ed783427bd120451ff5953c16c5c36837
 #+end_src
 *** Add ~metamask~ browser Plugins
 [Create New Wallet] > [No thanks] > [51682651cje]
@@ -15,10 +78,10 @@ blockchain app from testing to scaled deployment.
 ~create_account('congjianer@outlook.com','51682651cje')~
 ~create_project('web3','hi_project')~
 
-
 *** the soliciity compiler ~solc~
 #+begin_src bash
 sudo add-apt-repository ppa:ethereum/ethereum
 sudo apt-get update
 sudo apt-get install solc
 #+end_src
+
