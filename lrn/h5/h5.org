@@ -482,6 +482,11 @@ Config
   npm install -g sass
   sass style.sass style.css --watch
 #+end_src
+**** vite
+#+begin_src bash
+  npm create vite@latest
+
+  #+end_src
 *** React
 **** setup
 #+begin_src bash

@@ -13,7 +13,10 @@ import {establish_team,
         init_light,
         initSky,
         makeOnWindowResize,
+
+        load_relay,
         load_submarine,
+
         setup_stats,
         setup_defaults,
 
@@ -53,7 +56,7 @@ async function init() {
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
-  initSea(scene);
+  initSea(scene, renderer, camera ,onRenders);
   let g1 = await get_submarines();
 
   add_helpers_orbit(camera, renderer, render,scene, L);
@@ -255,13 +258,14 @@ async function get_destination(g1){
 async function get_submarine_group(){
   const g = new THREE.Group();
   // console.log(`Adding submarines`);
-  let s = 1.2;                    // the scale of smaller submarine
-  let m = await load_submarine();
+  let m = await load_relay();
   m.name = '主潜艇';
   g.add(m);
 
   // let submarines = [m];
   // Method 1: just clone --------------------------------------------------
+  let s = 0.1;                    // the scale of smaller submarine
+  m = await load_submarine();
   let n = 1;
   for (let i of [-1,1]){
     for (let j of [-1,1]){

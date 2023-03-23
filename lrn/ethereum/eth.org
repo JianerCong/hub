@@ -1,0 +1,24 @@
+** install
+#+begin_src bash
+  npm install -g truffle
+  truffle
+
+  # a personal blockchain for rapid dev of Eth and COrda distrubuted app
+  npm install -g ganache
+  # generates 10 accounts and key pairs
+#+end_src
+*** Add ~metamask~ browser Plugins
+[Create New Wallet] > [No thanks] > [51682651cje]
+*** Use Infura
+tools and infrastructure that enable developers to rapidly transition their
+blockchain app from testing to scaled deployment.
+~create_account('congjianer@outlook.com','51682651cje')~
+~create_project('web3','hi_project')~
+
+
+*** the soliciity compiler ~solc~
+#+begin_src bash
+sudo add-apt-repository ppa:ethereum/ethereum
+sudo apt-get update
+sudo apt-get install solc
+#+end_src

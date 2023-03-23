@@ -1,6 +1,8 @@
 import TWEEN from './public/tween.esm.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as THREE from 'three';
+import {Water} from './my-water-cls';
+
 
 // async function establish_team_old(scene,main_sub, small_subs,render){
 //   // const geom = new THREE.SphereGeometry(2,8,8);
@@ -203,9 +205,9 @@ function visitChildren(object, fn){
 function add_helpers_orbit(camera, renderer, render,scene, L){
   // helpers
 	const grid_helper = new THREE.GridHelper( L * 12, 12, 0xffffff, 0xffffff );
-	scene.add( grid_helper );
+	// scene.add( grid_helper );
   const axes_helper = new THREE.AxesHelper(50);
-	scene.add( axes_helper );
+	// scene.add( axes_helper );
 
   /* listen to 'change */
 	const controls = new OrbitControls( camera, renderer.domElement );
@@ -215,7 +217,8 @@ function add_helpers_orbit(camera, renderer, render,scene, L){
 	controls.enablePan = false;
 }
 
-function initSea(scene){
+function initSea(scene, renderer, camera ,onRenders){
+
   // console.log('sea initialized');
   let n = 500;
   const g = new THREE.CylinderGeometry(n,n,n);
@@ -235,6 +238,7 @@ function initSea(scene){
   sea.position.y = -n/2;
   // sea.rotation.set(Math.PI/-2, 0 ,0);
   scene.add(sea);
+
 }
 
 function init_light(scene){
@@ -286,18 +290,21 @@ function makeOnWindowResize(camera,renderer, render){
 
 import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader';
 import {MTLLoader} from 'three/examples/jsm/loaders/MTLLoader';
-async function load_submarine(){
-
+async function load_relay(){
 
   let mtlLoader = new MTLLoader();
-  const materials = await mtlLoader.loadAsync('./public/submarine.mtl');
+  const materials = await mtlLoader.loadAsync('./public/G2001模型obj/中继器0.mtl');
   // let mat = new THREE.MeshPhongMaterial({color: 0x666666});
 
   // use model --------------------------------------------------
   let l = new OBJLoader();
   await l.setMaterials(materials);
-  let m = await l.loadAsync('./public/submarine.obj');
-  let s = 2;
+  let m = await l.loadAsync('./public/G2001模型obj/中继器0.obj');
+
+  let s = 0.1;
+  m.translateX(340*s);
+  m.translateY(-20*s);
+
   m.scale.set(s,s,s);
   // m.translate()
   visitChildren(m, (ch) => {
@@ -306,11 +313,47 @@ async function load_submarine(){
     // ch.material = mat;
   });
 
+  const g = new THREE.Group();
+  g.add(m);
+
   // DEBUG: use cube --------------------------------------------------
   // let  n = 10;
   // const geom = new THREE.BoxGeometry(n,n,n);
   // let m = new THREE.Mesh(geom, mat);
-  return m;
+  return g;
+}
+
+
+async function load_submarine(){
+
+  let mtlLoader = new MTLLoader();
+  const materials = await mtlLoader.loadAsync('./public/G2001模型obj/航行器.mtl');
+  // let mat = new THREE.MeshPhongMaterial({color: 0x666666});
+
+  // use model --------------------------------------------------
+  let l = new OBJLoader();
+  await l.setMaterials(materials);
+  let m = await l.loadAsync('./public/G2001模型obj/航行器.obj');
+  m.translateX(2);
+  // m.translateY(-2);
+
+  let s = 0.6;
+  m.scale.set(s,s,s);
+  // m.translate()
+  visitChildren(m, (ch) => {
+    ch.recieveShadow = true;
+    ch.castShadow = true;
+    // ch.material = mat;
+  });
+
+  const g = new THREE.Group();
+  g.add(m);
+
+  // DEBUG: use cube --------------------------------------------------
+  // let  n = 10;
+  // const geom = new THREE.BoxGeometry(n,n,n);
+  // let m = new THREE.Mesh(geom, mat);
+  return g;
 }
 
 async function load_satellite(H,scene){
@@ -512,6 +555,8 @@ export {
         init_light,
         initSky,
         makeOnWindowResize,
+
+  load_relay,
         load_submarine,
         load_satellite,
         setup_stats,

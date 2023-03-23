@@ -13,6 +13,8 @@ import {establish_team,
         init_light,
         initSky,
         makeOnWindowResize,
+
+        load_relay,
         load_submarine,
         load_satellite,
 
@@ -30,19 +32,20 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(3,init);
-init();
+// init();
 
 async function init() {
   // setup_stats(onRenders);
 
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
+	// camera.position.set( 0, 300, 0 );/* x,y,z  (left, up, front)*/
 	// camera.position.set( 0, 50, 300 );/* x,y,z  (left, up, front)*/
 	camera.position.set( 0, 100, 300 );/* x,y,z  (left, up, front)*/
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
-  initSea(scene);
+  initSea(scene, renderer, camera ,onRenders);
   let {g1,g2} = await get_submarines();
 
   add_helpers_orbit(camera, renderer, render,scene, L);
@@ -70,7 +73,7 @@ async function start_movie({g1,g2}){
   cav.appendChild(para);
   let sub;
 
-  //move little subs--------------------------------------------------
+  // move little subs--------------------------------------------------
   para.textContent = '1.组队已经完成';
   await subtitle_on(para);
   await Promise.all([
@@ -289,12 +292,13 @@ async function emit_signal(sub){
 async function get_submarine_group(scale=1){
   const g = new THREE.Group();
   // console.log(`Adding submarines`);
-  let s = 1.2;                    // the scale of smaller submarine
-  let m = await load_submarine();
+  let m = await load_relay();
   m.name = '主潜艇';
+
   g.add(m);
 
-  // let submarines = [m];
+  let s = 0.1;                    // the scale of smaller submarine
+  m = await load_submarine();
   // Method 1: just clone --------------------------------------------------
   let n = 1;
   for (let i of [-1,1]){
@@ -304,7 +308,6 @@ async function get_submarine_group(scale=1){
       m1.translateZ(scale * j*L);
       // for debug purpose,
       m1.translateY(-L);
-
 
       let random_amount = 0.5*L;
       // Add some randomness to position
@@ -322,6 +325,7 @@ async function get_submarine_group(scale=1){
 
 // Out of the region, it will be cropped.
 async function get_submarines(){
+
   const dist = 8 * L;
   let g1 = await get_submarine_group();
   g1.translateX(- dist/2);
@@ -421,5 +425,8 @@ function add_patrol_to_horizontal_sub(sub){
 }
 
 
-function render() {renderer.render( scene, camera ); for (let fn of onRenders){fn();}}
+function render() {
+  renderer.render( scene, camera ); for (let fn of onRenders){
+  fn();
+}}
 function animate(time) {requestAnimationFrame(animate); TWEEN.update(time); render();}

@@ -14,6 +14,7 @@ import {establish_team,
         initSky,
         makeOnWindowResize,
 
+        load_relay,
         load_submarine,
         load_satellite,
 
@@ -29,18 +30,19 @@ let onRenders = [];
 const L = 50;
 
 register_to_button(1,init);
-// init();
+init();
 
 async function init() {
   // setup_stats(onRenders);
 
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
-	camera.position.set( 0, 300, 300 );/* x,y,z  (left, up, front)*/
+	// camera.position.set( 0, 300, 300 );/* x,y,z  (left, up, front)*/
+	camera.position.set( 0, 200, 400 );/* x,y,z  (left, up, front)*/
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
-  initSea(scene);
+  initSea(scene, renderer, camera ,onRenders);
   let {g1,g2} = await get_submarines();
 
   add_helpers_orbit(camera, renderer, render,scene, L);
@@ -106,13 +108,15 @@ async function get_submarine_group(){
 
   const g = new THREE.Group();
   // console.log(`Adding submarines`);
-  let s = 1.2;                    // the scale of smaller submarine
-  let m = await load_submarine();
+
+  let m = await load_relay();
   m.name = '主潜艇';
   g.add(m);
 
   // let submarines = [m];
   // Method 1: just clone --------------------------------------------------
+  let s = 0.1;                    // the scale of smaller submarine
+  m = await load_submarine();
   let n = 1;
   for (let i of [-1,1]){
     for (let j of [-1,1]){
