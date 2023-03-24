@@ -582,6 +582,24 @@ async function recieve_signals_from_sat(X,scene,H=200){
 
 }
 
+function reset_subs(g1){
+  // Essentially reset the the rotation status of submarines in g1
+
+  let news = [];
+  for (let sub of g1.children.slice(1)){
+    let g = new THREE.Group();
+    g.position.copy(sub.position);
+    // console.log(g);
+
+    sub.removeFromParent();
+    sub.position.set(0,0,0);
+
+    g.add(sub);
+    news.push(g);
+  }
+  news.forEach(e => g1.add(e));
+  // After rotatting the group, make a new group
+}
 
 export {
   establish_team, subtitle_on, subtitle_off,
@@ -604,4 +622,5 @@ export {
         make_signals,
         recieve_signals_from_sat,
   get_signals,
+  reset_subs,
        }

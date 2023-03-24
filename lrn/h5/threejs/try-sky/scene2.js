@@ -21,6 +21,7 @@ import {establish_team,
         setup_defaults,
 
         register_to_button,
+        reset_subs,
        } from './my_utils.js';
 
 let camera, scene, renderer;
@@ -28,7 +29,7 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(2,init);
-// init();
+init();
 // for now, we play scene 2 by default, comment out the above line on export.
 // Maybe it's more reasonable to play scene 1 on launch.
 
@@ -210,31 +211,6 @@ async function navigate_there(g1){
   }
   await play_these(ts);
 }
-
-// async function get_destination(g1){
-//   let dest = -4*L;
-
-//   // add a small ball m
-//   const geom = new THREE.SphereGeometry(2,8,8);
-//   const mat = new THREE.MeshPhongMaterial({color: 0xff2211});
-//   let m = new THREE.Mesh(geom,mat); // small ball
-//   scene.add(m);
-
-//   let v0 = new THREE.Vector3();
-//   g1.children[0].getWorldPosition(v0);    // position of main submarine
-//   // console.log(g1.children[0]);
-//   let v = new THREE.Vector3(dest, 0,0);
-//   let o = {t:0};
-//   let ms = 500;
-//   let t = new TWEEN.Tween(o).to({t:1},ms)
-//       .repeat(3)
-//       .onUpdate(()=>{
-//         m.position.lerpVectors(v0,v,o.t);
-//         render();
-//       });
-//   await play_this(t);
-//   m.removeFromParent();
-// }
 
 async function get_destination(g1){
   let dest = -4*L;
