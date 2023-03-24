@@ -51,9 +51,11 @@ async function init() {
   // setup_stats(onRenders);
   let o = setup_defaults();
   camera = o.camera; scene = o.scene; renderer = o.renderer;
-	camera.position.set( 0, 100, 200 );/* x,y,z  (left, up, front)*/
+
+	// camera.position.set( 0, 150, 200 );/* x,y,z  (left, up, front)*/
 	// camera.position.set( 0, 500, 0 );/* x,y,z  (left, up, front)*/
 	// camera.position.set( 0, 0, 300 );/* x,y,z  (left, up, front)*/
+
 
   init_light(scene);
 	let {sky,sun} = initSky(scene, renderer);
@@ -115,6 +117,7 @@ async function start_movie(g1){
 async function start_task(g1){
   let ts = [];
   for (let sub of g1.children.slice(1)){
+
     // console.log(sub.rotation);
     let dv = new THREE.Vector3();
     let R = 0.8 * L * Math.random(); // distance to move
@@ -152,9 +155,9 @@ async function distribute_task(g1){
     } else {
       throw new Error("Error");
     }
-    // console.log(sub.rotation);
+    console.log(sub.rotation);
 
-    let t = new TWEEN.Tween(sub.rotation).to({y: a},2000);
+    let t = new TWEEN.Tween(sub.rotation).to({y: a + Math.PI/2},2000);
     ts.push(t);
     sub.userData.a = a;
   }
@@ -180,14 +183,14 @@ async function navigate_there(g1){
   ts = [];
 
 
+  reset_subs(g1);
+
   ms = 8000;
   let t = new TWEEN.Tween(g1.position)
       .to({x: -4*L},ms)
       .easing(TWEEN.Easing.Quadratic.InOut);
   ts.push(t);
-
   let o = {t:0};
-
   for (let sub of g1.children.slice(1)){
     sub.userData.oldY = sub.position.y;
     // console.log(sub.position);
@@ -198,7 +201,8 @@ async function navigate_there(g1){
         .to({t:1},ms)
         .onUpdate(function(o){
           // sub.position.x = sub.userData.oldX + o.t*l;
-          sub.position.y = sub.userData.oldY + A*Math.sin(2*Math.PI*o.t*n);
+          sub.position.y = sub.userData.oldY + A*(Math.cos(2*Math.PI*o.t*n)-1);
+          sub.rotation.z = Math.atan(0.4*Math.sin(2*Math.PI*o.t*n));
         }).delay(0.1*ms*Math.random())
         .easing(TWEEN.Easing.Quadratic.InOut);
     ;

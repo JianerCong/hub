@@ -301,7 +301,7 @@ function initSky(scene, renderer) {
 	let sun = new THREE.Vector3();
 	const uniforms = sky.material.uniforms;
 	const phi = THREE.MathUtils.degToRad( 90 - 0 );
-	const theta = THREE.MathUtils.degToRad( -160);
+	const theta = THREE.MathUtils.degToRad( 160);
 	sun.setFromSphericalCoords( 1, phi, theta );
 	uniforms[ 'sunPosition' ].value.copy( sun );
 	renderer.toneMappingExposure =  renderer.toneMappingExposure;
@@ -419,9 +419,9 @@ async function load_satellite(H,scene){
   g.position.set(0,H,0);
   // g.rotateX(-Math.PI*0.5);
 
-  let t = new TWEEN.Tween(g.rotation).to({z:Math.PI*2},10000).repeat(Infinity).start();
-  let t2 = new TWEEN.Tween(g.rotation).to({y:Math.PI*2},20000).repeat(Infinity).start();
-  let t3 = new TWEEN.Tween(g.rotation).to({x:Math.PI*2},40000).repeat(Infinity).start();
+  let t = new TWEEN.Tween(g.rotation).to({z:Math.PI*2},5000).repeat(Infinity).start();
+  let t2 = new TWEEN.Tween(g.rotation).to({y:Math.PI*2},10000).repeat(Infinity).start();
+  let t3 = new TWEEN.Tween(g.rotation).to({x:Math.PI*2},20000).repeat(Infinity).start();
   scene.add(g);
 
   return g;
@@ -435,7 +435,9 @@ function setup_stats(onRenders){
 
 }
 
-function setup_defaults(id="three-output"){
+function setup_defaults( rot=false, camY=150,camR=300, id="three-output"){
+  // camY: Y of camera, R, the radius
+
   let div = document.querySelector("#webgl-output");
   let w = div.getBoundingClientRect().width;
   let h = div.getBoundingClientRect().height;
@@ -459,6 +461,26 @@ function setup_defaults(id="three-output"){
   // console.log(dom);
   dom.id = id;
   div.appendChild(dom);
+
+  camera.position.set(0,camY,camR);
+  if (rot){
+    // Rotate the camera around (0,0)
+    const R = camR;
+    let o1 = {t:0};
+    new TWEEN.Tween(o1).to({t:2},20000)
+      .repeat(Infinity).onUpdate(obj=>{
+        camera.position.set(
+          R*Math.sin(obj.t*Math.PI),
+          camY*(1+0.1*Math.cos(obj.t*Math.PI*2)),
+          R*Math.cos(obj.t*Math.PI),
+        );
+        camera.lookAt(0,0,0);
+      })
+      // .yoyo(false)
+      .start();
+
+}
+
   return {camera, scene, renderer};
 }
 
