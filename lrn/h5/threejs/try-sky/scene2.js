@@ -251,8 +251,8 @@ async function get_destination(g1){
 
   // yoyo=ture makes the number of repeat matters ⇒
   // odd ⇒ 有，even ⇒ 无
-  let t = new TWEEN.Tween(m.material).to({opacity:1},500).repeat(5).yoyo(true);
-  await play_this(t);
+  let t = new TWEEN.Tween(m.material).to({opacity:1},500).repeat(Infinity).yoyo(true).start();
+  await new Promise((resolve) => {setTimeout(resolve, 2000);}); // sleep 4 sec
 }
 
 async function get_submarine_group(){

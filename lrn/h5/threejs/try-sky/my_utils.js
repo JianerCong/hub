@@ -62,6 +62,7 @@ async function establish_team(scene,main_sub, small_subs,render,fade_out=true){
 
   let ts = [];
   let tubes = [];
+  const tube_radius = 0.5;
   for (let sub of small_subs){
     // let sub = g1.children.slice(1)[0];
     let o = {t:0};
@@ -72,7 +73,7 @@ async function establish_team(scene,main_sub, small_subs,render,fade_out=true){
     let tube_geom = new THREE.TubeGeometry(
       new THREE.LineCurve3(v0,v),
       1,                       // tabular segment
-      1,                        // radius
+      tube_radius,                        // radius
     );
 
     let tube = new THREE.Mesh(tube_geom,mat);
@@ -107,7 +108,7 @@ async function establish_team(scene,main_sub, small_subs,render,fade_out=true){
     let tube_geom = new THREE.TubeGeometry(
       new THREE.LineCurve3(v,v1),
       1,                       // tabular segment
-      1,                        // radius
+      tube_radius,                        // radius
     );
     let tube = new THREE.Mesh(tube_geom,mat);
     let t = new TWEEN.Tween(tube.material).to({emissiveIntensity:1,opacity:1},500).repeat(4).yoyo(true);
@@ -204,9 +205,9 @@ function visitChildren(object, fn){
 function add_helpers_orbit(camera, renderer, render,scene, L){
   // helpers
 	const grid_helper = new THREE.GridHelper( L * 12, 12, 0xffffff, 0xffffff );
-	// scene.add( grid_helper );
+	scene.add( grid_helper );
   const axes_helper = new THREE.AxesHelper(50);
-	// scene.add( axes_helper );
+	scene.add( axes_helper );
 
   /* listen to 'change */
 	const controls = new OrbitControls( camera, renderer.domElement );
@@ -372,7 +373,7 @@ async function load_submarine(){
   await l.setMaterials(materials);
   let m = await l.loadAsync('./public/G2001模型obj/航行器.obj');
   m.translateX(2);
-  // m.translateY(-2);
+  m.translateY(40);
 
   let s = 0.6;
   m.scale.set(s,s,s);
