@@ -8,6 +8,9 @@ out: printf("\1\\n");
   *        previous character or group, repeated 0 or more time
   +        previous character or group, repeated 1 or more time
   ?        previous character or group, repeated 0 or 1 time
+
+  *?,+?,?? Non-greedy version
+  
   ^        start of line
   $        end of line
   [...]    any character between brackets
@@ -220,4 +223,6 @@ C-x C-k C-f
     Specify the format for inserting the keyboard macro counter (kmacro-set-format). 
 ** mark
 + C-x C-x :: exchange-point-and-mark
+** expand
++ M-/ :: expand at point
 

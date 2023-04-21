@@ -382,6 +382,10 @@ f1.o f2.o:
 #     echo $@
 #+END_SRC
 ** git
+*** push to a remote branch
+git push hub jianer:fix-deps
+*** fetch from server and delete some
+git fetch --all --prune
 *** undo
 git commit --amend
 *** git log
@@ -428,6 +432,8 @@ git reset hi.c
 #+begin_src bash
   openssl sha1 hi.txt
 #+end_src
+** rsync
+rsync -av from-dir to-dir
 * Tmux
 https://tmuxcheatsheet.com/
 ** basic

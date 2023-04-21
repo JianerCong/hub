@@ -41,7 +41,16 @@ C-c . : mark env
 <a> C-e : fill env
 <a> C-s : fill sec
 <a> C-r : fill region 
+*** mupdf
+#+begin_src bash
+  sudo apt install mupdf
+  mupdf m.pdf
+  pkill -HUP mupdf                # refresh mupdf
+#+end_src
++ Then, in the custom-group for AucTeX.Edit the command list so that it does:
+latex -> view
 
++ In the latex command section add -shell-escape if necessary.
 *** cdlatex
 **** special fonts
 #+begin_src lisp

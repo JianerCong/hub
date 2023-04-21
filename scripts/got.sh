@@ -5,9 +5,12 @@ declare -A addr
 h=$HOME
 
 addr["l"]="$h/Templates/lrn/"
-addr["t"]="$h/Templates/lrn/h5/threejs/try-sky/"
-addr["w"]="$h/work/lcode/"
-addr["c"]="$h/Downloads/cmake-3.26.0-rc4/Help/guide/tutorial/"
+# addr["t"]="$h/Templates/lrn/h5/threejs/try-sky/"
+addr["w"]="$h/wspace/submarine/"
+addr["r"]="$h/repo/rock-chain-origin/"
+addr["n"]="$h/repo/notes/test-dia/"
+addr["p"]="$h/repo/notes/supply-chain-report/"
+# addr["c"]="$h/Downloads/cmake-3.26.0-rc4/Help/guide/tutorial/"
 
 {
     for s in "${!addr[@]}"; do

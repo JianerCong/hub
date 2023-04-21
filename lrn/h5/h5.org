@@ -21,6 +21,25 @@
     right: 20%
     /* z-index: 99999
 #+end_src
+*** sass
+**** keyframes
+#+begin_src sass
+
+    @keyframes slide-in
+      from
+        margin-left: 100%
+        width: 300%
+
+
+      70%
+        margin-left: 90%
+        width: 150%
+
+
+      to
+        margin-left: 0%
+        width: 100%
+#+end_src
 ** JS
 *** Q&A
 **** 404 favicon?
@@ -1247,6 +1266,23 @@ npm i --save-dev @types/three
       hideSpinner();
     }
   });
+#+end_src
+** Canvas
+#+begin_src js
+  window.addEventListener("load", eventWindowLoaded, false);
+  function eventWindowLoaded () {
+     canvasApp();
+  }
+
+
+  let theCanvas = document.querySelector("#canvasOne");
+  // get the context
+  var context = theCanvas.getContext("2d");
+#+end_src
+#+begin_src html
+<canvas id="canvasOne" width="500" height="300">
+ Your browser does not support HTML5 Canvas.
+</canvas>
 #+end_src
 * End
 

@@ -66,6 +66,16 @@
     };
   \end{scope}
 #+END_SRC
+*** arrow
+#+begin_src latex
+  \usetikzlibrary{arrows.meta}    %-o arrow head
+  \usetikzlibrary{arrows}
+
+  % See page 173
+  \draw[very thick,-o] (0,0) |- (1,1); %up then right
+  \draw[very thick,-latex] (0,0) |- (1,1); %up then right
+#+end_src
+
 ** minipage
 *** basic
 #+BEGIN_SRC latex

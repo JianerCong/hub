@@ -32,7 +32,7 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(3,init);
-// init();
+init();
 
 async function init() {
   // setup_stats(onRenders);

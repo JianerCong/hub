@@ -267,6 +267,21 @@ The same limit on display:
 \end{description}
 \end{document}
 #+END_SRC
+*** better description list
+#+begin_src latex
+\documentclass{article}
+\usepackage{enumitem}
+\setlist[description]{leftmargin=\parindent,labelindent=\parindent}
+\begin{document}
+\section{Test}
+left aligned text
+\begin{description}
+ \item[One] first item
+ \item[Two] second item
+ \item[Three] third item
+\end{description}
+\end{document}
+#+end_src
 *** change the label individually
 #+BEGIN_SRC latex
 \documentclass{article}
@@ -1019,5 +1034,22 @@ Copyright: \copyright Math-Linux.Com\\
 Trademark: \texttrademark or \textsuperscript{TM} Math-Linux.Com  \\
 Registered: \textregistered Math-Linux.Com \\
 \end{document}
+#+end_src
+** url
+#+begin_src latex
+  \usepackage{hyperref}
+  \hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Overleaf Example},
+    pdfpagemode=FullScreen,
+  }
+
+  \urlstyle{same}
+
+
+  \url{http://www.overleaf.com}
 #+end_src
 

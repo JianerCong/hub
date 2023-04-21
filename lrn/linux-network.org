@@ -621,6 +621,15 @@ server {
 #+begin_src bash
 add_header Strict-Transport-Security max-age=31536000;
  #+end_src
+** Clash
+*** add proxy
+#+begin_src bash
+  export http_proxy="http://127.0.0.1:7890"
+  export https_proxy="http://127.0.0.1:7890"
+  export no_proxy="localhost,127.0.0.1"
+
+  git config --global http.proxy 'http://127.0.0.1:7890'
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "bash"

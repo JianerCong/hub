@@ -122,7 +122,10 @@ Add the link in /usr/bin
 #+begin_src bash
   sudo ln -s /home/me /home/pi
 #+end_src
-
+** Ubuntu version
+#+begin_src bash
+lsb_release -a
+#+end_src
 * End
 
 # Local Variables:

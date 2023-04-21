@@ -137,8 +137,12 @@ const subtitle_transition_ms = 1000;
 
 async function subtitle_on(para,ms=subtitle_transition_ms){
   // use tween
-  let o = {opacity: 0};
-  let fade_in = new TWEEN.Tween(o)
+  // let fade_in = new TWEEN.Tween({left:0})
+  //     .to({left:-100},ms).onUpdate((obj)=>{
+  //       para.style.transform = `translate(${obj.left}%)`;
+  //     });
+
+  let fade_in = new TWEEN.Tween({opacity:0})
       .to({opacity:1},ms).onUpdate((obj)=>{
         para.style.opacity = `${obj.opacity}`;
       });
@@ -147,8 +151,12 @@ async function subtitle_on(para,ms=subtitle_transition_ms){
 
 async function subtitle_off(para,ms=subtitle_transition_ms){
   // use tween
-  let o = {opacity: 1};
-  let fade_in = new TWEEN.Tween(o)
+  // let fade_in = new TWEEN.Tween({left:-100})
+  //     .to({left:0},ms).onUpdate((obj)=>{
+  //       para.style.transform = `translate(${obj.left}%)`;
+  //     });
+
+  let fade_in = new TWEEN.Tween({opacity:1})
       .to({opacity:0},ms).onUpdate((obj)=>{
         para.style.opacity = `${obj.opacity}`;
       });
@@ -442,7 +450,6 @@ function setup_defaults( rot=false, camY=150,camR=300, id="three-output"){
   let w = div.getBoundingClientRect().width;
   let h = div.getBoundingClientRect().height;
   // console.log(`w=${w},h=${h}`);
-
   /* aspect ratio, near, far */
 	let camera = new THREE.PerspectiveCamera( 60, w/h, 0.1, 2000 );
 	let scene = new THREE.Scene();

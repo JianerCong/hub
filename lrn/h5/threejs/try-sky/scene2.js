@@ -29,7 +29,7 @@ let onRenders = [];
 const L = 25;
 
 register_to_button(2,init);
-init();
+// init();
 // for now, we play scene 2 by default, comment out the above line on export.
 // Maybe it's more reasonable to play scene 1 on launch.
 
@@ -155,7 +155,7 @@ async function distribute_task(g1){
     } else {
       throw new Error("Error");
     }
-    console.log(sub.rotation);
+    // console.log(sub.rotation);
 
     let t = new TWEEN.Tween(sub.rotation).to({y: a + Math.PI/2},2000);
     ts.push(t);

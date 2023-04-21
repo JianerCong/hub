@@ -53,15 +53,15 @@ s1 <prompt s2> s3 _ s4
 (define-skeleton tex-exam-boiler-plate
   "Insert ann exam template"
   nil
-   "\\documentclass{exam}" \n
-   "\\begin{center}" \n
-   "{\\Huge " (skeleton-read "Title ?: ")"}" \n
-   "\\end{center}" \n
-   "\\begin{document}" \n
-   "\\begin{questions}" \n
-    _ \n
-   "\\end{questions}" \n
-   "\\end{document}"
+  "\\documentclass{exam}" \n
+  "\\begin{center}" \n
+  "{\\Huge " (skeleton-read "Title ?: ")"}" \n
+  "\\end{center}" \n
+  "\\begin{document}" \n
+  "\\begin{questions}" \n
+  _ \n
+  "\\end{questions}" \n
+  "\\end{document}"
   )
 
 (define-skeleton tex-tikz-boiler-plate
@@ -101,7 +101,7 @@ s1 <prompt s2> s3 _ s4
   (clear-abbrev-table latex-mode-abbrev-table)
   (define-abbrev-table 'latex-mode-abbrev-table
     '(
-      ;; ("nd" "\\node")
+      ("nd" "\\node")
       ("nt" "\\notag\\\\")
       ("nte" "\\notag")
       ("dr" "\\draw")
@@ -158,9 +158,26 @@ s1 <prompt s2> s3 _ s4
   (define-key LaTeX-mode-map "$" 'skeleton-pair-insert-maybe)
   (define-key LaTeX-mode-map "\"" 'skeleton-pair-insert-maybe)
   (define-key LaTeX-mode-map "(" 'skeleton-pair-insert-maybe)
+
+  (when (boundp 'cdlatex-mode-map)
+    ;; cdlatex overwrites the LaTeX map
+    (define-key cdlatex-mode-map "(" 'skeleton-pair-insert-maybe)
+    )
   (define-key LaTeX-mode-map (kbd "\C-c \C-p") 'outline-previous-visible-heading)
   (define-key LaTeX-mode-map (kbd "\C-c \C-n") 'outline-next-visible-heading)
   (define-key LaTeX-mode-map (kbd "\C-c \C-u") 'outline-up-heading)
   )
 
 
+
+(defvar my-deletion-skeletons-alist
+  '(
+    (?\( . ?\))
+    (?$  . ?$)
+    )
+  )
+(defadvice delete-backward-char (before delete-empty-pair activate)
+  (if (eq (cdr (assq (char-before) my-deletion-skeletons-alist)) (char-after))
+      ;; if the char-after == l[char-before]
+      (and (char-after) (delete-char 1)))
+  )
