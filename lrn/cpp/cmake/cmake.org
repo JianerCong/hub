@@ -1,4 +1,4 @@
-** Cmake-core
+** Cmake-lang
 *** public|interface|provate target_link_libraries
 Generally, a dependency should be specified in a use of target_link_libraries()
 with the PRIVATE keyword if it is used by only the implementation of a library,
@@ -532,18 +532,6 @@ Building a correctly linked executable heavily depends on a valid configuration
 
 We'll learn about another nuisance of linking – the One Definition Rule (ODR).
 
-*** Target attributes
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.20.0)
-project(hi)
-
-find_Package(Boost COMPONENTS log)
-message("🐸 Find boost: ${Boost_FOUND}")
-include(CMakePrintHelpers)
-cmake_print_properties(TARGETS Boost::log PROPERTIES TYPE SOURCE_DIR)
-
-#+end_src
-
 *** if()
 #+begin_src cmake
 if(<condition>)
@@ -581,7 +569,21 @@ target_include_directories(Hi PUBLIC
 # run
 add_custom_target(run ALL Hi COMMENT "Runing App 🐸")
 #+end_src
+** Target
+*** Target attributes
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.20.0)
+project(hi)
 
+find_Package(Boost COMPONENTS log)
+message("🐸 Find boost: ${Boost_FOUND}")
+include(CMakePrintHelpers)
+cmake_print_properties(TARGETS Boost::log PROPERTIES TYPE SOURCE_DIR)
+
+#+end_src
+
+** find_package
++ CONFIG keyward lets it find the <pkg>Config file
 ** ctest
 # cmake ..
 # cmake --build .

@@ -526,6 +526,278 @@ BOOST_AUTO_TEST_CASE(test_fail) {
 + core :: the core is the central component that all log entries are routed
   through. It is implemented as a singleton. To get a pointer to the core, call
   ~boost::log::core::get()~.
+**** trivial logging with filter
+Trivial logging For those who don't want to read tons of clever manuals and just
+need a simple tool for logging, here you go:
+#+begin_src c++
+  #include <boost/log/trivial.hpp> // For BOOST_LOG_TRIVIAL, trace, debug,..,fatal
+  #include <boost/log/core.hpp>
+  #include <boost/log/expressions.hpp>
+
+  int main(int argc, char* argv[])
+  {
+      // Trivial logging: all log records are written into a file
+      BOOST_LOG_TRIVIAL(trace) << "A trace severity message[1]";
+      BOOST_LOG_TRIVIAL(debug) << "A debug severity message[2]";
+      BOOST_LOG_TRIVIAL(info) << "An informational severity message[3]";
+      BOOST_LOG_TRIVIAL(warning) << "A warning severity message[4]";
+      BOOST_LOG_TRIVIAL(error) << "An error severity message[5]";
+      BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message[6]";
+
+      // Filtering can also be applied
+      using namespace boost::log;
+
+      // The global singleton core
+      core::get()->set_filter
+      (
+       // A Boost.Phoenix lambda
+          trivial::severity >= trivial::info
+          // LHS: placeholder var; RHS: value of type severity_level
+      );
+
+      // Now the first two lines will not pass the filter
+      BOOST_LOG_TRIVIAL(trace) << "A trace severity message";
+      BOOST_LOG_TRIVIAL(debug) << "A debug severity message";
+      BOOST_LOG_TRIVIAL(info) << "An informational severity message[1]";
+      BOOST_LOG_TRIVIAL(warning) << "A warning severity message[2]";
+      BOOST_LOG_TRIVIAL(error) << "An error severity message[3]";
+      BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message[4]";
+
+      return 0;
+  }
+#+end_src
+**** a test for log
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+# set the project name and version
+project(Hi VERSION 1.0)
+
+find_package(Boost CONFIG REQUIRED log)
+# boost library by their canonical name:: "date_time" for "libboost_date_time"
+# ls /lib/x86_64-linux-gnu/libboost_*.a
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC Boost::log)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
+
+#+end_src
+
+#+begin_src c++
+  #include <boost/log/common.hpp>
+#include <boost/log/sinks.hpp>
+#include <boost/log/sources/logger.hpp>
+// #include <boost/utility/empty_deleter.hpp>
+#include <boost/shared_ptr.hpp>
+#include <iostream>
+
+using namespace boost::log;
+int main(){
+  typedef sinks::asynchronous_sink<sinks::text_ostream_backend>
+    text_sink;
+  boost::shared_ptr<text_sink> sink =
+    boost::make_shared<text_sink>();
+
+  boost::shared_ptr<std::ostream> stream {
+    &std::clog                 // standard output stream for logging
+    ,boost::null_deleter()
+    // ,boost::empty_deleter
+  };
+
+  // access the backend through locked_backend()
+  sink->locked_backend()->add_stream(stream);
+
+  core::get()->add_sink(sink);
+  // default log connects it self to core.
+  sources::logger lg;
+  BOOST_LOG(lg) << "aaa";
+
+  sink->flush();
+}
+
+#+end_src
+**** set up sinks
+You can add sinks to core at the beginning.
+
+**** sinks that rotate the file
+#+begin_src c++
+  void init()
+  {
+    logging::add_file_log
+      (
+       keywords::file_name = "sample_%N.log",                                        /*< file name pattern >*/
+       keywords::rotation_size = 10 * 1024 * 1024,                                   /*< rotate files every 10 MiB... >*/
+       keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0), /*< ...or at midnight >*/
+       keywords::format = "[%TimeStamp%]: %Message%"                                 /*< log record format >*/
+       );
+
+    logging::core::get()->set_filter
+      (
+       logging::trivial::severity >= logging::trivial::info
+       );
+  }
+#+end_src
+** Windows
+*** install location
+Usually C:\Program Files\boost\boost_1_82_0,
+(But by default, the install prefix for ~b2.exe~ is set to C:\Boost.)
+After build I got the message
+
+#+begin_src comment
+  The following directory should be added to compiler include paths:
+
+    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0
+
+The following directory should be added to linker library paths:
+
+    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0\stage\lib
+#+end_src
+So after doing a
+#+begin_src powershell
+  mv .\boost_1_82_0\ -Destination 'C:\Program Files\' 
+#+end_src
+I should includes those dir respectively.
+*** HelloWorld
+**** CMakeLists.txt
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.20)
+  # set the project name and version
+  project(Hi VERSION 1.0)
+
+
+  # Version 1.82 is too high for findBoost
+  # set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
+
+  # So we must use the shipped BoostConfig.cmake
+  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  # The above dir contains the BoostConfig.cmake
+  find_package(Boost CONFIG REQUIRED COMPONENTS log)
+
+  add_executable(myexe test.cpp)
+  target_link_libraries(myexe PUBLIC Boost::log)
+
+  # cmake .. && cmake --build .
+  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
+
+#+end_src
+**** test.cpp
+#+begin_src c++
+  #include <boost/log/trivial.hpp>
+
+int main(int, char*[])
+{
+  BOOST_LOG_TRIVIAL(trace) << "A trace severity message";
+  BOOST_LOG_TRIVIAL(debug) << "A debug severity message";
+  BOOST_LOG_TRIVIAL(info) << "An informational severity message";
+  BOOST_LOG_TRIVIAL(warning) << "A warning severity message";
+  BOOST_LOG_TRIVIAL(error) << "An error severity message";
+  BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message";
+
+  return 0;
+}
+#+end_src
+
+** TroubleShoot
+*** LINK : fatal error LNK1104: cannot open file 'libboost_log_setup-vc143-mt-gd-x64-1_82.lib'
+Original CMake and C++:
+
+Here we add a sink to the Boost::log core. This will link to the
+~libboost_log_setsup~, which should be compiled seperately, and it's another
+target.
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.20)
+  # set the project name and version
+  project(Hi VERSION 1.0)
+
+
+  set(Boost_DIR "C:\\Users\\congj\\MyProgramFiles\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  # The above dir contains the BoostConfig.cmake
+  find_package(Boost REQUIRED COMPONENTS log)
+  # find_package(Boost CONFIG REQUIRED COMPONENTS log)
+
+  add_executable(myexe test.cpp)
+  target_link_libraries(myexe PUBLIC Boost::log)
+
+  # cmake .. && cmake --build .
+  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
+
+#+end_src
+#+begin_src c++
+/*
+ *          Copyright Andrey Semashev 2007 - 2015.
+ * Distributed under the Boost Software License, Version 1.0.
+ *    (See accompanying file LICENSE_1_0.txt or copy at
+ *          http://www.boost.org/LICENSE_1_0.txt)
+ */
+
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+
+void init()
+{
+    logging::add_file_log("sample.log");
+    logging::core::get()->set_filter
+    (
+        logging::trivial::severity >= logging::trivial::info
+    );
+}
+
+int main(int, char*[])
+{
+    init();
+    logging::add_common_attributes();
+
+    using namespace logging::trivial;
+    src::severity_logger< severity_level > lg;
+
+    BOOST_LOG_SEV(lg, trace) << "A trace severity message";
+    BOOST_LOG_SEV(lg, debug) << "A debug severity message";
+    BOOST_LOG_SEV(lg, info) << "An informational severity message";
+    BOOST_LOG_SEV(lg, warning) << "A warning severity message";
+    BOOST_LOG_SEV(lg, error) << "An error severity message";
+    BOOST_LOG_SEV(lg, fatal) << "A fatal severity message";
+
+    return 0;
+}
+
+#+end_src
+Solution: should add the component ~Boost::log_setup~ in addition to
+~Boost::log~. (This target should be built)
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.20)
+# set the project name and version
+project(Hi VERSION 1.0)
+
+
+# Version 1.82 is too high for findBoost
+# set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
+# set(BOOST_ROOT "C:\\Users\\congj\\MyProgramFiles\\boost_1_82_0")
+
+set(Boost_DIR "C:\\Users\\congj\\MyProgramFiles\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+# The above dir contains the BoostConfig.cmake
+find_package(Boost REQUIRED COMPONENTS log log_setup)
+# find_package(Boost CONFIG REQUIRED COMPONENTS log)
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC Boost::log Boost::log_setup)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
+
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

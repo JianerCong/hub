@@ -3,6 +3,7 @@ Virtual desktop:
  + win-ctr-Left/Right :: switch between virtual desktop
  + Win + CTRL + D :: Create a new desktop.
  + Win + CTRL + F4:: Close the current desktop.
+ + win + TAB :: Show desktop
 ** Windows terminal
 *** panes
     + C-S-W :: close the pane

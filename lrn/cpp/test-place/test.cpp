@@ -1,30 +1,47 @@
-#include <boost/log/common.hpp>
-#include <boost/log/sinks.hpp>
-#include <boost/log/sources/logger.hpp>
-// #include <boost/utility/empty_deleter.hpp>
-#include <boost/shared_ptr.hpp>
-#include <iostream>
+/*
+ *          Copyright Andrey Semashev 2007 - 2015.
+ * Distributed under the Boost Software License, Version 1.0.
+ *    (See accompanying file LICENSE_1_0.txt or copy at
+ *          http://www.boost.org/LICENSE_1_0.txt)
+ */
 
-using namespace boost::log;
-int main(){
-  typedef sinks::asynchronous_sink<sinks::text_ostream_backend>
-    text_sink;
-  boost::shared_ptr<text_sink> sink =
-    boost::make_shared<text_sink>();
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
-  boost::shared_ptr<std::ostream> stream {
-    &std::clog                 // standard output stream for logging
-    ,boost::null_deleter()
-    // ,boost::empty_deleter
-  };
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
 
-  // access the backend through locked_backend()
-  sink->locked_backend()->add_stream(stream);
+void init()
+{
+    logging::add_file_log("sample.log");
+    logging::core::get()->set_filter
+    (
+        logging::trivial::severity >= logging::trivial::info
+    );
+}
 
-  core::get()->add_sink(sink);
-  // default log connects it self to core.
-  sources::logger lg;
-  BOOST_LOG(lg) << "aaa";
+int main(int, char*[])
+{
+    init();
+    logging::add_common_attributes();
 
-  sink->flush();
+    using namespace logging::trivial;
+    src::severity_logger< severity_level > lg;
+
+    BOOST_LOG_SEV(lg, trace) << "A trace severity message";
+    BOOST_LOG_SEV(lg, debug) << "A debug severity message";
+    BOOST_LOG_SEV(lg, info) << "An informational severity message";
+    BOOST_LOG_SEV(lg, warning) << "A warning severity message";
+    BOOST_LOG_SEV(lg, error) << "An error severity message";
+    BOOST_LOG_SEV(lg, fatal) << "A fatal severity message";
+
+    return 0;
 }
