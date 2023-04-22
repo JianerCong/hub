@@ -620,7 +620,6 @@ int main(){
 #+end_src
 **** set up sinks
 You can add sinks to core at the beginning.
-
 **** sinks that rotate the file
 #+begin_src c++
   void init()
@@ -638,6 +637,117 @@ You can add sinks to core at the beginning.
        logging::trivial::severity >= logging::trivial::info
        );
   }
+#+end_src
+**** ~add_file_log~ Bedind The Scene
+之前的init大概可以翻译成如下：
+#+begin_src c++
+void init()
+{
+    // Construct the sink
+    typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
+    boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+    // Add a stream to write log to
+    sink->locked_backend()->add_stream(
+        boost::make_shared< std::ofstream >("sample.log"));
+
+    // Register the sink in the logging core
+    logging::core::get()->add_sink(sink);
+}
+#+end_src
+每个sink有一个frontend和一个backend.在以上种类为:
++ frontend :: synchronous_sink （for multithreading,filtering, formatting）
++ backend :: text_ostream_backend (specific task for this sink)
+以上的backend也可以加一个往console写的。
+#+begin_src c++
+#include <boost/core/null_deleter.hpp>
+
+// We have to provide an empty deleter to avoid destroying the global stream object
+boost::shared_ptr< std::ostream > stream(&std::clog, boost::null_deleter());
+sink->locked_backend()->add_stream(stream);
+#+end_src
+你可以给 ~text_ostream_backend~ 加很多 ~stream~ ，比如说文件又或是到console。这
+样的话filter只用一次，但我们可以同时往文件和console两个地方写。
+**** logger
+***** sink 和 source的区别？
+sink 需要被register到core。source不用。
+***** non-thread-safe logger 有啥用？
+如果你每个线程都用不同的logger的话，那就没必要thread-safe.
+***** thread-safe logger 有啥不一样
+有 _mt 后缀，会慢。
+***** Global logger
+Define a global logger
+#+begin_src c++
+BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
+
+#+end_src
+Get the global logger
+#+begin_src c++
+src::logger_mt& lg = my_logger::get();
+
+#+end_src
+***** write to logger
+#+begin_src c++
+  BOOST_LOG(lg) << "Hello, World!";
+#+end_src
+背后原理：
+#+begin_src c++
+  logging::record rec = lg.open_record(); // 给我个record对象如果有sink在接着的
+                                          // 话,filter用上在这。
+  if (rec)                                // 如果有record，开写
+  {
+      logging::record_ostream strm(rec); // 在record上开个stream
+      strm << "Hello, World!";
+      strm.flush();               // stream到record
+      lg.push_record(boost::move(rec)); // record到logger
+   }
+#+end_src
+***** Full example
+Need Boost::log, Boost::log_setup
+#+begin_src c++
+#include <boost/move/utility_core.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/sources/global_logger_storage.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace keywords = boost::log::keywords;
+
+BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
+
+void logging_function1()
+{
+    src::logger lg;
+    logging::record rec = lg.open_record();
+    if (rec)
+    {
+        logging::record_ostream strm(rec);
+        strm << "AAA from local logger";
+        strm.flush();
+        lg.push_record(boost::move(rec));
+    }
+}
+
+void logging_function2()
+{
+    src::logger_mt& lg = my_logger::get();
+    BOOST_LOG(lg) << "AAA from global logger";
+}
+
+int main(int, char*[])
+{
+    logging::add_file_log("sample.log");
+    logging::add_common_attributes();
+
+    logging_function1();
+    logging_function2();
+
+    return 0;
+}
+
 #+end_src
 ** Windows
 *** install location
@@ -712,7 +822,7 @@ target.
   project(Hi VERSION 1.0)
 
 
-  set(Boost_DIR "C:\\Users\\congj\\MyProgramFiles\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
   # The above dir contains the BoostConfig.cmake
   find_package(Boost REQUIRED COMPONENTS log)
   # find_package(Boost CONFIG REQUIRED COMPONENTS log)
@@ -784,9 +894,8 @@ project(Hi VERSION 1.0)
 
 # Version 1.82 is too high for findBoost
 # set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
-# set(BOOST_ROOT "C:\\Users\\congj\\MyProgramFiles\\boost_1_82_0")
 
-set(Boost_DIR "C:\\Users\\congj\\MyProgramFiles\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
 # The above dir contains the BoostConfig.cmake
 find_package(Boost REQUIRED COMPONENTS log log_setup)
 # find_package(Boost CONFIG REQUIRED COMPONENTS log)
