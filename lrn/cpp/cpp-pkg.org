@@ -1,5 +1,5 @@
 ** Boost
-*** hi
+*** start on linux
 **** install
 #+begin_src bash
   sudo apt search libboost
@@ -35,7 +35,7 @@ add_executable(myexe test.cpp)
 # cmake .. && cmake --build .
 add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
 #+end_src
-*** smart point
+*** smart pointer
 **** sole ownership
 ***** unique pointer
 #+begin_src c++
@@ -749,8 +749,8 @@ int main(int, char*[])
 }
 
 #+end_src
-** Windows
-*** install location
+*** Install on Windows
+**** install location
 Usually C:\Program Files\boost\boost_1_82_0,
 (But by default, the install prefix for ~b2.exe~ is set to C:\Boost.)
 After build I got the message
@@ -769,8 +769,8 @@ So after doing a
   mv .\boost_1_82_0\ -Destination 'C:\Program Files\' 
 #+end_src
 I should includes those dir respectively.
-*** HelloWorld
-**** CMakeLists.txt
+**** HelloWorld
+***** CMakeLists.txt
 #+begin_src cmake
   cmake_minimum_required(VERSION 3.20)
   # set the project name and version
@@ -792,7 +792,7 @@ I should includes those dir respectively.
   add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
 
 #+end_src
-**** test.cpp
+***** test.cpp
 #+begin_src c++
   #include <boost/log/trivial.hpp>
 
@@ -809,8 +809,8 @@ int main(int, char*[])
 }
 #+end_src
 
-** TroubleShoot
-*** LINK : fatal error LNK1104: cannot open file 'libboost_log_setup-vc143-mt-gd-x64-1_82.lib'
+*** TroubleShoot
+**** LINK : fatal error LNK1104: cannot open file 'libboost_log_setup-vc143-mt-gd-x64-1_82.lib'
 Original CMake and C++:
 
 Here we add a sink to the Boost::log core. This will link to the
@@ -907,6 +907,234 @@ target_link_libraries(myexe PUBLIC Boost::log Boost::log_setup)
 add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
 
 #+end_src
+** RocksDB
+*** concept
++ 每个db对应一个文件夹，文件都在那里面。
+*** Basic
+**** Status？
+RocksDB容易出错的都会返回 ~rocksdb::Status~ 类型。
+#+begin_src c++
+rocksdb::Status s = ...;
+if (!s.ok()) cerr << s.ToString() << endl;
+#+end_src
+**** open db
+#+begin_src c++
+  #include <assert>
+  #include "rocksdb/db.h"
+
+  rocksdb::DB* db;
+  rocksdb::Options options;
+  options.create_if_missing = true;
+  // options.error_if_exists = true;
+  rocksdb::Status status =
+    rocksdb::DB::Open(options, "/tmp/testdb", &db);
+  assert(status.ok());
+  ...
+#+end_src
+**** closing db
+#+begin_src c++
+/* open the db as described above */
+/* do something with db */
+delete db;
+#+end_src
+**** CRUD: create/read/update/delete
+#+begin_src c++
+std::string value;
+rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &value);
+if (s.ok()) s = db->Put(rocksdb::WriteOptions(), key2, value);
+if (s.ok()) s = db->Delete(rocksdb::WriteOptions(), key1);
+#+end_src
+*** Deeper
+**** options
+你可以用方法来set，也可以用str-str Map来set。
+有些可以在跑的时候改
+#+begin_src c++
+rocksdb::Status s;
+s = db->SetOptions({{"write_buffer_size", "131072"}});
+assert(s.ok());
+s = db->SetDBOptions({{"max_background_flushes", "2"}});
+assert(s.ok());
+#+end_src
+这些会被储存在 OPTIONS-xxxx 文件之中。
+具体option见：https://github.com/facebook/rocksdb/wiki/Basic-Operations
+几个可能会用的有
+#+begin_src c++
+  std::unordered_map<std::string, std::string> cf_options_map = {
+      {"write_buffer_size", "1"},
+      {"max_write_buffer_number", "2"},
+      {"compression", "kSnappyCompression"},
+      {"compression_per_level",
+       "kNoCompression:"
+       "kSnappyCompression:"
+       "kZlibCompression:"
+       "kBZip2Compression:"
+       "kLZ4Compression:"
+       "kLZ4HCCompression:"
+       "kXpressCompression:"
+       "kZSTD:"
+       "kZSTDNotFinalCompression"},
+      {"bottommost_compression", "kLZ4Compression"},
+  };
+  #+end_src
+**** Closing the db
+你可以直接delete,或者用Close(). Close()可以查错，比如说看logger有没有被关掉的。
+#+begin_src c++
+  ... open the db as described above ...
+  ... do something with db ...
+  Status s = db->Close();
+  ... log status ...
+  delete db;
+  #+end_src
+**** get
+***** PinnableSlice
+当有的value会常常往返DB的时候用 ~PinnableSlice~ 可以省一些 ~memcopy~。
+#+begin_src c++
+  PinnableSlice pinnable_val;
+  rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &pinnable_val);
+  #+end_src
+The source will be released once pinnable_val is destructed or ::Reset is invoked on it.
+***** MultiGet
+#+begin_src c++
+  std::vector<Slice> keys;
+  std::vector<PinnableSlice> values;
+  std::vector<Status> statuses;
+
+  for ... {
+    keys.emplace_back(key);
+  }
+  values.resize(keys.size());
+  statuses.resize(keys.size());
+
+  db->MultiGet(ReadOptions(), cf, keys.size(), keys.data(), values.data(), statuses.data());
+#+end_src
+你可以用 ~std::array~ or any contiguous storage type.
+#+begin_src c++
+  std::vector<ColumnFamilyHandle*> column_families;
+  std::vector<Slice> keys;
+  std::vector<std::string> values;
+
+  for ... {
+    keys.emplace_back(key);
+    column_families.emplace_back(column_family);
+  }
+  values.resize(keys.size());
+
+  std::vector<Status> statuses = db->MultiGet(ReadOptions(), column_families, keys, &values);
+  #+end_src
+**** Column Family FAQ
+等下，ColumnFamily是啥？
+
++ Q: What are column families used for?
++ A: The most common reasons of using column families:
+  + Use different compaction setting, comparators, compression types, merge
+    operators, or compaction filters in different parts of data.
+  + Drop a column family to delete its data One column family to store metadata
+    and another one to store the data.
+
++ Q: What's the difference between storing data in multiple column family and in
+multiple rocksdb database?
++ A: The main differences will be backup, atomic writes and performance of writes.
+  + The advantage of using multiple databases: database is the unit of backup or
+    checkpoint. It's easier to copy a database to another host than a column
+    family.
+  + Advantages of using multiple column families:
+    + write batches are atomic across multiple column families on one database.
+      You can't achieve this using multiple RocksDB databases
+    + If you issue sync writes to WAL, too many databases may hurt the performance.
+
++ Q: If I have multiple column families and call the DB functions without a
+  column family handle, what the result will be?
++ A: It will operate only the default column family.
+
+所以column family 其实就像subtable一样。
+怎么获得？ 
+**** Batch Write 一个不过全部rollback
+#+begin_src c++
+  #include "rocksdb/write_batch.h"
+  ...
+  std::string value;
+  rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &value);
+  if (s.ok()) {
+    rocksdb::WriteBatch batch;
+    batch.Delete(key1);
+    batch.Put(key2, value);
+    s = db->Write(rocksdb::WriteOptions(), &batch);
+  }
+  #+end_src
+**** sync/async write
+默认async write。（先回归，后台慢慢写）
+
+如下打开sync
+#+begin_src c++
+  rocksdb::WriteOptions write_options;
+  write_options.sync = true;
+  db->Put(write_options, ...);
+#+end_src
+**** Iteration
+***** db[:] :: print all kv
+#+begin_src c++
+  rocksdb::Iterator* it = db->NewIterator(rocksdb::ReadOptions());
+  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+    cout << it->key().ToString() << ": " << it->value().ToString() << endl;
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  delete it;
+  #+end_src
+***** db[start:limit]
+#+begin_src c++
+  for (it->Seek(start);
+       it->Valid() && it->key().ToString() < limit;
+       it->Next()) {
+    ...
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  #+end_src
+***** db.reverse()[:]
+#+begin_src c++
+  for (it->SeekToLast(); it->Valid(); it->Prev()) {
+    ...
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  #+end_src
+***** db[limit:start-1:-1]
+#+begin_src c++
+  for (it->SeekForPrev(start);
+       it->Valid() && it->key().ToString() > limit;
+       it->Prev()) {
+    ...
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  #+end_src
+**** Slice ? 就是string
+The return value of the ~it->key()~ and ~it->value()~ calls above are instances of
+the ~rocksdb::Slice~ type. Slice is a simple structure that contains a length and
+a pointer to an external byte array. Returning a Slice is a cheaper alternative
+to returning a std::string since we do not need to copy potentially large keys
+and values.
+
+C-string 和 string 都可以到slice
+#+begin_src c++
+   rocksdb::Slice s1 = "hello";
+
+   std::string str("world");
+   rocksdb::Slice s2 = str;
+   #+end_src
+and back
+#+begin_src c++
+   std::string str = s1.ToString();
+   assert(str == std::string("hello"));
+   #+end_src
+***** caveat
+你要保证slice所指的东西一直在。slice就是个指针。
+不要用如下：
+#+begin_src c++
+   rocksdb::Slice slice;
+   if (...) {
+     std::string str = ...;
+     slice = str;
+   }
+   Use(slice);
+   #+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

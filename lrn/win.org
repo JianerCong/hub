@@ -266,3 +266,7 @@ Next in the shell
 #+begin_src powershell
 lame .\hi.wav .\fr.mp3
 #+end_src
+** Make bootable disk
++ rufus
+Or use dd.exe
+Remember in the BIOS setting enable lagacy-compatble mode, not just UEFI-mode.
