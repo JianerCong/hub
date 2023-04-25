@@ -581,7 +581,8 @@ include(CMakePrintHelpers)
 cmake_print_properties(TARGETS Boost::log PROPERTIES TYPE SOURCE_DIR)
 
 #+end_src
-
+*** build a particular target
+cmake --build . --target Library1 Library2
 ** find_package
 + CONFIG keyward lets it find the <pkg>Config file
 ** ctest

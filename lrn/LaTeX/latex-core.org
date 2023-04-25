@@ -1,4 +1,10 @@
 # -*- org-what-lang-is-for: "latex"; -*-
+** font
+*** redefine \emph
+#+begin_src latex
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+#+end_src
 ** math
 *** brackets
 Type 	LaTeX markup 	Renders as
