@@ -18,6 +18,13 @@
       lame "$x.wav" "$x.mp3"
   }
 #+end_src
+*** format string
+#+begin_src csharp
+# .NET string format string
+[string]::Format('Hello, {0} {1}.',$first,$last)
+# PowerShell format string
+'Hello, {0} {1}.' -f $first, $last
+#+end_src
 ** Format number
 #+begin_src powershell
   “{0:N2}” -f ((5/21)*100)
@@ -448,28 +455,92 @@ automatic variable to examine the error.
       -split $a
     #+end_src
 ** Array
+*** basic
    #+begin_src powershell
+     $data = @(
+         'Zero'
+         'One'
+         'Two'
+         'Three'
+     )
+
+     $data[0] # ⇒ Zero
+
+     # sub array
+     $data[0,2,3] # Zero Two Three
+     $data[1..3] #One Two Three
+     $data[-1] #Three
+
+
+     $a = 1,2,3,4,5,6,7,8
+     $a[2..-1]
+     # 3 2 1 8
+
+     $data.count #4
+
      $A = 22,5,10,8,12,9,80
      $B = ,7                         #array of one element
      $C = 5..8                            #5,6,7,8
-$A.GetType()
+     $A.GetType()
+
+
+     # Loop
+     foreach ( $node in $data )
+     {
+         "Item: [$node]"
+     }
+     foreach($person in $data)
+{
+    $person.FirstName = 'Kevin'
+}
+     $data.foreach({"Item [$PSItem]"})
+     # Item [Zero]
+     # Item [One]
+     # Item [Two]
+     # Item [Three]
+
+     # You can drop the paren around the script block
+     $data.foreach{"Item [$PSItem]"}
+
+     # index
+     for ( $index = 0; $index -lt $data.count; $index++)
+     {
+         "Item: [{0}]" -f $data[$index]
+     }
+
+
    #+end_src
+*** array of obj
+#+begin_src powershell
+  $data = @(
+      [pscustomobject]@{FirstName='Kevin';LastName='Marquette'}
+      [pscustomobject]@{FirstName='John'; LastName='Doe'}
+  )
+  $data[0].FirstName
+  $data[0].FirstName = 'Aaa'
 
+  $data | ForEach-Object {$_.LastName}
+  # Marquette
+  # Doe
+
+  # Magic Powershell
+  $data.LastName
+  # Marquette
+  # Doe
+
+  # Object filtering
+  $data | Where-Object {$_.FirstName -eq 'Kevin'}
+  # FirstName LastName
+  # -----     ----
+  # Kevin     Marquette
+
+  $processList = Get-Process
+#+end_src
 *** Types
-When no data type is specified, PowerShell creates each array as an object array
-(System.Object[]).
-
 Use [long[]] prefix to declare a strongly-typed array
 #+begin_src powershell
   $A.GetType()
   [int32[]]$ia = 1500,2230,3350,4000
-#+end_src
-
-  You can create arrays that are cast to any supported type in the .NET. For
-  example, the objects that ~Get-Process~ retrieves to represent processes are of
-  the ~System.Diagnostics.Process~ type
-#+begin_src powershell
-  [Diagnostics.Process[]]$zz = Get-Process
 #+end_src
 *** Array from statement
     #+begin_src powershell
@@ -478,134 +549,142 @@ Use [long[]] prefix to declare a strongly-typed array
       $p = @(Get-Process Notepad)
     #+end_src
 *** Accessing array
-    #+begin_src powershell
-      $a[0]
-      $a[1..4]
-      $a = 0 .. 9
-      $a[-3..-1]                      #7 8 9
-      $a[-1..-3]                      #9 8 7
-      $a[2..-2]                             #2 1 0 9 -8
-      # From 0 to 2 AND 4 to 6
-      $a[0,2+4..6]                                #0 1 2 4 5 6
+#+begin_src powershell
+  $a[0]
+  $a[1..4]
+  $a = 0 .. 9
+  $a[-3..-1]                      #7 8 9
+  $a[-1..-3]                      #9 8 7
+  $a[2..-2]                             #2 1 0 9 -8
+  # From 0 to 2 AND 4 to 6
+  $a[0,2+4..6]                                #0 1 2 4 5 6
 
-      $a[1] = 10
-      # Append to array: Caution: new array each time, Consider declaration.
-      $a = @(0..4)
-      $a += 5
+  $a[1] = 10
+  # Append to array: Caution: new array each time, Consider declaration.
+  $a = @(0..4)
+  $a += 5
 
-      # t is everything in $a expect for a[2]
-      $t = $a[0,1 + 3..($a.length - 1)]
-    #+end_src
+  # t is everything in $a expect for a[2]
+  $t = $a[0,1 + 3..($a.length - 1)]
+#+end_src
 *** Concat | Delete
-    #+begin_src powershell
-      # Concat array
-      $x = 1,3
-      $y = 5,9
-      $z = $x + $y
+#+begin_src powershell
+  # Concat array
+  $x = 1,3
+  $y = 5,9
+  $z = $x + $y
 
-      # delete array
-      $z=$null                       
-    #+end_src
+  # delete array
+  $z=$null                       
+#+end_src
+*** Join
+#+begin_src powershell
+PS> $data = @(1,2,3,4)
+PS> $data -join '-'
+1-2-3-4
+PS> $data -join ','
+1,2,3,4
+#+end_src
 *** Loop
-    #+begin_src powershell
-      $a = 0..9
-      # C-style
-      for ($i = 0; $i -le ($a.length - 1); $i += 2) {
-          $a[$i]
-      }
-      # for each
-      foreach ($element in $a) {
-          $element
-      }
+#+begin_src powershell
+  $a = 0..9
+  # C-style
+  for ($i = 0; $i -le ($a.length - 1); $i += 2) {
+      $a[$i]
+  }
+  # for each
+  foreach ($element in $a) {
+      $element
+  }
 
-      # while
-      $i=0
-      while($i -lt 4) {
-          $a[$i]
-          $i++
-      }
+  # while
+  $i=0
+  while($i -lt 4) {
+      $a[$i]
+      $i++
+  }
 
-      # Methods
-      $a = @(0 .. 3)
-      $a.ForEach({ $_ * $_})          #0 1 4 9
+  # Methods
+  $a = @(0 .. 3)
+  $a.ForEach({ $_ * $_})          #0 1 4 9
 
-      # For each convert to type
-      @("1/1/2017", "2/1/2017", "3/1/2017").ForEach([datetime])
-      # Sunday, January 1, 2017 12:00:00 AM
-      # Wednesday, February 1, 2017 12:00:00 AM
-      # Wednesday, March 1, 2017 12:00:00 AM
+  # For each convert to type
+  @("1/1/2017", "2/1/2017", "3/1/2017").ForEach([datetime])
+  # Sunday, January 1, 2017 12:00:00 AM
+  # Wednesday, February 1, 2017 12:00:00 AM
+  # Wednesday, March 1, 2017 12:00:00 AM
 
-      # Access Property by name
-      (dir 'C:\Temp').ForEach('LastAccessTime') #get
-      (dir 'C:\Temp').ForEach('LastAccessTime', (Get-Date)) #set
+  # Access Property by name
+  (dir 'C:\Temp').ForEach('LastAccessTime') #get
+  (dir 'C:\Temp').ForEach('LastAccessTime', (Get-Date)) #set
 
-      # For each object, apply the methods
-      # ForEach(string methodName)
-      ("one", "two", "three").ForEach("ToUpper")
+  # For each object, apply the methods
+  # ForEach(string methodName)
+  ("one", "two", "three").ForEach("ToUpper")
 
-    #+end_src
+#+end_src
 *** Properties and Methods
-    #+begin_src powershell
-      $a = 0..9
-      $a.Count
-      $a.Length                       #Same
+#+begin_src powershell
+  $a = 0..9
+  $a.Count
+  $a.Length                       #Same
 
-      $a=1..3
-      $a.Clear()
-      # for each object, is it null?
-      $a | % { $null -eq $_ }         #t,t,t
+  $a=1..3
+  $a.Clear()
+  # for each object, is it null?
+  $a | % { $null -eq $_ }         #t,t,t
 
-      # Clear set bits to 0;
-      [int[]] $intA = 1, 2, 3
-      $intA.Clear()
-      $intA                           #0,0,0
+  # Clear set bits to 0;
+  [int[]] $intA = 1, 2, 3
+  $intA.Clear()
+  $intA                           #0,0,0
 
-      [int32[]] $a=1..3
-      # Get the methods for the array
-      Get-Member -InputObject $a
-      # Trap Attention
-      $a | Get-Member                 #methods for int32
-      , $a | Get-Member                 #methods for array
-    #+end_src
+  [int32[]] $a=1..3
+  # Get the methods for the array
+  Get-Member -InputObject $a
+  # Trap Attention
+  $a | Get-Member                 #methods for int32
+  , $a | Get-Member                 #methods for array
+#+end_src
 *** Filter array with where
-    #+begin_src powershell
-      # Get all even numbers
-      (0..9).Where{ $_ % 2 }
-      # Get all non-empty strings
-      ('hi', '', 'there').Where({$_.Length})
+#+begin_src powershell
+  # Get all even numbers
+  (0..9).Where{ $_ % 2 }
+  # Get all non-empty strings
+  ('hi', '', 'there').Where({$_.Length})
 
-      # Get the zip files in the current users profile, sorted by LastAccessTime.
-      $Zips = dir $env:userprofile -Recurse '*.zip' | Sort-Object LastAccessTime
-      # Get the least accessed file over 100MB
-      $Zips.Where({$_.Length -gt 100MB}, 'Default', 1)
-      #  Default means: Use Script Block ^^^^^^^^   ^--- the maximum number of object
+  # Get the zip files in the current users profile, sorted by LastAccessTime.
+  $Zips = dir $env:userprofile -Recurse '*.zip' | Sort-Object LastAccessTime
+  # Get the least accessed file over 100MB
+  $Zips.Where({$_.Length -gt 100MB}, 'Default', 1)
+  #  Default means: Use Script Block ^^^^^^^^   ^--- the maximum number of object
 
-    #+end_src
-**** Search
+#+end_src
+*** Search
      The difference between loop and search is that, the loop stops when found
-     #+begin_src powershell
-      # Use 'Last' or 'First' can also specify the maximum number of objs
-      $h = (Get-Date).AddHours(-1)
-      $logs = dir 'C:\' -Recurse '*.log' | Sort-Object CreationTime
-      # Find the last 5 log files created in the past hour.
-      $logs.Where({$_.CreationTime -gt $h}, 'Last', 5)
+#+begin_src powershell
+ # Use 'Last' or 'First' can also specify the maximum number of objs
+ $h = (Get-Date).AddHours(-1)
+ $logs = dir 'C:\' -Recurse '*.log' | Sort-Object CreationTime
+ # Find the last 5 log files created in the past hour.
+ $logs.Where({$_.CreationTime -gt $h}, 'Last', 5)
 
-      # Use SkipUntil 
-      $computers = "Server01", "Server02", "Server03", "localhost", "Server04"
-      # Find the first available online server.
-      $computers.Where({ Test-Connection $_ }, 'SkipUntil', 1) #=>localhost
+ # Use SkipUntil 
+ $computers = "Server01", "Server02", "Server03", "localhost", "Server04"
+ # Find the first available online server.
+ $computers.Where({ Test-Connection $_ }, 'SkipUntil', 1) #=>localhost
 
-      # Retrieve the first set of numbers less than or equal to 10.
-      (1..50).Where({$_ -gt 10}, 'Until')
-      # This would perform the same operation.
-      (1..50).Where({$_ -le 10})
-     #+end_src
-**** Split array
-     #+begin_src powershell
-       $running, $stopped = (Get-Service).Where({$_.Status -eq 'Running'}, 'Split')
-       $running
-       $stopped
-     #+end_src
+ # Retrieve the first set of numbers less than or equal to 10.
+ (1..50).Where({$_ -gt 10}, 'Until')
+ # This would perform the same operation.
+ (1..50).Where({$_ -le 10})
+#+end_src
+*** Split array
+#+begin_src powershell
+  $running, $stopped = (Get-Service).Where({$_.Status -eq 'Running'}, 'Split')
+  $running
+  $stopped
+#+end_src
 *** Multidimentional array
     #+begin_src powershell
       [string[,]]$rank2 = [string[,]]::New(3,2)
@@ -648,39 +727,12 @@ Use [long[]] prefix to declare a strongly-typed array
 pipeline or by parameters that support arrays of objects.
 
 *** The real power of array: One call for all
-    When you use the ~member access operator (.)~ with a member name on a
-    *collection object*, such as an array:
-
-    if (~the collection object does not have a member of that name~):
-
-         The items of the collection are enumerated and PowerShell looks for that
-         member on each item.
-
-    This applies to both property and method members.
-
     #+begin_src powershell
       $files = (New-Item -Type File -Force '/temp/t1.txt'),
       (New-Item -Force -Type File '/temp/t2.txt')
       $files.LastWriteTime
       # Friday, June 25, 2021 1:21:17 PM
       # Friday, June 25, 2021 1:21:17 PM
-    #+end_src
-
-    Get OK, Set Nope:
-    
-    #+begin_src powershell
-      $files.LastWriteTime = (Get-Date).AddDays(-1) #Error
-    #+end_src
-
-    Instead, should use a ~set_~ method
-    #+begin_src powershell
-      $files.set_LastWriteTime((Get-Date).AddDays(-1)) #Okay
-      $files.LastWriteTime
-    #+end_src
-
-    So you may wanna ask: What values can I set?
-    #+begin_src powershell
-      $files | Get-Member | Where-Object Definition -like '*set;*'
     #+end_src
 ** Filter (where-object)
 #+begin_src powershell
@@ -1055,3 +1107,10 @@ function pspf{
 }
 
   #+end_src
+
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "powershell"
+# End:
