@@ -75,6 +75,23 @@
   \draw[very thick,-o] (0,0) |- (1,1); %up then right
   \draw[very thick,-latex] (0,0) |- (1,1); %up then right
 #+end_src
+** tcolorbox
+*** why there's a space between my code and my box border when using minted?
+#+begin_src latex
+  Instead of 
+  \begin{simplec}
+    struct Transaction {
+      /* 数据在这 */
+    }
+  \end{simplec}
+
+  Do
+  \begin{simplec}
+    struct Transaction {
+      /* 数据在这 */
+    }\end{simplec}
+
+#+end_src
 
 ** minipage
 *** basic

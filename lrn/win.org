@@ -222,10 +222,6 @@ affecting the rest of the image.
 + switch between control point and corner point :: double-click on the point
 
 + path are under the path tab of the layer panel.
-** AE
-+ [P]，[S],[T],[U]:: reveal position/scale/opacity/all animated param/
-+ alt-drag :: time-stretch key-frames
-+ manually remark location :: use effect controls panel
 ** clash for windows Q&A
 *** use clash Proxy in cmd
 #+begin_src powershell

@@ -111,6 +111,18 @@ z is not present in string
     std::cout << new_s << '\n';
   }
 #+end_src
+*** assert
+#+begin_src c++
+  #include <cstdio>
+  #include <cassert>
+
+
+  int main(int argc, char *argv[]){
+    assert(2==1);
+
+    return 0;
+  }
+#+end_src
 *** Move
 **** forward
  Trun into rvalue if possible.

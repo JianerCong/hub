@@ -36,3 +36,25 @@ Selct the shapes
 + double-clicking on the anchor point to make the following path straight.
 **** join
 + select the paths : Object > Path > Join
+** AE
++ [P]，[S],[T],[U]:: reveal position/scale/opacity/all animated param/
++ alt-drag :: time-stretch key-frames
++ manually remark location :: use effect controls panel
++ [W] :: rotate tool
++ [ee] :: show expression
++ [.] :: zoomin
++ Shift-a :: add anchor to expressed properties
+*** layers & views
++ C-S-A :: deselect all layers
++ [.],[,],[/]:: zoom in/out/to 100%
++ [=],[-] :: zoom-in/out time
++ [;], S-[;] :: zoom-min/max
++ C-' :: show-hide grid
++ C-S-' :: snap to grid
+
+*** mv
++ M-Pgup :: go 10 frames back
++ M-arrow :: move selected key-frames
++ M-S-arrow :: move selected key-frames * 10
++ M-S-PgUp :: move selected layers
++  :: 

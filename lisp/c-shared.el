@@ -8,7 +8,7 @@
 
 (define-skeleton c-say
   "say something "
-  > "P(\"" _ "\");")
+  > "printf(\"" _ "\");")
 
 
 (define-skeleton c-big-comment

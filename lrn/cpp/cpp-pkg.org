@@ -1135,6 +1135,77 @@ and back
    }
    Use(slice);
    #+end_src
+** EVMONE
+*** helloworld
+**** cpp
+#+begin_src c++
+#include <evmc/evmc.hpp>
+#include <cstdio>
+
+#define DEBUG
+#ifdef DEBUG
+#define P(...) printf(__VA_ARGS__)
+#endif
+
+int main(int argc, char *argv[]){
+  // using namespace evmc;
+  // uint8_t i = 0xff;
+  // P("got value %x\n",i);
+
+  evmc::bytes32 v1;
+  for (int i = 0;i<32;i++){P("%x,",v1.bytes[i]);}
+  P("Before ^\n");
+
+  for (int i = 0;i<32;i++){v1.bytes[i] = 0xff;}
+
+  for (int i = 0;i<32;i++){P("%x,",v1.bytes[i]);}
+  P("After ^\n");
+  return 0;
+}
+
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+project(hi VERSION 1.1)
+
+add_executable(main test.cpp)
+# target_include_directories(main PUBLIC /home/me/repo/evmone/evmc/include/)
+target_include_directories(main PUBLIC ../evmone/evmc/include/)
+add_custom_target(run ALL main 1 COMMENT "Runing App 🐸")
+
+include(CMakePrintHelpers)
+cmake_print_properties(TARGETS main PROPERTIES INCLUDE_DIRECTORIES)
+
+#+end_src
+*** StorageValue
+#+begin_src c++
+#include <evmc/evmc.hpp>
+#include <evmc/mocked_host.hpp>
+#include <cstdio>
+
+#define DEBUG
+#ifdef DEBUG
+#define P(...) printf(__VA_ARGS__)
+#endif
+
+int main(int argc, char *argv[]){
+  using namespace evmc;
+  bytes32 v1, v2;
+  for (int i = 0;i<32;i++){v1.bytes[i] = 0xff;}
+
+  StorageValue s{v1,v2,EVMC_ACCESS_COLD};
+  P("Curent : ");
+  for (int i = 0;i<32;i++) P("%x ",s.current.bytes[i]); puts("");
+  P("Original : ");
+  for (int i = 0;i<32;i++) P("%x ",s.original.bytes[i]); puts("");
+  return 0;
+}
+// Curent : ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+// Original : 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+
+
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

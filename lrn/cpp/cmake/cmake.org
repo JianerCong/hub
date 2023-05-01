@@ -1,4 +1,11 @@
 ** Cmake-lang
+*** target include
+#+begin_src cmake
+target_include_directories(mylib PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/mylib>
+  $<INSTALL_INTERFACE:include/mylib>  # <prefix>/include/mylib
+)
+#+end_src
 *** public|interface|provate target_link_libraries
 Generally, a dependency should be specified in a use of target_link_libraries()
 with the PRIVATE keyword if it is used by only the implementation of a library,

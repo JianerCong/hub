@@ -102,6 +102,7 @@ s1 <prompt s2> s3 _ s4
   (define-abbrev-table 'latex-mode-abbrev-table
     '(
       ("nd" "\\node")
+      ("tw" "text width=")
       ("nt" "\\notag\\\\")
       ("nte" "\\notag")
       ("dr" "\\draw")

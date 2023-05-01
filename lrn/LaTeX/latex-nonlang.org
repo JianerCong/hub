@@ -7,6 +7,26 @@
 
      # ^^^ this will increase your RAM usage from 3000k (3M) to 5M
    #+end_src
+*** I don't have program initexmf on linux?
+1. open file /usr/local/texlive/2022/texmf-dest/web2c/texmf.cnf
+2. copy k,v in it
+3. change them and add them back in /usr/local/texlive/2022/texmf.cnf
+
+** install info
+  TEXDIR (the main TeX directory):
+     /usr/local/texlive/2023
+   TEXMFLOCAL (directory for site-wide local files):
+     /usr/local/texlive/texmf-local
+   TEXMFSYSVAR (directory for variable and automatically generated data):
+     /usr/local/texlive/2023/texmf-var
+   TEXMFSYSCONFIG (directory for local config):
+     /usr/local/texlive/2023/texmf-config
+   TEXMFVAR (personal directory for variable and automatically generated data):
+     ~/.texlive2023/texmf-var
+   TEXMFCONFIG (personal directory for local config):
+     ~/.texlive2023/texmf-config
+   TEXMFHOME (directory for user-specific files):
+     ~/texmf
 
 ** emacs + auctex
 *** basic
