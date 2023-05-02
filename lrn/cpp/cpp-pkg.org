@@ -1206,6 +1206,29 @@ int main(int argc, char *argv[]){
 
 
 #+end_src
+*** opcode
++ 比较重要的就是 f3 : RETURN
+***** 例子
+#+begin_src c++
+7f #push32 val
+d0d1d2d3d4d5d6d7d8d9dadbdcdddedf
+e0e1e2e3e4e5e6e7e8e9eaebecedeeef
+
+60 #push1 0
+00
+
+52 #memstore(0,val)
+
+60 #push1 20
+20
+
+60 #push1 0 (refund?)
+00
+
+
+f3 #return
+
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

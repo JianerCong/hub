@@ -1,5 +1,15 @@
 (load-file (concat path-template "c-shared.el"))
 
+(define-skeleton cpp-boost-unit-test-boilerplate
+  "Insert a boost-unit test"
+  nil
+  "#define BOOST_TEST_MAIN" \n
+  "#include <boost/test/unit_test.hpp>" \n
+ "BOOST_AUTO_TEST_CASE(test_1) {" \n
+ "BOOST_CHECK(1 == 1);" \n
+ "} // BOOST_AUTO_TEST_CASE(test_no_1)" \n
+)
+
 (define-skeleton cpp-show-one-values
   "insert a r.show(a,b,c)"
   nil
@@ -93,6 +103,7 @@
 (define-key c++-mode-map (kbd "\C-c w") 'cpp-add-my-lib)
 (define-key c++-mode-map (kbd "\C-c i") 'cpp-include)
 (define-key c++-mode-map (kbd "\C-c s") 'cpp-show-one-values)
+(define-key c++-mode-map (kbd "\C-c b") 'cpp-boost-unit-test-boilerplate)
 
 
 ;; Fold all: folding-whole-buffer

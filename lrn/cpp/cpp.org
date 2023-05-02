@@ -696,6 +696,7 @@ int main ()
 }
 #+END_SRC
 *** map
+**** basic
    #+begin_src c++
 /**
  * @file umap.cpp
@@ -749,6 +750,21 @@ int main(int argc, char *argv[]){
   }
 
    #+end_src
+**** caveat: [] access create member
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <unordered_map>
+
+using std::unordered_map;
+struct A {int a;};
+BOOST_AUTO_TEST_CASE(test_1) {
+  unordered_map<int,A> m;
+  m[1].a = 123;                 // a new A is created
+  BOOST_CHECK_EQUAL(m[1].a, 123);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+#+end_src
 *** iomanip
  #+begin_src c++
 #include <iostream>
@@ -1116,6 +1132,33 @@ int main()
   #endif
   // unsigned sleep(unsigned seconds);
 
+
+#+end_src
+** cpp2
+*** basic_string
+Defined in header <string>
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <string>
+
+using bytes = std::basic_string<uint8_t>;
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  bytes s{0,1,2,3};
+
+  BOOST_CHECK_EQUAL(s[0],0);
+  BOOST_CHECK_NE(s[2],1);
+  BOOST_CHECK_EQUAL(&*(s.begin() + 1), &*s.begin() + 1);
+  // *& converts iterator to pointer
+  BOOST_CHECK_EQUAL(s.data(),&*s.begin());
+
+  // pointer and array class
+  BOOST_CHECK_EQUAL(2,s.data()[2]);
+  BOOST_CHECK_EQUAL(s.data() + 2,&(s.data()[2]));
+  BOOST_CHECK_EQUAL(&s[2],s.data() + 2);
+
+} // BOOST_AUTO_TEST_CASE(test_no_1)
 
 #+end_src
 ** rocksdb
