@@ -75,6 +75,7 @@
         ("ct" . "<ctime>")
         ("ci" . "<cstdio>")
         ("ex" . "<stdexcept>")
+        ("a" . "<algorithm>")
         )
       )
 

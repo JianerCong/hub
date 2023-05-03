@@ -592,6 +592,92 @@ cmake_print_properties(TARGETS Boost::log PROPERTIES TYPE SOURCE_DIR)
 cmake --build . --target Library1 Library2
 ** find_package
 + CONFIG keyward lets it find the <pkg>Config file
+*** write your own
+**** main
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.20.0)
+
+  project(FindPackageCustom CXX)
+  # 让findpackage 找这里
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/module/")
+
+  find_package(PQXX REQUIRED)
+  add_executable(main main.cpp)
+  target_link_libraries(main PRIVATE PQXX::PQXX)
+#+end_src
+**** ./cmake/module/FindPQXX.cmake
+
+如果用户已经提供lib和include的位置：
+#+begin_src cmake
+  if (PQXX_LIBRARIES AND PQXX_INCLUDES)
+  add_imported_library(${PQXX_LIBRARIES} ${PQXX_INCLUDES})
+  return()
+endif()
+#+end_src
+直接找>>
+#+begin_src cmake
+  function(add_imported_library library headers)
+    # init the target variable
+    add_library(PQXX::PQXX UNKNOWN IMPORTED)
+    # UNKNOWN can also be DYNAMIC | STATIC.Here, we don't care
+    set_target_properties(PQXX::PQXX PROPERTIES
+      IMPORTED_LOCATION ${library}
+      INTERFACE_INCLUDE_DIRECTORIES ${headers}
+    )
+
+    set(PQXX_FOUND 1 CACHE INTERNAL "PQXX found" FORCE)
+    set(PQXX_LIBRARIES ${library}
+        CACHE STRING "Path to pqxx library" FORCE)
+    set(PQXX_INCLUDES ${headers}
+        CACHE STRING "Path to pqxx headers" FORCE)
+
+    mark_as_advanced(FORCE PQXX_LIBRARIES)
+    mark_as_advanced(FORCE PQXX_INCLUDES)
+  endfunction()
+#+end_src
+
+如果用户没提供：
+
+找dependency
+#+begin_src cmake
+  # deliberately used in mind-module against the documentation
+  include(CMakeFindDependencyMacro)
+  find_dependency(PostgreSQL)     #this macro call return when not found
+#+end_src
+在系统里找lib和include
+#+begin_src cmake
+  file(TO_CMAKE_PATH "$ENV{PQXX_DIR}" _PQXX_DIR)
+  find_library(PQXX_LIBRARY_PATH NAMES libpqxx pqxx
+    PATHS
+    ${_PQXX_DIR}/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    # (...) many other paths - removed for brevity
+    /usr/lib
+    NO_DEFAULT_PATH
+  )
+
+  find_path(PQXX_HEADER_PATH NAMES pqxx/pqxx
+    PATHS
+    ${_PQXX_DIR}/include
+    # (...) many other paths - removed for brevity
+    /usr/include
+    NO_DEFAULT_PATH
+  )
+#+end_src
+根据找没找到加target
+#+begin_src cmake
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(
+    PQXX DEFAULT_MSG PQXX_LIBRARY_PATH PQXX_HEADER_PATH
+  )
+
+  if (PQXX_FOUND)
+    add_imported_library(
+      "${PQXX_LIBRARY_PATH};${POSTGRES_LIBRARIES}"
+      "${PQXX_HEADER_PATH};${POSTGRES_INCLUDE_DIRECTORIES}"
+    )
+
+  endif()
+#+end_src
 ** ctest
 # cmake ..
 # cmake --build .

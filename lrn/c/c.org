@@ -66,6 +66,15 @@ file m.exe
 ldd m.exe
 nm hi.so
   #+end_src
+*** pkg-config
+**** How to link to zlib
+#+begin_src bash
+  pkg-config --libs zlib          # -lz
+  pkg-config --list-all
+  ls /usr/lib/x86_64-linux-gnu/pkgconfig/
+
+
+#+end_src
 ** lang
 *** bits
   #+BEGIN_SRC c

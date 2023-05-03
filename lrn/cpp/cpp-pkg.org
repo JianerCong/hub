@@ -908,6 +908,19 @@ add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
 
 #+end_src
 ** RocksDB
+*** install
+#+begin_src bash
+  sudo apt install libgflags-dev
+  sudo apt install libsnappy-dev
+  sudo apt install zlib1g-dev
+  sudo apt install libbz2-dev
+  sudo apt install liblz4-dev
+  sudo apt install libzstd-dev
+
+  git clone https://github.com/facebook/rocksdb.git
+  cd rocksdb
+  make static_lib                 # or make shared_lib
+#+end_src
 *** concept
 + 每个db对应一个文件夹，文件都在那里面。
 *** Basic
@@ -1135,6 +1148,8 @@ and back
    }
    Use(slice);
    #+end_src
+*** Test
+
 ** EVMONE
 *** helloworld
 **** cpp
