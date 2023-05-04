@@ -262,6 +262,24 @@ target_compile_definitions(foo PUBLIC -DFOO)  # -D removed
 target_compile_definitions(foo PUBLIC "" FOO) # "" ignored
 target_compile_definitions(foo PUBLIC -D FOO) # -D becomes "", then ignored
 #+end_src
+*** set compile option
+**** for whole dir
+#+begin_src cmake
+if (MSVC)
+    # warning level 4
+    add_compile_options(/W4)
+else()
+    # additional warnings
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+#+end_src
+**** for a target
+#+begin_src cmake
+  target_compile_options(mytarget
+    PUBLIC "-lm"
+    INTERFACE "-lpthread")
+  #+end_src
+
 *** Reuse cmake project
 **** link to obj to other folder 
 import all targets defined in the CMakeLists.txt in ../my_test whose objects are

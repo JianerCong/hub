@@ -908,7 +908,7 @@ add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
 
 #+end_src
 ** RocksDB
-*** install
+*** install and run
 #+begin_src bash
   sudo apt install libgflags-dev
   sudo apt install libsnappy-dev
@@ -916,10 +916,191 @@ add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
   sudo apt install libbz2-dev
   sudo apt install liblz4-dev
   sudo apt install libzstd-dev
+  sudo apt install libjemalloc-dev
+  sudo apt install liburing-dev
 
   git clone https://github.com/facebook/rocksdb.git
-  cd rocksdb
-  make static_lib                 # or make shared_lib
+  cmake -S rocksdb/ -B build-rocksdb/ -DWITH_JEMALLOC=1 -DWITH_LIBURING=1 \
+        -DWITH_SNAPPY=1 -DWITH_LZ4=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DCMAKE_BUILD_TYPE=Release \
+
+  cmake -S rocksdb/ -B build-rocksdb/ -DWITH_JEMALLOC=1 -DWITH_SNAPPY=1 -DWITH_LZ4=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DCMAKE_BUILD_TYPE=Release
+
+  cmake --build build-rocksdb
+  cmake --install build-rocksdb --prefix installed-rocksdb
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+set(CMAKE_CXX_COMPILER "g++")
+project(hi VERSION 1.1)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+set(RocksDB_DIR "/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb")
+include(/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake)
+
+find_package(RocksDB CONFIG REQUIRED)
+
+# add the executable
+add_executable(main test.cpp)
+
+target_link_libraries(main PUBLIC Boost::unit_test_framework RocksDB::rocksdb)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** cpp
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <rocksdb/db.h>
+
+
+
+BOOST_AUTO_TEST_CASE(t1) {
+  rocksdb::DB* d;
+
+  rocksdb::Options options;
+  options.IncreaseParallelism();
+  options.OptimizeLevelStyleCompaction();
+  options.create_if_missing = true;
+
+  rocksdb::Status status = rocksdb::DB::Open(options, "/tmp/testdb", &d);
+
+  BOOST_CHECK(status.ok());
+  delete d;
+}
+
+#+end_src
+*** Oh,what you did on my sys ?
+#+begin_src c++
+-- Install configuration: "Debug"
+-- Installing: /usr/include/rocksdb
+-- Installing: /usr/include/rocksdb/trace_record_result.h
+-- Installing: /usr/include/rocksdb/write_batch.h
+-- Installing: /usr/include/rocksdb/table_reader_caller.h
+-- Installing: /usr/include/rocksdb/flush_block_policy.h
+-- Installing: /usr/include/rocksdb/rate_limiter.h
+-- Installing: /usr/include/rocksdb/perf_level.h
+-- Installing: /usr/include/rocksdb/compaction_job_stats.h
+-- Installing: /usr/include/rocksdb/customizable.h
+-- Installing: /usr/include/rocksdb/stats_history.h
+-- Installing: /usr/include/rocksdb/memtablerep.h
+-- Installing: /usr/include/rocksdb/utilities
+-- Installing: /usr/include/rocksdb/utilities/lua
+-- Installing: /usr/include/rocksdb/utilities/lua/rocks_lua_util.h
+-- Installing: /usr/include/rocksdb/utilities/lua/rocks_lua_custom_library.h
+-- Installing: /usr/include/rocksdb/utilities/sim_cache.h
+-- Installing: /usr/include/rocksdb/utilities/transaction.h
+-- Installing: /usr/include/rocksdb/utilities/options_type.h
+-- Installing: /usr/include/rocksdb/utilities/stackable_db.h
+-- Installing: /usr/include/rocksdb/utilities/optimistic_transaction_db.h
+-- Installing: /usr/include/rocksdb/utilities/leveldb_options.h
+-- Installing: /usr/include/rocksdb/utilities/write_batch_with_index.h
+-- Installing: /usr/include/rocksdb/utilities/memory_util.h
+-- Installing: /usr/include/rocksdb/utilities/agg_merge.h
+-- Installing: /usr/include/rocksdb/utilities/customizable_util.h
+-- Installing: /usr/include/rocksdb/utilities/debug.h
+-- Installing: /usr/include/rocksdb/utilities/cache_dump_load.h
+-- Installing: /usr/include/rocksdb/utilities/option_change_migration.h
+-- Installing: /usr/include/rocksdb/utilities/options_util.h
+-- Installing: /usr/include/rocksdb/utilities/transaction_db.h
+-- Installing: /usr/include/rocksdb/utilities/db_ttl.h
+-- Installing: /usr/include/rocksdb/utilities/backup_engine.h
+-- Installing: /usr/include/rocksdb/utilities/checkpoint.h
+-- Installing: /usr/include/rocksdb/utilities/replayer.h
+-- Installing: /usr/include/rocksdb/utilities/transaction_db_mutex.h
+-- Installing: /usr/include/rocksdb/utilities/env_mirror.h
+-- Installing: /usr/include/rocksdb/utilities/object_registry.h
+-- Installing: /usr/include/rocksdb/utilities/ldb_cmd.h
+-- Installing: /usr/include/rocksdb/utilities/info_log_finder.h
+-- Installing: /usr/include/rocksdb/utilities/ldb_cmd_execute_result.h
+-- Installing: /usr/include/rocksdb/utilities/table_properties_collectors.h
+-- Installing: /usr/include/rocksdb/utilities/convenience.h
+-- Installing: /usr/include/rocksdb/sst_file_reader.h
+-- Installing: /usr/include/rocksdb/block_cache_trace_writer.h
+-- Installing: /usr/include/rocksdb/db_dump_tool.h
+-- Installing: /usr/include/rocksdb/statistics.h
+-- Installing: /usr/include/rocksdb/sst_file_writer.h
+-- Installing: /usr/include/rocksdb/file_system.h
+-- Installing: /usr/include/rocksdb/write_batch_base.h
+-- Installing: /usr/include/rocksdb/port_defs.h
+-- Installing: /usr/include/rocksdb/c.h
+-- Installing: /usr/include/rocksdb/iterator.h
+-- Installing: /usr/include/rocksdb/status.h
+-- Installing: /usr/include/rocksdb/trace_record.h
+-- Installing: /usr/include/rocksdb/snapshot.h
+-- Installing: /usr/include/rocksdb/table.h
+-- Installing: /usr/include/rocksdb/wide_columns.h
+-- Installing: /usr/include/rocksdb/threadpool.h
+-- Installing: /usr/include/rocksdb/comparator.h
+-- Installing: /usr/include/rocksdb/concurrent_task_limiter.h
+-- Installing: /usr/include/rocksdb/sst_dump_tool.h
+-- Installing: /usr/include/rocksdb/cache.h
+-- Installing: /usr/include/rocksdb/env_encryption.h
+-- Installing: /usr/include/rocksdb/persistent_cache.h
+-- Installing: /usr/include/rocksdb/file_checksum.h
+-- Installing: /usr/include/rocksdb/thread_status.h
+-- Installing: /usr/include/rocksdb/slice_transform.h
+-- Installing: /usr/include/rocksdb/secondary_cache.h
+-- Installing: /usr/include/rocksdb/unique_id.h
+-- Installing: /usr/include/rocksdb/iostats_context.h
+-- Installing: /usr/include/rocksdb/memory_allocator.h
+-- Installing: /usr/include/rocksdb/rocksdb_namespace.h
+-- Installing: /usr/include/rocksdb/transaction_log.h
+-- Installing: /usr/include/rocksdb/trace_reader_writer.h
+-- Installing: /usr/include/rocksdb/compaction_filter.h
+-- Installing: /usr/include/rocksdb/db.h
+-- Installing: /usr/include/rocksdb/listener.h
+-- Installing: /usr/include/rocksdb/env.h
+-- Installing: /usr/include/rocksdb/ldb_tool.h
+-- Installing: /usr/include/rocksdb/sst_partitioner.h
+-- Installing: /usr/include/rocksdb/experimental.h
+-- Installing: /usr/include/rocksdb/version.h
+-- Installing: /usr/include/rocksdb/sst_file_manager.h
+-- Installing: /usr/include/rocksdb/compression_type.h
+-- Installing: /usr/include/rocksdb/universal_compaction.h
+-- Installing: /usr/include/rocksdb/slice.h
+-- Installing: /usr/include/rocksdb/db_bench_tool.h
+-- Installing: /usr/include/rocksdb/advanced_cache.h
+-- Installing: /usr/include/rocksdb/io_status.h
+-- Installing: /usr/include/rocksdb/cache_bench_tool.h
+-- Installing: /usr/include/rocksdb/functor_wrapper.h
+-- Installing: /usr/include/rocksdb/perf_context.h
+-- Installing: /usr/include/rocksdb/db_stress_tool.h
+-- Installing: /usr/include/rocksdb/wal_filter.h
+-- Installing: /usr/include/rocksdb/data_structure.h
+-- Installing: /usr/include/rocksdb/write_buffer_manager.h
+-- Installing: /usr/include/rocksdb/cleanable.h
+-- Installing: /usr/include/rocksdb/metadata.h
+-- Installing: /usr/include/rocksdb/table_properties.h
+-- Installing: /usr/include/rocksdb/system_clock.h
+-- Installing: /usr/include/rocksdb/configurable.h
+-- Installing: /usr/include/rocksdb/convenience.h
+-- Installing: /usr/include/rocksdb/advanced_options.h
+-- Installing: /usr/include/rocksdb/options.h
+-- Installing: /usr/include/rocksdb/filter_policy.h
+-- Installing: /usr/include/rocksdb/types.h
+-- Installing: /usr/include/rocksdb/merge_operator.h
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Findlz4.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindJeMalloc.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Findgflags.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/CxxFlags.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Findzstd.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/ReadVersion.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindTBB.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindSnappy.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindNUMA.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.a
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.so.8.3.0
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.so.8
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.so
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBTargets.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBTargets-debug.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBConfig.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBConfigVersion.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/pkgconfig/rocksdb.pc
+
 #+end_src
 *** concept
 + 每个db对应一个文件夹，文件都在那里面。
@@ -1151,6 +1332,16 @@ and back
 *** Test
 
 ** EVMONE
+*** install
+#+begin_src bash
+  cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DEVMC_TESTING=1 # TESTING builds everything
+  cmake --build build-evmone
+  ./build-evmone/bin/evmc-unittests --gtest_list_tests
+  ./build-evmone/bin/evmc-unittests
+  ./build-evmone/bin/evmc-unittests --gtest_filter=example_vm.*
+  cmake --install build-evmone --prefix installed-evmone
+
+#+end_src
 *** helloworld
 **** cpp
 #+begin_src c++
@@ -1225,24 +1416,23 @@ int main(int argc, char *argv[]){
 + 比较重要的就是 f3 : RETURN
 ***** 例子
 #+begin_src c++
-7f #push32 val
-d0d1d2d3d4d5d6d7d8d9dadbdcdddedf
-e0e1e2e3e4e5e6e7e8e9eaebecedeeef
+  7f #push32 val
+  d0d1d2d3d4d5d6d7d8d9dadbdcdddedf
+  e0e1e2e3e4e5e6e7e8e9eaebecedeeef
 
-60 #push1 0
-00
+  60 #push1 0
+  00
 
-52 #memstore(0,val)
+  52 #memstore(0,val)
 
-60 #push1 20
-20
+  60 #push1 20
+  20
 
-60 #push1 0 (refund?)
-00
+  60 #push1 0
+  00
 
 
-f3 #return
-
+  f3 #return Memory[00:00+20] ⇒ Mem里的0到32bytes = val
 #+end_src
 * End
 # Local Variables:
