@@ -630,6 +630,22 @@ add_header Strict-Transport-Security max-age=31536000;
 
   git config --global http.proxy 'http://127.0.0.1:7890'
 #+end_src
+** file sharing
+#+begin_src bash
+  sudo apt install samba
+  sudo vi  /etc/samba/smb.conf
+
+  sudo apt install smbclient
+  # 在Windows上开启共享后：
+  smbclient '\\XTZJ-20221017GU\Users\'
+  # smb:> help
+
+  # Nope the following dosen't work
+  # mkdir ~/myWin
+  # sudo apt install cifs-utils
+  # sudo mount -t cifs '\\XTZJ-20221017GU\Users\' ~/myWin -o user=me,pass=123
+
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "bash"

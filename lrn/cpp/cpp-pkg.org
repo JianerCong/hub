@@ -1332,17 +1332,26 @@ and back
 *** Test
 
 ** EVMONE
+*** notes
+**** TODO Delete the standalone version of evmone
 *** install
 #+begin_src bash
-  cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DEVMC_TESTING=1 # TESTING builds everything
+  # cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DEVMC_TESTING=1 # TESTING builds everything
+  # c
+  tar zxf evmone-0.9.1-linux-x86_64.tar.gz --directory=evmone-0.9.1/
+
+  git clone --recursive https://github.com/ethereum/evmone
+  cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DBUILD_SHARED_LIBS=0 # TESTING builds everything
   cmake --build build-evmone
-  ./build-evmone/bin/evmc-unittests --gtest_list_tests
-  ./build-evmone/bin/evmc-unittests
-  ./build-evmone/bin/evmc-unittests --gtest_filter=example_vm.*
+
+  rm installed-evmone/ -rf
   cmake --install build-evmone --prefix installed-evmone
+  # ./build-evmone/bin/evmc-unittests --gtest_list_tests
+  # ./build-evmone/bin/evmc-unittests
+  # ./build-evmone/bin/evmc-unittests --gtest_filter=example_vm.*
 
 #+end_src
-*** helloworld
+*** helloworld with headers
 **** cpp
 #+begin_src c++
 #include <evmc/evmc.hpp>
@@ -1433,6 +1442,100 @@ int main(int argc, char *argv[]){
 
 
   f3 #return Memory[00:00+20] ⇒ Mem里的0到32bytes = val
+#+end_src
+*** full hello with evmone
+**** cpp
+#+begin_src cpp
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <evmc/evmc.hpp>        // for evmc::VM
+#include <evmone/evmone.h>      // for evmc_create_evmone
+
+BOOST_AUTO_TEST_CASE(t1) {
+  evmc::VM vm{evmc_create_evmone()};
+  BOOST_CHECK_EQUAL(vm.name(),"evmone");
+  BOOST_CHECK_NE(vm.name(),"evmtwo");
+}
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+# initially
+# > mkdir cmake
+# > wget https://raw.githubusercontent.com/cpp-pm/gate/master/cmake/HunterGate.cmake -O cmake/HunterGate.cmake
+include("cmake/HunterGate.cmake")
+HunterGate(
+  URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+  SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+)
+
+project(hi VERSION 1.1)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
+set(evmc_DIR "/home/me/repo/installed-evmone/lib/cmake/evmc/")
+find_package(evmc REQUIRED)     #do not explicitly specify the components
+                                #because the authors are lazy,they didin't set
+                                #<pkg>_<compnent>_FOUND=1 for found components
+
+## Now we have evmc::evmc , evmc_cpp
+set(evmone_DIR "/home/me/repo/installed-evmone/lib/cmake/evmone/")
+find_package(evmone REQUIRED)     #do not explicitly specify the components
+## Now we have evmone::evmone
+
+
+hunter_add_package(intx)
+find_package(intx REQUIRED)     #do not explicitly specify the components
+hunter_add_package(ethash)
+find_package(ethash REQUIRED)     #do not explicitly specify the components
+
+add_executable(main test.cpp)
+target_link_libraries(main
+  evmc::evmc_cpp
+  evmone::evmone
+  Boost::unit_test_framework
+  intx::intx
+  ethash::keccak
+)
+#  因为有INTERFACE_LINK_LIBRARIES "evmc::evmc;intx::intx;\$<LINK_ONLY:ethash::keccak>",
+# 所以EVMONE要求intx,evmc,ethash::keccak
+
+
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+
+# cmake -S. -B build -DHUNTER_STATUS_DEBUG=ON -DCMAKE_BUILD_TYPE=Release
+# cmake --build build --config Release
+
+#+end_src
+** Hunter
+#+begin_src bash
+  mkdir cmake
+  wget https://raw.githubusercontent.com/cpp-pm/gate/master/cmake/HunterGate.cmake -O cmake/HunterGate.cmake
+  
+#+end_src
+*** cmake
+#+begin_src cmake
+    cmake_minimum_required(VERSION 3.2)
+
+  include("cmake/HunterGate.cmake")
+  HunterGate(
+      URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+      SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+  )
+
+  project(Foo)
+
+  hunter_add_package(Boost COMPONENTS regex system filesystem)
+  find_package(Boost CONFIG REQUIRED regex system filesystem)
+
+  add_executable(foo foo.cpp)
+  target_link_libraries(foo PUBLIC Boost::regex Boost::system Boost::filesystem)
+#+end_src
+*** build
+#+begin_src bash
+cmake -S. -B_builds -DHUNTER_STATUS_DEBUG=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build _builds --config Release
 #+end_src
 * End
 # Local Variables:
