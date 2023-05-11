@@ -110,7 +110,12 @@ s1 <prompt s2> s3 _ s4
   (clear-abbrev-table latex-mode-abbrev-table)
   (define-abbrev-table 'latex-mode-abbrev-table
     '(
-      ("nd" "" (lambda () (skeleton-insert '(nil "\\node (" (skeleton-read "Name: ") ") [text width=8cm] " \n " {" _ "};"))))
+      ("nd" "" (lambda () (skeleton-insert
+                           '(nil "\\node (" (setq x (skeleton-read "Name: "))
+                                 ") [text width=8cm] " \n
+                                 "{\\begin{ifaceBox}[title=\\texttt{" x "}]" \n
+                                 _ \n
+                                 "\\end{ifaceBox}};"))))
       ("tw" "text width=")
       ("nt" "\\notag\\\\")
       ("nte" "\\notag")

@@ -171,7 +171,7 @@ abbrev table"
         ("pr" . "@param")
         ("cr" . "char")
         ("vd" . "void")
-        ("db" . "double")
+        ;; ("db" . "double")
         ;; ("def" . "define")
         ("lv" . "exit(EXIT_FAILURE);")
         ))
