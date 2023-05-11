@@ -50,6 +50,15 @@ s1 <prompt s2> s3 _ s4
   >"\\end{document}"
   )
 
+(define-skeleton tex-mymatrix
+  "Insert a matrix boilerplate"
+  nil
+  "\\matrix (M-" (setq s (skeleton-read "Parent ?")) ") [myMatrix, text width=8cm]"
+  " at ([shift={(1cm,-2cm)}]  " s ".south){" \n
+  _ \n
+  "\\\\};"
+  )
+
 (define-skeleton tex-exam-boiler-plate
   "Insert ann exam template"
   nil
@@ -101,7 +110,7 @@ s1 <prompt s2> s3 _ s4
   (clear-abbrev-table latex-mode-abbrev-table)
   (define-abbrev-table 'latex-mode-abbrev-table
     '(
-      ("nd" "\\node")
+      ("nd" "" (lambda () (skeleton-insert '(nil "\\node (" (skeleton-read "Name: ") ") [text width=8cm] " \n " {" _ "};"))))
       ("tw" "text width=")
       ("nt" "\\notag\\\\")
       ("nte" "\\notag")
@@ -116,6 +125,7 @@ s1 <prompt s2> s3 _ s4
       ("whr" "\\intertext{Where}")
       ("tx" "\\text")
       ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
+      ;; ("vb" "" (lambda () (skeleton-insert '(nil "\\verb|" _ "|"))))
       )
     )
   )

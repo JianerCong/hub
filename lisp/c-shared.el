@@ -140,6 +140,8 @@ s if not found."
 (define-abbrev-table 'c++-mode-abbrev-table
   '(
     ("tt" "template<T>")
+    ("spt" "" (lambda () (skeleton-insert '(nil "shared_ptr<" _ ">"))))
+    ("upt" "" (lambda () (skeleton-insert '(nil "unique_ptr<" _ ">"))))
     ))
 
 (defun define-abbrev-for-c++-and-c (pair)

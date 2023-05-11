@@ -89,10 +89,7 @@
      \n)
   )
 
-
-(define-abbrev c++-mode-abbrev-table "tt" "template<typename T>" )
-(define-abbrev c++-mode-abbrev-table "tkv" "template<K,V>")
-(define-abbrev c++-mode-abbrev-table "itr" "iterator")
+;; Most abbrev are defined in c-shared.el
 (define-abbrev c++-mode-abbrev-table "vve" "" 'cpp-say-err)
 
 ;;a function that modifies the value of type V

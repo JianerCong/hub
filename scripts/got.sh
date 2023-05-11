@@ -9,6 +9,8 @@ addr["l"]="$h/Templates/lrn/"
 addr["w"]="$h/wspace/submarine/"
 addr["r"]="$h/repo/rock-chain-origin/"
 addr["n"]="$h/repo/notes/test-dia/"
+addr["h"]="$h/repo/hi/"
+addr["R"]="$h/repo/"
 addr["p"]="$h/repo/notes/supply-chain-report/"
 # addr["c"]="$h/Downloads/cmake-3.26.0-rc4/Help/guide/tutorial/"
 
