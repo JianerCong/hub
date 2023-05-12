@@ -216,6 +216,26 @@ BOOST_AUTO_TEST_CASE(test_1) {
 }
 
 #+end_src
+*** hash
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <functional>           // for hash
+#include <string>
+
+using std::hash;
+using std::string;
+
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  hash<string> H;
+  string s{"aaa"},s1{"bbb"},s2{"aaa"};
+  size_t h{H(s)}, h1{H(s1)},h2{H(s2)};
+
+  BOOST_CHECK_NE(h,h1);
+  BOOST_CHECK_EQUAL(h,h2);
+}
+#+end_src
 *** std::priority_queue
 #+begin_src c++
 #define BOOST_TEST_MAIN
@@ -572,7 +592,48 @@ BOOST_AUTO_TEST_CASE(test_1) {
 } // BOOST_AUTO_TEST_CASE(test_no_1)
 
 #+end_src
+*** time
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <chrono>
+#include <thread>
 
+
+using namespace std::chrono;
+BOOST_AUTO_TEST_CASE(test_1) {
+  milliseconds m{1000};         // 1 sec
+  m *= 2;
+  BOOST_CHECK_EQUAL(m.count(),2000);
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_to_sec) {
+  milliseconds m{1000};         // 1 sec
+  int sec = m.count() * milliseconds::period::num /
+    milliseconds::period::den;
+  BOOST_CHECK_EQUAL(sec,1);
+}
+
+BOOST_AUTO_TEST_CASE(test_time_sth) {
+  time_point<system_clock> start, end;
+  start = system_clock::now();
+
+  using namespace std::chrono_literals;
+  std::this_thread::sleep_for(3000ms); // sleep for 3sec
+
+  end = system_clock::now();
+  duration<double> elapsed_seconds = end - start;
+  double s = elapsed_seconds.count();
+
+  BOOST_CHECK(s > 2 && s < 4);  // slept for 3sec
+}
+
+// using tbb::parallel_for;
+// using tbb::blocked_range;
+// #include <tbb/parallel_for.h>
+// #include <tbb/blocked_range.h>
+
+#+end_src
 
 * End
 # Local Variables:

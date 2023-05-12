@@ -1537,6 +1537,111 @@ add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
 cmake -S. -B_builds -DHUNTER_STATUS_DEBUG=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build _builds --config Release
 #+end_src
+** TBB
+*** install
+#+begin_src bash
+  git clone https://github.com/oneapi-src/oneTBB.git
+  cmake -S oneTBB-2021.9.0 -B build-oneTBB -DCMAKE_INSTALL_PREFIX=installed-oneTBB -DTBB_TEST=OFF
+  cmake --build build-oneTBB
+  # Install
+  cmake --install build-oneTBB
+  #-- Installing: /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBTargets.cmake
+  # -- Installing: /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBConfig.cmake
+
+  # what targets are installed?
+  cat /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBTargets.cmake | grep add_library
+#+end_src
+*** hello world
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+set(TBB_DIR "/home/me/repo/installed-oneTBB/lib/cmake/TBB/")
+
+find_package(TBB CONFIG REQUIRED)
+
+# add the executable
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework TBB::tbb)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** c++
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+
+using tbb::parallel_for;
+using tbb::blocked_range;
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  int o{0};
+  auto f = [&](blocked_range<int> &r){
+    for (int i = r.begin();i<r.end();++i)
+      o+=i;
+  };
+  parallel_for(blocked_range<int>(1,4),f);
+
+  BOOST_CHECK_EQUAL(o,1+2+3);
+}
+
+BOOST_AUTO_TEST_CASE(test_with_short_hand) {
+  int o{0};
+  parallel_for(size_t(0),size_t(4),size_t(1),[&](size_t i) {o+=i;});
+  // for (i=0;i<3;i+=1;) o+=i
+  BOOST_CHECK_EQUAL(o,1+2+3);
+}
+
+#+end_src
+*** concurrent_map
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <functional>
+#include <tbb/parallel_for.h>
+#include <tbb/concurrent_hash_map.h>
+
+using tbb::concurrent_hash_map;
+using tbb::parallel_for;
+struct C {
+  static size_t hash(const int& i){
+    std::hash<int> h;
+    return h(i);
+  }
+  static bool equal(const int& x,const int& y){
+    return x==y;
+  }
+};
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  // accessor locks the key
+  using M = concurrent_hash_map<int,int,C>;
+  using S = size_t;
+  M m;
+
+  parallel_for(S(0),S(4),S(1),[&](S i){
+    M::accessor a;              // a "write"lock for key a
+    m.insert(a,(int) i);
+    a->second = i*10;           // k=i,v=i*10
+  });
+
+  M::const_accessor a;              // read-only pointer
+  bool found = m.find(a,2);         // read kv
+  BOOST_CHECK(found);
+  BOOST_CHECK_EQUAL(a->second,20);
+  BOOST_CHECK_EQUAL(a->first,2);
+}
+
+
+#+end_src
+
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

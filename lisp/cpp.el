@@ -76,6 +76,7 @@
         ("ci" . "<cstdio>")
         ("ex" . "<stdexcept>")
         ("a" . "<algorithm>")
+        ("f" . "<functional>")
         )
       )
 
