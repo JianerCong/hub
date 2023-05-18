@@ -516,6 +516,20 @@ async def run():
 asyncio.run(run())
 
 #+end_src
+** eth-hash
+#+begin_src bash
+  pyenv
+  pip install eth-hash[pycryptodome]
+#+end_src
+#+begin_src python
+  from eth_hash.auto import keccak
+
+  s='baz(uint32,bool)'
+  b1 = bytes(s,'utf-8')
+  b = keccak(b1)
+  h = b.hex()
+  h[:8] # 'cdcd77c0' the first 4 bytes used as function selector
+#+end_src
 * End
 
 # Local Variables:

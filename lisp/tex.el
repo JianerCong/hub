@@ -130,6 +130,7 @@ s1 <prompt s2> s3 _ s4
       ("whr" "\\intertext{Where}")
       ("tx" "\\text")
       ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
+      ("ttt" "" (lambda () (skeleton-insert '(nil "[title=\\texttt{" _ "}]"))))
       ;; ("vb" "" (lambda () (skeleton-insert '(nil "\\verb|" _ "|"))))
       )
     )

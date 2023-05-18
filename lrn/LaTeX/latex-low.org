@@ -46,6 +46,12 @@
 The Riemann sphere (the complex numbers plus $\infty$) is 
 sometimes represented by \( \S \)
 #+END_SRC
+** dimen
+#+begin_src tex
+\newdimen\variable
+\variable=42pt
+The value is now \the\variable.
+#+end_src
 ** newenvironment
 *** synopsis
 #+begin_src latex

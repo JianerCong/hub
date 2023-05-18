@@ -518,6 +518,44 @@ BOOST_AUTO_TEST_CASE(test_fail) {
 }
 
 #+end_src
+**** filter
+***** based on decorator (also works on individual case)
+****** c++
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_SUITE(test_suite_1, *boost::unit_test::label("aaa"));
+BOOST_AUTO_TEST_CASE(test_2) {BOOST_CHECK(true);}
+BOOST_AUTO_TEST_CASE(test_1) {BOOST_CHECK_EQUAL(1,1);}
+BOOST_AUTO_TEST_SUITE_END();
+
+BOOST_AUTO_TEST_SUITE(test_suite_2);
+BOOST_AUTO_TEST_CASE(test_2) {BOOST_CHECK_EQUAL(3,3);}
+BOOST_AUTO_TEST_SUITE_END();
+
+#+end_src
+****** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# add the executable
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework)
+# add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+***** based on names
+run_test=suite_1/suite_1/test_1
+run_test=suite_1/suite_2/*
+run_test=suite_1/suite_2/
+
 *** log
 + Backend :: decide where the data is written.
   ~boost::log::sinks::text_ostream_backend~ is initialized with a stream of type
@@ -906,6 +944,33 @@ target_link_libraries(myexe PUBLIC Boost::log Boost::log_setup)
 # cmake .. && cmake --build .
 add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
 
+#+end_src
+*** algorithm
+**** hex/unhex
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/algorithm/hex.hpp>
+  #include <string>
+  #include <iostream>
+
+  using std::cout;
+  using std::string;
+  using boost::algorithm::unhex;
+  using boost::algorithm::hex;
+  BOOST_AUTO_TEST_CASE(test_1) {
+    string s{"abc"};
+    string s2 = hex(s);
+    BOOST_CHECK_EQUAL(s2,string("616263"));
+    BOOST_CHECK_EQUAL(unhex(s2),string("abc"));
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
+
+  BOOST_AUTO_TEST_CASE(test_2) {
+    string s{"123"};
+    string s2 = hex(s);
+    BOOST_CHECK_EQUAL(s2,string("313233"));
+    BOOST_CHECK_EQUAL(unhex(s2),string("123"));
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
 #+end_src
 ** RocksDB
 *** install and run

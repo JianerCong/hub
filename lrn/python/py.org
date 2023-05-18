@@ -520,6 +520,30 @@ viously listed in the try statement.
 
   asyncio.run(main())
 #+end_src
+** bytes
+#+begin_src python
+  # python code demonstrating
+  # int to bytes
+  str = "Welcome to Geeksforgeeks"
+  arr = bytes(str, 'utf-8')
+  print(arr)                      # b'Welcome to Geeksforgeeks'
+
+  # python code to demonstrate
+  # int to bytes
+  number = 12
+  result = bytes(number)          # b'\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00 \x00\x00'
+  print(bytes())                  # b''
+  l = [1,2,3,4,5]
+  bs = bytes(l)              # b'\x01\x02\x03\x04\x05'
+  bs.hex()
+  b'abc'.hex()               # '616263'
+  
+  # a = bytearray(bs)
+  # len(a)                          # 5
+  # hex_string = a.hex()
+  # for b in a:
+  #     print(b)
+#+end_src
 * End
 
 # Local Variables:

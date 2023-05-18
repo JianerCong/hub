@@ -634,6 +634,48 @@ BOOST_AUTO_TEST_CASE(test_time_sth) {
 // #include <tbb/blocked_range.h>
 
 #+end_src
+*** structure binding
+#+begin_src c++
+
+#include <bits/stdc++.h>
+using namespace std;
+  
+struct Point
+{
+    int x;
+    int y;
+};
+  
+// Driver code
+int main( )
+{
+    Point p = { 1,2 };
+      
+    // Structure binding
+    auto[ x_coord, y_coord ] = p;
+      
+    cout << "X Coordinate : " << x_coord << endl;
+    cout << "Y Coordinate : " << y_coord << endl;
+      
+    return 0;
+}
+#+end_src
+*** tuple and structure binding
+#+begin_src c++
+
+#include<tuple> // for tuple
+using std::tuple;
+using std::make_tuple;
+tuple<int,string_view> f(){
+  return make_tuple(123,"abc");
+}
+BOOST_AUTO_TEST_CASE(binding){
+  auto [x,y] = f();
+  BOOST_CHECK_EQUAL(x,123);
+  BOOST_CHECK_EQUAL(y,"abc");
+}
+
+#+end_src
 
 * End
 # Local Variables:

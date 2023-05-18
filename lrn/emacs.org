@@ -9,7 +9,7 @@ out: printf("\1\\n");
   +        previous character or group, repeated 1 or more time
   ?        previous character or group, repeated 0 or 1 time
 
-  *?,+?,?? Non-greedy version
+*?,+?,?? Non-greedy version
   
   ^        start of line
   $        end of line

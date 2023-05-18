@@ -142,6 +142,8 @@ s if not found."
     ("tt" "template<T>")
     ("spt" "" (lambda () (skeleton-insert '(nil "shared_ptr<" _ ">"))))
     ("upt" "" (lambda () (skeleton-insert '(nil "unique_ptr<" _ ">"))))
+    ("ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
+    ;; c-comment
     ))
 
 (defun define-abbrev-for-c++-and-c (pair)
