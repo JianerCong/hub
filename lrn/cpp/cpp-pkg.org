@@ -1,4 +1,255 @@
 ** Boost
+*** asio
+**** hi
+***** hi
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/asio.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+#include <boost/format.hpp>
+#include <string>
+
+using std::string;
+using boost::format;
+using std::cout;
+
+
+boost::asio::io_service io_svc;
+int a = 0;
+void WorkerThread() {
+  // std::cout << "thread " << ++a << ".\n";
+  int b = ++a;
+  cout << format("thread %d \n") % b;
+  io_svc.run();
+  cout << format("thread %d is done 🐸\n") % b;
+}
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  boost::shared_ptr<boost::asio::io_service::work>
+    worker(new boost::asio::io_service::work(io_svc));
+
+  std::cout << "Press ENTER key to exit!" << std::endl;
+  boost::thread_group threads;
+  for(int i=0; i<5; i++)
+    threads.create_thread(WorkerThread);
+
+  std::cin.get();
+  io_svc.stop();
+  threads.join_all();
+}
+// thread 1 
+// thread 2 
+// thread 3 
+// thread 4 
+// thread 5 
+
+// thread 4 is done 🐸
+// thread 5 is done 🐸
+// thread 3 is done 🐸
+// thread 1 is done 🐸
+// thread 2 is done 🐸
+
+#+end_src
+***** cmake
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework system thread)
+# add the executable
+add_executable(main e.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework Boost::thread Boost::system)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** bind
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
+using boost::bind;
+int f(int a){return a;}
+BOOST_AUTO_TEST_CASE(test_2) {
+  BOOST_CHECK_EQUAL(f(2),bind(&f,2)());
+}
+
+#+end_src
+**** post vs dispath
+#+begin_src c++
+  /* dispatch.cpp */
+#include <boost/asio.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <iostream>
+
+boost::mutex global_stream_lock;
+using std::cout;
+
+
+void WorkerThread(boost::shared_ptr<boost::asio::io_service> iosvc) {
+  global_stream_lock.lock();
+  std::cout << "Thread Start.\n";
+  global_stream_lock.unlock();
+
+  iosvc->run();
+
+  global_stream_lock.lock();
+  std::cout << "Thread Finish.\n";
+  global_stream_lock.unlock();
+}
+
+void Dispatch(int i) {
+  global_stream_lock.lock();
+  std::cout << "dispath() Function for i = " << i <<  std::endl;
+  global_stream_lock.unlock();
+}
+
+void Post(int i) {
+  global_stream_lock.lock();
+  std::cout << "post() Function for i = " << i <<  std::endl;
+  global_stream_lock.unlock();
+}
+
+void Running(boost::shared_ptr<boost::asio::io_service> iosvc) {
+  for( int x = 0; x < 5; ++x ) {
+    iosvc->dispatch(boost::bind(&Dispatch, x));
+    iosvc->post(boost::bind(&Post, x));
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+  }
+  cout << "Running finished\n";
+}
+
+int main(void) {
+  boost::shared_ptr<boost::asio::io_service> io_svc(
+    new boost::asio::io_service
+  );
+
+  boost::shared_ptr<boost::asio::io_service::work> worker(
+    new boost::asio::io_service::work(*io_svc)
+  );
+
+  global_stream_lock.lock();
+  std::cout << "The program will exit automatically once all work has finished." << std::endl;
+  global_stream_lock.unlock();
+
+  boost::thread_group threads;
+
+  threads.create_thread(boost::bind(&WorkerThread, io_svc));
+
+  io_svc->post(boost::bind(&Running, io_svc));
+  std::cout << "Run all the posts:--------------------------------------------------\n";
+  worker.reset();
+
+  std::cout << "join_all\n";
+  threads.join_all();
+
+  return 0;
+}
+// The program will exit automatically once all work has finished.
+// Run all the posts:--------------------------------------------------
+// join_all:--------------------------------------------------
+// Thread Start.
+// dispath() Function for i = 0
+//   dispath() Function for i = 1
+//   dispath() Function for i = 2
+//   dispath() Function for i = 3
+//   dispath() Function for i = 4
+//   Running finished
+//   post() Function for i = 0
+//   post() Function for i = 1
+//   post() Function for i = 2
+//   post() Function for i = 3
+//   post() Function for i = 4
+//   Thread Finish.
+
+#+end_src
+**** minimal server
+#+begin_src c++
+  #include <boost/asio.hpp>
+  using boost::asio::io_service;
+  using boost::asio::ip::tcp;
+  using boost::system::error_code;
+  using boost::asio::buffer;
+  #include <cstdio>
+
+  #include <string>
+  using std::string;
+
+  io_service iosrv;
+  // string a{argv,argc};
+  tcp::endpoint endp{tcp::v4(),8888};
+  tcp::acceptor accp{iosrv,endp};
+  tcp::socket skt{iosrv};
+
+  void acceptHandler(const error_code &ec);
+  void writeHandler(const error_code &ec, size_t n);
+  int main(int argc, char *argv[]){
+    accp.listen();
+    printf("Start listening 🐸\n");
+    accp.async_accept(skt,acceptHandler);
+    iosrv.run();
+    return 0;
+  }
+
+  void acceptHandler(const error_code &ec){
+    if (ec) return;
+    printf("acceptHandler() called");
+    async_write(skt,buffer("🐸aaa\n"),writeHandler);
+  }
+
+  void writeHandler(const error_code &ec, size_t n){
+    printf("writeHandler() called");
+    if (ec) return;
+    skt.shutdown(tcp::socket::shutdown_send);
+  }
+
+  // telnet localhost 8888
+
+#+end_src
+*** format
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  #include <string>
+
+  using std::string;
+  using boost::format;
+
+
+  BOOST_AUTO_TEST_CASE(test_2) {
+    string s = (format("%2% %1%") % 22 % 11 ).str();
+
+    // printf-style:min length=5, with sign
+    string s2 = (format("%1$+5d %2$+5d") % -10 % 30 ).str();
+    // printf-style,No reordering
+    string s3 = (format("%+5d %+5d") % -10 % 30 ).str();
+    string s4 = (format("0x%020x") % 0xff).str();
+
+    BOOST_CHECK_EQUAL(s,"11 22");
+    BOOST_CHECK_EQUAL(s2,"  -10   +30");
+    BOOST_CHECK_EQUAL(s2,s3);
+    BOOST_CHECK_EQUAL(s4,"0x000000000000000000ff");
+    //                      11223344551122334455
+  }
+
+// See absolute tabulations:
+// for(unsigned int i=0; i < names.size(); ++i)
+//   cout << format("%1%, %2%, %|40t|%3%\n") % names[i] % surname[i] % tel[i];
+
+// Marc-François Michel, Durand,           +33 (0) 123 456 789
+// Jean, de Lattre de Tassigny,            +33 (0) 987 654 321
+#+end_src
 *** start on linux
 **** install
 #+begin_src bash
@@ -944,6 +1195,10 @@ target_link_libraries(myexe PUBLIC Boost::log Boost::log_setup)
 # cmake .. && cmake --build .
 add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
 
+#+end_src
+**** what cmake targets are available
+#+begin_src bash
+  ls /usr/lib/x86_64-linux-gnu/libboost*.so
 #+end_src
 *** algorithm
 **** hex/unhex

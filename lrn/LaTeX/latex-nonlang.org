@@ -28,6 +28,57 @@
    TEXMFHOME (directory for user-specific files):
      ~/texmf
 
+** install package
+#+begin_src bash
+  sudo /usr/local/texlive/2023/bin/x86_64-linux/tlmgr update --all
+
+#+end_src
+** install manually the simpsons
+#+begin_src bash
+  # the mp files
+  for s in bart lisa homer marge maggie burns snpp; do
+      echo $s
+      wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/$s.mf
+  done
+  wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/simpsons.mf
+  sudo mkdir /usr/local/texlive/texmf-local/fonts/source/simpsons
+  sudo mv *.mf /usr/local/texlive/texmf-local/fonts/source/simpsons
+
+  # the style file
+  wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/simpsons.sty
+  ls /usr/local/texlive/texmf-local/tex/latex/
+  sudo mv simpsons.sty /usr/local/texlive/texmf-local/tex/latex/ -v
+
+  # the tfm file
+  wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/simpsons.tfm
+  # sudo rmdir /usr/local/texlive/texmf-local/fonts/tfm/public
+  sudo mkdir /usr/local/texlive/texmf-local/fonts/tfm/public
+  sudo mkdir /usr/local/texlive/texmf-local/fonts/tfm/public/simpsons
+  sudo mv simpsons.tfm /usr/local/texlive/texmf-local/fonts/tfm/public/simpsons
+  ls /usr/local/texlive/texmf-local/fonts/tfm/public/simpsons
+
+
+  # re hash
+  sudo /usr/local/texlive/2023/bin/x86_64-linux/texhash
+
+  # check the simpsons
+  kpsewhich simpsons.tfm
+  
+#+end_src
+#+begin_src latex
+\documentclass{article}
+\usepackage{simpsons}
+
+\begin{document} 
+\Lisa
+\Homer
+\Bart
+\Marge
+\Maggie
+\Burns
+\SNPP
+\end{document}
+#+end_src
 ** emacs + auctex
 *** basic
 C-c C-o C-f : Enter folding mode
