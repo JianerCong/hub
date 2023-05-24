@@ -5,6 +5,17 @@
 \let\emph\relax % there's no \RedeclareTextFontCommand
 \DeclareTextFontCommand{\emph}{\bfseries\em}
 #+end_src
+*** size
+\tiny
+\scriptsize
+\footnotesize
+\small	
+\normalsize	
+\large	
+\Large	
+\LARGE	
+\huge	
+\Huge
 ** math
 *** brackets
 Type 	LaTeX markup 	Renders as
@@ -257,6 +268,36 @@ The same limit on display:
   $f^{(k)}(x)$
   $\frac{\partial^2 f}{\partial x^2}$
   $\frac{\partial^{k} f}{\partial x^k}$
+#+end_src
+** indent and paragraphs
+*** alignment
+#+begin_src latex
+  \begin{flushleft}
+    ...
+  \end{flushleft}
+
+  \begingroup
+  \raggedleft 
+  ...
+  \endgroup
+#+end_src
+*** indent and skip
+#+begin_src latex
+   % \setlength{\parindent}{20pt}
+  \usepackage[skip=10pt plus1pt, indent=40pt]{parskip}
+  % parskip = 10 + 1
+#+end_src
+** blank space
+#+begin_src latex
+  Horizontal \hspace{1cm} spaces can be inserted manually. Useful 
+  to control the fine-tuning in the layout of pictures.
+
+  Left Side \hfill Right Side
+
+  \vspace{5mm} %5mm vertical space
+  This text still at the top, 5mm below the first paragraph.
+  \vfill
+  Text at the bottom of the page.
 #+end_src
 ** list
 *** description list

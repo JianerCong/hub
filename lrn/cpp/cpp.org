@@ -1,4 +1,16 @@
 ** Cpp
+*** cast
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  int x = 2;
+  uint64_t y = static_cast<uint64_t>(x);
+  BOOST_CHECK_EQUAL(x,y);
+}
+
+#+end_src
 *** string
 **** length
 #+begin_src c++
