@@ -696,6 +696,15 @@ BOOST_AUTO_TEST_CASE(binding){
 }
 
 #+end_src
+*** thread
+**** id
+#+begin_src c++
+13   std::string id() {
+14      std::ostringstream out;
+15      out << std::this_thread::get_id();
+16      return out.str();
+17   }
+#+end_src
 
 * End
 # Local Variables:

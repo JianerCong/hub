@@ -1962,6 +1962,87 @@ BOOST_AUTO_TEST_CASE(test_1) {
 
 #+end_src
 
+** intx
+*** bash
+#+begin_src bash
+sudo mkdir  /usr/local/include/intx
+sudo cp intx.hpp /usr/local/include/intx/ -v
+#+end_src
+*** tests
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <intx/intx.hpp>        // the whole package is header-only
+#include <algorithm>
+
+
+BOOST_AUTO_TEST_CASE(array_to_native_int){
+  uint8_t a[3] = {0,0,1};
+  // std::fill_n(a.bytes,20,0x0);
+  uint64_t x = intx::be::load<uint64_t,3>(a);
+  BOOST_CHECK_EQUAL(x,1);
+}
+
+BOOST_AUTO_TEST_CASE(struct_to_int){
+  struct A {uint8_t bytes[8];};
+  A a;
+  std::fill_n(a.bytes,8,0x0);
+  a.bytes[7] = 0x12;
+
+  // a should have a .bytes field
+  uint64_t x = intx::be::load<uint64_t,A>(a);
+  // 8-byte int
+  BOOST_CHECK_EQUAL(x,0x12);
+}
+
+
+BOOST_AUTO_TEST_CASE(array_to_int){
+  uint8_t a[32];
+
+  std::fill_n(a   ,30,0x0);
+  std::fill_n(a+30,2,0xff);
+
+  intx::uint256 x = intx::be::load<intx::uint256,32>(a);
+  // 8-byte int
+  BOOST_CHECK_EQUAL(int(x),0xffff);
+}
+
+#include <string_view>
+BOOST_AUTO_TEST_CASE(int_to_array){    // int to array
+  using namespace intx;
+
+  constexpr auto size = sizeof(uint64_t);
+  uint8_t data[size]{};
+  std::string_view view{reinterpret_cast<const char*>(data), std::size(data)};
+
+  be::store(data, uint64_t{0x0102030405060708});
+  BOOST_CHECK_EQUAL(view,"\x01\x02\x03\x04\x05\x06\x07\x08");
+}
+
+BOOST_AUTO_TEST_CASE(int_to_small_array){
+  intx::uint256 x{0xabcd};
+  uint8_t a[2];
+  std::string_view v{reinterpret_cast<const char*>(a), std::size(a)};
+  intx::be::trunc<2,256>(a,x);
+
+  BOOST_CHECK_EQUAL(v,"\xab\xcd"); // hex escape
+  BOOST_CHECK_EQUAL(a[0],0xab);
+  BOOST_CHECK_EQUAL(a[1],0xcd);
+}
+
+BOOST_AUTO_TEST_CASE(int_to_small_struct){
+  struct A {uint8_t bytes[2];};
+  intx::uint256 x{0xabcd};
+
+  A a = intx::be::trunc<A,256>(x);
+  std::string_view v{reinterpret_cast<const char*>(a.bytes), std::size(a.bytes)};
+
+  BOOST_CHECK_EQUAL(v,"\xab\xcd"); // hex escape
+  BOOST_CHECK_EQUAL(a.bytes[0],0xab);
+  BOOST_CHECK_EQUAL(a.bytes[1],0xcd);
+}
+
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"
