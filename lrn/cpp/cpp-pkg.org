@@ -1,4 +1,47 @@
+** jsoncpp
+*** install and hi
+**** install
+#+begin_src bash
+  cmake -S jsoncpp-1.9.5/ -B build-jsoncpp \
+        -DJSONCPP_WITH_TESTS=0 -DBUILD_SHARED_LIBS=0 \
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_OBJECT_LIBS=0
+  cmake --build build-jsoncpp
+  cmake --install build-jsoncpp --prefix installed-jsoncpp
+
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+# include("cmake/HunterGate.cmake")
+# HunterGate(
+#   URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+#   SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+# )
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# add the executable
+
+set(jsoncpp_DIR "/home/me/repo/installed-jsoncpp/lib/cmake/jsoncpp")
+# hunter_add_package(jsoncpp)
+find_package(jsoncpp CONFIG REQUIRED)
+
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework jsoncpp_static)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** 
 ** Boost
+*** check Boost version
+#+begin_src bash
+  cat /usr/include/boost/version.hpp  | grep BOOST_LIB_VERSION 
+#+end_src
 *** asio
 **** hi
 ***** hi
@@ -173,7 +216,7 @@ int main(void) {
 //   Thread Finish.
 
 #+end_src
-**** minimal server
+**** tcp minimal server
 #+begin_src c++
   #include <boost/asio.hpp>
   using boost::asio::io_service;
@@ -214,6 +257,182 @@ int main(void) {
   }
 
   // telnet localhost 8888
+
+#+end_src
+**** http minimal server： get/only
+***** cmake
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED)
+add_executable(weak-server weak-server.cpp)
+add_custom_target(run ALL
+  weak-server 0.0.0.0 7777
+  COMMENT "Runing App 🐸")
+
+#+end_src
+***** c++
+#+begin_src c++
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/config.hpp>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <thread>
+#include <cstdio>
+
+#include <boost/format.hpp>
+using boost::format;
+
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace asio = boost::asio;            // from <boost/asio.hpp>
+using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+using std::cout;
+
+using http::request;
+using http::response;
+
+
+// Handles an HTTP server connection
+void do_session(tcp::socket& socket);
+int main(int argc, char* argv[]){
+    try{
+        // Check command line arguments.
+        if (argc != 3)
+        {
+            std::cerr <<
+                "Usage: weak-server <address> <port>\n" <<
+                "Example:\n" <<
+                "    weak-server 0.0.0.0 8080 .\n";
+            return EXIT_FAILURE;}
+
+        asio::ip::address const address = asio::ip::make_address(argv[1]);
+        auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
+
+        // The io_context is required for all I/O
+        asio::io_context ioc{1};
+
+        // The acceptor receives incoming connections
+        tcp::acceptor acceptor{ioc, {address, port}};
+        for(;;){
+          printf("🐸 Waiting for requests\n");
+          // This will receive the new connection
+          tcp::socket socket{ioc};
+          // Block until we get a connection
+          acceptor.accept(socket);
+          // Launch the session, transferring ownership of the socket
+          std::thread{std::bind(&do_session, std::move(socket))}.detach();
+        }
+    }
+    catch (const std::exception& e){
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+}
+
+
+response<http::string_body>
+handle_request(request<http::string_body>&& req);
+void fail(beast::error_code ec, char const* what);
+void do_session(tcp::socket& socket){
+  beast::error_code ec;
+  // This buffer is required to persist across reads
+  beast::flat_buffer buffer;
+  for(;;){
+      // Read a request
+      request<http::string_body> req;
+      http::read(socket, buffer, req, ec);
+      if(ec == http::error::end_of_stream) break;
+      if(ec) return fail(ec, "read");
+
+      // Handle request
+        response<http::string_body> res =
+          handle_request(std::move(req));
+
+      // Determine if we should close the connection
+      bool keep_alive = res.keep_alive();
+
+      // Send the response
+      beast::http::write(socket, std::move(res), ec);
+      if(ec) return fail(ec, "write");
+      if(! keep_alive){
+        printf("We should not keep alive\n");
+          // This means we should close the connection, usually because
+          // the response indicated the "Connection: close" semantic.
+          break;
+        }
+    }
+  // Send a TCP shutdown
+  socket.shutdown(tcp::socket::shutdown_send, ec);
+  // At this point the connection is closed gracefully
+}
+// Report a failure
+void fail(beast::error_code ec, char const* what){
+  std::cerr << what << ": " << ec.message() << "\n";
+}
+
+response<http::string_body>
+handle_request(request<http::string_body>&& req){
+      // Returns a bad request response
+    auto const bad_request =
+    [&req](beast::string_view why){
+        response<http::string_body> res{http::status::bad_request, req.version()};
+        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(http::field::content_type, "text/html");
+        res.keep_alive(req.keep_alive());
+        res.body() = std::string(why);
+        res.prepare_payload();
+        return res;
+    };
+
+    // Returns a server error response
+    // auto const server_error =
+    // [&req](beast::string_view what){
+    //     response<http::string_body> res{http::status::internal_server_error, req.version()};
+    //     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    //     res.set(http::field::content_type, "text/html");
+    //     res.keep_alive(req.keep_alive());
+    //     res.body() = "An error occurred: '" + std::string(what) + "'";
+    //     res.prepare_payload();
+    //     return res;
+    // };
+
+    // Make sure we can handle the method
+    if( req.method() != http::verb::get &&
+        req.method() != http::verb::post)
+      return bad_request("Unknown HTTP-method");
+
+    printf("🐸 Handling request from %s\n",req.target().data());
+    // cout << format("🐸 Got request [%1]\n") % req.target().;
+
+
+    // Respond to GET request
+    // response<http::string_body> res{
+    //   std::piecewise_construct,
+    //   std::make_tuple(std::move(body)),
+    //   std::make_tuple(http::status::ok, req.version())};
+    response<http::string_body> res;
+    res.body() =  "🐸 hi from server\n";
+
+    res.version(11);   // HTTP/1.1
+    res.set(http::field::server, "Beast");
+    res.result(http::status::ok);
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "application/text");
+    res.keep_alive(req.keep_alive());
+
+    res.prepare_payload();
+    return res;
+}
 
 #+end_src
 *** format
@@ -1243,7 +1462,7 @@ add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
   cmake -S rocksdb/ -B build-rocksdb/ -DWITH_JEMALLOC=1 -DWITH_LIBURING=1 \
         -DWITH_SNAPPY=1 -DWITH_LZ4=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DCMAKE_BUILD_TYPE=Release \
 
-  cmake -S rocksdb/ -B build-rocksdb/ -DWITH_JEMALLOC=1 -DWITH_SNAPPY=1 -DWITH_LZ4=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DCMAKE_BUILD_TYPE=Release
+  # cmake -S rocksdb/ -B build-rocksdb/ -DWITH_JEMALLOC=1 -DWITH_SNAPPY=1 -DWITH_LZ4=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DCMAKE_BUILD_TYPE=Release
 
   cmake --build build-rocksdb
   cmake --install build-rocksdb --prefix installed-rocksdb

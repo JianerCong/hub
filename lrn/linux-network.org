@@ -301,6 +301,22 @@ Service Set ID = Network Name
  # Ctrl-D to terminate 
 
 **** curl
+#+begin_src bash
+  curl http://www.tutorialspoint.com
+  curl http://www.tutorialspoint.com -i # get and show header
+
+  # download file and save it.
+  curl -O ftp://speedtest.tele2.net/1MB.zip
+
+  # stop and resume
+  curl -# -O ftp://speedtest.tele2.net/1MB.zip
+  Ctr-C
+  curl -C - -O ftp://speedtest.tele2.net/1MB.zip
+
+  # Post data
+  curl -d "name=curl" https://example.com
+  curl --data "name=curl" https://example.com
+#+end_src
  curl --trace-ascii hi.txt https://www.example.com > /dev/null
 
 **** ssh

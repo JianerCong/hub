@@ -43,23 +43,24 @@
 
 (setq c-my-using-alist
       '(
-        ("o" . "cout")
-        ("e" . "endl")
-        ("r" . "cerr")
-        ("i" . "cin")
-        ("v" . "vector")
-        ("m" . "unordered_map")
-        ("s" . "string")
-        ("of" . "ofstream")
-        ("if" . "ifstream")
+        ("o" . "std::cout")
+        ("e" . "std::endl")
+        ("r" . "std::cerr")
+        ("i" . "std::cin")
+        ("v" . "std::vector")
+        ("m" . "std::unordered_map")
+        ("s" . "std::string")
+        ("of" . "std::ofstream")
+        ("if" . "std::ifstream")
+        ("bf" . "boost::format")
         ))
 
 (define-skeleton cpp-using-std
   "using std::something"
   " "
-  '(setq p "Enter the next std:: (e.g. cout? ): " )
+  '(setq p "Enter the next  (e.g. std::cout? ): " )
   > ((skeleton-read (concat p (alist-to-menu c-my-using-alist)))
-     "using std::" str
+     "using " str
      (delete-and-handle-choice str c-my-using-alist)
      ";" \n))
 
@@ -77,6 +78,7 @@
         ("ex" . "<stdexcept>")
         ("a" . "<algorithm>")
         ("f" . "<functional>")
+        ("F" . "<boost/format.hpp>")
         )
       )
 
