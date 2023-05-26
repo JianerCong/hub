@@ -6,10 +6,11 @@ h=$HOME
 
 addr["l"]="$h/Templates/lrn/"
 # addr["t"]="$h/Templates/lrn/h5/threejs/try-sky/"
-addr["w"]="$h/wspace/submarine/"
+# addr["w"]="$h/wspace/submarine/"
 addr["r"]="$h/repo/rock-chain-origin/"
 addr["n"]="$h/repo/notes/test-dia/"
 addr["h"]="$h/repo/hi/"
+addr["E"]="$h/repo/expr/"
 addr["R"]="$h/repo/"
 addr["p"]="$h/repo/notes/supply-chain-report/"
 addr["e"]="$h/repo/notes/test-evmone-mockedHost/"

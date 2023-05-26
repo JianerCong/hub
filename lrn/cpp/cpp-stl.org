@@ -104,6 +104,25 @@ BOOST_AUTO_TEST_CASE(t1) {
 }
 
 #+end_src
+*** unique_ptr
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <memory>
+
+using std::unique_ptr;
+using std::make_unique;
+
+int x=0;
+struct A {A() {x++;} ~A() {x++;}};
+BOOST_AUTO_TEST_CASE(parse_obj) {
+  {
+    unique_ptr<A> p = make_unique<A>();
+  }
+  BOOST_CHECK_EQUAL(x,2);
+}
+
+#+end_src
 
 *** basic_string
 Defined in header <string>
@@ -131,6 +150,38 @@ BOOST_AUTO_TEST_CASE(test_1) {
 } // BOOST_AUTO_TEST_CASE(test_no_1)
 
 #+end_src
+*** ostream, osstream/istringstream,...
+**** to string
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <iostream>
+  #include <string>
+  using std::string;
+
+
+  BOOST_AUTO_TEST_CASE(parse_obj) {
+    std::ostringstream b;
+    b << 123;
+    string s = b.str();
+    BOOST_CHECK_EQUAL(s,"123");
+  }
+
+  #include <sstream>
+  BOOST_AUTO_TEST_CASE(serl_obj) {
+    std::istringstream s(string("1 2 3"));
+    int n;
+    s >> n;
+    BOOST_CHECK_EQUAL(n,1);
+  }
+#+end_src
+**** class hierarchy
++ ios_base
+  + basic_ios
+    + basic_ostream
+    + ostream = basic_ostream<char>
+      + basic_ostringstream
+      + ostringstream = basic_ostringstream<char>
 *** check equal
 #+begin_src c++
 #define BOOST_TEST_MAIN
