@@ -1,3 +1,63 @@
+** ethash
+*** install and hi
+**** install
+#+begin_src bash
+  cmake -S ethash-1.0.1 -B build-ethash
+  cmake --build build-ethash/
+  cmake --install build-ethash/ --prefix installed-ethash
+
+  # cmake --install build-ethash/ --prefix installed-ethash
+  # -- Install configuration: ""
+  # -- Installing: /home/me/repo/installed-ethash/lib/libkeccak.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash-global-context.a
+  # -- Installing: /home/me/repo/installed-ethash/include
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/version.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.h
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets-noconfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfigVersion.cmake
+
+  # Check the targets
+  cat /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake | grep add_library
+
+#+end_src
+**** test
+#+begin_src c++
+#include <ethash/keccak.hpp>
+#include <string>
+using std::string;
+#include <string_view>
+using std::string_view;
+
+
+BOOST_AUTO_TEST_CASE(test_ethash){
+  string s = "baz(uint32,bool)";
+  ethash::hash256 h = ethash::keccak256(reinterpret_cast<uint8_t*>(s.data()),
+                                        s.size());
+
+  string_view v{reinterpret_cast<const char*>(h.bytes),4};
+  BOOST_CHECK_EQUAL(v,"\xcd\xcd\x77\xc0");
+
+  // Got from --------------------------------------------------
+  // from eth_hash.auto import keccak
+  // s='baz(uint32,bool)'
+  // b1 = bytes(s,'utf-8')
+  // b = keccak(b1)
+  // h = b.hex()
+  // h[:8] # 'cdcd77c0' the first 4 bytes used as function selector
+}
+
+#+end_src
 ** jsoncpp
 *** install and hi
 **** install
@@ -2294,10 +2354,18 @@ BOOST_AUTO_TEST_CASE(test_1) {
 #+end_src
 
 ** intx
-*** bash
+*** bash [dirty way: copy the header]
 #+begin_src bash
 sudo mkdir  /usr/local/include/intx
 sudo cp intx.hpp /usr/local/include/intx/ -v
+#+end_src
+*** install [polite way: follow the instrution]
+#+begin_src bash
+  mv ~/Downloads/intx-0.10.0.tar.gz .
+  tar zxf intx-0.10.0.tar.gz
+  cmake -S intx-0.10.0 -B build-intx -DINTX_TESTING=0
+  cmake --build build-intx
+  cmake --install build-intx --prefix installed-intx
 #+end_src
 *** tests
 #+begin_src c++

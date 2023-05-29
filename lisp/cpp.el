@@ -50,6 +50,7 @@
         ("v" . "std::vector")
         ("m" . "std::unordered_map")
         ("s" . "std::string")
+        ("sv" . "std::string_view")
         ("of" . "std::ofstream")
         ("if" . "std::ifstream")
         ("bf" . "boost::format")
@@ -69,6 +70,7 @@
         ("i" . "<iostream>")
         ("o" . "<cstdio>")
         ("s" . "<string>")
+        ("sv" . "<string_view>")
         ("v" . "<vector>")
         ("m" . "<unordered_map>")
         ("f" . "<fstream>")
@@ -94,6 +96,9 @@
 
 ;; Most abbrev are defined in c-shared.el
 (define-abbrev c++-mode-abbrev-table "vve" "" 'cpp-say-err)
+(define-abbrev c++-mode-abbrev-table "nx" "noexcept")
+(define-abbrev c++-mode-abbrev-table "str" "string")
+(define-abbrev c++-mode-abbrev-table "stv" "string_view")
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")

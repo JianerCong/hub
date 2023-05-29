@@ -644,48 +644,76 @@ BOOST_AUTO_TEST_CASE(test_1) {
 
 #+end_src
 *** time
+**** sleep and check
 #+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <chrono>
-#include <thread>
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <chrono>
+  #include <thread>
 
 
-using namespace std::chrono;
-BOOST_AUTO_TEST_CASE(test_1) {
-  milliseconds m{1000};         // 1 sec
-  m *= 2;
-  BOOST_CHECK_EQUAL(m.count(),2000);
-}
+  using namespace std::chrono;
+  BOOST_AUTO_TEST_CASE(test_1) {
+    milliseconds m{1000};         // 1 sec
+    m *= 2;
+    BOOST_CHECK_EQUAL(m.count(),2000);
+  }
 
-BOOST_AUTO_TEST_CASE(test_convert_to_sec) {
-  milliseconds m{1000};         // 1 sec
-  int sec = m.count() * milliseconds::period::num /
-    milliseconds::period::den;
-  BOOST_CHECK_EQUAL(sec,1);
-}
+  BOOST_AUTO_TEST_CASE(test_convert_to_sec) {
+    milliseconds m{1000};         // 1 sec
+    int sec = m.count() * milliseconds::period::num /
+      milliseconds::period::den;
+    BOOST_CHECK_EQUAL(sec,1);
+  }
 
-BOOST_AUTO_TEST_CASE(test_time_sth) {
-  time_point<system_clock> start, end;
-  start = system_clock::now();
+  BOOST_AUTO_TEST_CASE(test_time_sth) {
+    time_point<system_clock> start, end;
+    start = system_clock::now();
 
-  using namespace std::chrono_literals;
-  std::this_thread::sleep_for(3000ms); // sleep for 3sec
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(3000ms); // sleep for 3sec
 
-  end = system_clock::now();
-  duration<double> elapsed_seconds = end - start;
-  double s = elapsed_seconds.count();
+    end = system_clock::now();
+    duration<double> elapsed_seconds = end - start;
+    double s = elapsed_seconds.count();
 
-  BOOST_CHECK(s > 2 && s < 4);  // slept for 3sec
-}
+    BOOST_CHECK(s > 2 && s < 4);  // slept for 3sec
+  }
 
-// using tbb::parallel_for;
-// using tbb::blocked_range;
-// #include <tbb/parallel_for.h>
-// #include <tbb/blocked_range.h>
+  using std::chrono::high_resolution_clock;
+  using std::chrono::time_point;
+  using std::chrono::duration_cast;
+  using std::chrono::duration;
+  BOOST_AUTO_TEST_CASE(default_time_point) {
+    // using Clock= std::chrono::high_resolution_clock;
+    // using TimePoint = std::chrono::time_point<Clock>;
 
+    time_point<high_resolution_clock> p;                  // default value
+    high_resolution_clock::duration d = p.time_since_epoch();
+
+    using std::chrono::milliseconds;
+    milliseconds s = std::chrono::duration_cast<milliseconds>(d);
+
+    duration<long,std::micro> s2 = s; // ms to mus
+    int i = s.count();
+
+    BOOST_CHECK_EQUAL(i,0);
+    BOOST_CHECK_EQUAL(s2.count(),0);
+  }
+
+  BOOST_AUTO_TEST_CASE(add_duration){
+    using std::chrono::days;
+    time_point<high_resolution_clock> p = high_resolution_clock::now();                  // default value
+    time_point<high_resolution_clock> p2 = p + days(2);
+    high_resolution_clock::duration d = p2 - p;
+    days s = std::chrono::duration_cast<days>(d);
+    /*by default use clocks duration, but we can specify it here*/
+
+    BOOST_CHECK_EQUAL(s.count(),2);
+  }
 #+end_src
 *** sleep
+**** sleep
 #+begin_src c++
 #include <iostream>
 #include <chrono>
