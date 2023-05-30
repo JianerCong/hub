@@ -56,6 +56,14 @@
         ("bf" . "boost::format")
         ))
 
+(define-skeleton cpp-add-boost-test-case
+  "Add a BOOST_AUTO_TEST_CASE"
+  nil
+  "BOOST_AUTO_TEST_CASE(" (skeleton-read "name:") "){" \n
+  _ \n
+  "}"
+  )
+
 (define-skeleton cpp-using-std
   "using std::something"
   " "
@@ -81,6 +89,7 @@
         ("a" . "<algorithm>")
         ("f" . "<functional>")
         ("F" . "<boost/format.hpp>")
+        ("L" . "<boost/log/trivial.hpp>>")
         )
       )
 
@@ -96,9 +105,20 @@
 
 ;; Most abbrev are defined in c-shared.el
 (define-abbrev c++-mode-abbrev-table "vve" "" 'cpp-say-err)
+
+(define-abbrev c++-mode-abbrev-table "lg0" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(trace) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg1" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(debug) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg2" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(info) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "beq" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_EQUAL(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-add-boost-test-case)
+
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
 (define-abbrev c++-mode-abbrev-table "str" "string")
 (define-abbrev c++-mode-abbrev-table "stv" "string_view")
+(define-abbrev c++-mode-abbrev-table "sb" "" (lambda () (skeleton-insert '(nil "std::begin(" _ ")"))))
+(define-abbrev c++-mode-abbrev-table "se" "" (lambda () (skeleton-insert '(nil "std::end(" _ ")"))))
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")

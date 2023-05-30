@@ -1,4 +1,26 @@
 ** Cpp
+*** c++ 11 literal
+#+begin_src c++
+    #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <string>
+  using std::string;
+
+  struct A{const char* x;};
+
+  A operator ""_a(const char* x){return A(x);};
+  A operator ""_a(const char* x,size_t){return A(x);};
+
+
+  BOOST_AUTO_TEST_CASE(test_literal) {
+    A a = 123_a;                  // call (1)
+    A b = "abc"_a;                // call (2)
+    BOOST_CHECK_EQUAL(a.x,string("123"));
+    BOOST_CHECK_EQUAL(b.x,string("abc"));
+  }
+  
+#+end_src
 *** cast
 #+begin_src c++
 #define BOOST_TEST_MAIN

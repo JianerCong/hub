@@ -226,6 +226,28 @@ Use shift to get argument successively
       echo $str
   done
 #+END_SRC
+** watch for file change
+#+begin_src bash
+  sudo apt install inotify-tools
+
+  inotifywatch -v \               # verbose
+  -e access \
+     -e modify \
+     -t 60 \            # watch for 60s
+  -r ~/.beagle       # recursively this dir
+
+  # do sth
+  #!/bin/sh
+
+  # Watch a dir and do sth
+  inotifywait --monitor --recursive \
+              --timefmt '%d/%m/%y %H:%M' --format '%T %w %f' \
+              -e close_write /tmp/test |
+      while read -r date time dir file; do
+          changed_abs=${dir}${file}
+          echo "At ${time} on ${date}, file $changed_abs was changed" >&2
+      done
+#+end_src
 ** tempfile
 #+BEGIN_SRC bash
 #! /bin/bash
