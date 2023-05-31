@@ -112,6 +112,7 @@
 (define-abbrev c++-mode-abbrev-table "lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "beq" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_EQUAL(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "bck" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-add-boost-test-case)
 
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")

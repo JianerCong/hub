@@ -456,6 +456,15 @@ f1.o f2.o:
 #+end_src
 ** rsync
 rsync -av from-dir to-dir
+** pipe stderr
+#+begin_src bash
+    command 2>&1 >/dev/null | grep 'something'
+    # stderr to stdout,
+  #  stdout to /dev/null (without affecting stderr)
+
+    command &| grep 'something'   # pipe both
+    command 2| grep 'something'   # pipe stderr
+#+end_src
 * Tmux
 https://tmuxcheatsheet.com/
 ** basic
@@ -491,7 +500,7 @@ https://tmuxcheatsheet.com/
   C-b $                           # rename session
 #+end_src
 ** copy mode
-+ C-b ] :: enter
++ C-b [ :: enter
 + q :: quit
 + arrow-keys :: move
 + page-up/down :: ~
