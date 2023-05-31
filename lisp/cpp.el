@@ -56,10 +56,18 @@
         ("bf" . "boost::format")
         ))
 
-(define-skeleton cpp-add-boost-test-case
+(define-skeleton cpp-boost-add-test-case
   "Add a BOOST_AUTO_TEST_CASE"
   nil
   "BOOST_AUTO_TEST_CASE(" (skeleton-read "name:") "){" \n
+  _ \n
+  "}"
+  )
+
+(define-skeleton cpp-boost-add-fixture-test-case
+  "Add a BOOST_FIXTURE_TEST_CASE"
+  nil
+  "BOOST_FIXTURE_TEST_CASE(" (skeleton-read "name:") "){" \n
   _ \n
   "}"
   )
@@ -113,7 +121,10 @@
 (define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "beq" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_EQUAL(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "bck" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK(" _ ");"))))
-(define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-add-boost-test-case)
+(define-abbrev c++-mode-abbrev-table "brq" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "btm" "" (lambda () (skeleton-insert '(nil "BOOST_TEST_MESSAGE(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-boost-add-test-case)
+(define-abbrev c++-mode-abbrev-table "bfc" "" 'cpp-boost-add-fixture-test-case)
 
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
 (define-abbrev c++-mode-abbrev-table "str" "string")

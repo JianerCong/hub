@@ -1,4 +1,175 @@
 ** stl
+*** filesystem C++17
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <filesystem>
+  #include <string>
+  #include <string_view>
+  using std::string_view;
+  using std::string;
+
+
+  using std::filesystem::path;
+  using std::filesystem::current_path;
+  namespace fs = std::filesystem;
+
+  #ifdef _WIN32
+  #else
+  // Unix-only test
+  BOOST_AUTO_TEST_CASE(test_path){
+    path p = "/tmp/hi.txt"; // portable format
+    // fs::path p2 = "C:\\users\\abcdef\\AppData\\Local\\Temp\\"; // native format
+    // fs::path p3 = U"D:/猫.txt"; // UTF-32 string
+    // fs::path p4 = u8"~/狗.txt"; // UTF-8 string
+    path f = p.filename();
+
+    BOOST_CHECK_EQUAL(string(p),"/tmp/hi.txt");
+    BOOST_CHECK_EQUAL(string(path("/tmp/hi.txt").filename()),"hi.txt");
+    BOOST_CHECK_EQUAL(string(path("/tmp/hi").filename()),"hi");
+    BOOST_CHECK_EQUAL(string(path("/tmp/").filename()),"");
+    BOOST_CHECK_EQUAL(string(path("/tmp/hi.txt").parent_path()),"/tmp");
+    BOOST_CHECK(path("").empty());
+    // Current path
+    // BOOST_CHECK_EQUAL(string(current_path()),"/home/me/repo/hi2/build");
+  }
+  #endif
+
+  BOOST_AUTO_TEST_CASE(create_check_remove_empty_dir){
+    path p = "/tmp/dir1"; // portable format
+
+    BOOST_REQUIRE(fs::create_directories(p));
+    BOOST_CHECK(fs::exists(p));
+
+    // remove empty dir
+    BOOST_REQUIRE(fs::remove(p));
+    BOOST_CHECK(!fs::exists(p));
+  }
+
+  BOOST_AUTO_TEST_CASE(tmp_remove_nonempty_dir){
+    fs::path tmp = std::filesystem::temp_directory_path();
+    BOOST_REQUIRE(fs::create_directories(tmp / "aaa/bbb"));
+    BOOST_CHECK(fs::exists(tmp / "aaa"));
+
+    // remove recursively
+    std::uintmax_t n = fs::remove_all(tmp / "aaa");
+
+    BOOST_CHECK(!fs::exists(tmp / "aaa"));
+    BOOST_CHECK_EQUAL(string(tmp),"/tmp");
+    BOOST_CHECK_EQUAL(n,2);
+  }
+
+  #include <fstream>
+  using std::ofstream;
+  BOOST_AUTO_TEST_CASE(create_write_size_delete_file){
+    path p{fs::temp_directory_path() / "hi.bin"};
+    if (fs::exists(p)) fs::remove(p);
+
+    ofstream(p).put('\xff').flush();
+    // For unformatted, use:
+    // (ofstream(p) << '\xff').flush();
+
+    BOOST_CHECK_EQUAL(fs::file_size(p),1);
+    BOOST_REQUIRE(fs::remove(p));
+  }
+
+  BOOST_AUTO_TEST_CASE(remove_nonempty_folder){
+    fs::path tmp = std::filesystem::temp_directory_path();
+    BOOST_REQUIRE(fs::create_directories(tmp / "aaa"));
+
+    path p{tmp / "aaa/hi.bin"};
+
+    (ofstream(p) << "abc").flush();
+    // For unformatted, use:
+    // ofstream(p).write("abc").flush();
+
+    BOOST_CHECK_EQUAL(fs::file_size(p),3);
+    // Cannot size a dir.
+    BOOST_CHECK_THROW(fs::file_size(tmp / "aaa"),fs::filesystem_error);
+    BOOST_REQUIRE(fs::remove_all(tmp / "aaa"));
+  }
+
+  BOOST_AUTO_TEST_CASE(move_folder){
+    fs::path tmp = std::filesystem::temp_directory_path();
+    path p1{tmp / "p1"};
+    path p2{tmp / "p2"};
+
+    if (fs::exists(p1)) fs::remove_all(p1);
+    if (fs::exists(p2)) fs::remove_all(p2);
+
+    fs::create_directories(p1);
+    BOOST_REQUIRE(fs::exists(p1));
+    BOOST_REQUIRE(!fs::exists(p2));
+
+    // move the folder
+    fs::rename(p1,p2);
+
+    // Now p2 exists, p1 dosen't
+    BOOST_REQUIRE(!fs::exists(p1));
+    BOOST_REQUIRE(fs::exists(p2));
+
+    // remove dir
+    fs::remove_all(p2);
+  }
+
+  BOOST_AUTO_TEST_CASE(move_file){
+    fs::path tmp = fs::temp_directory_path();
+    path f1{tmp / "f1.txt"};
+    path f2{tmp / "f2.txt"};
+
+    if (fs::exists(f1)) fs::remove(f1);
+    if (fs::exists(f2)) fs::remove(f2);
+
+    ofstream(f1).put('a').flush();
+    BOOST_REQUIRE(fs::exists(f1));
+    BOOST_REQUIRE(!fs::exists(f2));
+    BOOST_CHECK_EQUAL(fs::file_size(f1),1);
+
+    // move the file
+    fs::rename(f1,f2);
+
+    // Now f2 exists, f1 dosen't
+    BOOST_REQUIRE(!fs::exists(f1));
+    BOOST_REQUIRE(fs::exists(f2));
+    BOOST_CHECK_EQUAL(fs::file_size(f2),1);
+
+    // remove dir
+    fs::remove(f2);
+    BOOST_REQUIRE(!fs::exists(f2));
+  }
+
+
+  BOOST_AUTO_TEST_CASE(copy){
+      fs::path s = fs::temp_directory_path() / "sandbox";
+
+      fs::create_directories(s / "d1");
+      ofstream(s / "d1/f1.txt").put('a').flush();
+
+      const auto copyOptions =
+        fs::copy_options::update_existing
+       // Replace the existing file only if it is older than the file being
+        // copied
+        | fs::copy_options::recursive;
+      // Recursively copy subdirectories and their content
+
+      std::error_code err;
+      // copy dir recursively
+      fs::copy(s / "d1",
+               s / "d2",
+               copyOptions,
+               err);
+
+      BOOST_REQUIRE(!bool(err));
+      BOOST_CHECK(fs::exists(s / "d2"));
+      BOOST_CHECK(fs::exists(s / "d2/f1.txt"));
+      BOOST_CHECK(fs::exists(s / "d1"));
+      BOOST_CHECK(fs::exists(s / "d1/f1.txt"));
+      BOOST_CHECK_EQUAL(fs::file_size(s / "d2/f1.txt"),1);
+      BOOST_CHECK_EQUAL(fs::file_size(s / "d1/f1.txt"),1);
+
+      fs::remove_all(s);
+  }
+#+end_src
 *** count
 #+begin_src c++
 #define BOOST_TEST_MAIN
