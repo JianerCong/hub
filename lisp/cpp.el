@@ -127,6 +127,8 @@
 (define-abbrev c++-mode-abbrev-table "bfc" "" 'cpp-boost-add-fixture-test-case)
 
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
+(define-abbrev c++-mode-abbrev-table "rdb" "rocksdb::")
+(define-abbrev c++-mode-abbrev-table "fs" "filesystem::")
 (define-abbrev c++-mode-abbrev-table "str" "string")
 (define-abbrev c++-mode-abbrev-table "stv" "string_view")
 (define-abbrev c++-mode-abbrev-table "sb" "" (lambda () (skeleton-insert '(nil "std::begin(" _ ")"))))

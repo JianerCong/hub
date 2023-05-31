@@ -679,133 +679,181 @@ and back
    #+end_src
 *** Test
 #+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <rocksdb/db.h>
-#include <string>
-using std::string;
-#include <filesystem>
-namespace fs = std::filesystem;
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <rocksdb/db.h>
+  #include <string>
+  using std::string;
+  #include <filesystem>
+  namespace fs = std::filesystem;
 
-#include <boost/format.hpp>
-using boost::format;
+  #include <boost/format.hpp>
+  using boost::format;
 
 
-using rocksdb::ReadOptions;
-using rocksdb::WriteBatch;
-using rocksdb::WriteOptions;
+  using rocksdb::ReadOptions;
+  using rocksdb::WriteBatch;
+  using rocksdb::WriteOptions;
 
-BOOST_AUTO_TEST_CASE(test_opendb) {
-  rocksdb::DB* db;
-  // Boilerplates (Copied from rocksdb/example/simple_example.cc)
-  // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
-  rocksdb::Options options;
-  options.IncreaseParallelism();
-  options.OptimizeLevelStyleCompaction();
-  options.create_if_missing = true;
-
-  fs::path d = fs::temp_directory_path() / "testdb";
-  // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
-  rocksdb::Status status = rocksdb::DB::Open(options, string(d) , &db);
-  BOOST_REQUIRE(status.ok());
-  BOOST_CHECK(fs::exists(d));
-  // Close and then destroy the db (delete the folder)
-  delete db;
-  // Closing the db persists the folder
-  BOOST_CHECK(fs::exists(d));
-}
-
-rocksdb::Options getInitOptions(){
-  rocksdb::Options options;
-  options.IncreaseParallelism();
-  options.OptimizeLevelStyleCompaction();
-  options.create_if_missing = true;
-  return options;
-}
-
-struct D{
-  D(){
+  BOOST_AUTO_TEST_CASE(test_opendb) {
+    rocksdb::DB* db;
     // Boilerplates (Copied from rocksdb/example/simple_example.cc)
     // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
-    rocksdb::Options options = getInitOptions();
-    dbDir = fs::temp_directory_path() / "testdb";
-    BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
+    rocksdb::Options options;
+    options.IncreaseParallelism();
+    options.OptimizeLevelStyleCompaction();
+    options.create_if_missing = true;
 
+    fs::path d = fs::temp_directory_path() / "testdb";
     // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
-    rocksdb::Status status = rocksdb::DB::Open(options, string(dbDir) , &db);
+    rocksdb::Status status = rocksdb::DB::Open(options, string(d) , &db);
     BOOST_REQUIRE(status.ok());
-}
-  ~D(){
-    BOOST_TEST_MESSAGE("Tearing down Db and remove");
+    BOOST_CHECK(fs::exists(d));
+    // Close and then destroy the db (delete the folder)
     delete db;
-    BOOST_REQUIRE(fs::remove_all(dbDir));
-    BOOST_REQUIRE(!fs::exists(dbDir));
-  }
-  rocksdb::DB* db;
-  fs::path dbDir;
-};
-
-BOOST_FIXTURE_TEST_CASE(put_get,D){
-  // Put key-value
-  rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
-  BOOST_REQUIRE(s.ok());
-  string value;
-
-  // get value
-  s = db->Get(ReadOptions(), "k1", &value);
-  BOOST_REQUIRE(s.ok());
-  BOOST_CHECK_EQUAL(value,"abc");
-}
-
-BOOST_FIXTURE_TEST_CASE(batch,D){
-
-  // Write a kv
-  rocksdb::Status s = db->Put(WriteOptions(), "k1", "aaa");
-  BOOST_REQUIRE(s.ok());
-
-  // write a batch
-  string value;
-  {
-    rocksdb::WriteBatch batch;
-    batch.Delete("key1");
-    batch.Put("key2", "bbb");
-    s = db->Write(WriteOptions(), &batch);
+    // Closing the db persists the folder
+    BOOST_CHECK(fs::exists(d));
   }
 
-  // check the batch
-  s = db->Get(ReadOptions(), "key1", &value);
-  BOOST_CHECK(s.IsNotFound());
-  s = db->Get(ReadOptions(), "key2", &value);
-  BOOST_CHECK_EQUAL(value,"bbb");
+  rocksdb::Options getInitOptions(){
+    rocksdb::Options options;
+    options.IncreaseParallelism();
+    options.OptimizeLevelStyleCompaction();
+    options.create_if_missing = true;
+    return options;
+  }
 
-}
+  struct D{
+    D(){
+      // Boilerplates (Copied from rocksdb/example/simple_example.cc)
+      // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+      rocksdb::Options options = getInitOptions();
+      dbDir = fs::temp_directory_path() / "testdb";
+      BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
 
-// BOOST_AUTO_TEST_CASE(test_batch_write){
-//   rocksdb::DB* db = initDb();
-//   rocksdb::Status status = rocksdb::DB::Open(options, "/tmp/testdb", &db);
-//   BOOST_REQUIRE(status.ok());
+      // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
+      rocksdb::Status status = rocksdb::DB::Open(options, string(dbDir) , &db);
+      BOOST_REQUIRE(status.ok());
+  }
+    ~D(){
+      BOOST_TEST_MESSAGE("Tearing down Db and remove");
+      delete db;
+      BOOST_REQUIRE(fs::remove_all(dbDir));
+      BOOST_REQUIRE(!fs::exists(dbDir));
+    }
+    rocksdb::DB* db;
+    fs::path dbDir;
+  };
 
-//   // Put key-value
-//   s = db->Put(WriteOptions(), "key1", "value");
-//   BOOST_REQUIRE(s.ok());
+  BOOST_FIXTURE_TEST_CASE(put_get,D){
+    // Put key-value
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
+    BOOST_REQUIRE(s.ok());
+    string value;
 
-//   string value;
-//   // atomically apply a set of updates
-//   {
-//     WriteBatch batch;
-//     batch.Delete("key1");
-//     batch.Put("key2", value);
-//     s = db->Write(WriteOptions(), &batch);
-//   }
+    // get value
+    s = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(s.ok());
+    BOOST_CHECK_EQUAL(value,"abc");
+  }
 
-//   s = db->Get(ReadOptions(), "key1", &value);
-//   assert(s.IsNotFound());
+  BOOST_FIXTURE_TEST_CASE(batch,D){
+
+    // Write a kv
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "aaa");
+    BOOST_REQUIRE(s.ok());
+
+    // write a batch
+    string value;
+    {
+      rocksdb::WriteBatch batch;
+      batch.Delete("key1");
+      batch.Put("key2", "bbb");
+      s = db->Write(WriteOptions(), &batch);
+    }
+
+    // check the batch
+    s = db->Get(ReadOptions(), "key1", &value);
+    BOOST_CHECK(s.IsNotFound());
+    s = db->Get(ReadOptions(), "key2", &value);
+    BOOST_CHECK_EQUAL(value,"bbb");
+  }
+
+  BOOST_AUTO_TEST_CASE(manually_backup){
+    rocksdb::Options options = getInitOptions();
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1", d2 = s / "d2";
+
+    // Create db
+    rocksdb::DB* db;
+    rocksdb::Status status = rocksdb::DB::Open(options, string(d1) , &db);
+    BOOST_REQUIRE(status.ok());
+    BOOST_CHECK(fs::exists(d1));  // now only d1 exists
+
+    // store a kv in d1
+    status = db->Put(WriteOptions(), "k1", "abc");
+    // BOOST_REQUIRE(status.ok());
+
+    // close the db
+    delete db;
+
+    // copy d1 to d2
+    const auto copyOptions =
+      fs::copy_options::update_existing
+      // Replace the existing file only if it is older than the file being
+      // copied
+      | fs::copy_options::recursive;
+    // Recursively copy subdirectories and their content
+    std::error_code err;
+    // copy dir recursively
+    fs::copy(d1, d2, copyOptions, err);
+    BOOST_REQUIRE(!bool(err));
+    BOOST_CHECK(fs::exists(d2));
+
+    // open the db in d2
+    string value;
+    status = rocksdb::DB::Open(options, string(d2) , &db);
+    BOOST_REQUIRE(status.ok());
+
+    // check the value stored from d1
+    status = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(status.ok());
+    BOOST_CHECK_EQUAL(value,"abc");
+    delete db;
+
+    // clean up
+    BOOST_CHECK(fs::remove_all(s));
+    }
+
+  // BOOST_AUTO_TEST_CASE(test_batch_write){
+  //   rocksdb::DB* db = initDb();
+  //   rocksdb::Status status = rocksdb::DB::Open(options, "/tmp/testdb", &db);
+  //   BOOST_REQUIRE(status.ok());
+
+  //   // Put key-value
+  //   s = db->Put(WriteOptions(), "key1", "value");
+  //   BOOST_REQUIRE(s.ok());
+
+  //   string value;
+  //   // atomically apply a set of updates
+  //   {
+  //     WriteBatch batch;
+  //     batch.Delete("key1");
+  //     batch.Put("key2", value);
+  //     s = db->Write(WriteOptions(), &batch);
+  //   }
+
+  //   s = db->Get(ReadOptions(), "key1", &value);
+  //   assert(s.IsNotFound());
 
 
-//   // Close and then destroy the db (delete the folder)
-//   delete db;
-// }
-
+  //   // Close and then destroy the db (delete the folder)
+  //   delete db;
+  // }
 #+end_src
 ** EVMONE
 *** notes
