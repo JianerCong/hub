@@ -1,4 +1,7 @@
 * Emac
+** scroll
++ C-M-S-v :: scroll other window up
++ C-M-v :: scroll other window down
 ** regex
 *** useful query replace
 in: #print(f'\(.*\)')

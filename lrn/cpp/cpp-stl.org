@@ -202,9 +202,8 @@ BOOST_AUTO_TEST_CASE(test_equal) {
 #+begin_src c++
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <iterator>               // for std::begin
+// #include <iterator>               // for std::begin, but also included in algorithm
 #include <algorithm>            // for std::copy_n, equal, fill, fill_n
-
 
 using std::begin;
 using std::end;
@@ -212,9 +211,6 @@ using std::copy_n;
 using std::equal;
 using std::fill;
 using std::fill_n;
-
-
-
 
 
 BOOST_AUTO_TEST_CASE(test_copy_n) {
@@ -244,6 +240,30 @@ BOOST_AUTO_TEST_CASE(test_fill_bytes) {
 
   copy_n(begin(a),2,begin(b)+1);
   BOOST_CHECK(equal(begin(r), end(r),begin(b)));
+}
+
+#include <numeric>
+BOOST_AUTO_TEST_CASE(fill_incresing_value){
+  int a[3];
+  std::iota(std::begin(a),std::end(a),2);
+  // fill value from 2
+  BOOST_CHECK_EQUAL(a[0],2);
+  BOOST_CHECK_EQUAL(a[1],3);
+  BOOST_CHECK_EQUAL(a[2],4);
+}
+
+BOOST_AUTO_TEST_CASE(copy_backward){
+  int a[3];
+  std::iota(std::begin(a),std::end(a),2); // a = {2,3,4}
+
+  int b[6];
+  int r[] = {0,0,0,2,3,4};
+  fill(std::begin(b),std::end(b),0);
+
+  std::copy_backward(std::begin(a),std::end(a),std::end(b));
+  for (int i=0;i<6;i++){
+    BOOST_CHECK_EQUAL(b[i],r[i]);
+  }
 }
 
 #+end_src
@@ -303,6 +323,8 @@ Defined in header <string>
 #include <string>
 
 using bytes = std::basic_string<uint8_t>;
+using std::string;
+
 
 BOOST_AUTO_TEST_CASE(test_1) {
   bytes s{0,1,2,3};
@@ -319,6 +341,38 @@ BOOST_AUTO_TEST_CASE(test_1) {
   BOOST_CHECK_EQUAL(&s[2],s.data() + 2);
 
 } // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(trim_leading_char){
+  // Don't init C-string with \x00 (nullchar)
+  // The following won't work
+
+  // string s{"\x00\x00\x00\x01"};
+  // size_t i = s.find_first_not_of('\x00');
+  string s{"aaabc"};
+  size_t i = s.find_first_not_of('a');
+  BOOST_CHECK_EQUAL(i,3);
+  BOOST_CHECK_EQUAL(s.substr(i),"bc");
+}
+
+
+BOOST_AUTO_TEST_CASE(find_first_not_of_bytes){
+  string s{"\x01\x01\x01\x02"};
+  size_t i = s.find_first_not_of('\x01');
+  BOOST_CHECK_EQUAL(i,3);
+}
+
+BOOST_AUTO_TEST_CASE(find_first_not_of_bytes_with_null_char){
+  string s;
+
+  for (int i=0;i<3;i++)
+    s.push_back('\x00');
+  s.push_back('\x01');
+  s.push_back('\x01');
+
+  size_t i = s.find_first_not_of('\x00');
+  BOOST_CHECK_EQUAL(i,3);
+  BOOST_CHECK_EQUAL(s.substr(i),"\x01\x01");
+}
 
 #+end_src
 *** ostream, osstream/istringstream,...
