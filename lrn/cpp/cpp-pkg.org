@@ -682,11 +682,18 @@ and back
   #define BOOST_TEST_MAIN
   #include <boost/test/unit_test.hpp>
   #include <rocksdb/db.h>
+
+  #include <rocksdb/utilities/backup_engine.h>
+  #include <vector>
+  using std::vector;
+
+  #include <boost/log/trivial.hpp>
+
+
   #include <string>
   using std::string;
   #include <filesystem>
   namespace fs = std::filesystem;
-
   #include <boost/format.hpp>
   using boost::format;
 
@@ -706,7 +713,7 @@ and back
 
     fs::path d = fs::temp_directory_path() / "testdb";
     // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
-    rocksdb::Status status = rocksdb::DB::Open(options, string(d) , &db);
+    rocksdb::Status status = rocksdb::DB::Open(options, d , &db);
     BOOST_REQUIRE(status.ok());
     BOOST_CHECK(fs::exists(d));
     // Close and then destroy the db (delete the folder)
@@ -732,7 +739,7 @@ and back
       BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
 
       // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
-      rocksdb::Status status = rocksdb::DB::Open(options, string(dbDir) , &db);
+      rocksdb::Status status = rocksdb::DB::Open(options, dbDir , &db);
       BOOST_REQUIRE(status.ok());
   }
     ~D(){
@@ -745,6 +752,10 @@ and back
     fs::path dbDir;
   };
 
+  // This labals which testcase/suite to run.
+  #define MY_TEST_THIS *boost::unit_test::label("aaa")
+
+  BOOST_AUTO_TEST_SUITE(core_operation,  MY_TEST_THIS);
   BOOST_FIXTURE_TEST_CASE(put_get,D){
     // Put key-value
     rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
@@ -755,6 +766,62 @@ and back
     s = db->Get(ReadOptions(), "k1", &value);
     BOOST_REQUIRE(s.ok());
     BOOST_CHECK_EQUAL(value,"abc");
+  }
+
+  BOOST_FIXTURE_TEST_CASE(del,D){
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
+    BOOST_REQUIRE(s.ok());
+
+    // get value, should be there
+    string value;
+    s = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(s.ok());
+    // BOOST_REQUIRE(!s.IsNotFound());
+    BOOST_CHECK_EQUAL(value,"abc");
+
+    // delete the value
+    s = db->Delete(WriteOptions(), "k1");
+    BOOST_REQUIRE(s.ok());
+    s = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(!s.ok());       // not found=not ok
+    BOOST_REQUIRE(s.IsNotFound());
+    // Now it's not found
+  }
+
+  BOOST_FIXTURE_TEST_CASE(iterator,D){
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "v1");
+    BOOST_REQUIRE(s.ok());
+
+    string v1{"v1"};
+    BOOST_REQUIRE(db->KeyMayExist(ReadOptions(),
+                                  "k1",&v1,/*timestamp=*/ (bool*) nullptr));
+    // Use Bloom filter to check a : if definitely not exists return false
+
+    s = db->Put(WriteOptions(), "k2", "v2");
+    BOOST_REQUIRE(s.ok());
+
+    rocksdb::Iterator* i = db->NewIterator(ReadOptions());
+    i->SeekToFirst();
+    BOOST_REQUIRE(i->Valid());
+
+    int cnt{0};
+    string ks[] = {"k1","k2"};
+    string vs[] = {"v1","v2"};
+    for (i->SeekToFirst();i->Valid();i->Next()){
+      // Check db = [(k1,v1),(k2,v2)]
+      BOOST_CHECK_EQUAL(ks[cnt],i->key().ToString());
+      BOOST_CHECK_EQUAL(vs[cnt],i->value().ToString());
+      cnt++;
+      if (!i->status().ok()){
+        // BOOST_LOG_TRIVIAL(error) << ;
+        BOOST_ERROR(format("iterator error") % i->status().ToString());
+      }
+      BOOST_LOG_TRIVIAL(info) << format("k=%s v=%s") % i->key().ToStringView()
+        % i->value().ToStringView();
+      //  ^^^^^^^^^^ rocksdb::Slice (also has ToString())
+    }
+    // size of db
+    BOOST_CHECK_EQUAL(cnt,2);
   }
 
   BOOST_FIXTURE_TEST_CASE(batch,D){
@@ -778,6 +845,7 @@ and back
     s = db->Get(ReadOptions(), "key2", &value);
     BOOST_CHECK_EQUAL(value,"bbb");
   }
+  BOOST_AUTO_TEST_SUITE_END();
 
   BOOST_AUTO_TEST_CASE(manually_backup){
     rocksdb::Options options = getInitOptions();
@@ -790,7 +858,7 @@ and back
 
     // Create db
     rocksdb::DB* db;
-    rocksdb::Status status = rocksdb::DB::Open(options, string(d1) , &db);
+    rocksdb::Status status = rocksdb::DB::Open(options, d1 , &db);
     BOOST_REQUIRE(status.ok());
     BOOST_CHECK(fs::exists(d1));  // now only d1 exists
 
@@ -816,7 +884,7 @@ and back
 
     // open the db in d2
     string value;
-    status = rocksdb::DB::Open(options, string(d2) , &db);
+    status = rocksdb::DB::Open(options, d2 , &db);
     BOOST_REQUIRE(status.ok());
 
     // check the value stored from d1
@@ -829,31 +897,246 @@ and back
     BOOST_CHECK(fs::remove_all(s));
     }
 
-  // BOOST_AUTO_TEST_CASE(test_batch_write){
-  //   rocksdb::DB* db = initDb();
-  //   rocksdb::Status status = rocksdb::DB::Open(options, "/tmp/testdb", &db);
-  //   BOOST_REQUIRE(status.ok());
 
-  //   // Put key-value
-  //   s = db->Put(WriteOptions(), "key1", "value");
-  //   BOOST_REQUIRE(s.ok());
+  BOOST_AUTO_TEST_SUITE(backup);
 
-  //   string value;
-  //   // atomically apply a set of updates
-  //   {
-  //     WriteBatch batch;
-  //     batch.Delete("key1");
-  //     batch.Put("key2", value);
-  //     s = db->Write(WriteOptions(), &batch);
-  //   }
+  BOOST_AUTO_TEST_CASE(backup_engine_1_open){
+    // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
 
-  //   s = db->Get(ReadOptions(), "key1", &value);
-  //   assert(s.IsNotFound());
+    // mkdir
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1", d2 = s / "d1_backup";
+
+    // make db in d1
+    rocksdb::DB* db;
+    rocksdb::Options o = getInitOptions();
+    rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+    BOOST_REQUIRE(st.ok());
+
+    // put kv1
+    st = db->Put(WriteOptions(), "key1", "value1");
+    BOOST_REQUIRE(st.ok());
+    // create backup db=[(k1,v1)]
+
+    // create backup
+    rocksdb::BackupEngine* backup_engine;
+    st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                     rocksdb::BackupEngineOptions(d2),
+                           &backup_engine);
+    BOOST_REQUIRE(st.ok());
+    // put kv2
+    // create backup2 db=[(k1,v1),(k2,v2)]
+    // put kv3
+    // close db;
+
+    // restore db to backup1 = [(k1,v1)]
+    // restore db to backup2 = [(k1,v1),(k2,v2)]
+
+    // clean up
+
+    delete db;
+    delete backup_engine;
+    BOOST_CHECK(fs::remove_all(s));
+  }
+
+  BOOST_AUTO_TEST_CASE(backup_engine_2_create_backup){
+    // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
+
+    // mkdir
+    // --------------------------------------------------
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1", d2 = s / "d1_backup";
+
+    // make db in d1
+    // --------------------------------------------------
+    rocksdb::DB* db;
+    rocksdb::Options o = getInitOptions();
+    rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+    // BOOST_CHECK(st.ok());
+
+    // put kv1
+    // --------------------------------------------------
+    st = db->Put(WriteOptions(), "key1", "value1");
+    // BOOST_CHECK(st.ok());
+    // create backup db=[(k1,v1)]
+
+    // create backup
+    // --------------------------------------------------
+    rocksdb::BackupEngine* backup_engine;
+    st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                     rocksdb::BackupEngineOptions(d2),
+                           &backup_engine);
+    // BOOST_REQUIRE(st.ok());
+
+    st = backup_engine->CreateNewBackup(db);
+    BOOST_REQUIRE(st.ok());
+
+    // Check the backup is there
+    // --------------------------------------------------
+    std::vector<rocksdb::BackupInfo> backup_info;
+    backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+    BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+    st = backup_engine->VerifyBackup(1);
+    BOOST_REQUIRE(st.ok());
+
+    // put kv2
+    // create backup2 db=[(k1,v1),(k2,v2)]
+    // put kv3
+    // close db;
+
+    // restore db to backup1 = [(k1,v1)]
+    // restore db to backup2 = [(k1,v1),(k2,v2)]
+
+    // clean up
+
+    delete db;
+    delete backup_engine;
+    BOOST_CHECK(fs::remove_all(s));
+    BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+  }
 
 
-  //   // Close and then destroy the db (delete the folder)
-  //   delete db;
-  // }
+  BOOST_AUTO_TEST_CASE(backup_engine_3_restore_backup){
+    // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
+
+    // mkdir
+    // --------------------------------------------------
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1",
+      d1_backup = s / "d1_backup",
+      d1_restored = s / "d1_restored";
+
+    // make db in d1
+    // --------------------------------------------------
+    rocksdb::DB* db;
+    rocksdb::Options o = getInitOptions();
+    rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+    // BOOST_CHECK(st.ok());
+
+    // put kv1
+    // --------------------------------------------------
+    st = db->Put(WriteOptions(), "key1", "value1");
+    // BOOST_CHECK(st.ok());
+    // create backup db=[(k1,v1)]
+
+    // create backup
+    // --------------------------------------------------
+    rocksdb::BackupEngine* backup_engine;
+    st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                     rocksdb::BackupEngineOptions(d1_backup),
+                           &backup_engine);
+    // BOOST_REQUIRE(st.ok());
+
+    st = backup_engine->CreateNewBackup(db);
+    BOOST_REQUIRE(st.ok());
+
+    // Check the backup is there
+    // --------------------------------------------------
+    std::vector<rocksdb::BackupInfo> backup_info;
+    backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+    // BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+    st = backup_engine->VerifyBackup(1);
+    BOOST_REQUIRE(st.ok());
+
+    // put kv2
+    // --------------------------------------------------
+    st = db->Put(WriteOptions(), "key2", "value2");
+    BOOST_CHECK(st.ok());
+
+    // create backup2 db=[(k1,v1),(k2,v2)]
+    // --------------------------------------------------
+    st = backup_engine->CreateNewBackup(db);
+    BOOST_REQUIRE(st.ok());
+
+    // check the backup
+    // --------------------------------------------------
+    backup_engine->GetBackupInfo(&backup_info);
+    BOOST_CHECK_EQUAL(backup_info.size(),2);   // 2 backups
+
+    st = backup_engine->VerifyBackup(2);
+    BOOST_REQUIRE(st.ok());
+
+    // put kv3
+    st = db->Put(WriteOptions(), "key3", "value3");
+    BOOST_CHECK(st.ok());
+
+    // close db first;
+    delete db;
+
+    // restore db to backup1 = [(k1,v1)]
+    // --------------------------------------------------
+    rocksdb::BackupEngineReadOnly* backup_engine_ro;
+    st = rocksdb::BackupEngineReadOnly::Open(
+                                   rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d1_backup),
+                                   &backup_engine_ro);
+    BOOST_REQUIRE(st.ok());
+
+    st = backup_engine_ro->RestoreDBFromBackup(1,
+                                               /*db_dir*/d1_restored,
+                                               /*wal_dir*/d1_restored);
+    BOOST_REQUIRE(st.ok());
+
+    // open db again to backup1 and check db=[(k1,v1)] (i.e. k2 is not there)
+    // --------------------------------------------------
+
+
+    st = rocksdb::DB::Open(o,d1_restored,&db);
+    BOOST_REQUIRE(st.ok());
+
+    std::string value;
+    st = db->Get(ReadOptions(), "key1", &value);
+    BOOST_REQUIRE(!st.IsNotFound());
+
+    st = db->Get(ReadOptions(), "key2", &value);
+    BOOST_REQUIRE(st.IsNotFound());
+
+    // restore db to backup2 = [(k1,v1),(k2,v2)] and check db[(k1,v1),(k2,v2)]
+    // --------------------------------------------------
+
+    // close db first;
+    // Remember to close the db before restoring the backup.
+    delete db;
+
+    st = backup_engine_ro->RestoreDBFromBackup(2,
+                                               /*db_dir*/d1_restored,
+                                               /*wal_dir*/d1_restored);
+    BOOST_REQUIRE(st.ok());
+
+    // open db again to backup2 and check db=[(k1,v1),(k2,v2)] (i.e. k3 is not there)
+    // --------------------------------------------------
+    st = rocksdb::DB::Open(o,d1_restored,&db);
+    BOOST_REQUIRE(st.ok());
+
+    st = db->Get(ReadOptions(), "key1", &value);
+    BOOST_REQUIRE(!st.IsNotFound()); // k1 exists
+
+    st = db->Get(ReadOptions(), "key2", &value);
+    BOOST_REQUIRE(!st.IsNotFound()); // k2 exists
+
+    st = db->Get(ReadOptions(), "key3", &value);
+    BOOST_REQUIRE(st.IsNotFound()); // k2 dosen't
+
+
+    // clean up
+    delete db;
+    delete backup_engine;
+    delete backup_engine_ro;
+    BOOST_CHECK(fs::remove_all(s));
+    BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+  }
+  BOOST_AUTO_TEST_SUITE_END();
 #+end_src
 ** EVMONE
 *** notes

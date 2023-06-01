@@ -56,6 +56,14 @@
         ("bf" . "boost::format")
         ))
 
+(define-skeleton cpp-boost-add-test-suite
+  "Add a BOOST_AUTO_TEST_SUITE"
+  nil
+  "BOOST_AUTO_TEST_SUITE(" (skeleton-read "name:") ");" \n
+  _ \n
+  "BOOST_AUTO_TEST_SUITE_END();"
+  )
+
 (define-skeleton cpp-boost-add-test-case
   "Add a BOOST_AUTO_TEST_CASE"
   nil
@@ -124,6 +132,7 @@
 (define-abbrev c++-mode-abbrev-table "brq" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "btm" "" (lambda () (skeleton-insert '(nil "BOOST_TEST_MESSAGE(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-boost-add-test-case)
+(define-abbrev c++-mode-abbrev-table "bts" "" 'cpp-boost-add-test-suite)
 (define-abbrev c++-mode-abbrev-table "bfc" "" 'cpp-boost-add-fixture-test-case)
 
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
