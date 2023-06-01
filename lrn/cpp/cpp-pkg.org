@@ -133,126 +133,146 @@ add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
 #+end_src
 **** use
 #+begin_src c++
-  #define BOOST_TEST_MAIN
-  #include <boost/test/unit_test.hpp>
-  #include <json/json.h>
-  #include <json/reader.h>
-  #include <json/writer.h>
-  using Json::Value;
-  using Json::CharReader;
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <json/json.h>
+#include <json/reader.h>
+#include <json/writer.h>
+using Json::Value;
+using Json::CharReader;
 
-  #include <memory>
-  using std::unique_ptr;
+#include <memory>
+using std::unique_ptr;
 
-  #include <string_view>
-  using std::string_view;
-  #include <string>
-  using std::string;
+#include <string_view>
+using std::string_view;
+#include <string>
+using std::string;
 
 
-  BOOST_AUTO_TEST_CASE(trivial_parse) {
-    string_view s = "{\"x\" : true}";
-    unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+BOOST_AUTO_TEST_CASE(trivial_parse) {
+  string_view s = "{\"x\" : true}";
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
 
-    Json::Value v;
-    string err;
-    bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
-    bool x = v["x"].asBool();
+  Json::Value v;
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  bool x = v["x"].asBool();
 
-    BOOST_CHECK(ok);
-    BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
-    BOOST_CHECK_EQUAL(x,true);
-  }
+  BOOST_CHECK(ok);
+  BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
+  BOOST_CHECK_EQUAL(x,true);
+}
 
-  BOOST_AUTO_TEST_CASE(parse_int_string_array) {
-    string_view s = "{"
-      "\"w\" : \"abc\","
-      "\"x\" : true,"
-      "\"y\" : [1,2,3],"
-      "}";
-    // CharReader* r = Json::CharReaderBuilder().newCharReader();
-    unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
-    Value v;
-    string err;
-    bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
-    BOOST_REQUIRE(ok);
+BOOST_AUTO_TEST_CASE(parse_int_string_array) {
+  string_view s = "{"
+    "\"w\" : \"abc\","
+    "\"x\" : true,"
+    "\"y\" : [1,2,3],"
+    "}";
+  // CharReader* r = Json::CharReaderBuilder().newCharReader();
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+  Value v;
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  BOOST_REQUIRE(ok);
 
-    string w = v["w"].asString();
-    Value y = v["y"];
-    BOOST_REQUIRE_EQUAL(y.size(),3);
-    uint64_t i = y[1].asUInt64();
+  string w = v["w"].asString();
+  Value y = v["y"];
+  BOOST_REQUIRE_EQUAL(y.size(),3);
+  uint64_t i = y[1].asUInt64();
 
-    BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
-    BOOST_CHECK_EQUAL(w,"abc");
-    BOOST_CHECK_EQUAL(i,2);
-  }
+  BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
+  BOOST_CHECK_EQUAL(w,"abc");
+  BOOST_CHECK_EQUAL(i,2);
+}
 
-  BOOST_AUTO_TEST_CASE(parse_with_helper_func) {
-    // I feel like r->parse() is alright
-    string s = "{"
-      "\"w\" : \"abc\","
-      "}";
-    auto b = Json::CharReaderBuilder();
-    Value v; string err;
-    auto s1 = std::istringstream(s);
-    bool ok = Json::parseFromStream(b,s1,&v,&err);
-    BOOST_REQUIRE(ok);
+BOOST_AUTO_TEST_CASE(parse_with_helper_func) {
+  // I feel like r->parse() is alright
+  string s = "{"
+    "\"w\" : \"abc\","
+    "}";
+  auto b = Json::CharReaderBuilder();
+  Value v; string err;
+  auto s1 = std::istringstream(s);
+  bool ok = Json::parseFromStream(b,s1,&v,&err);
+  BOOST_REQUIRE(ok);
 
-    string w = v["w"].asString();
-    BOOST_CHECK_EQUAL(w,"abc");
-  }
-  BOOST_AUTO_TEST_CASE(parse_obj) {
-    string_view s = "{"
-      "\"x\" : true,"
-      "\"y\" : {\"w\": 123},"
-      "}";
-    // CharReader* r = Json::CharReaderBuilder().newCharReader();
-    unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
-    Value v;
+  string w = v["w"].asString();
+  BOOST_CHECK_EQUAL(w,"abc");
+}
+BOOST_AUTO_TEST_CASE(parse_obj) {
+  string_view s = "{"
+    "\"x\" : true,"
+    "\"y\" : {\"w\": 123},"
+    "}";
+  // CharReader* r = Json::CharReaderBuilder().newCharReader();
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+  Value v;
 
-    string err;
-    bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
-    BOOST_REQUIRE(ok);
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  BOOST_REQUIRE(ok);
 
-    Value y = v["y"];
-    BOOST_REQUIRE_EQUAL(y.type(),Json::ValueType::objectValue);
+  Value y = v["y"];
+  BOOST_REQUIRE_EQUAL(y.type(),Json::ValueType::objectValue);
 
-    BOOST_CHECK_EQUAL(y["w"].asUInt64(),123);
-  }
+  BOOST_CHECK_EQUAL(y["w"].asUInt64(),123);
+}
 
-  BOOST_AUTO_TEST_CASE(marshel_obj) {
-    // For convenience, use `writeString()` with a specialized builder.
-    Json::StreamWriterBuilder w;
-    Value v;                      // default to empty object
-    v["x"] = 1;
-    std::string d = Json::writeString(w,v);
-    BOOST_CHECK_EQUAL(d,"{\n"
-                      "\t\"x\" : 1\n"
-                      "}");
-  }
+BOOST_AUTO_TEST_CASE(marshel_obj) {
+  // For convenience, use `writeString()` with a specialized builder.
+  Json::StreamWriterBuilder w;
+  Value v;                      // default to empty object
+  v["x"] = 1;
+  std::string d = Json::writeString(w,v);
+  BOOST_CHECK_EQUAL(d,"{\n"
+                    "\t\"x\" : 1\n"
+                    "}");
+}
 
-  BOOST_AUTO_TEST_CASE(marshel_array) {
-    // For convenience, use `writeString()` with a specialized builder.
-    Json::StreamWriterBuilder w;
-    w.settings_["indentation"] = "";
-    Value v;                      // default to empty object
-    v["x"].append(1);
-    v["x"].append(2);
-    v["x"].append(3);
-    std::string d = Json::writeString(w,v);
-    BOOST_CHECK_EQUAL(d,"{\"x\":[1,2,3]}");
-  }
+BOOST_AUTO_TEST_CASE(marshel_array) {
+  // For convenience, use `writeString()` with a specialized builder.
+  Json::StreamWriterBuilder w;
+  w.settings_["indentation"] = "";
+  Value v;                      // default to empty object
+  v["x"].append(1);
+  v["x"].append(2);
+  v["x"].append(3);
+  std::string d = Json::writeString(w,v);
+  BOOST_CHECK_EQUAL(d,"{\"x\":[1,2,3]}");
+}
 
-  BOOST_AUTO_TEST_CASE(marshel_obj_with_options) {
-    Json::StreamWriterBuilder w;
-    w.settings_["indentation"] = "";
-    // empty indentation also omit newlines, so effectively makes it compact
-    w.settings_["emitUTF8"] = true;
-    Value v;                      // default to empty object
-    v["x"] = 1;
-    std::string d = Json::writeString(w,v);
-    // StreamWriter* w = Json::StreamWriterBuilder().newStreamWriter();
-    BOOST_CHECK_EQUAL(d,"{\"x\":1}");
+BOOST_AUTO_TEST_CASE(marshel_obj_with_options) {
+  Json::StreamWriterBuilder w;
+  w.settings_["indentation"] = "";
+  // empty indentation also omit newlines, so effectively makes it compact
+  w.settings_["emitUTF8"] = true;
+  Value v;                      // default to empty object
+  v["x"] = 1;
+  std::string d = Json::writeString(w,v);
+  // StreamWriter* w = Json::StreamWriterBuilder().newStreamWriter();
+  BOOST_CHECK_EQUAL(d,"{\"x\":1}");
+}
+
+BOOST_AUTO_TEST_CASE(iterate){
+  Json::Value v(Json::objectValue);
+  // Json::Value null_value; // null
+  // Json::Value arr_value(Json::arrayValue); // []
+  // Json::Value obj_value(Json::objectValue); // {}
+  v["x"] = 1;
+  v["y"] = "aaa";
+
+  Json::Value::Members ks = v.getMemberNames();
+  // ^^^^^^^^^^^^^^^^^^^^ Currently vector<string>
+  BOOST_CHECK_EQUAL(ks.size(),2);
+
+  BOOST_CHECK_EQUAL(ks[0],"x");
+  BOOST_CHECK_EQUAL(ks[1],"y");
+  BOOST_CHECK_EQUAL(v[ks[0]].asUInt64(),1);
+  BOOST_CHECK_EQUAL(v[ks[1]].asString(),"aaa");
+
+  BOOST_CHECK_EQUAL(v.size(),2);
   }
 #+end_src
 ** RocksDB
@@ -678,6 +698,26 @@ and back
    Use(slice);
    #+end_src
 *** Test
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.21)
+# set(CMAKE_CXX_COMPILER "g++")
+project(hi VERSION 1.1)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework log)
+
+# It seems a bug that we need to include this Finduring
+include(/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake)
+set(RocksDB_DIR "/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb")
+find_package(RocksDB CONFIG REQUIRED)
+
+# add the executable
+add_executable(main test.cpp)
+
+target_link_libraries(main PUBLIC Boost::unit_test_framework Boost::log RocksDB::rocksdb)
+# add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
 #+begin_src c++
   #define BOOST_TEST_MAIN
   #include <boost/test/unit_test.hpp>
