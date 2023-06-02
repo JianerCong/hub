@@ -31,11 +31,15 @@
     ("ethk" "🤔")
     ("ehan" "😓")
     ("efrog" "🐸")
+    ("eparrot" "🦜")
+    ("eturtle" "🐢")
+    ;; ("esloth" "🦥")
     ("enice" "👍")
     ("edrip" "💧")
     ("eheart" "💙")
     ("esnow" "❄")
-    ("echeck" "✔️")
+    ("echeck" "✅️")
+    ("ecross" "❌️")
     ))
 
 

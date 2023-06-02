@@ -1,4 +1,5 @@
 ** Cpp
+
 *** c++ 11 literal
 #+begin_src c++
     #define BOOST_TEST_MAIN
@@ -767,6 +768,106 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
+**** friend
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <string>
+
+using bytes = std::basic_string<uint8_t>;
+using std::string;
+
+
+namespace n1{
+  class A{
+  public:
+    friend class B;
+  private:
+    // private constant
+    const static int y{123};
+  };
+
+  class B{
+  public:
+    int y;
+    // Access friend's private const
+    B(): y(A::y){}
+  };
+}
+
+BOOST_AUTO_TEST_CASE(access_private_const) {
+  n1::B b;
+  n1::A a;
+  BOOST_CHECK_EQUAL(b.y,123);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+
+
+namespace n2{
+  class A{
+  public: friend class B;
+  private: int y;
+  };
+
+  class B{
+    A a;
+  public:
+    B(A _a): a(_a){}
+    // get set member friend's
+    int get(){return a.y;};
+    void set(int y){a.y=y;};
+  };
+}
+BOOST_AUTO_TEST_CASE(member_friend){
+  n2::B b{n2::A()};
+  b.set(123);
+  BOOST_CHECK_EQUAL(b.get(),123);
+}
+
+namespace n3{
+  class A{
+  public: friend class B;
+  private: int y;
+  };
+
+  class B{
+  public:
+    // get set passed-in friend's
+    int get(A&a){return a.y;};
+    void set(A&a,int y){a.y=y;};
+  };
+}
+BOOST_AUTO_TEST_CASE(passed_in_friend){
+  n3::B b;
+  n3::A a;
+  b.set(a,123);
+  BOOST_CHECK_EQUAL(b.get(a),123);
+}
+
+namespace n4{
+  class A;// forward def: neccesarry for friend function
+  // now compiler knows A--------------------------------------------------
+  class B{
+  public:
+    int get(A&a);
+    // Has to be implemented later
+  };
+  // now compiler knows B::get--------------------------------------------------
+  class A{
+  public:
+    friend int B::get(A& a);
+  private: int y = 123;
+  };
+  // now compiler knows everything -----------------------------------------
+  int B::get(A&a){return a.y;};
+}
+BOOST_AUTO_TEST_CASE(friend_func){
+  n4::B b;
+  n4::A a;
+  BOOST_CHECK_EQUAL(b.get(a),123);
+}
+
+#+end_src
 *** Exception
 1. domain_error
 2. invalid_argument
