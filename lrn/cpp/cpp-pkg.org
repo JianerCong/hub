@@ -697,6 +697,12 @@ and back
    }
    Use(slice);
    #+end_src
+*** Trouble shoot
+**** pthread error
+pthread lock: Invalid argument │ unknown location(0): fatal error: in
+"col_family/list_column": signal: SIGABRT (application abort requested)
+
+A: Do not ~delete db~ more than once.
 *** Test
 #+begin_src cmake
   cmake_minimum_required(VERSION 3.21)
@@ -722,6 +728,8 @@ add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing A
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 #include <rocksdb/db.h>
+
+#include <utility>              // std::as_const
 
 #include <rocksdb/utilities/backup_engine.h>
 #include <vector>
@@ -770,12 +778,15 @@ rocksdb::Options getInitOptions(){
   return options;
 }
 
+namespace filesystem = std::filesystem;
 struct D{
   D(){
     // Boilerplates (Copied from rocksdb/example/simple_example.cc)
     // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
     rocksdb::Options options = getInitOptions();
     dbDir = fs::temp_directory_path() / "testdb";
+    if (filesystem::exists(dbDir)) BOOST_REQUIRE(filesystem::remove_all(dbDir));
+
     BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
 
     // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
@@ -1130,7 +1141,6 @@ BOOST_AUTO_TEST_CASE(backup_engine_3_restore_backup){
   // open db again to backup1 and check db=[(k1,v1)] (i.e. k2 is not there)
   // --------------------------------------------------
 
-
   st = rocksdb::DB::Open(o,d1_restored,&db);
   BOOST_REQUIRE(st.ok());
 
@@ -1199,7 +1209,14 @@ BOOST_FIXTURE_TEST_CASE(make_cf,D){
 
 }
 
-BOOST_FIXTURE_TEST_CASE(open_existing_cf,D){
+
+BOOST_FIXTURE_TEST_CASE(open_existing_cf_new,D){
+  /*
+    🐢 : The sensible way to open an existing db with cfs is to call
+    ListColumnFamilies() first.
+    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+    db.
+   */
   using rocksdb::ColumnFamilyDescriptor;
   using rocksdb::ColumnFamilyHandle;
   using rocksdb::ColumnFamilyOptions;
@@ -1221,8 +1238,59 @@ BOOST_FIXTURE_TEST_CASE(open_existing_cf,D){
      🦜: Do we need to remember beforehand what colum families(CF) are in an
      existing db?
 
-     🐢: Yes. cfs should be the vector of ALL cfs, containing name + options.
+     🐢: Not necessarily, we can(and should) call ListColumnFamilies beforehand,
+     and then construct the ColumnFamilyDescriptor from that.
   */
+
+  vector<string> cfNames;
+  rocksdb::Options o = getInitOptions();
+  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfNames);
+  BOOST_CHECK(s.ok());
+
+  // convert the string to ColumnFamilyDescriptor
+  vector<ColumnFamilyDescriptor> cfs;
+
+  // std::ranges::transform(cfNames,std::back_inserter(cfs),
+  //                        [](string s) -> ColumnFamilyDescriptor {
+  //                          return ColumnFamilyDescriptor(s,ColumnFamilyOptions()); }
+  //                        );
+  // 🦜: I found it easier to just use loop than <algorithm>
+  for (auto & s : cfNames)
+    cfs.push_back(ColumnFamilyDescriptor(s,ColumnFamilyOptions()));
+
+
+
+  BOOST_CHECK_EQUAL(cfs.size(),2);
+  vector<ColumnFamilyHandle*> handles;
+  s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
+               cfs, &handles, &db);
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(open_existing_cf_old,D){
+  /*
+    🐢 : Although the official example in rocksdb/examples/example.cc use the
+    following method to open existing db with cfs. The better way should be to
+    query the cf first before opening the db.
+
+    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+    db.
+   */
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  delete db;
 
   vector<ColumnFamilyDescriptor> cfs{
     // have to open default column family
@@ -1391,7 +1459,46 @@ BOOST_FIXTURE_TEST_CASE(drop_cf,D){
   // must be called before closing db
   BOOST_CHECK(s.ok());
 }
+
+BOOST_FIXTURE_TEST_CASE(list_column,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  /* reopen the db with two column families
+
+     🦜: Do we need to remember beforehand what colum families(CF) are in an
+     existing db?
+
+     🐢: Yes. cfs should be the vector of ALL cfs, containing name + options.
+  */
+
+  // delete db;
+  vector<string> cfs;
+  rocksdb::Options o = getInitOptions();
+  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfs);
+  BOOST_CHECK(s.ok());
+  BOOST_REQUIRE_EQUAL(cfs.size(),2);
+  BOOST_CHECK_EQUAL(cfs[0],rocksdb::kDefaultColumnFamilyName);
+  BOOST_CHECK_EQUAL(cfs[1],"cf1");
+//   for (auto s : cfs){
+//     BOOST_TEST_MESSAGE(format("Got cf: " "%1%") % s);
+// }
+
+  }
+
 BOOST_AUTO_TEST_SUITE_END();
+
 
 #+end_src
 ** EVMONE
