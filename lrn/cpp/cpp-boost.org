@@ -1,4 +1,42 @@
 ** Boost
+*** exception
+https://en.cppreference.com/w/cpp/error/exception
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <boost/throw_exception.hpp>
+  #include <boost/exception/diagnostic_information.hpp>
+
+  #include <stdexcept>
+  #include <iostream>
+  #include <string>
+  using std::string;
+
+  #include <boost/format.hpp>
+  #include <boost/log/trivial.hpp>
+  using boost::format;
+
+
+
+  void f(){
+    BOOST_THROW_EXCEPTION(std::runtime_error( "aaa" ));
+  }
+
+  BOOST_AUTO_TEST_CASE(throw1){
+    BOOST_CHECK_THROW(f(),std::runtime_error);
+
+    try{f();}
+    catch( std::exception const & x ){
+      string s = boost::diagnostic_information(x);
+      BOOST_CHECK(s.find("aaa") != string::npos
+                  // std::string , contains "aaa"
+                  );
+      BOOST_LOG_TRIVIAL(info) << format("[%s]") % s;
+    }
+  }
+
+#+end_src
 *** check Boost version
 #+begin_src bash
   cat /usr/include/boost/version.hpp  | grep BOOST_LIB_VERSION 

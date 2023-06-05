@@ -131,6 +131,7 @@
 (define-abbrev c++-mode-abbrev-table "bck" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "brq" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "btm" "" (lambda () (skeleton-insert '(nil "BOOST_TEST_MESSAGE(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "bth" "" (lambda () (skeleton-insert '(nil "BOOST_THROW_EXCEPTION(std::runtime_error(format(\"" _ "\")));"))))
 (define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-boost-add-test-case)
 (define-abbrev c++-mode-abbrev-table "bts" "" 'cpp-boost-add-test-suite)
 (define-abbrev c++-mode-abbrev-table "bfc" "" 'cpp-boost-add-fixture-test-case)
@@ -138,10 +139,12 @@
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
 (define-abbrev c++-mode-abbrev-table "rdb" "rocksdb::")
 (define-abbrev c++-mode-abbrev-table "fs" "filesystem::")
-(define-abbrev c++-mode-abbrev-table "str" "string")
-(define-abbrev c++-mode-abbrev-table "stv" "string_view")
+(define-abbrev c++-mode-abbrev-table "st" "string")
+(define-abbrev c++-mode-abbrev-table "sv" "string_view")
 (define-abbrev c++-mode-abbrev-table "sb" "" (lambda () (skeleton-insert '(nil "std::begin(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "se" "" (lambda () (skeleton-insert '(nil "std::end(" _ ")"))))
+(define-abbrev c++-mode-abbrev-table "fmt" "" (lambda () (skeleton-insert '(nil "format(\"" _ "\")"))))
+(define-abbrev c++-mode-abbrev-table "ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")

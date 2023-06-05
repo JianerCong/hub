@@ -89,6 +89,7 @@
   using std::filesystem::path;
   using std::filesystem::current_path;
   namespace fs = std::filesystem;
+  namespace filesystem = std::filesystem;
 
   #ifdef _WIN32
   #else
@@ -216,34 +217,43 @@
 
 
   BOOST_AUTO_TEST_CASE(copy){
-      fs::path s = fs::temp_directory_path() / "sandbox";
+    fs::path s = fs::temp_directory_path() / "sandbox";
 
-      fs::create_directories(s / "d1");
-      ofstream(s / "d1/f1.txt").put('a').flush();
+    fs::create_directories(s / "d1");
+    ofstream(s / "d1/f1.txt").put('a').flush();
 
-      const auto copyOptions =
-        fs::copy_options::update_existing
-       // Replace the existing file only if it is older than the file being
-        // copied
-        | fs::copy_options::recursive;
-      // Recursively copy subdirectories and their content
+    const auto copyOptions =
+      fs::copy_options::update_existing
+      // Replace the existing file only if it is older than the file being
+      // copied
+      | fs::copy_options::recursive;
+    // Recursively copy subdirectories and their content
 
-      std::error_code err;
-      // copy dir recursively
-      fs::copy(s / "d1",
-               s / "d2",
-               copyOptions,
-               err);
+    std::error_code err;
+    // copy dir recursively
+    fs::copy(s / "d1",
+             s / "d2",
+             copyOptions,
+             err);
 
-      BOOST_REQUIRE(!bool(err));
-      BOOST_CHECK(fs::exists(s / "d2"));
-      BOOST_CHECK(fs::exists(s / "d2/f1.txt"));
-      BOOST_CHECK(fs::exists(s / "d1"));
-      BOOST_CHECK(fs::exists(s / "d1/f1.txt"));
-      BOOST_CHECK_EQUAL(fs::file_size(s / "d2/f1.txt"),1);
-      BOOST_CHECK_EQUAL(fs::file_size(s / "d1/f1.txt"),1);
+    BOOST_REQUIRE(!bool(err));
+    BOOST_CHECK(fs::exists(s / "d2"));
+    BOOST_CHECK(fs::exists(s / "d2/f1.txt"));
+    BOOST_CHECK(fs::exists(s / "d1"));
+    BOOST_CHECK(fs::exists(s / "d1/f1.txt"));
+    BOOST_CHECK_EQUAL(fs::file_size(s / "d2/f1.txt"),1);
+    BOOST_CHECK_EQUAL(fs::file_size(s / "d1/f1.txt"),1);
 
-      fs::remove_all(s);
+    fs::remove_all(s);
+  }
+
+  BOOST_AUTO_TEST_CASE(current_dir_parent_path){
+    path p = filesystem::current_path();
+    BOOST_CHECK_EQUAL(string(p),"/home/me/repo/build-hi2");
+    BOOST_CHECK_EQUAL(string(p.parent_path()),"/home/me/repo");
+    // BOOST_CHECK_EQUAL(string(p / ".."),"/home/me/repo/build-hi2/..");
+    // BOOST_CHECK_EQUAL(string(filesystem::absolute(p / "..")),"/home/me/repo");
+    BOOST_CHECK(string(p).starts_with("/home/me/repo"));
   }
 #+end_src
 *** count

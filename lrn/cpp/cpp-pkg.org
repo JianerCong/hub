@@ -705,23 +705,24 @@ pthread lock: Invalid argument │ unknown location(0): fatal error: in
 A: Do not ~delete db~ more than once.
 *** Test
 #+begin_src cmake
-  cmake_minimum_required(VERSION 3.21)
-# set(CMAKE_CXX_COMPILER "g++")
-project(hi VERSION 1.1)
+    cmake_minimum_required(VERSION 3.21)
+  # set(CMAKE_CXX_COMPILER "g++")
+  project(hi VERSION 1.1)
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework log)
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework log)
 
-# It seems a bug that we need to include this Finduring
-include(/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake)
-set(RocksDB_DIR "/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb")
-find_package(RocksDB CONFIG REQUIRED)
+  # It seems a bug that we need to include this Finduring
+  include(/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake)
+  set(RocksDB_DIR "/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb")
+  find_package(RocksDB CONFIG REQUIRED)
 
-# add the executable
-add_executable(main test.cpp)
+  # add the executable
+  add_executable(main test.cpp)
 
-target_link_libraries(main PUBLIC Boost::unit_test_framework Boost::log RocksDB::rocksdb)
-# add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
-add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+  target_link_libraries(main PUBLIC Boost::unit_test_framework
+  Boost::log RocksDB::rocksdb)
+  # add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+  add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
 
 #+end_src
 #+begin_src c++
