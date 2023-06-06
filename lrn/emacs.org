@@ -1,7 +1,10 @@
 * Emac
-** scroll
+** useful keys
 + C-M-S-v :: scroll other window up
 + C-M-v :: scroll other window down
++ C-k :: kill line (easier than dd)
++ C-M-k :: kill s-exp
++ M-d :: kill word
 ** regex
 *** useful query replace
 in: #print(f'\(.*\)')
