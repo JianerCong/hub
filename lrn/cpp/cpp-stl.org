@@ -75,6 +75,106 @@
     }
 
 #+end_src
+*** set
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  using boost::format;
+  #include <set>
+
+  using std::set;
+
+  BOOST_AUTO_TEST_CASE(set_basic){
+    set<int> s{1,2,3};
+    BOOST_REQUIRE(s.contains(1));
+    BOOST_CHECK_EQUAL(s.size(),3);
+  }
+
+  BOOST_AUTO_TEST_CASE(set_duplicate_elem_ignored){
+    set<int> s{1,2,3,3};
+    BOOST_REQUIRE(s.contains(1));
+    BOOST_CHECK_EQUAL(s.size(),3);
+  }
+
+
+  struct A{
+    int x;int y;
+  };
+  struct compA{
+    constexpr bool operator()(const A & l,const A & r) const{
+      return l.x < r.x;
+    };
+  };
+  // two are considered equal
+  BOOST_AUTO_TEST_CASE(custom_set_1_explicit_comparator){
+    set<A,compA> s{{1,1},{1,2}};
+    BOOST_CHECK_EQUAL(s.size(),1); 
+  }
+
+  // --------------------------------------------------
+  struct B{
+    int x;int y;
+  };
+  namespace std{
+    // 🦜: help std::less to use set on custom set
+    template<>
+    struct less<B>{
+      constexpr bool operator()(const B & l,const B & r) const{
+        return l.x < r.x;
+      };
+    };
+  }
+  // two are considered equal
+  BOOST_AUTO_TEST_CASE(custom_set_2_std_less){
+    set<B> s{{1,1},{1,2}};
+    BOOST_CHECK_EQUAL(s.size(),1);
+  }
+
+
+  // --------------------------------------------------
+  // with operator()
+  struct S {
+    int x;
+    S(int i) : x{i} { std::cout << "S{" << i << "} "; }
+    bool operator<(S const& s) const { return x < s.x; }
+  };
+  BOOST_AUTO_TEST_CASE(custom_set_3_operator){
+    std::set<S> s{3, 1, 4, 1, 5};
+    BOOST_CHECK_EQUAL(s.count(1),1);
+    BOOST_CHECK_EQUAL(s.count(2),0);
+  }
+
+  // --------------------------------------------------
+  struct R {
+    int x;
+    R(int i) : x{i} { std::cout << "R{" << i << "} "; }
+    bool operator<(R const& r) const { return x < r.x; }
+  };
+  bool operator<(R const& r, int i) { return r.x < i; }
+  bool operator<(int i, R const& r) { return i < r.x; }
+
+  BOOST_AUTO_TEST_CASE(custom_set_4_heterogeneous_lookup){
+    // c++14, use int to find R
+    std::set<R, std::less<>> r{3, 1, 4, 1, 5};
+    BOOST_CHECK_EQUAL(r.count(1),1);
+    BOOST_CHECK_EQUAL(r.count(2),0);
+  }
+
+  BOOST_AUTO_TEST_CASE(insert){
+    set<int> s;
+    auto r1 = s.insert(3);
+    BOOST_REQUIRE(r1.first != s.end()); // valid iterator
+    BOOST_CHECK_EQUAL(*r1.first,3);
+    BOOST_REQUIRE(r1.second);     // insertion done
+
+    auto r2 = s.insert(3);
+    BOOST_CHECK(r1.first == r2.first); // same location
+    BOOST_REQUIRE(not r2.second);      // no insertion
+
+    BOOST_CHECK_EQUAL(s.size(),1);
+  }
+#+end_src
 *** filesystem C++17
 #+begin_src c++
   #define BOOST_TEST_MAIN
@@ -392,12 +492,27 @@ using std::make_unique;
 
 int x=0;
 struct A {A() {x++;} ~A() {x++;}};
-BOOST_AUTO_TEST_CASE(parse_obj) {
+BOOST_AUTO_TEST_CASE(make_unique_ptr) {
   {
     unique_ptr<A> p = make_unique<A>();
   }
   BOOST_CHECK_EQUAL(x,2);
 }
+
+
+/*
+  🦜: You cannot pass unique_ptr as argument, because the cp ctor has been
+  deliberately deleted... Otherwise it won't be unique would it?
+
+  void f(unique_ptr<int> p) {(*p)++;};
+  BOOST_AUTO_TEST_CASE(pass_unique_ptr) {
+  {
+  unique_ptr<int> p{new int(2)};
+  f(p);
+  BOOST_CHECK_EQUAL(*p, 3);
+  }
+  }
+ */
 
 #+end_src
 
@@ -1044,7 +1159,7 @@ int main()
     std::cout << "Waited " << elapsed << '\n';
 }
 #+end_src
-*** structure binding
+*** structure binding from struct
 #+begin_src c++
 
 #include <bits/stdc++.h>
@@ -1073,7 +1188,7 @@ int main( )
 *** tuple and structure binding
 #+begin_src c++
 
-#include<tuple> // for tuple
+include<tuple> // for tuple
 using std::tuple;
 using std::make_tuple;
 tuple<int,string_view> f(){
