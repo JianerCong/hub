@@ -483,37 +483,82 @@ BOOST_AUTO_TEST_CASE(t1) {
 #+end_src
 *** unique_ptr
 #+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <memory>
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <memory>
 
-using std::unique_ptr;
-using std::make_unique;
+  using std::unique_ptr;
+  using std::make_unique;
 
-int x=0;
-struct A {A() {x++;} ~A() {x++;}};
-BOOST_AUTO_TEST_CASE(make_unique_ptr) {
-  {
-    unique_ptr<A> p = make_unique<A>();
+  int x=0;
+  struct A {A() {x++;} ~A() {x++;}};
+  BOOST_AUTO_TEST_CASE(make_unique_ptr) {
+    {
+      unique_ptr<A> p = make_unique<A>();
+    }
+    BOOST_CHECK_EQUAL(x,2);
   }
-  BOOST_CHECK_EQUAL(x,2);
-}
+
+  BOOST_AUTO_TEST_CASE(built_in_array){
+    auto p(make_unique<int[]>(3));
+    p[2] = 1;
+    BOOST_CHECK_EQUAL(p[2],1);
+  }
 
 
-/*
-  🦜: You cannot pass unique_ptr as argument, because the cp ctor has been
-  deliberately deleted... Otherwise it won't be unique would it?
+  /*
+    🦜: You cannot pass unique_ptr as argument, because the cp ctor has been
+    deliberately deleted... Otherwise it won't be unique would it?
 
-  void f(unique_ptr<int> p) {(*p)++;};
+    void f(unique_ptr<int> p) {(*p)++;};
+    BOOST_AUTO_TEST_CASE(pass_unique_ptr) {
+    {
+    unique_ptr<int> p{new int(2)};
+    f(p);
+    BOOST_CHECK_EQUAL(*p, 3);
+    }
+    }
+  ,*/
+
+
+  unique_ptr<int> f(unique_ptr<int> p) {
+    (*p)++;
+    return p;
+  };
   BOOST_AUTO_TEST_CASE(pass_unique_ptr) {
-  {
-  unique_ptr<int> p{new int(2)};
-  f(p);
-  BOOST_CHECK_EQUAL(*p, 3);
+    {
+      unique_ptr<int> p{new int(2)};
+      p = f(std::move(p));       // this works
+      // p = f(p);                   // this won't work
+      BOOST_CHECK_EQUAL(*p, 3);
+    }
   }
-  }
- */
 
+  BOOST_AUTO_TEST_CASE(take_away_ownership){
+    unique_ptr<int> p{new int(2)};
+    BOOST_REQUIRE(p);         // p is here
+    f(std::move(p));
+    BOOST_REQUIRE(not p);         // p is gone
+    BOOST_REQUIRE(p == nullptr);
+  }
+  // helper class for runtime polymorphism demo below
+  struct B{
+    virtual ~B() = default;
+  };
+  BOOST_AUTO_TEST_CASE(custom_deleter){
+    int x{0};
+    {
+      unique_ptr<B,void(*)(B*)> p(new B, [](B* toBeDeleted){
+        // x++;
+
+        // 🦜: you cannot reference outside world here using [&], because that
+        // changes the signature.
+        BOOST_TEST_MESSAGE("destructor called");
+        delete toBeDeleted;
+      });
+    }
+    BOOST_CHECK_EQUAL(x,0);
+  }
 #+end_src
 
 *** basic_string
