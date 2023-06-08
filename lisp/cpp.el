@@ -80,6 +80,13 @@
   "}"
   )
 
+(define-skeleton cpp-add-banner
+  "Add a banner"
+  nil
+  "// " (skeleton-read "id:") " --------------------------------------------------" \n
+  "// "_
+  )
+
 (define-skeleton cpp-using-std
   "using std::something"
   " "
@@ -121,6 +128,7 @@
 
 ;; Most abbrev are defined in c-shared.el
 (define-abbrev c++-mode-abbrev-table "vve" "" 'cpp-say-err)
+(define-abbrev c++-mode-abbrev-table "bnnr" "" 'cpp-add-banner)
 
 (define-abbrev c++-mode-abbrev-table "lg0" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(trace) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "lg1" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(debug) << format(\"" _ "\");"))))

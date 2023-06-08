@@ -1503,8 +1503,10 @@ BOOST_AUTO_TEST_SUITE_END();
 
 #+end_src
 ** EVMONE
-*** notes
-**** TODO Delete the standalone version of evmone
+*** Q/A
+**** Why there're opt code PUSH32, PUSH3,...
+Lower push will still push a 32-long value but with 0-zero padding.
+
 *** install
 #+begin_src bash
   # cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DEVMC_TESTING=1 # TESTING builds everything
