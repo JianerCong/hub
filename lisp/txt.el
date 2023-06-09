@@ -33,6 +33,12 @@
 (define-abbrev-table 'cmake-mode-abbrev-table
   '(
     ("hh" "hihi")
+
+    ("msg" "" (lambda () (skeleton-insert
+                         '(nil "message(" _ ")")
+                         )
+                )
+     )
     ))
 
 

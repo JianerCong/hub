@@ -50,10 +50,42 @@
         ("v" . "std::vector")
         ("m" . "std::unordered_map")
         ("s" . "std::string")
+        ("sv" . "std::string_view")
         ("of" . "std::ofstream")
         ("if" . "std::ifstream")
         ("bf" . "boost::format")
         ))
+
+(define-skeleton cpp-boost-add-test-suite
+  "Add a BOOST_AUTO_TEST_SUITE"
+  nil
+  "BOOST_AUTO_TEST_SUITE(" (skeleton-read "name:") ");" \n
+  _ \n
+  "BOOST_AUTO_TEST_SUITE_END();"
+  )
+
+(define-skeleton cpp-boost-add-test-case
+  "Add a BOOST_AUTO_TEST_CASE"
+  nil
+  "BOOST_AUTO_TEST_CASE(" (skeleton-read "name:") "){" \n
+  _ \n
+  "}"
+  )
+
+(define-skeleton cpp-boost-add-fixture-test-case
+  "Add a BOOST_FIXTURE_TEST_CASE"
+  nil
+  "BOOST_FIXTURE_TEST_CASE(" (skeleton-read "name:") "){" \n
+  _ \n
+  "}"
+  )
+
+(define-skeleton cpp-add-banner
+  "Add a banner"
+  nil
+  "// " (skeleton-read "id:") " --------------------------------------------------" \n
+  "// "_
+  )
 
 (define-skeleton cpp-using-std
   "using std::something"
@@ -69,6 +101,7 @@
         ("i" . "<iostream>")
         ("o" . "<cstdio>")
         ("s" . "<string>")
+        ("sv" . "<string_view>")
         ("v" . "<vector>")
         ("m" . "<unordered_map>")
         ("f" . "<fstream>")
@@ -79,6 +112,7 @@
         ("a" . "<algorithm>")
         ("f" . "<functional>")
         ("F" . "<boost/format.hpp>")
+        ("L" . "<boost/log/trivial.hpp>>")
         )
       )
 
@@ -94,6 +128,31 @@
 
 ;; Most abbrev are defined in c-shared.el
 (define-abbrev c++-mode-abbrev-table "vve" "" 'cpp-say-err)
+(define-abbrev c++-mode-abbrev-table "bnnr" "" 'cpp-add-banner)
+
+(define-abbrev c++-mode-abbrev-table "lg0" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(trace) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg1" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(debug) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg2" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(info) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "beq" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_EQUAL(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "bck" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "brq" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "btm" "" (lambda () (skeleton-insert '(nil "BOOST_TEST_MESSAGE(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "bth" "" (lambda () (skeleton-insert '(nil "BOOST_THROW_EXCEPTION(std::runtime_error(format(\"" _ "\")));"))))
+(define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-boost-add-test-case)
+(define-abbrev c++-mode-abbrev-table "bts" "" 'cpp-boost-add-test-suite)
+(define-abbrev c++-mode-abbrev-table "bfc" "" 'cpp-boost-add-fixture-test-case)
+
+(define-abbrev c++-mode-abbrev-table "nx" "noexcept")
+(define-abbrev c++-mode-abbrev-table "rdb" "rocksdb::")
+(define-abbrev c++-mode-abbrev-table "fs" "filesystem::")
+(define-abbrev c++-mode-abbrev-table "st" "string")
+(define-abbrev c++-mode-abbrev-table "sv" "string_view")
+(define-abbrev c++-mode-abbrev-table "sb" "" (lambda () (skeleton-insert '(nil "std::begin(" _ ")"))))
+(define-abbrev c++-mode-abbrev-table "se" "" (lambda () (skeleton-insert '(nil "std::end(" _ ")"))))
+(define-abbrev c++-mode-abbrev-table "fmt" "" (lambda () (skeleton-insert '(nil "format(\"" _ "\")"))))
+(define-abbrev c++-mode-abbrev-table "ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")

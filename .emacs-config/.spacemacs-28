@@ -613,9 +613,6 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(LaTeX-command "xelatex")
- '(LaTeX-command-style
-   '(("" "%(PDF)%(latex) -shell-escape %(file-line-error) %(extraopts) %(output-dir) %S%(PDFout)")))
  '(TeX-command-list
    '(("TeX" "%(PDF)%(tex) %(file-line-error) %`%(extraopts) %S%(PDFout)%(mode)%' %(output-dir) %t" TeX-run-TeX nil
       (plain-tex-mode texinfo-mode ams-tex-mode)
@@ -624,14 +621,15 @@ This function is called at the very end of Spacemacs initialization."
       (latex-mode doctex-mode)
       :help "Run LaTeX")
      ("View" "pkill -HUP mupdf" TeX-run-discard-or-function t t :help "Run Viewer")))
- '(TeX-engine 'xetex)
  '(TeX-engine-alist nil)
  '(js-indent-level 2)
  '(org-confirm-babel-evaluate nil)
  '(package-selected-packages
    '(popwin godoctor go-tag go-rename go-impl go-guru go-gen-test go-fill-struct go-eldoc flycheck-golangci-lint dap-mode lsp-docker lsp-treemacs bui yaml spinner company-go go-mode solidity-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode impatient-mode htmlize helm-css-scss haml-mode evil-matchit emmet-mode counsel-css company-web web-completion-data load-env-vars pyvenv markdown-toc epc concurrent deferred gh-md ctable pythonic tablist aio ess-R-data-view ess auctex-latexmk auctex toml-mode ron-mode racer rust-mode helm-gtags ggtags flycheck-rust counsel-gtags counsel swiper ivy cargo typescript-mode smartparens import-js grizzl add-node-modules-path origami lsp-mode markdown-mode flycheck-pos-tip pos-tip vue-mode edit-indirect ssass-mode vue-html-mode mmm-mode helm-ctest cmake-mode evil-tex company-reftex company-math math-symbol-lists company-auctex hungry-delete yasnippet-snippets tern helm-company helm-c-yasnippet fuzzy company-anaconda company auto-yasnippet ac-ispell auto-complete rainbow-delimiters transient cdlatex yapfify which-key use-package treemacs-projectile treemacs-icons-dired treemacs-evil sphinx-doc quickrun pytest pylookup pyenv-mode pydoc py-isort pippel pipenv pip-requirements pcre2el overseer nose nameless monokai-theme macrostep live-py-mode inspector importmagic hybrid-mode holy-mode help-fns+ helm-xref helm-themes helm-swoop helm-pydoc helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag flycheck-package flycheck-elsa evil-evilified-state emr elisp-slime-nav elisp-def dotenv-mode diminish cython-mode code-cells blacken bind-map anaconda-mode ace-jump-helm-line))
  '(safe-local-variable-values
-   '((org-what-lang-is-for . "markdown")
+   '((TeX-command-extra-options . "-shell-escape")
+     (abbrev-file-name . my-abbrev\.el)
+     (org-what-lang-is-for . "markdown")
      (org-what-lang-is-for . "js")
      (org-what-lang-is-for . "c")
      (org-what-lang-is-for . "R")

@@ -121,7 +121,13 @@ C-c . : mark env
 + Then, in the custom-group for AucTeX.Edit the command list so that it does:
 latex -> view
 
-+ In the latex command section add -shell-escape if necessary.
+# Use file local variable to change settings
+#+begin_src latex
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% End:
+#+end_src
 *** cdlatex
 **** special fonts
 #+begin_src lisp

@@ -226,6 +226,28 @@ Use shift to get argument successively
       echo $str
   done
 #+END_SRC
+** watch for file change
+#+begin_src bash
+  sudo apt install inotify-tools
+
+  inotifywatch -v \               # verbose
+  -e access \
+     -e modify \
+     -t 60 \            # watch for 60s
+  -r ~/.beagle       # recursively this dir
+
+  # do sth
+  #!/bin/sh
+
+  # Watch a dir and do sth
+  inotifywait --monitor --recursive \
+              --timefmt '%d/%m/%y %H:%M' --format '%T %w %f' \
+              -e close_write /tmp/test |
+      while read -r date time dir file; do
+          changed_abs=${dir}${file}
+          echo "At ${time} on ${date}, file $changed_abs was changed" >&2
+      done
+#+end_src
 ** tempfile
 #+BEGIN_SRC bash
 #! /bin/bash
@@ -434,6 +456,15 @@ f1.o f2.o:
 #+end_src
 ** rsync
 rsync -av from-dir to-dir
+** pipe stderr
+#+begin_src bash
+    command 2>&1 >/dev/null | grep 'something'
+    # stderr to stdout,
+  #  stdout to /dev/null (without affecting stderr)
+
+    command &| grep 'something'   # pipe both
+    command 2| grep 'something'   # pipe stderr
+#+end_src
 * Tmux
 https://tmuxcheatsheet.com/
 ** basic
@@ -469,7 +500,7 @@ https://tmuxcheatsheet.com/
   C-b $                           # rename session
 #+end_src
 ** copy mode
-+ C-b ] :: enter
++ C-b [ :: enter
 + q :: quit
 + arrow-keys :: move
 + page-up/down :: ~

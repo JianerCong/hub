@@ -1,3 +1,98 @@
+** ethash
+*** install and hi
+**** install
+#+begin_src bash
+  cmake -S ethash-1.0.1 -B build-ethash
+  cmake --build build-ethash/
+  cmake --install build-ethash/ --prefix installed-ethash
+
+  # cmake --install build-ethash/ --prefix installed-ethash
+  # -- Install configuration: ""
+  # -- Installing: /home/me/repo/installed-ethash/lib/libkeccak.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash-global-context.a
+  # -- Installing: /home/me/repo/installed-ethash/include
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/version.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.h
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets-noconfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfigVersion.cmake
+
+  # Check the targets
+  cat /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake | grep add_library
+
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+# include("cmake/HunterGate.cmake")
+# HunterGate(
+#   URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+#   SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+# )
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# add the executable
+
+set(ethash_DIR "/home/me/repo/installed-ethash/lib/cmake/ethash/")
+find_package(ethash REQUIRED)     #do not explicitly specify the components
+
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework ethash::ethash)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+
+#+end_src
+**** test
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <ethash/keccak.hpp>
+  #include <string>
+  using std::string;
+  #include <string_view>
+  using std::string_view;
+
+
+  BOOST_AUTO_TEST_CASE(test_ethash){
+    string s = "baz(uint32,bool)";
+    ethash::hash256 h = ethash::keccak256(reinterpret_cast<uint8_t*>(s.data()),
+                                          s.size());
+
+    string_view v{reinterpret_cast<const char*>(h.bytes),4};
+    BOOST_CHECK_EQUAL(v,"\xcd\xcd\x77\xc0");
+
+    // Got from --------------------------------------------------
+    // from eth_hash.auto import keccak
+    // s='baz(uint32,bool)'
+    // b1 = bytes(s,'utf-8')
+    // b = keccak(b1)
+    // h = b.hex()
+    // h[:8] # 'cdcd77c0' the first 4 bytes used as function selector
+  }
+
+  BOOST_AUTO_TEST_CASE(test_xor){
+    uint8_t x{0xff};
+    uint8_t y{0x0f};
+
+    BOOST_CHECK_EQUAL(x^y,uint8_t{0xf0});
+  }
+#+end_src
 ** jsoncpp
 *** install and hi
 **** install
@@ -31,7 +126,7 @@ set(jsoncpp_DIR "/home/me/repo/installed-jsoncpp/lib/cmake/jsoncpp")
 find_package(jsoncpp CONFIG REQUIRED)
 
 add_executable(main test.cpp)
-target_link_libraries(main PUBLIC Boost::unit_test_framework jsoncpp_static)
+target_link_libraries(main PUBLIC Boost::unit_test_framework JsonCpp::JsonCpp)
 add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
 # add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
 
@@ -136,6 +231,18 @@ BOOST_AUTO_TEST_CASE(marshel_obj) {
                     "}");
 }
 
+BOOST_AUTO_TEST_CASE(marshel_array) {
+  // For convenience, use `writeString()` with a specialized builder.
+  Json::StreamWriterBuilder w;
+  w.settings_["indentation"] = "";
+  Value v;                      // default to empty object
+  v["x"].append(1);
+  v["x"].append(2);
+  v["x"].append(3);
+  std::string d = Json::writeString(w,v);
+  BOOST_CHECK_EQUAL(d,"{\"x\":[1,2,3]}");
+}
+
 BOOST_AUTO_TEST_CASE(marshel_obj_with_options) {
   Json::StreamWriterBuilder w;
   w.settings_["indentation"] = "";
@@ -148,1415 +255,25 @@ BOOST_AUTO_TEST_CASE(marshel_obj_with_options) {
   BOOST_CHECK_EQUAL(d,"{\"x\":1}");
 }
 
-#+end_src
-** Boost
-*** check Boost version
-#+begin_src bash
-  cat /usr/include/boost/version.hpp  | grep BOOST_LIB_VERSION 
-#+end_src
-*** asio
-**** hi
-***** hi
-#+begin_src c++
-  #define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <boost/asio.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
-#include <iostream>
+BOOST_AUTO_TEST_CASE(iterate){
+  Json::Value v(Json::objectValue);
+  // Json::Value null_value; // null
+  // Json::Value arr_value(Json::arrayValue); // []
+  // Json::Value obj_value(Json::objectValue); // {}
+  v["x"] = 1;
+  v["y"] = "aaa";
 
-#include <boost/format.hpp>
-#include <string>
+  Json::Value::Members ks = v.getMemberNames();
+  // ^^^^^^^^^^^^^^^^^^^^ Currently vector<string>
+  BOOST_CHECK_EQUAL(ks.size(),2);
 
-using std::string;
-using boost::format;
-using std::cout;
+  BOOST_CHECK_EQUAL(ks[0],"x");
+  BOOST_CHECK_EQUAL(ks[1],"y");
+  BOOST_CHECK_EQUAL(v[ks[0]].asUInt64(),1);
+  BOOST_CHECK_EQUAL(v[ks[1]].asString(),"aaa");
 
-
-boost::asio::io_service io_svc;
-int a = 0;
-void WorkerThread() {
-  // std::cout << "thread " << ++a << ".\n";
-  int b = ++a;
-  cout << format("thread %d \n") % b;
-  io_svc.run();
-  cout << format("thread %d is done 🐸\n") % b;
-}
-
-BOOST_AUTO_TEST_CASE(test_2) {
-  boost::shared_ptr<boost::asio::io_service::work>
-    worker(new boost::asio::io_service::work(io_svc));
-
-  std::cout << "Press ENTER key to exit!" << std::endl;
-  boost::thread_group threads;
-  for(int i=0; i<5; i++)
-    threads.create_thread(WorkerThread);
-
-  std::cin.get();
-  io_svc.stop();
-  threads.join_all();
-}
-// thread 1 
-// thread 2 
-// thread 3 
-// thread 4 
-// thread 5 
-
-// thread 4 is done 🐸
-// thread 5 is done 🐸
-// thread 3 is done 🐸
-// thread 1 is done 🐸
-// thread 2 is done 🐸
-
-#+end_src
-***** cmake
-#+begin_src cmake
-  cmake_minimum_required(VERSION 3.21)
-
-project(hi VERSION 1.1)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(Boost REQUIRED COMPONENTS unit_test_framework system thread)
-# add the executable
-add_executable(main e.cpp)
-target_link_libraries(main PUBLIC Boost::unit_test_framework Boost::thread Boost::system)
-add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
-# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
-
-#+end_src
-**** bind
-#+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <boost/bind/bind.hpp>
-using namespace boost::placeholders;
-using boost::bind;
-int f(int a){return a;}
-BOOST_AUTO_TEST_CASE(test_2) {
-  BOOST_CHECK_EQUAL(f(2),bind(&f,2)());
-}
-
-#+end_src
-**** post vs dispath
-#+begin_src c++
-  /* dispatch.cpp */
-#include <boost/asio.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
-#include <iostream>
-
-boost::mutex global_stream_lock;
-using std::cout;
-
-
-void WorkerThread(boost::shared_ptr<boost::asio::io_service> iosvc) {
-  global_stream_lock.lock();
-  std::cout << "Thread Start.\n";
-  global_stream_lock.unlock();
-
-  iosvc->run();
-
-  global_stream_lock.lock();
-  std::cout << "Thread Finish.\n";
-  global_stream_lock.unlock();
-}
-
-void Dispatch(int i) {
-  global_stream_lock.lock();
-  std::cout << "dispath() Function for i = " << i <<  std::endl;
-  global_stream_lock.unlock();
-}
-
-void Post(int i) {
-  global_stream_lock.lock();
-  std::cout << "post() Function for i = " << i <<  std::endl;
-  global_stream_lock.unlock();
-}
-
-void Running(boost::shared_ptr<boost::asio::io_service> iosvc) {
-  for( int x = 0; x < 5; ++x ) {
-    iosvc->dispatch(boost::bind(&Dispatch, x));
-    iosvc->post(boost::bind(&Post, x));
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+  BOOST_CHECK_EQUAL(v.size(),2);
   }
-  cout << "Running finished\n";
-}
-
-int main(void) {
-  boost::shared_ptr<boost::asio::io_service> io_svc(
-    new boost::asio::io_service
-  );
-
-  boost::shared_ptr<boost::asio::io_service::work> worker(
-    new boost::asio::io_service::work(*io_svc)
-  );
-
-  global_stream_lock.lock();
-  std::cout << "The program will exit automatically once all work has finished." << std::endl;
-  global_stream_lock.unlock();
-
-  boost::thread_group threads;
-
-  threads.create_thread(boost::bind(&WorkerThread, io_svc));
-
-  io_svc->post(boost::bind(&Running, io_svc));
-  std::cout << "Run all the posts:--------------------------------------------------\n";
-  worker.reset();
-
-  std::cout << "join_all\n";
-  threads.join_all();
-
-  return 0;
-}
-// The program will exit automatically once all work has finished.
-// Run all the posts:--------------------------------------------------
-// join_all:--------------------------------------------------
-// Thread Start.
-// dispath() Function for i = 0
-//   dispath() Function for i = 1
-//   dispath() Function for i = 2
-//   dispath() Function for i = 3
-//   dispath() Function for i = 4
-//   Running finished
-//   post() Function for i = 0
-//   post() Function for i = 1
-//   post() Function for i = 2
-//   post() Function for i = 3
-//   post() Function for i = 4
-//   Thread Finish.
-
-#+end_src
-**** tcp minimal server
-#+begin_src c++
-  #include <boost/asio.hpp>
-  using boost::asio::io_service;
-  using boost::asio::ip::tcp;
-  using boost::system::error_code;
-  using boost::asio::buffer;
-  #include <cstdio>
-
-  #include <string>
-  using std::string;
-
-  io_service iosrv;
-  // string a{argv,argc};
-  tcp::endpoint endp{tcp::v4(),8888};
-  tcp::acceptor accp{iosrv,endp};
-  tcp::socket skt{iosrv};
-
-  void acceptHandler(const error_code &ec);
-  void writeHandler(const error_code &ec, size_t n);
-  int main(int argc, char *argv[]){
-    accp.listen();
-    printf("Start listening 🐸\n");
-    accp.async_accept(skt,acceptHandler);
-    iosrv.run();
-    return 0;
-  }
-
-  void acceptHandler(const error_code &ec){
-    if (ec) return;
-    printf("acceptHandler() called");
-    async_write(skt,buffer("🐸aaa\n"),writeHandler);
-  }
-
-  void writeHandler(const error_code &ec, size_t n){
-    printf("writeHandler() called");
-    if (ec) return;
-    skt.shutdown(tcp::socket::shutdown_send);
-  }
-
-  // telnet localhost 8888
-
-#+end_src
-**** http minimal server： get/only
-***** cmake
-#+begin_src cmake
-  cmake_minimum_required(VERSION 3.21)
-
-project(hi VERSION 1.1)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(Boost REQUIRED)
-add_executable(weak-server weak-server.cpp)
-add_custom_target(run ALL
-  weak-server 0.0.0.0 7777
-  COMMENT "Runing App 🐸")
-
-#+end_src
-***** c++
-#+begin_src c++
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/config.hpp>
-#include <cstdlib>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <thread>
-#include <cstdio>
-
-#include <boost/format.hpp>
-using boost::format;
-
-namespace beast = boost::beast;         // from <boost/beast.hpp>
-namespace http = beast::http;           // from <boost/beast/http.hpp>
-namespace asio = boost::asio;            // from <boost/asio.hpp>
-using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
-using std::cout;
-
-using http::request;
-using http::response;
-
-
-// Handles an HTTP server connection
-void do_session(tcp::socket& socket);
-int main(int argc, char* argv[]){
-    try{
-        // Check command line arguments.
-        if (argc != 3)
-        {
-            std::cerr <<
-                "Usage: weak-server <address> <port>\n" <<
-                "Example:\n" <<
-                "    weak-server 0.0.0.0 8080 .\n";
-            return EXIT_FAILURE;}
-
-        asio::ip::address const address = asio::ip::make_address(argv[1]);
-        auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
-
-        // The io_context is required for all I/O
-        asio::io_context ioc{1};
-
-        // The acceptor receives incoming connections
-        tcp::acceptor acceptor{ioc, {address, port}};
-        for(;;){
-          printf("🐸 Waiting for requests\n");
-          // This will receive the new connection
-          tcp::socket socket{ioc};
-          // Block until we get a connection
-          acceptor.accept(socket);
-          // Launch the session, transferring ownership of the socket
-          std::thread{std::bind(&do_session, std::move(socket))}.detach();
-        }
-    }
-    catch (const std::exception& e){
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-}
-
-
-response<http::string_body>
-handle_request(request<http::string_body>&& req);
-void fail(beast::error_code ec, char const* what);
-void do_session(tcp::socket& socket){
-  beast::error_code ec;
-  // This buffer is required to persist across reads
-  beast::flat_buffer buffer;
-  for(;;){
-      // Read a request
-      request<http::string_body> req;
-      http::read(socket, buffer, req, ec);
-      if(ec == http::error::end_of_stream) break;
-      if(ec) return fail(ec, "read");
-
-      // Handle request
-        response<http::string_body> res =
-          handle_request(std::move(req));
-
-      // Determine if we should close the connection
-      bool keep_alive = res.keep_alive();
-
-      // Send the response
-      beast::http::write(socket, std::move(res), ec);
-      if(ec) return fail(ec, "write");
-      if(! keep_alive){
-        printf("We should not keep alive\n");
-          // This means we should close the connection, usually because
-          // the response indicated the "Connection: close" semantic.
-          break;
-        }
-    }
-  // Send a TCP shutdown
-  socket.shutdown(tcp::socket::shutdown_send, ec);
-  // At this point the connection is closed gracefully
-}
-// Report a failure
-void fail(beast::error_code ec, char const* what){
-  std::cerr << what << ": " << ec.message() << "\n";
-}
-
-response<http::string_body>
-handle_request(request<http::string_body>&& req){
-      // Returns a bad request response
-    auto const bad_request =
-    [&req](beast::string_view why){
-        response<http::string_body> res{http::status::bad_request, req.version()};
-        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, "text/html");
-        res.keep_alive(req.keep_alive());
-        res.body() = std::string(why);
-        res.prepare_payload();
-        return res;
-    };
-
-    // Returns a server error response
-    // auto const server_error =
-    // [&req](beast::string_view what){
-    //     response<http::string_body> res{http::status::internal_server_error, req.version()};
-    //     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    //     res.set(http::field::content_type, "text/html");
-    //     res.keep_alive(req.keep_alive());
-    //     res.body() = "An error occurred: '" + std::string(what) + "'";
-    //     res.prepare_payload();
-    //     return res;
-    // };
-
-    // Make sure we can handle the method
-    if( req.method() != http::verb::get &&
-        req.method() != http::verb::post)
-      return bad_request("Unknown HTTP-method");
-
-    printf("🐸 Handling request from %s\n",req.target().data());
-    // cout << format("🐸 Got request [%1]\n") % req.target().;
-
-
-    // Respond to GET request
-    // response<http::string_body> res{
-    //   std::piecewise_construct,
-    //   std::make_tuple(std::move(body)),
-    //   std::make_tuple(http::status::ok, req.version())};
-    response<http::string_body> res;
-    res.body() =  "🐸 hi from server\n";
-
-    res.version(11);   // HTTP/1.1
-    res.set(http::field::server, "Beast");
-    res.result(http::status::ok);
-    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-    res.set(http::field::content_type, "application/text");
-    res.keep_alive(req.keep_alive());
-
-    res.prepare_payload();
-    return res;
-}
-
-#+end_src
-*** format
-#+begin_src c++
-  #define BOOST_TEST_MAIN
-  #include <boost/test/unit_test.hpp>
-  #include <boost/format.hpp>
-  #include <string>
-
-  using std::string;
-  using boost::format;
-
-
-  BOOST_AUTO_TEST_CASE(test_2) {
-    string s = (format("%2% %1%") % 22 % 11 ).str();
-
-    // printf-style:min length=5, with sign
-    string s2 = (format("%1$+5d %2$+5d") % -10 % 30 ).str();
-    // printf-style,No reordering
-    string s3 = (format("%+5d %+5d") % -10 % 30 ).str();
-    string s4 = (format("0x%020x") % 0xff).str();
-
-    BOOST_CHECK_EQUAL(s,"11 22");
-    BOOST_CHECK_EQUAL(s2,"  -10   +30");
-    BOOST_CHECK_EQUAL(s2,s3);
-    BOOST_CHECK_EQUAL(s4,"0x000000000000000000ff");
-    //                      11223344551122334455
-  }
-
-// See absolute tabulations:
-// for(unsigned int i=0; i < names.size(); ++i)
-//   cout << format("%1%, %2%, %|40t|%3%\n") % names[i] % surname[i] % tel[i];
-
-// Marc-François Michel, Durand,           +33 (0) 123 456 789
-// Jean, de Lattre de Tassigny,            +33 (0) 987 654 321
-#+end_src
-*** start on linux
-**** install
-#+begin_src bash
-  sudo apt search libboost
-  sudo apt install libboost-all-dev
-#+end_src
-**** cpp
-#+begin_src c++
-  #include <iostream>
-  #include <boost/array.hpp>
-  using std::cout;
-
-  int main ()
-  {
-    boost::array<int,4> a = {{10, 20, 30, 30}};
-    cout << "a[0]=" << a[0];
-
-    return 0;
-  }
-  // Output:
-  // a[0]=10
-  #+end_src
-**** CMakeLists.txt
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-# set the project name and version
-project(Hi VERSION 1.0)
-
-# find_package(Boost CONFIG REQUIRED)
-# add the executable
-
-add_executable(myexe test.cpp)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
-#+end_src
-*** smart pointer
-**** sole ownership
-***** unique pointer
-#+begin_src c++
-#include <iostream>
-#include <boost/scoped_ptr.hpp>
-using std::cout;
-
-int main ()
-{
-  boost::scoped_ptr<int> p{new int{1}}; // cannot be copied or moved.
-  cout << *p << '\n';
-
-  p.reset(new int{2});          // release the old, point to new addr
-  cout << *p.get() << '\n';
-
-  p.reset();                    // release the allocated obj
-
-  // cast to false if point to nothing.
-  cout << std::boolalpha << static_cast<bool>(p) << '\n';
-
-  return 0;
-}
-
-// Output:
-// 1
-// 2
-// false
-
-#+end_src
-The destructor of this call ~delete~. To call ~delete[]~ use ~scoped_array~
-****** what if we try to copy the addr
-#+begin_src c++
-#include <cstdio>
-#include <boost/scoped_ptr.hpp>
-
-int main ()
-{
-  boost::scoped_ptr<int> p{new int{1}}; // cannot be copied or moved.
-  boost::scoped_ptr<int> p2{p};
-  return 0;
-}
-
-// Output:
-// error: ‘boost::scoped_ptr<T>::scoped_ptr(const boost::scoped_ptr<T>&) [with T = int]’ is private within this context
-
-#+end_src
-***** unique array
-#+begin_src c++
-#include <iostream>
-#include <boost/scoped_array.hpp>
-using std::cout;
-
-int main ()
-{
-  boost::scoped_array<int> p{new int[2]};
-  *p.get() = 10;
-  p[1] = 20;
-  cout << *p.get() << '\n';
-  cout << p[1] << '\n';
-
-  p.reset();                    // release the allocated obj
-  // cast to false if point to nothing.
-  cout << std::boolalpha << static_cast<bool>(p) << '\n';
-
-  return 0;
-}
-
-// Output:
-// 10
-// 20
-// false
-
-#+end_src
-**** shared ownership
-#+begin_src c++
-#include <boost/shared_ptr.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
-
-
-int main ()
-{
-  boost::shared_ptr<int> p1{new int{1}};
-  boost::shared_ptr<int> p2{p1};
-
-  P("*p1=%d, *p2=%d\nAfter reseting p1, p2 got ",*p1,*p2);
-  p1.reset();                    // release the allocated obj
-  // cast to false if point to nothing.
-  cout << std::boolalpha << static_cast<bool>(p2) << '\n';
-
-  return 0;
-}
-// Output
-// *p1=1, *p2=1
-//  After reseting p1, p2 got true
-
-
-#+end_src
-***** custom deleter
-#+begin_src c++
-#include <boost/shared_ptr.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
-
-void my_delete(int *p){
-  P("Calling my own delete.\n");
-  delete p;
-}
-
-
-int main ()
-{
-  boost::shared_ptr<int> p1(new int{1},my_delete);
-  P("*p1 = %d\n",*p1);
-  return 0;
-}
-// Output
-// *p1 = 1
-// Calling my own delete.
-
-#+end_src
-***** make_shared
-more efficient than calling ~new~ to create a dynamically allocated obj and
-calling ~new~ again in the constructor of ~boost::shared_ptr~ to allocate memory
-for the reference counter.
-#+begin_src c++
-#include <boost/make_shared.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
-
-using boost::make_shared;
-
-int main ()
-{
-  auto p1 = make_shared<int>(1);
-  auto p2 = make_shared<int[]>(10);
-  P("p1 has type %s, p2 has type %s\n",
-    typeid(p1).name(),
-    typeid(p2).name()
-    );
-}
-// Output
-// p1 has type N5boost10shared_ptrIiEE, p2 has type N5boost10shared_ptrIA_iEE
-
-
-#+end_src
-***** shared array
-#+begin_src c++
-#include <boost/shared_array.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
-
-using boost::shared_array;
-
-int main ()
-{
-  shared_array<int> p1{new int[1]};
-  {
-    shared_array<int> p2{p1};
-    p2[0] = 1;
-  }
-
-  P("p2 is gone, p1[0]=%d\n",p1[0]);
-}
-// Output
-// p2 is gone, p1[0]=1
-
-
-
-#+end_src
-***** How to time it 
-#+begin_src c++
-// #define BOOST_SP_USE_QUICK_ALLOCATOR
-#include <boost/shared_ptr.hpp>
-#include <ctime>
-
-#include <cstdio>
-#include <iostream>
-using std::cout;
-
-using std::time_t;
-using std::time;
-
-#define P(...) printf(__VA_ARGS__)
-
-
-#define N 20000000
-int main ()
-{
-  boost::shared_ptr<int> p;
-  std::time_t then = time(nullptr);
-
-  for (int i = 0;i < (N); ++i)
-    p.reset(new int{i});
-
-  std::time_t now = time(nullptr);
-  P("time taken %ld\n", now - then);
-  // --------------------------------------------------
-  int* p1;
-  then = time(nullptr);
-
-  for (int i = 0;i < (N); ++i){
-    delete p1;
-    p1 = new int{i};
-  }
-  delete p1;
-
-  now = time(nullptr);
-  P("time taken for built-in pointer %ld\n", now - then);
-
-}
-// Output? 不define更快？
-// while defining QUICK
-// time taken 2
-// time taken for built-in pointer 0
-
-// while not defining QUICK
-// time taken 1
-// time taken for built-in pointer 0
-
-#+end_src
-
-*** unit-test
-**** hi
-***** cmdline options
-#+begin_src c++
-The program 'myexe' is a Boost.Test module containing unit tests.
-
-  Usage
-    myexe [Boost.Test argument]... [-- [custom test module argument]...]
-
-  Use
-      myexe --help
-  or  myexe --help=<parameter name>
-  for detailed help on Boost.Test parameters.
-
-
-  Command line flags:
-   The command line flags of Boost.Test are listed below. All parameters are
-   optional. You can specify parameter value either as a command line argument or
-   as a value of its corresponding environment variable. If a flag is specified as
-   a command line argument and an environment variable at the same time, the
-   command line takes precedence. The command line argument support name guessing,
-   and works with shorter names as long as those are not ambiguous.
-
-   All the arguments after the '--' are ignored by Boost.Test.
-
-  Environment variables:
-   Every argument listed below may also be set by a corresponding
-   environmentvariable. For an argument '--argument_x=<value>', the corresponding
-   environment variable is 'BOOST_TEST_ARGUMENT_X=value
-
-  The following parameters are supported:
-
-  auto_start_dbg
-    Automatically attaches debugger in case of system level failure (signal).
-    --auto_start_dbg[=<boolean value>]
-    -d[ <boolean value>]
-
-  break_exec_path
-    For the exception safety testing allows to break at specific execution path.
-    --break_exec_path=<value>
-
-  build_info
-    Displays library build information.
-    --build_info[=<boolean value>]
-    -i[ <boolean value>]
-
-  catch_system_errors
-    Allows to switch between catching and ignoring system errors (signals).
-    --[no_]catch_system_errors[=<boolean value>]
-    -s[ <boolean value>]
-
-  color_output
-    Enables color output of the framework log and report messages.
-    --[no_]color_output[=<boolean value>]
-    -x[ <boolean value>]
-
-  detect_fp_exceptions
-    Enables/disables floating point exceptions traps.
-    --[no_]detect_fp_exceptions[=<boolean value>]
-
-  detect_memory_leaks
-    Turns on/off memory leaks detection (optionally breaking on specified alloc
-    order number).
-    --detect_memory_leaks[=<alloc order number>]
-
-  help
-    Help for framework parameters.
-    --help[=<parameter name>]
-
-  list_content
-    Lists the content of test tree - names of all test suites and test cases.
-    --list_content[=<HRF|DOT>]
-
-  list_labels
-    Lists all available labels.
-    --list_labels[=<boolean value>]
-
-  log_format
-    Specifies log format.
-    --log_format=<HRF|CLF|XML|JUNIT>
-    -f <HRF|CLF|XML|JUNIT>
-
-  log_level
-    Specifies the logging level of the test execution.
-    --log_level=<all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
-    -l <all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
-
-  log_sink
-    Specifies log sink: stdout (default), stderr or file name.
-    --log_sink=<stderr|stdout|file name>
-    -k <stderr|stdout|file name>
-
-  logger
-    Specifies log level and sink for one or several log format
-    --logger=log_format,log_level,log_sink[:log_format,log_level,log_sink]
-
-  output_format
-    Specifies output format (both log and report).
-    --output_format=<HRF|CLF|XML>
-    -o <HRF|CLF|XML>
-
-  random
-    Allows to switch between sequential and random order of test units execution.
-    Optionally allows to specify concrete seed for random number generator.
-    --random[=<seed>]
-
-  report_format
-    Specifies the test report format.
-    --report_format=<HRF|CLF|XML>
-    -m <HRF|CLF|XML>
-
-  report_level
-    Specifies test report level.
-    --report_level=<confirm|short|detailed|no>
-    -r <confirm|short|detailed|no>
-
-  report_memory_leaks_to
-    File where to report memory leaks to.
-    --report_memory_leaks_to=<file name>
-
-  report_sink
-    Specifies report sink: stderr(default), stdout or file name.
-    --report_sink=<stderr|stdout|file name>
-    -e <stderr|stdout|file name>
-
-  result_code
-    Disables test modules's result code generation.
-    --[no_]result_code[=<boolean value>]
-    -c[ <boolean value>]
-
-  run_test
-    Filters which tests to execute.
-    --run_test=<test unit filter>
-    -t <test unit filter>
-
-  save_pattern
-    Allows to switch between saving or matching test pattern file.
-    --save_pattern[=<boolean value>]
-
-  show_progress
-    Turns on progress display.
-    --show_progress[=<boolean value>]
-    -p[ <boolean value>]
-
-  usage
-    Short message explaining usage of Boost.Test parameters.
-    -?[ <boolean value>]
-
-  use_alt_stack
-    Turns on/off usage of an alternative stack for signal handling.
-    --[no_]use_alt_stack[=<boolean value>]
-
-  version
-    Prints Boost.Test version and exits.
-    --version[ <boolean value>]
-
-  wait_for_debugger
-    Forces test module to wait for button to be pressed before starting test run.
-    --wait_for_debugger[=<boolean value>]
-    -w[ <boolean value>]
-
-    #+end_src
-***** CMake
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-
-# set the project name and version
-project(Hi VERSION 1.0)
-
-find_package(Boost CONFIG REQUIRED
-  unit_test_framework)
-# add the executable
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC
-  Boost::unit_test_framework)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
-
-#+end_src
-***** cpp
-#+begin_src c++
-// #define BOOST_TEST_MODULE test_module_name
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-
-BOOST_AUTO_TEST_CASE(test_1) {
-  BOOST_CHECK(1 == 1);
-} // BOOST_AUTO_TEST_CASE(test_no_1)
-
-BOOST_AUTO_TEST_CASE(test_2) {
-  BOOST_CHECK(2 == 1);
-}
-
-
-#+end_src
-**** test-not-equal
-***** cmake
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-
-# set the project name and version
-project(Hi VERSION 1.0)
-
-find_package(Boost CONFIG REQUIRED
-  unit_test_framework)
-# add the executable
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC
-  Boost::unit_test_framework)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
-
-#+end_src
-***** cpp
-#+begin_src c++
-// #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE MyTest
-#include <boost/test/unit_test.hpp>
-#include <stdexcept>
-
-
-BOOST_AUTO_TEST_CASE(test_1) {
-  BOOST_CHECK_NE(2,1);          // 2 != 1
-} // BOOST_AUTO_TEST_CASE(test_no_1)
-
-void f(){
-  throw std::runtime_error("hi");
-}
-
-BOOST_AUTO_TEST_CASE(test_2) {
-  BOOST_CHECK_THROW(f(), std::runtime_error);
-}
-
-
-BOOST_AUTO_TEST_CASE(test_equal) {
-  BOOST_CHECK_EQUAL(1, 1);
-}
-
-BOOST_AUTO_TEST_CASE(test_error) {
-  BOOST_ERROR("this should give error ❄");
-}
-
-
-BOOST_AUTO_TEST_CASE(test_fail) {
-  BOOST_FAIL("this should give fatal error ❄");
-}
-
-#+end_src
-**** filter
-***** based on decorator (also works on individual case)
-****** c++
-#+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-
-BOOST_AUTO_TEST_SUITE(test_suite_1, *boost::unit_test::label("aaa"));
-BOOST_AUTO_TEST_CASE(test_2) {BOOST_CHECK(true);}
-BOOST_AUTO_TEST_CASE(test_1) {BOOST_CHECK_EQUAL(1,1);}
-BOOST_AUTO_TEST_SUITE_END();
-
-BOOST_AUTO_TEST_SUITE(test_suite_2);
-BOOST_AUTO_TEST_CASE(test_2) {BOOST_CHECK_EQUAL(3,3);}
-BOOST_AUTO_TEST_SUITE_END();
-
-#+end_src
-****** cmake
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.21)
-
-project(hi VERSION 1.1)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-# add the executable
-add_executable(main test.cpp)
-target_link_libraries(main PUBLIC Boost::unit_test_framework)
-# add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
-add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
-
-#+end_src
-***** based on names
-run_test=suite_1/suite_1/test_1
-run_test=suite_1/suite_2/*
-run_test=suite_1/suite_2/
-
-*** log
-+ Backend :: decide where the data is written.
-  ~boost::log::sinks::text_ostream_backend~ is initialized with a stream of type
-  ~std::ostream~ and writes log entries to it.
-+ Frontend :: connection between core and a backend. (Filters are here)
-+ core :: the core is the central component that all log entries are routed
-  through. It is implemented as a singleton. To get a pointer to the core, call
-  ~boost::log::core::get()~.
-**** trivial logging with filter
-Trivial logging For those who don't want to read tons of clever manuals and just
-need a simple tool for logging, here you go:
-#+begin_src c++
-  #include <boost/log/trivial.hpp> // For BOOST_LOG_TRIVIAL, trace, debug,..,fatal
-  #include <boost/log/core.hpp>
-  #include <boost/log/expressions.hpp>
-
-  int main(int argc, char* argv[])
-  {
-      // Trivial logging: all log records are written into a file
-      BOOST_LOG_TRIVIAL(trace) << "A trace severity message[1]";
-      BOOST_LOG_TRIVIAL(debug) << "A debug severity message[2]";
-      BOOST_LOG_TRIVIAL(info) << "An informational severity message[3]";
-      BOOST_LOG_TRIVIAL(warning) << "A warning severity message[4]";
-      BOOST_LOG_TRIVIAL(error) << "An error severity message[5]";
-      BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message[6]";
-
-      // Filtering can also be applied
-      using namespace boost::log;
-
-      // The global singleton core
-      core::get()->set_filter
-      (
-       // A Boost.Phoenix lambda
-          trivial::severity >= trivial::info
-          // LHS: placeholder var; RHS: value of type severity_level
-      );
-
-      // Now the first two lines will not pass the filter
-      BOOST_LOG_TRIVIAL(trace) << "A trace severity message";
-      BOOST_LOG_TRIVIAL(debug) << "A debug severity message";
-      BOOST_LOG_TRIVIAL(info) << "An informational severity message[1]";
-      BOOST_LOG_TRIVIAL(warning) << "A warning severity message[2]";
-      BOOST_LOG_TRIVIAL(error) << "An error severity message[3]";
-      BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message[4]";
-
-      return 0;
-  }
-#+end_src
-**** a test for log
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-# set the project name and version
-project(Hi VERSION 1.0)
-
-find_package(Boost CONFIG REQUIRED log)
-# boost library by their canonical name:: "date_time" for "libboost_date_time"
-# ls /lib/x86_64-linux-gnu/libboost_*.a
-# add the executable
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC Boost::log)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
-
-#+end_src
-
-#+begin_src c++
-  #include <boost/log/common.hpp>
-#include <boost/log/sinks.hpp>
-#include <boost/log/sources/logger.hpp>
-// #include <boost/utility/empty_deleter.hpp>
-#include <boost/shared_ptr.hpp>
-#include <iostream>
-
-using namespace boost::log;
-int main(){
-  typedef sinks::asynchronous_sink<sinks::text_ostream_backend>
-    text_sink;
-  boost::shared_ptr<text_sink> sink =
-    boost::make_shared<text_sink>();
-
-  boost::shared_ptr<std::ostream> stream {
-    &std::clog                 // standard output stream for logging
-    ,boost::null_deleter()
-    // ,boost::empty_deleter
-  };
-
-  // access the backend through locked_backend()
-  sink->locked_backend()->add_stream(stream);
-
-  core::get()->add_sink(sink);
-  // default log connects it self to core.
-  sources::logger lg;
-  BOOST_LOG(lg) << "aaa";
-
-  sink->flush();
-}
-
-#+end_src
-**** set up sinks
-You can add sinks to core at the beginning.
-**** sinks that rotate the file
-#+begin_src c++
-  void init()
-  {
-    logging::add_file_log
-      (
-       keywords::file_name = "sample_%N.log",                                        /*< file name pattern >*/
-       keywords::rotation_size = 10 * 1024 * 1024,                                   /*< rotate files every 10 MiB... >*/
-       keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0), /*< ...or at midnight >*/
-       keywords::format = "[%TimeStamp%]: %Message%"                                 /*< log record format >*/
-       );
-
-    logging::core::get()->set_filter
-      (
-       logging::trivial::severity >= logging::trivial::info
-       );
-  }
-#+end_src
-**** ~add_file_log~ Bedind The Scene
-之前的init大概可以翻译成如下：
-#+begin_src c++
-void init()
-{
-    // Construct the sink
-    typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
-    boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
-
-    // Add a stream to write log to
-    sink->locked_backend()->add_stream(
-        boost::make_shared< std::ofstream >("sample.log"));
-
-    // Register the sink in the logging core
-    logging::core::get()->add_sink(sink);
-}
-#+end_src
-每个sink有一个frontend和一个backend.在以上种类为:
-+ frontend :: synchronous_sink （for multithreading,filtering, formatting）
-+ backend :: text_ostream_backend (specific task for this sink)
-以上的backend也可以加一个往console写的。
-#+begin_src c++
-#include <boost/core/null_deleter.hpp>
-
-// We have to provide an empty deleter to avoid destroying the global stream object
-boost::shared_ptr< std::ostream > stream(&std::clog, boost::null_deleter());
-sink->locked_backend()->add_stream(stream);
-#+end_src
-你可以给 ~text_ostream_backend~ 加很多 ~stream~ ，比如说文件又或是到console。这
-样的话filter只用一次，但我们可以同时往文件和console两个地方写。
-**** logger
-***** sink 和 source的区别？
-sink 需要被register到core。source不用。
-***** non-thread-safe logger 有啥用？
-如果你每个线程都用不同的logger的话，那就没必要thread-safe.
-***** thread-safe logger 有啥不一样
-有 _mt 后缀，会慢。
-***** Global logger
-Define a global logger
-#+begin_src c++
-BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
-
-#+end_src
-Get the global logger
-#+begin_src c++
-src::logger_mt& lg = my_logger::get();
-
-#+end_src
-***** write to logger
-#+begin_src c++
-  BOOST_LOG(lg) << "Hello, World!";
-#+end_src
-背后原理：
-#+begin_src c++
-  logging::record rec = lg.open_record(); // 给我个record对象如果有sink在接着的
-                                          // 话,filter用上在这。
-  if (rec)                                // 如果有record，开写
-  {
-      logging::record_ostream strm(rec); // 在record上开个stream
-      strm << "Hello, World!";
-      strm.flush();               // stream到record
-      lg.push_record(boost::move(rec)); // record到logger
-   }
-#+end_src
-***** Full example
-Need Boost::log, Boost::log_setup
-#+begin_src c++
-#include <boost/move/utility_core.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/sources/global_logger_storage.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-
-namespace logging = boost::log;
-namespace src = boost::log::sources;
-namespace keywords = boost::log::keywords;
-
-BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
-
-void logging_function1()
-{
-    src::logger lg;
-    logging::record rec = lg.open_record();
-    if (rec)
-    {
-        logging::record_ostream strm(rec);
-        strm << "AAA from local logger";
-        strm.flush();
-        lg.push_record(boost::move(rec));
-    }
-}
-
-void logging_function2()
-{
-    src::logger_mt& lg = my_logger::get();
-    BOOST_LOG(lg) << "AAA from global logger";
-}
-
-int main(int, char*[])
-{
-    logging::add_file_log("sample.log");
-    logging::add_common_attributes();
-
-    logging_function1();
-    logging_function2();
-
-    return 0;
-}
-
-#+end_src
-*** Install on Windows
-**** install location
-Usually C:\Program Files\boost\boost_1_82_0,
-(But by default, the install prefix for ~b2.exe~ is set to C:\Boost.)
-After build I got the message
-
-#+begin_src comment
-  The following directory should be added to compiler include paths:
-
-    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0
-
-The following directory should be added to linker library paths:
-
-    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0\stage\lib
-#+end_src
-So after doing a
-#+begin_src powershell
-  mv .\boost_1_82_0\ -Destination 'C:\Program Files\' 
-#+end_src
-I should includes those dir respectively.
-**** HelloWorld
-***** CMakeLists.txt
-#+begin_src cmake
-  cmake_minimum_required(VERSION 3.20)
-  # set the project name and version
-  project(Hi VERSION 1.0)
-
-
-  # Version 1.82 is too high for findBoost
-  # set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
-
-  # So we must use the shipped BoostConfig.cmake
-  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
-  # The above dir contains the BoostConfig.cmake
-  find_package(Boost CONFIG REQUIRED COMPONENTS log)
-
-  add_executable(myexe test.cpp)
-  target_link_libraries(myexe PUBLIC Boost::log)
-
-  # cmake .. && cmake --build .
-  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
-
-#+end_src
-***** test.cpp
-#+begin_src c++
-  #include <boost/log/trivial.hpp>
-
-int main(int, char*[])
-{
-  BOOST_LOG_TRIVIAL(trace) << "A trace severity message";
-  BOOST_LOG_TRIVIAL(debug) << "A debug severity message";
-  BOOST_LOG_TRIVIAL(info) << "An informational severity message";
-  BOOST_LOG_TRIVIAL(warning) << "A warning severity message";
-  BOOST_LOG_TRIVIAL(error) << "An error severity message";
-  BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message";
-
-  return 0;
-}
-#+end_src
-
-*** TroubleShoot
-**** LINK : fatal error LNK1104: cannot open file 'libboost_log_setup-vc143-mt-gd-x64-1_82.lib'
-Original CMake and C++:
-
-Here we add a sink to the Boost::log core. This will link to the
-~libboost_log_setsup~, which should be compiled seperately, and it's another
-target.
-#+begin_src cmake
-  cmake_minimum_required(VERSION 3.20)
-  # set the project name and version
-  project(Hi VERSION 1.0)
-
-
-  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
-  # The above dir contains the BoostConfig.cmake
-  find_package(Boost REQUIRED COMPONENTS log)
-  # find_package(Boost CONFIG REQUIRED COMPONENTS log)
-
-  add_executable(myexe test.cpp)
-  target_link_libraries(myexe PUBLIC Boost::log)
-
-  # cmake .. && cmake --build .
-  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
-
-#+end_src
-#+begin_src c++
-/*
- *          Copyright Andrey Semashev 2007 - 2015.
- * Distributed under the Boost Software License, Version 1.0.
- *    (See accompanying file LICENSE_1_0.txt or copy at
- *          http://www.boost.org/LICENSE_1_0.txt)
- */
-
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-
-namespace logging = boost::log;
-namespace src = boost::log::sources;
-namespace sinks = boost::log::sinks;
-namespace keywords = boost::log::keywords;
-
-void init()
-{
-    logging::add_file_log("sample.log");
-    logging::core::get()->set_filter
-    (
-        logging::trivial::severity >= logging::trivial::info
-    );
-}
-
-int main(int, char*[])
-{
-    init();
-    logging::add_common_attributes();
-
-    using namespace logging::trivial;
-    src::severity_logger< severity_level > lg;
-
-    BOOST_LOG_SEV(lg, trace) << "A trace severity message";
-    BOOST_LOG_SEV(lg, debug) << "A debug severity message";
-    BOOST_LOG_SEV(lg, info) << "An informational severity message";
-    BOOST_LOG_SEV(lg, warning) << "A warning severity message";
-    BOOST_LOG_SEV(lg, error) << "An error severity message";
-    BOOST_LOG_SEV(lg, fatal) << "A fatal severity message";
-
-    return 0;
-}
-
-#+end_src
-Solution: should add the component ~Boost::log_setup~ in addition to
-~Boost::log~. (This target should be built)
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.20)
-# set the project name and version
-project(Hi VERSION 1.0)
-
-
-# Version 1.82 is too high for findBoost
-# set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
-
-set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
-# The above dir contains the BoostConfig.cmake
-find_package(Boost REQUIRED COMPONENTS log log_setup)
-# find_package(Boost CONFIG REQUIRED COMPONENTS log)
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC Boost::log Boost::log_setup)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
-
-#+end_src
-**** what cmake targets are available
-#+begin_src bash
-  ls /usr/lib/x86_64-linux-gnu/libboost*.so
-#+end_src
-*** algorithm
-**** hex/unhex
-#+begin_src c++
-  #define BOOST_TEST_MAIN
-  #include <boost/test/unit_test.hpp>
-  #include <boost/algorithm/hex.hpp>
-  #include <string>
-  #include <iostream>
-
-  using std::cout;
-  using std::string;
-  using boost::algorithm::unhex;
-  using boost::algorithm::hex;
-  BOOST_AUTO_TEST_CASE(test_1) {
-    string s{"abc"};
-    string s2 = hex(s);
-    BOOST_CHECK_EQUAL(s2,string("616263"));
-    BOOST_CHECK_EQUAL(unhex(s2),string("abc"));
-  } // BOOST_AUTO_TEST_CASE(test_no_1)
-
-  BOOST_AUTO_TEST_CASE(test_2) {
-    string s{"123"};
-    string s2 = hex(s);
-    BOOST_CHECK_EQUAL(s2,string("313233"));
-    BOOST_CHECK_EQUAL(unhex(s2),string("123"));
-  } // BOOST_AUTO_TEST_CASE(test_no_1)
 #+end_src
 ** RocksDB
 *** install and run
@@ -1980,11 +697,816 @@ and back
    }
    Use(slice);
    #+end_src
-*** Test
+*** Trouble shoot
+**** pthread error
+pthread lock: Invalid argument │ unknown location(0): fatal error: in
+"col_family/list_column": signal: SIGABRT (application abort requested)
 
+A: Do not ~delete db~ more than once.
+*** Test
+#+begin_src cmake
+    cmake_minimum_required(VERSION 3.21)
+  # set(CMAKE_CXX_COMPILER "g++")
+  project(hi VERSION 1.1)
+
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework log)
+
+  # It seems a bug that we need to include this Finduring
+  include(/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake)
+  set(RocksDB_DIR "/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb")
+  find_package(RocksDB CONFIG REQUIRED)
+
+  # add the executable
+  add_executable(main test.cpp)
+
+  target_link_libraries(main PUBLIC Boost::unit_test_framework
+  Boost::log RocksDB::rocksdb)
+  # add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+  add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <rocksdb/db.h>
+
+#include <utility>              // std::as_const
+
+#include <rocksdb/utilities/backup_engine.h>
+#include <vector>
+using std::vector;
+
+#include <boost/log/trivial.hpp>
+
+
+#include <string>
+using std::string;
+#include <filesystem>
+namespace fs = std::filesystem;
+#include <boost/format.hpp>
+using boost::format;
+
+
+using rocksdb::ReadOptions;
+using rocksdb::WriteBatch;
+using rocksdb::WriteOptions;
+
+BOOST_AUTO_TEST_CASE(test_opendb) {
+  rocksdb::DB* db;
+  // Boilerplates (Copied from rocksdb/example/simple_example.cc)
+  // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+  rocksdb::Options options;
+  options.IncreaseParallelism();
+  options.OptimizeLevelStyleCompaction();
+  options.create_if_missing = true;
+
+  fs::path d = fs::temp_directory_path() / "testdb";
+  // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
+  rocksdb::Status status = rocksdb::DB::Open(options, d , &db);
+  BOOST_REQUIRE(status.ok());
+  BOOST_CHECK(fs::exists(d));
+  // Close and then destroy the db (delete the folder)
+  delete db;
+  // Closing the db persists the folder
+  BOOST_CHECK(fs::exists(d));
+}
+
+rocksdb::Options getInitOptions(){
+  rocksdb::Options options;
+  options.IncreaseParallelism();
+  options.OptimizeLevelStyleCompaction();
+  options.create_if_missing = true;
+  return options;
+}
+
+namespace filesystem = std::filesystem;
+struct D{
+  D(){
+    // Boilerplates (Copied from rocksdb/example/simple_example.cc)
+    // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+    rocksdb::Options options = getInitOptions();
+    dbDir = fs::temp_directory_path() / "testdb";
+    if (filesystem::exists(dbDir)) BOOST_REQUIRE(filesystem::remove_all(dbDir));
+
+    BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
+
+    // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
+    rocksdb::Status status = rocksdb::DB::Open(options, dbDir , &db);
+    BOOST_REQUIRE(status.ok());
+}
+  ~D(){
+    BOOST_TEST_MESSAGE("Tearing down Db and remove");
+    delete db;
+    BOOST_REQUIRE(fs::remove_all(dbDir));
+    BOOST_REQUIRE(!fs::exists(dbDir));
+  }
+  rocksdb::DB* db;
+  fs::path dbDir;
+};
+
+// This labals which testcase/suite to run.
+#define MY_TEST_THIS *boost::unit_test::label("aaa")
+
+BOOST_AUTO_TEST_SUITE(core_operation);
+BOOST_FIXTURE_TEST_CASE(put_get,D){
+  // Put key-value
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
+  BOOST_REQUIRE(s.ok());
+  string value;
+
+  // get value
+  s = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"abc");
+}
+
+BOOST_FIXTURE_TEST_CASE(del,D){
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
+  BOOST_REQUIRE(s.ok());
+
+  // get value, should be there
+  string value;
+  s = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  // BOOST_REQUIRE(!s.IsNotFound());
+  BOOST_CHECK_EQUAL(value,"abc");
+
+  // delete the value
+  s = db->Delete(WriteOptions(), "k1");
+  BOOST_REQUIRE(s.ok());
+  s = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(!s.ok());       // not found=not ok
+  BOOST_REQUIRE(s.IsNotFound());
+  // Now it's not found
+}
+
+BOOST_FIXTURE_TEST_CASE(iterator,D){
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+
+  string v1{"v1"};
+  BOOST_REQUIRE(db->KeyMayExist(ReadOptions(),
+                                "k1",&v1,/*timestamp=*/ (bool*) nullptr));
+  // Use Bloom filter to check a : if definitely not exists return false
+
+  s = db->Put(WriteOptions(), "k2", "v2");
+  BOOST_REQUIRE(s.ok());
+
+  rocksdb::Iterator* i = db->NewIterator(ReadOptions());
+  i->SeekToFirst();
+  BOOST_REQUIRE(i->Valid());
+
+  int cnt{0};
+  string ks[] = {"k1","k2"};
+  string vs[] = {"v1","v2"};
+  for (i->SeekToFirst();i->Valid();i->Next()){
+    // Check db = [(k1,v1),(k2,v2)]
+    BOOST_CHECK_EQUAL(ks[cnt],i->key().ToString());
+    BOOST_CHECK_EQUAL(vs[cnt],i->value().ToString());
+    cnt++;
+    if (!i->status().ok()){
+      // BOOST_LOG_TRIVIAL(error) << ;
+      BOOST_ERROR(format("iterator error") % i->status().ToString());
+    }
+    BOOST_LOG_TRIVIAL(info) << format("k=%s v=%s") % i->key().ToStringView()
+      % i->value().ToStringView();
+    //  ^^^^^^^^^^ rocksdb::Slice (also has ToString())
+  }
+  // size of db
+  BOOST_CHECK_EQUAL(cnt,2);
+}
+
+BOOST_FIXTURE_TEST_CASE(batch,D){
+
+  // Write a kv
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "aaa");
+  BOOST_REQUIRE(s.ok());
+
+  // write a batch
+  string value;
+  {
+    rocksdb::WriteBatch batch;
+    batch.Delete("key1");
+    batch.Put("key2", "bbb");
+    s = db->Write(WriteOptions(), &batch);
+  }
+
+  // check the batch
+  s = db->Get(ReadOptions(), "key1", &value);
+  BOOST_CHECK(s.IsNotFound());
+  s = db->Get(ReadOptions(), "key2", &value);
+  BOOST_CHECK_EQUAL(value,"bbb");
+}
+BOOST_AUTO_TEST_SUITE_END();
+
+BOOST_AUTO_TEST_CASE(manually_backup){
+  rocksdb::Options options = getInitOptions();
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1", d2 = s / "d2";
+
+  // Create db
+  rocksdb::DB* db;
+  rocksdb::Status status = rocksdb::DB::Open(options, d1 , &db);
+  BOOST_REQUIRE(status.ok());
+  BOOST_CHECK(fs::exists(d1));  // now only d1 exists
+
+  // store a kv in d1
+  status = db->Put(WriteOptions(), "k1", "abc");
+  // BOOST_REQUIRE(status.ok());
+
+  // close the db
+  delete db;
+
+  // copy d1 to d2
+  const auto copyOptions =
+    fs::copy_options::update_existing
+    // Replace the existing file only if it is older than the file being
+    // copied
+    | fs::copy_options::recursive;
+  // Recursively copy subdirectories and their content
+  std::error_code err;
+  // copy dir recursively
+  fs::copy(d1, d2, copyOptions, err);
+  BOOST_REQUIRE(!bool(err));
+  BOOST_CHECK(fs::exists(d2));
+
+  // open the db in d2
+  string value;
+  status = rocksdb::DB::Open(options, d2 , &db);
+  BOOST_REQUIRE(status.ok());
+
+  // check the value stored from d1
+  status = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(status.ok());
+  BOOST_CHECK_EQUAL(value,"abc");
+  delete db;
+
+  // clean up
+  BOOST_CHECK(fs::remove_all(s));
+  }
+
+
+BOOST_AUTO_TEST_SUITE(backup);
+
+BOOST_AUTO_TEST_CASE(backup_engine_1_open){
+  // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
+
+  // mkdir
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1", d2 = s / "d1_backup";
+
+  // make db in d1
+  rocksdb::DB* db;
+  rocksdb::Options o = getInitOptions();
+  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv1
+  st = db->Put(WriteOptions(), "key1", "value1");
+  BOOST_REQUIRE(st.ok());
+  // create backup db=[(k1,v1)]
+
+  // create backup
+  rocksdb::BackupEngine* backup_engine;
+  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d2),
+                         &backup_engine);
+  BOOST_REQUIRE(st.ok());
+  // put kv2
+  // create backup2 db=[(k1,v1),(k2,v2)]
+  // put kv3
+  // close db;
+
+  // restore db to backup1 = [(k1,v1)]
+  // restore db to backup2 = [(k1,v1),(k2,v2)]
+
+  // clean up
+
+  delete db;
+  delete backup_engine;
+  BOOST_CHECK(fs::remove_all(s));
+}
+
+BOOST_AUTO_TEST_CASE(backup_engine_2_create_backup){
+
+  // mkdir
+  // --------------------------------------------------
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1", d2 = s / "d1_backup";
+
+  // make db in d1
+  // --------------------------------------------------
+  rocksdb::DB* db;
+  rocksdb::Options o = getInitOptions();
+  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+  // BOOST_CHECK(st.ok());
+
+  // put kv1
+  // --------------------------------------------------
+  st = db->Put(WriteOptions(), "key1", "value1");
+  // BOOST_CHECK(st.ok());
+  // create backup db=[(k1,v1)]
+
+  // create backup
+  // --------------------------------------------------
+  rocksdb::BackupEngine* backup_engine;
+  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d2),
+                         &backup_engine);
+  // BOOST_REQUIRE(st.ok());
+
+  st = backup_engine->CreateNewBackup(db);
+  BOOST_REQUIRE(st.ok());
+
+  // Check the backup is there
+  // --------------------------------------------------
+  std::vector<rocksdb::BackupInfo> backup_info;
+  backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+  BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+  st = backup_engine->VerifyBackup(1);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv2
+  // create backup2 db=[(k1,v1),(k2,v2)]
+  // put kv3
+  // close db;
+
+  // restore db to backup1 = [(k1,v1)]
+  // restore db to backup2 = [(k1,v1),(k2,v2)]
+
+  // clean up
+
+  delete db;
+  delete backup_engine;
+  BOOST_CHECK(fs::remove_all(s));
+  BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+}
+
+
+BOOST_AUTO_TEST_CASE(backup_engine_3_restore_backup){
+  // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
+
+  // mkdir
+  // --------------------------------------------------
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1",
+    d1_backup = s / "d1_backup",
+    d1_restored = s / "d1_restored";
+
+  // make db in d1
+  // --------------------------------------------------
+  rocksdb::DB* db;
+  rocksdb::Options o = getInitOptions();
+  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+  // BOOST_CHECK(st.ok());
+
+  // put kv1
+  // --------------------------------------------------
+  st = db->Put(WriteOptions(), "key1", "value1");
+  // BOOST_CHECK(st.ok());
+  // create backup db=[(k1,v1)]
+
+  // create backup
+  // --------------------------------------------------
+  rocksdb::BackupEngine* backup_engine;
+  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d1_backup),
+                         &backup_engine);
+  // BOOST_REQUIRE(st.ok());
+
+  st = backup_engine->CreateNewBackup(db);
+  BOOST_REQUIRE(st.ok());
+
+  // Check the backup is there
+  // --------------------------------------------------
+  std::vector<rocksdb::BackupInfo> backup_info;
+  backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+  // BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+  st = backup_engine->VerifyBackup(1);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv2
+  // --------------------------------------------------
+  st = db->Put(WriteOptions(), "key2", "value2");
+  BOOST_CHECK(st.ok());
+
+  // create backup2 db=[(k1,v1),(k2,v2)]
+  // --------------------------------------------------
+  st = backup_engine->CreateNewBackup(db);
+  BOOST_REQUIRE(st.ok());
+
+  // check the backup
+  // --------------------------------------------------
+  backup_engine->GetBackupInfo(&backup_info);
+  BOOST_CHECK_EQUAL(backup_info.size(),2);   // 2 backups
+
+  st = backup_engine->VerifyBackup(2);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv3
+  st = db->Put(WriteOptions(), "key3", "value3");
+  BOOST_CHECK(st.ok());
+
+  // close db first;
+  delete db;
+
+  // restore db to backup1 = [(k1,v1)]
+  // --------------------------------------------------
+  rocksdb::BackupEngineReadOnly* backup_engine_ro;
+  st = rocksdb::BackupEngineReadOnly::Open(
+                                 rocksdb::Env::Default(),
+                                 rocksdb::BackupEngineOptions(d1_backup),
+                                 &backup_engine_ro);
+  BOOST_REQUIRE(st.ok());
+
+  st = backup_engine_ro->RestoreDBFromBackup(1,
+                                             /*db_dir*/d1_restored,
+                                             /*wal_dir*/d1_restored);
+  BOOST_REQUIRE(st.ok());
+
+  // open db again to backup1 and check db=[(k1,v1)] (i.e. k2 is not there)
+  // --------------------------------------------------
+
+  st = rocksdb::DB::Open(o,d1_restored,&db);
+  BOOST_REQUIRE(st.ok());
+
+  std::string value;
+  st = db->Get(ReadOptions(), "key1", &value);
+  BOOST_REQUIRE(!st.IsNotFound());
+
+  st = db->Get(ReadOptions(), "key2", &value);
+  BOOST_REQUIRE(st.IsNotFound());
+
+  // restore db to backup2 = [(k1,v1),(k2,v2)] and check db[(k1,v1),(k2,v2)]
+  // --------------------------------------------------
+
+  // close db first;
+  // Remember to close the db before restoring the backup.
+  delete db;
+
+  st = backup_engine_ro->RestoreDBFromBackup(2,
+                                             /*db_dir*/d1_restored,
+                                             /*wal_dir*/d1_restored);
+  BOOST_REQUIRE(st.ok());
+
+  // open db again to backup2 and check db=[(k1,v1),(k2,v2)] (i.e. k3 is not there)
+  // --------------------------------------------------
+  st = rocksdb::DB::Open(o,d1_restored,&db);
+  BOOST_REQUIRE(st.ok());
+
+  st = db->Get(ReadOptions(), "key1", &value);
+  BOOST_REQUIRE(!st.IsNotFound()); // k1 exists
+
+  st = db->Get(ReadOptions(), "key2", &value);
+  BOOST_REQUIRE(!st.IsNotFound()); // k2 exists
+
+  st = db->Get(ReadOptions(), "key3", &value);
+  BOOST_REQUIRE(st.IsNotFound()); // k2 dosen't
+
+
+  // clean up
+  delete db;
+  delete backup_engine;
+  delete backup_engine_ro;
+  BOOST_CHECK(fs::remove_all(s));
+  BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+}
+BOOST_AUTO_TEST_SUITE_END();
+
+BOOST_AUTO_TEST_SUITE(col_family, MY_TEST_THIS);
+BOOST_FIXTURE_TEST_CASE(make_cf,D){
+  rocksdb::ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(
+                                             rocksdb::ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /* close the db
+   🦜: Does it destroy all the data contained in the ColFam ?
+
+   🐢: No, DestroyColumnFamilyHandle() has to be called before deleting the DB;
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+   */
+
+}
+
+
+BOOST_FIXTURE_TEST_CASE(open_existing_cf_new,D){
+  /*
+    🐢 : The sensible way to open an existing db with cfs is to call
+    ListColumnFamilies() first.
+    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+    db.
+   */
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  delete db;
+
+  /* reopen the db with two column families
+
+     🦜: Do we need to remember beforehand what colum families(CF) are in an
+     existing db?
+
+     🐢: Not necessarily, we can(and should) call ListColumnFamilies beforehand,
+     and then construct the ColumnFamilyDescriptor from that.
+  */
+
+  vector<string> cfNames;
+  rocksdb::Options o = getInitOptions();
+  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfNames);
+  BOOST_CHECK(s.ok());
+
+  // convert the string to ColumnFamilyDescriptor
+  vector<ColumnFamilyDescriptor> cfs;
+
+  // std::ranges::transform(cfNames,std::back_inserter(cfs),
+  //                        [](string s) -> ColumnFamilyDescriptor {
+  //                          return ColumnFamilyDescriptor(s,ColumnFamilyOptions()); }
+  //                        );
+  // 🦜: I found it easier to just use loop than <algorithm>
+  for (auto & s : cfNames)
+    cfs.push_back(ColumnFamilyDescriptor(s,ColumnFamilyOptions()));
+
+
+
+  BOOST_CHECK_EQUAL(cfs.size(),2);
+  vector<ColumnFamilyHandle*> handles;
+  s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
+               cfs, &handles, &db);
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(open_existing_cf_old,D){
+  /*
+    🐢 : Although the official example in rocksdb/examples/example.cc use the
+    following method to open existing db with cfs. The better way should be to
+    query the cf first before opening the db.
+
+    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+    db.
+   */
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  delete db;
+
+  vector<ColumnFamilyDescriptor> cfs{
+    // have to open default column family
+    ColumnFamilyDescriptor(rocksdb::kDefaultColumnFamilyName,
+                           ColumnFamilyOptions()),
+    // open the new one, too
+    ColumnFamilyDescriptor("cf1", ColumnFamilyOptions())
+  };
+  vector<ColumnFamilyHandle*> handles;
+  s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
+               cfs, &handles, &db);
+  BOOST_CHECK(s.ok());
+}
+
+
+BOOST_FIXTURE_TEST_CASE(read_write_from_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_REQUIRE(s.ok());
+
+  // Read write
+  s = db->Put(WriteOptions(),cf, "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+  std::string value;
+  s = db->Get(ReadOptions(), cf, "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"v1");
+
+  // (k1,v1) doesn't exist in the defaultColFam
+  s = db->Get(ReadOptions(), db->DefaultColumnFamily()
+              , "k1", &value);
+  BOOST_CHECK(s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(delete_from_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+
+  BOOST_REQUIRE(s.ok());
+
+  // Write to both cf
+  s = db->Put(WriteOptions(),cf, "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+  s = db->Put(WriteOptions(),dcf, "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+
+  // check in both db
+  std::string value;
+  s = db->Get(ReadOptions(), cf, "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"v1");
+  s = db->Get(ReadOptions(), dcf, "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"v1");
+
+  // delete in cf1
+  s = db->Delete(WriteOptions(),cf, "k1");
+  BOOST_REQUIRE(s.ok());
+
+  // (k1,v1) doesn't exist in the cf, but exists in dcf
+  s = db->Get(ReadOptions(), dcf, "k1", &value);
+  BOOST_CHECK(!s.IsNotFound());
+  s = db->Get(ReadOptions(), cf, "k1", &value);
+  BOOST_CHECK(s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(batch_for_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+  string value;
+
+  BOOST_REQUIRE(s.ok());
+
+  // write to df
+  s = db->Put(WriteOptions(),dcf, "k0", "v0");
+  BOOST_REQUIRE(s.ok());
+  // k0 has been added in dcf
+  s = db->Get(ReadOptions(), dcf,"k0" , &value);
+  BOOST_REQUIRE(!s.IsNotFound());
+
+  // Write to both cf
+  rocksdb::WriteBatch b;
+  b.Put(cf, "k1", "v1");
+  b.Put(cf, "k2", "v2");
+  b.Put(dcf, "k1", "v1");
+  b.Delete(dcf,"k0");
+  s = db->Write(WriteOptions(), &b);
+  BOOST_REQUIRE(s.ok());
+
+  // check values in both db
+  auto checkKv = [&] (ColumnFamilyHandle* h, string k, string v){
+    s = db->Get(ReadOptions(), h, k, &value);
+    BOOST_REQUIRE(s.ok());
+    BOOST_CHECK_EQUAL(value,v);
+  };
+  checkKv(cf,"k1","v1");
+  checkKv(cf,"k2","v2");
+  checkKv(dcf,"k1","v1");
+
+  // k0 has been deleted in dcf
+  s = db->Get(ReadOptions(), dcf,"k0" , &value);
+  BOOST_REQUIRE(s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+
+BOOST_FIXTURE_TEST_CASE(drop_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+  string value;
+
+  BOOST_REQUIRE(s.ok());
+
+  // write to df
+  s = db->Put(WriteOptions(),cf, "k0", "v0");
+  BOOST_REQUIRE(s.ok());
+  // k0 has been added in cf
+  s = db->Get(ReadOptions(), cf,"k0" , &value);
+  BOOST_REQUIRE(!s.IsNotFound());
+
+  s = db->DropColumnFamily(cf);
+  /*
+    🦜: Are the data gone when we DropColumnFamily()?
+
+    🐢: Not necessarily. The data is not gone if you have hold a column family
+    handle to it. The data is gone when no one refers to it anymore (GC).
+   */
+  s = db->Get(ReadOptions(), cf,"k0" , &value);
+  BOOST_REQUIRE(!s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(list_column,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  /* reopen the db with two column families
+
+     🦜: Do we need to remember beforehand what colum families(CF) are in an
+     existing db?
+
+     🐢: Yes. cfs should be the vector of ALL cfs, containing name + options.
+  */
+
+  // delete db;
+  vector<string> cfs;
+  rocksdb::Options o = getInitOptions();
+  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfs);
+  BOOST_CHECK(s.ok());
+  BOOST_REQUIRE_EQUAL(cfs.size(),2);
+  BOOST_CHECK_EQUAL(cfs[0],rocksdb::kDefaultColumnFamilyName);
+  BOOST_CHECK_EQUAL(cfs[1],"cf1");
+//   for (auto s : cfs){
+//     BOOST_TEST_MESSAGE(format("Got cf: " "%1%") % s);
+// }
+
+  }
+
+BOOST_AUTO_TEST_SUITE_END();
+
+
+#+end_src
 ** EVMONE
-*** notes
-**** TODO Delete the standalone version of evmone
+*** Q/A
+**** Why there're opt code PUSH32, PUSH3,...
+Lower push will still push a 32-long value but with 0-zero padding.
+
 *** install
 #+begin_src bash
   # cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DEVMC_TESTING=1 # TESTING builds everything
@@ -2294,10 +1816,18 @@ BOOST_AUTO_TEST_CASE(test_1) {
 #+end_src
 
 ** intx
-*** bash
+*** bash [dirty way: copy the header]
 #+begin_src bash
 sudo mkdir  /usr/local/include/intx
 sudo cp intx.hpp /usr/local/include/intx/ -v
+#+end_src
+*** install [polite way: follow the instrution]
+#+begin_src bash
+  mv ~/Downloads/intx-0.10.0.tar.gz .
+  tar zxf intx-0.10.0.tar.gz
+  cmake -S intx-0.10.0 -B build-intx -DINTX_TESTING=0
+  cmake --build build-intx
+  cmake --install build-intx --prefix installed-intx
 #+end_src
 *** tests
 #+begin_src c++
@@ -2372,7 +1902,6 @@ BOOST_AUTO_TEST_CASE(int_to_small_struct){
   BOOST_CHECK_EQUAL(a.bytes[0],0xab);
   BOOST_CHECK_EQUAL(a.bytes[1],0xcd);
 }
-
 #+end_src
 * End
 # Local Variables:
