@@ -1047,57 +1047,79 @@ int main ()
 *** map
 **** basic
    #+begin_src c++
-/**
- * @file umap.cpp
- * @author Jianer Cong
- * @brief unordered map basic
- */
+     #define BOOST_TEST_MAIN
+     #include <boost/test/unit_test.hpp>
+     #include <boost/format.hpp>
+     using boost::format;
+     #include <string>
 
-#include <unordered_map>
-#include <iostream>
+     #include <unordered_map>
+     #include <string>
+     using std::string;
 
-using std::cout;
-using std::unordered_map;
-using std::endl;
+     using std::unordered_map;
 
+     BOOST_AUTO_TEST_CASE(basic_iter){
+       int c{0};
+       string s;
+       unordered_map<int, const char*> m = {
+         {1, "aa"},
+           {2, "bb"}
+       };
+       for (const auto &[k, v]: m){
+         c += k;
+         BOOST_TEST_MESSAGE(format("(k,v) = (%d,%s)") % k % v);
+         // not sorted
+       }
+       BOOST_CHECK_EQUAL(c,3);
+     }
 
-typedef unordered_map<int,const char*> umap;
+     BOOST_AUTO_TEST_CASE(test_insert){
+       // 🦜 : insert() is successful only if the key dosen't exist already. Usually
+       // you probably means insert_or_assign()
 
-int main(int argc, char *argv[]){
-  umap m = {
-            { 1 , "one"},
-            {2, "two"}
-  };
+       unordered_map<int, string> m = {{1, "aa"}, {2, "bb"}};
+       BOOST_REQUIRE(m.insert({3,"cc"}).second); // ok
+       BOOST_CHECK_EQUAL(m.size(),3);
+       BOOST_REQUIRE(not m.insert({2,"bbb"}).second); // failed
+       BOOST_CHECK_EQUAL(m.size(),3);
+       BOOST_CHECK_EQUAL(m[2],"bb");
 
-  cout << "Map contents are\n";
-  for (const auto& [k, v] : m){
-    cout << "Key " << k << " Value " << v << endl;
-  }
+       // use insert_or_assign() 🦜 : you usually mean this
+       BOOST_REQUIRE(not m.insert_or_assign(2,"bbb").second); // false means "ASSIGN"
+       // 🦜 : Note that we don't have init_list now ^^^^
+       BOOST_CHECK_EQUAL(m[2],"bbb");
+     }
 
-  // Insert some value
-  m.insert({3,"three"});
-  m.insert({
-            {4,"four"}, {5,"five"}
-    });
+     BOOST_AUTO_TEST_CASE(erase){
+       unordered_map<int, string> m = {{1, "aa"}, {2, "bb"}};
+       BOOST_REQUIRE(m.contains(1));
+       m.erase(1);
+       BOOST_REQUIRE(not m.contains(1));
+     }
 
-  m.emplace(4,"NO");
-  // Will not insert, since already exits/
-  m.emplace(6,"six");
+     BOOST_AUTO_TEST_CASE(inplace_assignement){
+       unordered_map<int, string> m = {{1, "aa"}, {2, "bb"}};
+       m[1] = "aaa";
+       BOOST_CHECK_EQUAL(m[1],"aaa");
+       }
 
-  cout << "Now the contents are:\n";
-  for (const auto& p : m){
-    cout << "\t"<< p.first << " : " << p.second << endl;
-  }
-
-  cout << "After erase one:\n";
-  m.erase(1);
-
-  for (const auto& p : m){
-    cout << "\t"<< p.first << " : " << p.second << endl;
-  }
-  return 0;
-  }
-
+     struct A{
+       int x;
+       unordered_map<int,int> m;
+     };
+     BOOST_AUTO_TEST_CASE(map_to_struct){
+       unordered_map<int, A> m = {
+         {
+           1, {10,{}}
+         },
+         {
+           2, {20,{}}
+         }
+       };
+       BOOST_CHECK_EQUAL(m[1].x,10);
+       BOOST_CHECK_EQUAL(m[1].m.size(),0);
+     }
    #+end_src
 **** caveat: [] access create member
 #+begin_src c++
@@ -1232,16 +1254,45 @@ int main( )
 #+end_src
 *** tuple and structure binding
 #+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+#include <string>
 
-include<tuple> // for tuple
+using std::string_view;
+#include<tuple> // for tuple
 using std::tuple;
 using std::make_tuple;
 tuple<int,string_view> f(){
   return make_tuple(123,"abc");
 }
+
 BOOST_AUTO_TEST_CASE(binding){
   auto [x,y] = f();
   BOOST_CHECK_EQUAL(x,123);
+  BOOST_CHECK_EQUAL(y,"abc");
+}
+
+BOOST_AUTO_TEST_CASE(bind_to_known){
+  int x; string_view y;
+  std::tie(x,y) = f();
+  BOOST_CHECK_EQUAL(x,123);
+  BOOST_CHECK_EQUAL(y,"abc");
+}
+
+BOOST_AUTO_TEST_CASE(bind_to_known_with_get){
+  int x; string_view y;
+  const auto o = f();
+  x = std::get<0>(o);
+  y = std::get<1>(o);
+  BOOST_CHECK_EQUAL(x,123);
+  BOOST_CHECK_EQUAL(y,"abc");
+}
+
+BOOST_AUTO_TEST_CASE(bind_ignore){
+  string_view y;
+  std::tie(std::ignore,y) = f();
   BOOST_CHECK_EQUAL(y,"abc");
 }
 
