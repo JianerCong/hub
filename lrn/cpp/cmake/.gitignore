@@ -12,3 +12,4 @@ _deps
 # exclude all files in xxx.build folder
 *.build/
 bin/
+build-hi/
