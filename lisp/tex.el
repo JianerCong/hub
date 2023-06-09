@@ -5,7 +5,7 @@ s1 is inserted at the front, s2 is the prompt string, s3 is
 inserted after the prompt, s4 will be placed at the end. So it's
 s1 <prompt s2> s3 _ s4
 "
-  (lexical-let ((s1 s1)
+  (let ((s1 s1)
                 (s2 s2)
                 (s3 s3)
                 (s4 s4)
