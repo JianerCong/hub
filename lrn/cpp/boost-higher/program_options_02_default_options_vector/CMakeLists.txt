@@ -34,8 +34,24 @@ function(do_test target result)
 endfunction()
 
 # do a bunch of result based tests
-do_test(main "Allowed options" --help)    #default value
-
+do_test(main "Optimization level is 10" )    #default value
+do_test(main "Optimization level is 11" --optimization 11)
+do_test(main "Listen port is 0" ) #default value
+do_test(main "Listen port is 1001" --listen) #implicit value
+do_test(main "Listen port is 6789" --listen 6789)
+do_test(main "Verbosity enabled. Level is 1" -v) #implicit value
+do_test(main "Verbosity enabled. Level is 1" --verbose) #implicit value
+do_test(main "Verbosity enabled. Level is 10" -v 10)
+do_test(main "Verbosity enabled. Level is 10" --verbose 10 )
+do_test(main "Usage: m \\[options\\]" --help)
+do_test(main "Include paths are: d1 d2 d3"
+  --include-path d1
+  --include-path d2
+  --include-path d3)
+do_test(main "Include paths are: d1 d2 d3"
+  -Id1 -Id2 -Id3)
+do_test(main "Input files are: f1 f2 f3"
+  -Id1 -Id2 -Id3 f1 f2 f3)      #input file as positional argument
 
 add_custom_target(run ALL ctest -V COMMENT "Runing test 🐸")
 # add_custom_target(run ALL ctest COMMENT "Runing test 🐸")

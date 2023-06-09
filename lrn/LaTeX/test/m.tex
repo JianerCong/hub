@@ -1,0 +1,71 @@
+\documentclass{ctexart}
+\title{test}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+% Color
+\newcommand{\mycola}{MidnightBlue}
+\newcommand{\mycolb}{Mahogany}
+\newcommand{\mycolc}{OliveGreen}
+
+\newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
+\newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
+\newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\emph{#1}}}
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+\usepackage{fontspec}
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+\usepackage{minted}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usepackage{tikz}
+\usetikzlibrary{shapes} % ellipse node shape
+\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\usetikzlibrary{arrows.meta}    %-o arrow head
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+
+
+% Redefine em
+% latex.sty just do: \DeclareTextFontCommand{\emph}{\em}
+
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+\usepackage{amsmath}
+
+% ??? still xelatex?
+% \usepackage{xeCJK}
+\usepackage{emoji}
+
+\date{\today}
+\author{me}
+\begin{document}
+\maketitle
+
+% black and white
+% {\fontspec{Symbola}\symbol{"1F343}}
+% sudo apt -y install fonts-symbola
+
+% The luatex emoji
+\emoji{leaves}
+\end{document}
+
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% End:

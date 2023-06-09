@@ -30,6 +30,26 @@ s1 <prompt s2> s3 _ s4
 
 (fset 'tex-tikz-inputpage (my-make-skeleton "\\inpage[" "page dimension:" "]{" "}"))
 
+(define-skeleton luatex-boiler-plate
+  "Insert the boiler plate"
+  nil
+  "\\documentclass[12pt, a4paper, oneside]{ctexart}" \n
+  "\\title{" (skeleton-read "Title ?") "}" \n
+  "\\usepackage{geometry}"
+  "\\geometry{" \n
+  "a4paper," \n
+  "total={170mm,257mm}," \n
+  "left=20mm," \n
+  "top=20mm," \n
+  "}" \n
+  > "\\author{Me}" \n
+  > "\\date{\\today}" \n
+  > "\\begin{document}" \n
+  > "\\maketitle" \n
+  >  _ \n
+  >"\\end{document}"
+  )
+
 (define-skeleton tex-boiler-plate
   "Insert the boiler plate"
   nil
@@ -42,7 +62,7 @@ s1 <prompt s2> s3 _ s4
   "left=20mm," \n
   "top=20mm," \n
   "}" \n
-  > "\\author{Jianer Cong}" \n
+  > "\\author{Me}" \n
   > "\\date{\\today}" \n
   > "\\begin{document}" \n
   > "\\maketitle" \n
@@ -152,6 +172,51 @@ s1 <prompt s2> s3 _ s4
       ("qd" "\\quad")
       ("ni" "\\noindent")
       ("ddd" "\\cdots")
+      ("myHeader" 
+  "
+% Color
+\\newcommand{\\mycola}{MidnightBlue}
+\\newcommand{\\mycolb}{Mahogany}
+\\newcommand{\\mycolc}{OliveGreen}
+
+\\newcommand{\\cola}[1]{\\textcolor{\\mycola}{#1}}
+\\newcommand{\\colb}[1]{\\textcolor{\\mycolb}{#1}}
+\\newcommand{\\colc}[1]{\\textcolor{\\mycolc}{#1}}
+\\newcommand{\\Cola}[1]{\\textcolor{\\mycola}{\\emph{#1}}}
+\\let\\emph\\relax % there's no \\RedeclareTextFontCommand
+\\DeclareTextFontCommand{\\emph}{\\bfseries\\em}
+\\usepackage{fontspec}
+\\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+\\usepackage{minted}
+\\usepackage{tcolorbox}
+\\tcbuselibrary{skins}
+\\tcbuselibrary{minted}
+\\usepackage{tikz}
+\\usetikzlibrary{shapes} % ellipse node shape
+\\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\\usetikzlibrary{arrows.meta}    %-o arrow head
+\\usetikzlibrary{arrows}
+\\usetikzlibrary{matrix}
+
+
+% Redefine em
+% latex.sty just do: \\DeclareTextFontCommand{\\emph}{\\em}
+
+\\let\\emph\\relax % there's no \\RedeclareTextFontCommand
+\\DeclareTextFontCommand{\\emph}{\\bfseries\\em}
+% cjk
+\\usepackage{xeCJK}
+\\usepackage{amsmath}
+" \n
+       )
       ))                                  ;nil
   )
 
