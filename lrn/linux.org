@@ -175,6 +175,21 @@ sudo parted -l
 sudo visudo
 *** Cannot find path
 Add the link in /usr/bin
+** bzip2
+#+begin_src bash
+  tar -xvf archive.tar.bz2
+
+  # --------------------------------------------------
+  # another way
+  sudo apt install bzip2
+  bzip2 file-to-compress.txt
+  bzip2 -zk file-to-compress.txt
+  # z: zip the file , k: keep the original file
+
+  # decompress
+  bzip2 -d hi.bz2
+  bzip2 -vfd hi.bz2
+#+end_src
 * System
 ** users
 #+begin_src bash
