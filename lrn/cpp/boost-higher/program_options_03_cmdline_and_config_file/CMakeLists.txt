@@ -34,8 +34,6 @@ function(do_test target result)
 endfunction()
 
 # do a bunch of result based tests
-
-# The default config file
 set(f ${CMAKE_CURRENT_BINARY_DIR}/m.cfg)
 message("🐸 Config file written to ${f}")
 file(WRITE ${f} "
@@ -45,7 +43,6 @@ y-list = y1 y2 y3
 ")
 
 
-# Another config file
 set(f1 ${CMAKE_CURRENT_BINARY_DIR}/another.cfg)
 message("🐸 Config file written to ${f1}")
 file(WRITE ${f1} "
