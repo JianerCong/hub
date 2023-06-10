@@ -1,0 +1,130 @@
+** Boost
+*** program_option
+**** parse config
+***** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+IF (WIN32)
+  # set stuff for windows
+  set(Boost_DIR "C:\\Users\\congj\\repo\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+ENDIF()
+
+find_package(Boost CONFIG REQUIRED
+  unit_test_framework program_options)
+# add the executable
+
+add_executable(myexe m.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework
+  Boost::program_options)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸 ")
+
+
+#+end_src
+***** c++
+#+begin_src c++
+// #define BOOST_TEST_MODULE test_module_name
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/program_options.hpp>
+
+#include <iostream>
+#include <sstream>
+using std::stringstream;
+namespace program_options = boost::program_options;
+
+using std::vector;
+using std::string;
+using std::cout;
+using std::endl;
+
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  BOOST_CHECK(1 == 1);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+vector<string> parse_file(stringstream &file,
+                          program_options::options_description &opts,
+                          program_options::variables_map &vm)
+{
+  const bool ALLOW_UNREGISTERED = true;
+  cout << file.str() << endl;
+
+  program_options::parsed_options parsed =
+    program_options::parse_config_file(file, opts, ALLOW_UNREGISTERED);
+  program_options::store(parsed, vm);
+  vector<string> unregistered =
+    program_options::collect_unrecognized(parsed.options,
+                                          program_options::exclude_positional);
+  program_options::notify(vm);
+
+  return unregistered;
+}
+
+BOOST_AUTO_TEST_CASE(test_config_file_unregistered){
+  // The file
+  stringstream f;
+  f << "# comment aaa\n"
+    << "global_string = aaa\n"
+    << "unregistered_entry = bbb\n";
+  f.seekp(std::ios_base::beg);
+
+  // The option
+  program_options::options_description opts;
+  opts.add_options()
+    ("global_string", program_options::value<string>());
+
+
+  program_options::variables_map vars;
+  auto unregistered = parse_file(f, opts, vars);
+
+  BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
+  string expected_unreg_option = "unregistered_entry";
+  BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
+  BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
+}
+
+BOOST_AUTO_TEST_CASE(test_config_file_subsection){
+  // The file
+  stringstream f;
+  f << "# comment aaa\n"
+    << "global_string = aaa\n"
+    << "unregistered_entry = bbb\n"
+    << "\n[sub1]\n"
+    << "x = 1\n"
+    << "y=-1\n"
+    ;
+  f.seekp(std::ios_base::beg);
+
+  // The option
+  program_options::options_description opts;
+  opts.add_options()
+    ("global_string", program_options::value<string>())
+    ("sub1.x", program_options::value<int>())
+    ("sub1.y", program_options::value<int>())
+    ;
+
+  program_options::variables_map vars;
+  auto unregistered = parse_file(f, opts, vars);
+
+  BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
+  string expected_unreg_option = "unregistered_entry";
+  BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
+  BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
+  BOOST_CHECK_EQUAL(vars["sub1.x"].as<int>(),1);
+
+  BOOST_CHECK_EQUAL(vars["sub1.y"].as<int>(),-1);
+}
+
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

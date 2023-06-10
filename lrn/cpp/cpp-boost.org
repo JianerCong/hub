@@ -42,6 +42,39 @@ https://en.cppreference.com/w/cpp/error/exception
   cat /usr/include/boost/version.hpp  | grep BOOST_LIB_VERSION 
 #+end_src
 *** asio
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+# set(CMAKE_CXX_COMPILER "g++")
+project(hi VERSION 1.1)
+
+# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+IF (WIN32)
+  # set stuff for windows
+  set(Boost_DIR "C:\\Users\\congj\\repo\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+ELSE()
+  # set stuff for other systems
+ENDIF()
+find_package(Boost REQUIRED COMPONENTS unit_test_framework log
+  program_options
+)
+
+add_executable(myexe m.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::log)
+# Although beast and axio are all header-only, we need to link to at least one
+# Boost-target in order to bring in the include dirs
+
+# add_custom_target(run ALL
+#   weak-server 0.0.0.0 7777
+#   COMMENT "Runing App 🐸")
+
+#+end_src
 **** hi
 ***** hi
 #+begin_src c++
@@ -276,6 +309,17 @@ add_custom_target(run ALL
 #+end_src
 ***** c++
 #+begin_src c++
+  #include <boost/asio.hpp>
+using boost::asio::io_service;
+using boost::asio::ip::tcp;
+using boost::system::error_code;
+using boost::asio::buffer;
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
+using boost::format;
+
+#include <string>
+using std::string;
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -287,9 +331,6 @@ add_custom_target(run ALL
 #include <string>
 #include <thread>
 #include <cstdio>
-
-#include <boost/format.hpp>
-using boost::format;
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -379,6 +420,11 @@ void fail(beast::error_code ec, char const* what){
   std::cerr << what << ": " << ec.message() << "\n";
 }
 
+
+/**
+ * @brief Here we actually dispatch the appropriate functions and handle the
+ * request.
+ */
 response<http::string_body>
 handle_request(request<http::string_body>&& req){
       // Returns a bad request response
@@ -432,6 +478,7 @@ handle_request(request<http::string_body>&& req){
     res.prepare_payload();
     return res;
 }
+
 
 #+end_src
 *** format
