@@ -197,10 +197,8 @@ handle_request(request<http::string_body>&& req){
     return bad_request("Unknown HTTP-method");
 
   BOOST_LOG_TRIVIAL(debug) << format("Start handling");
-
-  BOOST_LOG_TRIVIAL(debug) << format("Handling request\n\tmethod: %s\n\ttarget: %s\n\tcontent type: %s")
-    % req.method_string() % req.target() % req[http::field::content_type];
-
+  BOOST_LOG_TRIVIAL(debug) << format("Handling request\n\tmethod: %s\n\ttarget: %s")
+    % req.method_string() % req.target();
   if (req.payload_size()){
     BOOST_LOG_TRIVIAL(debug) << format("payload_size:%d\n\tdata:%s")
       % req.payload_size().value() % req.body();
@@ -214,13 +212,13 @@ handle_request(request<http::string_body>&& req){
   //   std::make_tuple(std::move(body)),
   //   std::make_tuple(http::status::ok, req.version())};
   response<http::string_body> res;
-  res.body() =  "{\"x\" : \"aaa from server\"}";
+  res.body() =  "🐸 hi from server\n";
 
   res.version(11);   // HTTP/1.1
   res.set(http::field::server, "Beast");
   res.result(http::status::ok);
   res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-  res.set(http::field::content_type, "application/json");
+  res.set(http::field::content_type, "application/text");
   res.keep_alive(req.keep_alive());
 
   res.prepare_payload();

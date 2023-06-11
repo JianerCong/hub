@@ -45,28 +45,18 @@ int main(int argc, char* argv[]){
           "    weak-server 0.0.0.0 8080 .\n";
         return EXIT_FAILURE;}
 
-    // 🦜 Now we only use tcp::v4(), ignoring user specifed address
-    // asio::ip::address const address = asio::ip::make_address(argv[1]);
+    asio::ip::address const address = asio::ip::make_address(argv[1]);
     auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
 
 
     // The acceptor receives incoming connections
-    tcp::acceptor acceptor{ioc};
-
-    boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port);
-    acceptor.open(endpoint.protocol());
-
-    acceptor.bind(endpoint);    // this throws exception if failed to bind port
-
-    acceptor.listen();
-    BOOST_LOG_TRIVIAL(debug) << format("🐸 acceptor start listening on port %d")
-       % port;
+    tcp::acceptor acceptor{ioc, {address, port}};
 
     // The service run in one thread
     BOOST_LOG_TRIVIAL(debug) << format("Starting service thread");
     std::thread{[](){ioc.run();}}.detach();
-    // Start the dispatcher in another thread
 
+    // Start the dispatcher in another thread
     std::thread{[&](){
       for(;;){
         BOOST_LOG_TRIVIAL(debug) << format("❄ Waiting for request");
@@ -112,23 +102,18 @@ void do_session(tcp::socket& socket){
   // log the endpoint info
   boost::asio::ip::tcp::endpoint e1 = socket.remote_endpoint();
   boost::asio::ip::address a = e1.address();
-  uint16_t p = e1.port();
   string s = a.to_string();
-
-  BOOST_LOG_TRIVIAL(debug) << format("Got connection from %s:%d")
-    % s % p;
+  BOOST_LOG_TRIVIAL(debug) << format("Got connection from %s")
+    % s;
 
   // --------------------------------------------------
   // the mode
   beast::error_code ec;
   // This buffer is required to persist across reads
   beast::flat_buffer buffer;
-
-  // Keep reading request and handle the request until END OF STREAM or result
-  // in not keep_alive
   for(;;){
     // Read a request
-    request<http::string_body> req; // the request container
+    request<http::string_body> req;
     http::read(socket, buffer, req, ec);
     if(ec == http::error::end_of_stream) break;
     if(ec) return fail(ec, "read");
@@ -145,7 +130,7 @@ void do_session(tcp::socket& socket){
     if(ec) return fail(ec, "write");
 
 
-    if(not keep_alive){
+    if(! keep_alive){
       printf("We should not keep alive\n");
       // This means we should close the connection, usually because
       // the response indicated the "Connection: close" semantic.
@@ -164,7 +149,7 @@ void fail(beast::error_code ec, char const* what){
 
 /**
  * @brief Here we actually dispatch the appropriate functions and handle the
- * request. We have entered the boost.beast world from the boost.asio world.
+ * request.
  */
 response<http::string_body>
 handle_request(request<http::string_body>&& req){
@@ -188,7 +173,8 @@ handle_request(request<http::string_body>&& req){
   //     res.set(http::field::content_type, "text/html");
   //     res.keep_alive(req.keep_alive());
   //     res.body() = "An error occurred: '" + std::string(what) + "'";
-  //     res.prepare_payload() res;
+  //     res.prepare_payload();
+  //     return res;
   // };
 
   // Make sure we can handle the method
@@ -196,16 +182,8 @@ handle_request(request<http::string_body>&& req){
       req.method() != http::verb::post)
     return bad_request("Unknown HTTP-method");
 
-  BOOST_LOG_TRIVIAL(debug) << format("Start handling");
-
-  BOOST_LOG_TRIVIAL(debug) << format("Handling request\n\tmethod: %s\n\ttarget: %s\n\tcontent type: %s")
-    % req.method_string() % req.target() % req[http::field::content_type];
-
-  if (req.payload_size()){
-    BOOST_LOG_TRIVIAL(debug) << format("payload_size:%d\n\tdata:%s")
-      % req.payload_size().value() % req.body();
-    // body should be string for http::string_body
-  }
+  printf("🐸 Handling request from %s\n",req.target().data());
+  // cout << format("🐸 Got request [%1]\n") % req.target().;
 
 
   // Respond to GET request
@@ -214,13 +192,13 @@ handle_request(request<http::string_body>&& req){
   //   std::make_tuple(std::move(body)),
   //   std::make_tuple(http::status::ok, req.version())};
   response<http::string_body> res;
-  res.body() =  "{\"x\" : \"aaa from server\"}";
+  res.body() =  "🐸 hi from server\n";
 
   res.version(11);   // HTTP/1.1
   res.set(http::field::server, "Beast");
   res.result(http::status::ok);
   res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-  res.set(http::field::content_type, "application/json");
+  res.set(http::field::content_type, "application/text");
   res.keep_alive(req.keep_alive());
 
   res.prepare_payload();

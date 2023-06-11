@@ -85,6 +85,13 @@ while ($true){
 #+begin_src powershell
   # GET
   Invoke-RestMethod -Uri http://localhost:8080/albums
+  # also 
+  Invoke-RestMethod -Uri http://localhost:8080/albums -DisableKeepAlive
+  Invoke-RestMethod -Uri http://localhost:8080/albums -DisableKeepAlive `
+    -ResponseHeadersVariable x    #store header in $x
+  $x                              #see the header
+
+
 
   $Url = "http://localhost:8080/albums"
   $Body = @{
@@ -94,7 +101,8 @@ while ($true){
       price=4.44
   }
   # POST
-  Invoke-RestMethod -Method 'Post' -Uri $url -Body (ConvertTo-Json $body)
+  Invoke-RestMethod -Method 'Post' -Uri $url `
+    -Body (ConvertTo-Json $body) -ContentType 'application/json'
 
   # curl http://localhost:8080/albums \
   #   --include \
