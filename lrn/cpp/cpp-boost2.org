@@ -30,98 +30,98 @@ add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App �
 #+end_src
 ***** c++
 #+begin_src c++
-// #define BOOST_TEST_MODULE test_module_name
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <boost/program_options.hpp>
+  // #define BOOST_TEST_MODULE test_module_name
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/program_options.hpp>
 
-#include <iostream>
-#include <sstream>
-using std::stringstream;
-namespace program_options = boost::program_options;
+  #include <iostream>
+  #include <sstream>
+  using std::stringstream;
+  namespace program_options = boost::program_options;
 
-using std::vector;
-using std::string;
-using std::cout;
-using std::endl;
-
-
-BOOST_AUTO_TEST_CASE(test_1) {
-  BOOST_CHECK(1 == 1);
-} // BOOST_AUTO_TEST_CASE(test_no_1)
-
-vector<string> parse_file(stringstream &file,
-                          program_options::options_description &opts,
-                          program_options::variables_map &vm)
-{
-  const bool ALLOW_UNREGISTERED = true;
-  cout << file.str() << endl;
-
-  program_options::parsed_options parsed =
-    program_options::parse_config_file(file, opts, ALLOW_UNREGISTERED);
-  program_options::store(parsed, vm);
-  vector<string> unregistered =
-    program_options::collect_unrecognized(parsed.options,
-                                          program_options::exclude_positional);
-  program_options::notify(vm);
-
-  return unregistered;
-}
-
-BOOST_AUTO_TEST_CASE(test_config_file_unregistered){
-  // The file
-  stringstream f;
-  f << "# comment aaa\n"
-    << "global_string = aaa\n"
-    << "unregistered_entry = bbb\n";
-  f.seekp(std::ios_base::beg);
-
-  // The option
-  program_options::options_description opts;
-  opts.add_options()
-    ("global_string", program_options::value<string>());
+  using std::vector;
+  using std::string;
+  using std::cout;
+  using std::endl;
 
 
-  program_options::variables_map vars;
-  auto unregistered = parse_file(f, opts, vars);
+  BOOST_AUTO_TEST_CASE(test_1) {
+    BOOST_CHECK(1 == 1);
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
 
-  BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
-  string expected_unreg_option = "unregistered_entry";
-  BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
-  BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
-}
+  vector<string> parse_file(stringstream &file,
+                            program_options::options_description &opts,
+                            program_options::variables_map &vm)
+  {
+    const bool ALLOW_UNREGISTERED = true;
+    cout << file.str() << endl;
 
-BOOST_AUTO_TEST_CASE(test_config_file_subsection){
-  // The file
-  stringstream f;
-  f << "# comment aaa\n"
-    << "global_string = aaa\n"
-    << "unregistered_entry = bbb\n"
-    << "\n[sub1]\n"
-    << "x = 1\n"
-    << "y=-1\n"
-    ;
-  f.seekp(std::ios_base::beg);
+    program_options::parsed_options parsed =
+      program_options::parse_config_file(file, opts, ALLOW_UNREGISTERED);
+    program_options::store(parsed, vm);
+    vector<string> unregistered =
+      program_options::collect_unrecognized(parsed.options,
+                                            program_options::exclude_positional);
+    program_options::notify(vm);
 
-  // The option
-  program_options::options_description opts;
-  opts.add_options()
-    ("global_string", program_options::value<string>())
-    ("sub1.x", program_options::value<int>())
-    ("sub1.y", program_options::value<int>())
-    ;
+    return unregistered;
+  }
 
-  program_options::variables_map vars;
-  auto unregistered = parse_file(f, opts, vars);
+  BOOST_AUTO_TEST_CASE(test_config_file_unregistered){
+    // The file
+    stringstream f;
+    f << "# comment aaa\n"
+      << "global_string = aaa\n"
+      << "unregistered_entry = bbb\n";
+    f.seekp(std::ios_base::beg);
 
-  BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
-  string expected_unreg_option = "unregistered_entry";
-  BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
-  BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
-  BOOST_CHECK_EQUAL(vars["sub1.x"].as<int>(),1);
+    // The option
+    program_options::options_description opts;
+    opts.add_options()
+      ("global_string", program_options::value<string>());
 
-  BOOST_CHECK_EQUAL(vars["sub1.y"].as<int>(),-1);
-}
+
+    program_options::variables_map vars;
+    auto unregistered = parse_file(f, opts, vars);
+
+    BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
+    string expected_unreg_option = "unregistered_entry";
+    BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
+    BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
+  }
+
+  BOOST_AUTO_TEST_CASE(test_config_file_subsection){
+    // The file
+    stringstream f;
+    f << "# comment aaa\n"
+      << "global_string = aaa\n"
+      << "unregistered_entry = bbb\n"
+      << "\n[sub1]\n"
+      << "x = 1\n"
+      << "y=-1\n"
+      ;
+    f.seekp(std::ios_base::beg);
+
+    // The option
+    program_options::options_description opts;
+    opts.add_options()
+      ("global_string", program_options::value<string>())
+      ("sub1.x", program_options::value<int>())
+      ("sub1.y", program_options::value<int>())
+      ;
+
+    program_options::variables_map vars;
+    auto unregistered = parse_file(f, opts, vars);
+
+    BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
+    string expected_unreg_option = "unregistered_entry";
+    BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
+    BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
+    BOOST_CHECK_EQUAL(vars["sub1.x"].as<int>(),1);
+
+    BOOST_CHECK_EQUAL(vars["sub1.y"].as<int>(),-1);
+  }
 
 #+end_src
 *** beast
@@ -234,6 +234,341 @@ add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App �
 
 
 #+end_src
+*** json (>1.75)
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+IF (WIN32)
+  # set stuff for windows
+  set(Boost_DIR "C:\\Users\\congj\\repo\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+  else()
+    set(Boost_DIR "/home/me/.local/boost_1_82_0/stage/lib/cmake/Boost-1.82.0")
+    message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+ENDIF()
+
+find_package(Boost 1.75...<1.82 CONFIG REQUIRED
+  unit_test_framework json)
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework
+  Boost::json
+  )
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --log_level=all COMMENT "Runing App 🐸 ")
+
+
+
+#+end_src
+**** cpp
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <iostream>
+  #include <sstream>
+  using std::stringstream;
+
+  using std::vector;
+  using std::string;
+  using std::cout;
+  using std::endl;
+
+  #include <boost/format.hpp>
+  using boost::format;
+
+  #include <boost/json.hpp>
+  namespace json = boost::json;
+
+  BOOST_AUTO_TEST_CASE(test_basic_parse) {
+    string s = "{\"x\" : true}";
+    json::error_code ec;
+    json::value jv = json::parse(s, ec );
+
+    BOOST_CHECK(not ec);
+    BOOST_CHECK(jv.is_object());
+    BOOST_CHECK(not jv.is_null());
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
+
+  BOOST_AUTO_TEST_CASE(test_serialize){
+    json::value jv = { 1, 2, 3 };
+    string s = json::serialize( jv );                // produces "[1,2,3]"
+    BOOST_CHECK_EQUAL(s,"[1,2,3]");
+  }
+
+  BOOST_AUTO_TEST_SUITE(test_user_defined_type);
+  namespace my_app {
+    struct A{
+      int x;
+      bool y;
+    };
+    // 🦜 : Defining this method allows us to use json::serialize(value_from(a))
+    void tag_invoke(json::value_from_tag, json::value& jv, A const& c ){
+      jv = {
+        {"x", c.x},
+        {"y", c.y}
+      };
+    }
+
+    using json::value_to;
+    // 🦜 : Defining this allows us to use json::value_to<A>
+    A tag_invoke( json::value_to_tag<A>, json::value const& jv )
+    {
+      json::object const& obj = jv.as_object();
+      return A{
+        value_to<int>(obj.at("x")),
+        value_to<bool>(obj.at("y"))
+      };
+    }
+
+  } // namespace my_app
+  BOOST_AUTO_TEST_CASE(test_value_from){
+    my_app::A a{ 123, true };
+    string s = json::serialize( json::value_from( a ) );
+    BOOST_CHECK_EQUAL(s,"{\"x\":123,\"y\":true}");
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_vector_value_from){
+    // 🦜 : serialize knows vector ⇒ array
+    vector<my_app::A> v{
+      {123,true},
+      {123,false},
+      {223,false}
+    };
+
+    string s = json::serialize( json::value_from(v) );
+    BOOST_CHECK_EQUAL(s,
+                      "["
+                      "{\"x\":123,\"y\":true},"
+                      "{\"x\":123,\"y\":false},"
+                      "{\"x\":223,\"y\":false}"
+                      "]"
+                      );
+  }
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj){
+    json::value v = {
+      {"x", 123}, {"y",true}
+    };
+
+    my_app::A a = json::value_to<my_app::A>(v);
+    BOOST_CHECK_EQUAL(a.x,123);
+  };
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj_arr){
+    json::value v = {
+      {{"x", 123}, {"y",true}},
+      {{"x", 123}, {"y",false}},
+      {{"x", 223}, {"y",true}},
+    };
+
+    BOOST_REQUIRE(v.is_array());
+    vector<my_app::A> a = json::value_to<vector<my_app::A>>(v);
+    BOOST_CHECK_EQUAL(a.size(),3);
+  };
+
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj_exception){
+    json::value v = {
+      {"x", 123}, {"error",true}
+    };
+    BOOST_CHECK_THROW(json::value_to<my_app::A>(v),
+                      std::exception
+                      );
+  };
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj_catch_exception){
+    json::value v = {
+      {"x", 123}, {"error",true}
+    };
+    BOOST_CHECK_THROW(json::value_to<my_app::A>(v),
+                      std::exception
+                      );
+    string s;
+    try{
+      my_app::A a = json::value_to<my_app::A>(v);
+    }catch (std::exception &e){
+      // BOOST_TEST_MESSAGE(e.what());
+      s = e.what();
+    }
+
+    BOOST_CHECK_EQUAL(s,"out of range");
+  };
+
+  BOOST_AUTO_TEST_SUITE_END();
+
+  BOOST_AUTO_TEST_SUITE(test_working_with_value);
+  BOOST_AUTO_TEST_CASE(test_object){
+    json::object o;                                                     // construct an empty object
+
+    o[ "a" ] = 3.141;                                            // insert a double
+    o[ "b" ] = true;                                          // insert a bool
+    o[ "c" ] = "aaa";                                        // insert a string
+    o[ "d" ] = nullptr;                                     // insert a null
+    o[ "e" ].emplace_object()["x"] = 42;            // insert an object with 1 element
+    o[ "f" ] = { 1, 0, 2 };                                    // insert an array with 3 elements
+    o[ "g" ] = { {"x", "X-value"}, {"y", 42.99} };    // insert an object with 2 elements
+
+    BOOST_CHECK_EQUAL(o.size(),7);
+    BOOST_CHECK(o["a"].is_number());
+    BOOST_CHECK(o["b"].is_bool());
+    BOOST_CHECK(o["c"].is_string());
+    BOOST_CHECK(o["d"].is_null());
+    BOOST_CHECK(o["e"].is_object());
+    BOOST_CHECK(o["f"].is_array());
+    BOOST_CHECK(o["g"].is_object());
+
+    // access the internal member
+    BOOST_CHECK(o["g"].as_object()["x"].is_string());
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_build_obj){
+    json::value jv = {
+      {"x", 1.1},
+      {"y", "aaa"},
+      {"z", {1,2,3}},
+      {"a", {
+          {"x", 1},
+          {"y", 2}
+        }
+      }
+    };
+
+    BOOST_REQUIRE(jv.is_object());
+    json::object o = jv.as_object();
+    BOOST_REQUIRE(o["x"].is_number());
+    BOOST_REQUIRE(o["z"].is_array());
+    BOOST_REQUIRE(o["a"].is_object());
+  }
+
+  BOOST_AUTO_TEST_CASE(test_emplace){
+    // 🦜 : Emplace means "change to ..."
+    json::value v;
+    v.emplace_string() = "aaa";
+    BOOST_REQUIRE(v.is_string());
+    v.emplace_int64() = 1;
+    BOOST_REQUIRE(v.is_int64());
+  }
+
+  // unchecked access
+  BOOST_AUTO_TEST_CASE(test_as){
+    json::value v(true);
+    // Note: this is different from v{true} ⇒ [true]
+
+    BOOST_REQUIRE(v.is_bool());
+    BOOST_CHECK_EQUAL(v.as_bool(),true);
+    v.as_bool() = false;
+    BOOST_CHECK_EQUAL(v.as_bool(),false);
+
+    // as_**() will not check
+    BOOST_CHECK_THROW(v.as_string(),std::exception);
+  }
+
+  // checked access
+  BOOST_AUTO_TEST_CASE(test_if){
+    json::value v(true);
+    json::value v1(json::string_kind);
+
+    // check value
+    if( json::string* str = v1.if_string() )
+      ,*str = "aaa";
+    BOOST_CHECK_EQUAL(v1.as_string(),"aaa");
+  }
+
+  BOOST_AUTO_TEST_CASE(test_array){
+    json::array a;
+    a.emplace_back("aaa");
+    a.emplace_back(123);
+    a.emplace_back(true);
+
+    BOOST_CHECK_EQUAL(a.size(),3);
+    BOOST_CHECK_EQUAL(a[0].as_string(),"aaa");
+
+    BOOST_CHECK_THROW(a.at(3) = nullptr ,std::exception);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_array2){
+    json::array a({"aaa", 123, true});
+
+    BOOST_CHECK_EQUAL(a.size(),3);
+    BOOST_CHECK_EQUAL(a[0].as_string(),"aaa");
+    BOOST_CHECK_THROW(a.at(3) = nullptr ,std::exception);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_object_creation){
+    json::object o( {{"k1", "v1" }, { "k2", 123 }, { "k3", false }} );
+    BOOST_CHECK_EQUAL(o.size(),3);
+    }
+
+  BOOST_AUTO_TEST_CASE(test_object_creation2){
+    json::object o;
+    o.emplace("k1","v1");
+    o.emplace("k2",123);
+    o.emplace("k3",false);
+    BOOST_CHECK_EQUAL(o.size(),3);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_object_creation3){
+    json::object o;
+    o["k1"] = "v1";
+    o["k2"] = 123;
+    BOOST_CHECK_EQUAL(o.size(),2);
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_object_at){
+    json::object o;
+    o["k1"] = "v1";
+
+    BOOST_CHECK_THROW(o.at("k2"),std::out_of_range);
+    o.at("k1") = "v11";           // ok
+    BOOST_CHECK_EQUAL(o["k1"].as_string(),"v11");
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_object_iter){
+    json::object o;
+    o["k1"] = "v1";
+    o["k2"] = 123 ;
+
+    // for (json::key_value_pair* i = o.begin(); i != o.end(); i++){
+    //   BOOST_TEST_MESSAGE(format("k: %s, v: %s")
+    //                      % i->key() % i->value()
+    //                      );
+    //   // boost::json defined operator<< for these types
+    // }
+
+    vector<string> v={"k2","k1"};
+    for (const json::key_value_pair & kv : o){
+      BOOST_TEST_MESSAGE(format("k: %s, v: %s")
+                         % kv.key() % kv.value()
+                         );
+      // boost::json defined operator<< for these types
+      BOOST_CHECK_EQUAL(v.back(),kv.key());
+      v.pop_back();
+    }
+
+
+  }
+
+  BOOST_AUTO_TEST_SUITE_END();
+#+end_src
+*** Q/A
+**** cannot find link library?
+By default, the linker ld dosen't known the non-standard locations of shared
+libraries.
+
+Solution: before ~find_package~ set
+
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"
