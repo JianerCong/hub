@@ -109,7 +109,6 @@ s1 <prompt s2> s3 _ s4
   "\\end{document}")
 
 
-
 (defun quoted-parentheses (arg)
   (interactive "P")
   ;; if the text before point is \
@@ -124,6 +123,7 @@ s1 <prompt s2> s3 _ s4
 (define-key LaTeX-mode-map (kbd "\C-c f") 'tex-boiler-plate)
 (define-key LaTeX-mode-map (kbd "\C-c t") 'tex-tikz-boiler-plate)
 (define-key LaTeX-mode-map (kbd "\C-c e") 'tex-exam-boiler-plate)
+
 
 ;; LaTeX-mode uses latex-mode-abbrev-table
 (when (boundp 'latex-mode-abbrev-table)

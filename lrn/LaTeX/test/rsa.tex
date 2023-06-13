@@ -1,0 +1,164 @@
+\documentclass[dvipsnames]{article}
+
+\title{RSA}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+\usepackage[skip=10pt plus1pt, indent=0pt]{parskip}
+% Color
+\newcommand{\mycola}{MidnightBlue}
+\newcommand{\mycolb}{Mahogany}
+\newcommand{\mycolc}{OliveGreen}
+
+\newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
+\newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
+\newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
+\renewcommand{\emph}[1]{\texbf{#1}}
+
+\usepackage{fontspec}
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+\usepackage{minted}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usepackage{tikz}
+\usetikzlibrary{shapes} % ellipse node shape
+\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\usetikzlibrary{arrows.meta}    %-o arrow head
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+
+
+% Redefine em
+% latex.sty just do: \DeclareTextFontCommand{\emph}{\em}
+
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+\usepackage{amsmath}
+
+% ??? still xelatex?
+% \usepackage{xeCJK}
+\usepackage{emoji}
+
+\date{\today}
+\author{me}
+
+\newtcblisting{simplec}{
+  listing engine=minted,
+  minted language=c++,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter, 
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20
+}
+
+\begin{document}
+\maketitle
+
+\section{What is asymmetric encryption?}
+
+The first step in knowing how to encrypt a message is understanding \Cola{
+  asymmetric encryption} (also called \Cola{public key encryption} ).
+
+\emoji{turtle}  : You probably know that all the emails you send are ``in the clear'' for anyone
+sitting in between you and your recipients's email provider to read. That's not
+great. How do you fix this? You could use a cryptographic primitive like
+AES-GCM. To do that, you would need to set up a shared symmetric secret for each
+person that wants to message you.\\
+\emoji{parrot}  :But you don't known in advance who'll want to message you.\\
+\emoji{turtle}  :This is where \Cola{ asymmetric encryption} helps by allowing anyone in
+possesion of your public key to encrypt messages to you.\\
+Furthurmore, you are the only one who can decrypt these messages using the
+associated private key that only you own.
+
+\tikzstyle{myMatrix}=[matrix of nodes,below right,
+nodes={right},                  %apply to all nodes
+row sep=1cm,column sep=2cm]
+\tikzstyle{every node}=[inner sep=0pt]
+\begin{center}
+  \begin{tikzpicture}
+    \matrix (M1) [myMatrix]{
+      \emoji{crocodile} \\
+      \emoji{lizard} & \emoji{t-rex}\\
+      \emoji{snake} \\
+    };
+    \foreach \i in {1,2,3}{
+      \draw[-latex] (M1-\i-1) -- (M1-2-2);
+    }
+
+    % The left speaking box
+    \node[left,text width=5cm] at ([xshift=-0.5cm]M1-3-1.west) {
+      \begin{tcolorbox}[tile,
+        nobeforeafter,
+        boxsep=0pt,
+        % show bounding box,
+        colback=gray!10,
+        overlay={
+          \begin{scope}
+            % \fill[gray!10] (frame.east) circle (2pt);
+            \fill[gray!10] (frame.east) --
+            +(0,2mm) --
+            +(3mm,0) --
+            +(0,-2mm)
+            ;
+          \end{scope}
+        }
+        ]
+        I can't decrypt other's messages.
+      \end{tcolorbox}
+    };
+
+    \node[right,text width=5cm] at ([xshift=0.5cm]M1-2-2.east) {
+      \begin{tcolorbox}[tile,
+        nobeforeafter,
+        boxsep=0pt,
+        % show bounding box,
+        colback=gray!10,
+        overlay={
+          \begin{scope}
+            % \fill[gray!10] (frame.east) circle (2pt);
+            \fill[gray!10] (frame.west) --
+            +(0,2mm) --
+            +(-3mm,0) --
+            +(0,-2mm)
+            ;
+          \end{scope}
+        }
+        ]
+        I will decrypt them all.
+      \end{tcolorbox}
+     };
+  \end{tikzpicture}
+\end{center}
+
+\end{document}
+
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% End:

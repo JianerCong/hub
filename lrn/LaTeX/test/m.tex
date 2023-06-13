@@ -3,7 +3,7 @@
 
 \documentclass[dvipsnames]{article}
 
-\title{test}
+\title{Boost log}
 \usepackage{geometry}\geometry{
   a4paper,
   total={170mm,257mm},
@@ -22,10 +22,9 @@
 \newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
 \newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
 
-% \let\emph\relax % there's no \RedeclareTextFontCommand
-% \DeclareTextFontCommand{\emph}{\bfseries}
-\renewcommand{\emph}[1]{\texbf{#1}}
-
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries}
+% \renewcommand{\emph}[1]{\texbf{#1}}
 
 \usepackage{fontspec}
 \setmonofont{Cascadia}[
@@ -108,7 +107,7 @@ Use the following to \Cola{initialize a logging sink} that stores log records in
     logging::core::get()->set_filter(
     logging::trivial::severity >= logging::trivial::info
     );
-}
+  }
 \end{simplec}
 
 \section{More sinks}
@@ -127,11 +126,217 @@ You can register sink manually. Previously we created a file sink which is almos
 
     // Register the sink in the logging core
     logging::core::get()->add_sink(sink);
-}
+  }
 \end{simplec}
 
-Okay, the 
+\begin{tcolorbox}
+  \emoji{parrot} : It looks like a sink has two classes: a \Cola{frontend} and a \Cola{ backend}.\\
+  \emoji{turtle} : Yeah
+\end{tcolorbox}
+The frontend, (\texttt{synchronous\_sink}) is responsible for various common tasks for \emph{all sinks} such as
+\begin{itemize}
+\item thread synchronization model
+\item filtering               %M-Ret to change
+\item formatting (for text-based sinks)
+\end{itemize}
+\begin{tcolorbox}
+  \emoji{parrot} : What there are ``non-text-based'' sinks?\\
+  \emoji{turtle} : Probably, but let's not dive in.
+\end{tcolorbox}
 
+The backend \verb|text_ostream_backend| implements everything specific to the
+sink, such as ``writting to a file''. The library provides a number of
+frontends and backends out of the box.
+
+The \verb|synchronous_sink| class template above means that the \emph{sink} is
+synchronous, that is, it allows for several threads to log simultaneously and
+will block in case of contention.
+
+This means that the backend \verb|text_ostream_backend| dosen't have to worry
+about multithreading at all.
+
+The \verb|text_ostream_backend| weites formatted log records into
+STL-compatible streams. We have used a \emph{file stream} above, but we could
+have used any type of stream. For example, adding output to console could look
+like as follows:
+
+\begin{simplec}
+  #include <boost/core/null_deleter.hpp>
+
+  // We have to provide an empty deleter to avoid destroying the global stream object
+  boost::shared_ptr< std::ostream > stream(&std::clog, boost::null_deleter());
+  sink->locked_backend()->add_stream(stream);
+\end{simplec}
+
+The \verb|text_ostream_backend| supports adding several streams. In that case
+its output will be duplicated to all added streams.
+
+\begin{tcolorbox}
+  \emoji{parrot} : So if we add a file stream and a console stream to a single
+  backend, we got them both logged to?\\
+  \emoji{turtle} : Yeah, and that is a use case suggested by the official,
+  because all the formatting and filtering only happen once per record.\\
+
+  \emoji{parrot} : Fine, but I realize that duplicating the same content is not
+  that useful.\\
+  \emoji{turtle} : That's when you need multiple sinks.
+\end{tcolorbox}
+
+\section{Creating loggers and writting logs}
+
+\subsection{Dedicated logger objects}
+Now that we have defined where and how the log is to be stored, it's time to see
+how we emit log records. In order to be able to make log records one has to
+create a \Cola{logging source} first. This would be a logger object:
+
+\begin{simplec}
+  src::logger lg;
+\end{simplec}
+
+\begin{tcolorbox}
+  \emoji{parrot} : What's the logger for trivial logging?\\
+  \emoji{turtle} : The library provide one and is used behind the scene. 
+\end{tcolorbox}
+
+Unlike sinks, sources need \emph{not be} registered anywhere since they interact
+directly with the \emph{logging core}.
+
+Also note that there are two versions of loggers:
+\begin{itemize}
+\item thread-safe ones
+\item non-thread-safe ones.
+\end{itemize}
+
+For non-thread-safe ones, it is safe for different threads to write
+logs through different \Cola{instances} of loggers and thus there should be a
+seperate logger for each thread that writes logs.
+
+Thread-safe ones have \texttt{\_mt} suffix, and can potentially be very slow.
+
+All loggers are \emph{default} , \emph{copy-constructible} and support
+\emph{swapping}, so safe to be put into a class. (\emoji{turtle} : Actually it's
+recommended to do so.)
+
+The library provides a number of loggers with different features, such as
+\begin{itemize}
+\item severity
+\item channel support
+\end{itemize}
+
+\subsection{Gobal logger objects}
+
+In case you cannot put a logger into your class, the library provides a way of
+declaring global loggers:
+\begin{simplec}
+  BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
+\end{simplec}
+Here \verb|my_logger| is a \Cola{user-defined tag name }
+that will be used later to
+retrieve the logger instance and \verb|logger_mt| is the logger type. Any logger
+type
+\begin{itemize}
+\item provided by the library, or
+\item defined by the user
+\end{itemize}
+can participate in such declaration.
+\begin{tcolorbox}
+  \emoji{turtle} : Use thread-safe logger as the global one (if you need a
+  global logger).
+\end{tcolorbox}
+Later on you can acquire the logger like:
+\begin{simplec}
+  src::logger_mt& lg = my_logger::get();
+\end{simplec}
+Then, \texttt{lg} will refer to the one and only one instance of the logger
+throughout the application, even if the application consists of multiple
+modules. The \texttt{get} function itself is thread-safe, so there is no need in
+additional synchronization around it.
+
+\subsection{Writing logs}
+
+Write a record to a logger \texttt{lg}:
+\begin{simplec}
+  logging::record rec = lg.open_record(); // check if consumed by at least one sink [filtering applies here]
+  if (rec){
+    logging::record_ostream strm(rec);
+    strm << "Hello, World!";
+    strm.flush();
+    lg.push_record(boost::move(rec));
+  }
+\end{simplec}
+
+Of course, users are recommended to write their own macros instead of using the
+C++ logger interface directly like:
+\begin{simplec}
+  BOOST_LOG(lg) << "Hello, World!"; //macro defined by library
+\end{simplec}
+
+\section{Add more information to \texttt{log::Attributes}}
+
+Each log record can have a number of \Cola{named attribute values} attached.
+Attributes can represent any essential information about the conditions in which
+log record occurred, such as
+\begin{itemize}
+\item position in code
+\item executable module name
+\item current date and time
+\item custom data
+\end{itemize}
+
+An attribute may behave as a \textbf{value generator}, in which case it would return a
+different value for each \textbf{log record} it's involved in. As soon as the
+attribute generates the value, the latter becomes independent from the creator
+and can be used by
+\begin{itemize}
+\item filters
+\item formatters
+\item sinks
+\end{itemize}
+
+But in order to use the attribute value one has to know its name and type, or at
+least a set of types it may have. There're a number of commonly used attributes
+implemented in the library.
+
+Aside from that, there're three \Cola{possible scopes} of attributes:
+\begin{itemize}
+\item source-specific
+\item thread-specific
+\item global
+\end{itemize}
+When a log record is made, attribute values from these three sets are joined
+into a \textbf{single} set and passed to \textbf{sinks}.\\
+\emoji{turtle} : So the origin of attributes makes no difference for sinks.
+
+\textbf{Any} attribute can be registered in \textbf{any} scope. When registered,
+an attribute is given a \textbf{unique name} in order to make it possible to
+search for it (Lower scope overwrites higer scope). Such behavior makes it
+possible to override global or thread-specific attributes with the ones
+registered in your local logger.
+
+\subsection{Commonly used attributes}
+
+There're attributes that are likely to be used in nearly any application. \textbf{Log
+  record counter} and a \textbf{time stamp} for example. They can be added by:
+\begin{simplec}
+  logging::add_common_attributes();
+  // add : LineID (record count),TimeStamp,ProcessID,ThreadID
+\end{simplec}
+
+\begin{tcolorbox}
+  \emoji{turtle} : By default, when app starts, no attributes are registered.
+  The app has to do it before writing any logs.\\
+  \emoji{parrot} : Well then, how trivial-logging works?\\
+  \emoji{turtle} : The answer is that \Cola{the default sink} dosen't really use
+  any attribute values, except for the severity level, to compose its output.
+  This is done to avoid need for any initialization for trivial-logging. Once
+  you use \textbf{filters} or \textbf{formatters} and \textbf{non-default sinks}
+  you will have to register the attributes you need.
+\end{tcolorbox}
+
+The \verb|add_common_attributes| function is one of the several convenience
+helpers.
+
+Some attributes are registered automatically on logger construction.
 \end{document}
 
 
