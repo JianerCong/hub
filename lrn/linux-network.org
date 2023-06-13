@@ -10,6 +10,11 @@
   # -p: show processes using socket, 
   # -n: numeric Do not try to resolve service names. Show exact bandwidth values.
 #+end_src
+**** see all connections
+#+begin_src bash
+  sudo netstat -tupn              # to outside world
+  netstat                        # see all 
+#+end_src
 **** the ip-address
   #+BEGIN_SRC bash
   ip address show

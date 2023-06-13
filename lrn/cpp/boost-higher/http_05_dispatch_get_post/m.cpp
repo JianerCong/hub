@@ -67,6 +67,7 @@ int main(int argc, char* argv[]){
     acceptor.open(endpoint.protocol());
 
     acceptor.bind(endpoint);    // this throws exception if failed to bind port
+
     acceptor.listen();
     BOOST_LOG_TRIVIAL(debug) << format("🐸 acceptor start listening on port %d")
       % port;

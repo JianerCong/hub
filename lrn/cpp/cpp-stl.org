@@ -1053,10 +1053,10 @@ int main ()
      using boost::format;
      #include <string>
 
-     #include <unordered_map>
      #include <string>
      using std::string;
 
+     #include <unordered_map>
      using std::unordered_map;
 
      BOOST_AUTO_TEST_CASE(basic_iter){

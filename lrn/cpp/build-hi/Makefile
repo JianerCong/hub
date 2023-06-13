@@ -65,16 +65,6 @@ CMAKE_BINARY_DIR = /home/me/Templates/lrn/cpp/build-hi
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target test
-test:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
-	/usr/local/bin/ctest --force-new-ctest-process $(ARGS)
-.PHONY : test
-
-# Special rule for the target test
-test/fast: test
-.PHONY : test/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
@@ -127,37 +117,24 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named main
+# Target rules for targets named myexe
 
 # Build rule for target.
-main: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 main
-.PHONY : main
+myexe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 myexe
+.PHONY : myexe
 
 # fast build rule for target.
-main/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
-.PHONY : main/fast
-
-#=============================================================================
-# Target rules for targets named run
-
-# Build rule for target.
-run: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 run
-.PHONY : run
-
-# fast build rule for target.
-run/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
-.PHONY : run/fast
+myexe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/build
+.PHONY : myexe/fast
 
 m.o: m.cpp.o
 .PHONY : m.o
 
 # target to build an object file
 m.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/m.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.o
 .PHONY : m.cpp.o
 
 m.i: m.cpp.i
@@ -165,7 +142,7 @@ m.i: m.cpp.i
 
 # target to preprocess a source file
 m.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/m.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.i
 .PHONY : m.cpp.i
 
 m.s: m.cpp.s
@@ -173,7 +150,7 @@ m.s: m.cpp.s
 
 # target to generate assembly for a file
 m.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/m.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.s
 .PHONY : m.cpp.s
 
 # Help Target
@@ -184,9 +161,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... test"
-	@echo "... run"
-	@echo "... main"
+	@echo "... myexe"
 	@echo "... m.o"
 	@echo "... m.i"
 	@echo "... m.s"

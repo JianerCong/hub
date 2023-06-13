@@ -25,12 +25,6 @@ using std::string;
 using std::tuple;
 using std::make_tuple;
 
-
-#include <unordered_map>
-using std::unordered_map;
-#include <functional>
-using std::function;
-
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace asio = boost::asio;            // from <boost/asio.hpp>
@@ -67,9 +61,10 @@ int main(int argc, char* argv[]){
     acceptor.open(endpoint.protocol());
 
     acceptor.bind(endpoint);    // this throws exception if failed to bind port
+
     acceptor.listen();
     BOOST_LOG_TRIVIAL(debug) << format("🐸 acceptor start listening on port %d")
-      % port;
+       % port;
 
     // The service run in one thread
     BOOST_LOG_TRIVIAL(debug) << format("Starting service thread");
@@ -173,9 +168,9 @@ void fail(beast::error_code ec, char const* what){
 
 
 tuple<bool,string> getGetResponseBody(string  target /*e.g. "/"*/ ,
-                                      string clientAddress,uint16_t clientPort);
+                       string clientAddress,uint16_t clientPort);
 tuple<bool,string> getPostResponseBody(string  target /*e.g. "/"*/ ,
-                                       string clientAddress,uint16_t clientPort, string body);
+                           string clientAddress,uint16_t clientPort, string body);
 /**
  * @brief Here we actually dispatch the appropriate functions and handle the
  * request. We have entered the boost.beast world from the boost.asio world.
@@ -200,7 +195,7 @@ handle_request(request<http::string_body>&& req, string a, uint16_t p){
 
   // Returns a server error response
   auto const server_error =
-    [&req](beast::string_view what){
+  [&req](beast::string_view what){
       response<http::string_body> res{http::status::internal_server_error, req.version()};
       res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
       res.set(http::field::content_type, "text/html");
@@ -208,7 +203,7 @@ handle_request(request<http::string_body>&& req, string a, uint16_t p){
       res.body() = "An error occurred: '" + std::string(what) + "'";
       res.prepare_payload();
       return res;
-    };
+  };
 
   // 1.log --------------------------------------------------
   BOOST_LOG_TRIVIAL(debug) << format("Start handling");
@@ -242,8 +237,7 @@ handle_request(request<http::string_body>&& req, string a, uint16_t p){
     return server_error(body);
 
   // Got valid body
-  BOOST_LOG_TRIVIAL(debug) << format("Returning body %s") % body;
-  res.body() = body;
+  req.body() = body;
 
   res.version(11);   // HTTP/1.1
   res.set(http::field::server, "Beast");
@@ -258,76 +252,18 @@ handle_request(request<http::string_body>&& req, string a, uint16_t p){
 
 
 tuple<bool,string> getGetResponseBody(string  target /*e.g. "/"*/ ,
-                                      string clientAddr,uint16_t clientPort){
-
-  // <! the function dispatch map, each entry accepts (string address, uint16_t
-  // port). the key is the target such as "\hi", "\"
-  unordered_map<string,
-                function<tuple<bool,string>
-                         (string, uint16_t)
-                         >
-                > getLisnMap{
-    {"/aaa", [](string,uint16_t){return make_tuple(true,"\"aaa too\"");}},
-      {"/bbb", [](string a,uint16_t p){return make_tuple(true,
-    (format("\"bbb too %s:%d\"") % a % p).str()
-    );}}
-};
-
+                          string clientAddress,uint16_t clientPort){
   BOOST_LOG_TRIVIAL(debug) << format(" ❄ Handling GET\n\t"
-    "target: %s \t client: %s:%d"
-    ) % target % clientAddr % clientPort;
-
-  if (getLisnMap.contains(target))
-    return getLisnMap[target](clientAddr,clientPort);
-
-  string s = (format(  "{\"x\" : \"target %s is not known to GET-server\"}")
-    % target).str();
-
-  BOOST_LOG_TRIVIAL(debug) << format("Unregistered method");
+                                     "target: %s \t client: %s:%d"
+                                     ) % target % clientAddress % clientPort;
+  string s =  "{\"x\" : \"aaa from GET-server\"}";
   return make_tuple(true,s);
 }
-
 tuple<bool,string> getPostResponseBody(string  target /*e.g. "/"*/ ,
-                                       string clientAddr,uint16_t clientPort, string body){
-
-  // <! the function dispatch map, each entry accepts (string address, uint16_t
-  // port, string body). the key is the target such as "\hi", "\"
-  unordered_map<string,
-                function<tuple<bool,string>
-                         (string, uint16_t, string)
-                         >
-                > postLisnMap{
-    {"/aaa", [](string ,uint16_t,string){return make_tuple(true,"\"aaa from POST too\"");}},
-      {"/bbb", [](string a,uint16_t p, string d){return make_tuple(true,
-    (format("\"bbb too %s:%d, recieved data: %s\"") % a % p % d).str()
-    );}}
-};
-
+                           string clientAddress,uint16_t clientPort, string body){
   BOOST_LOG_TRIVIAL(debug) << format(" ❄ Handling POST\n\t"
-    "target: %s \t client: %s:%d\n\tbody:>>>%s<<<"
-    ) % target % clientAddr % clientPort % body;
-
-  if (postLisnMap.contains(target))
-    return postLisnMap[target](clientAddr,clientPort,body);
-
-  string s = (format(  "{\"x\" : \"target %s is not known to POST-server\"}")
-    % target).str();
-
-  BOOST_LOG_TRIVIAL(debug) << format("Unregistered method");
+                                     "target: %s \t client: %s:%d\n\tbody:>>>%s<<<"
+                                     ) % target % clientAddress % clientPort % body;
+  string s =  "{\"x\" : \"aaa from POST-server\"}";
   return make_tuple(true,s);
 }
-
-
-/*
-  Example
-
-  curl http://localhost:7777/aaa
-  ⇒ "aaa too" 
-  curl http://localhost:7777/bbb
-  ⇒ "bbb too 127.0.0.1:35656" 
-  curl http://localhost:7777/aaa -d "123"
-  ⇒ "aaa from POST too" 
-  curl http://localhost:7777/bbb -d "123"
-  ⇒ "bbb too 127.0.0.1:45732, recieved data: 123" 
-
-*/
