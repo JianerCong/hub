@@ -1119,6 +1119,7 @@ BOOST_AUTO_TEST_SUITE_END()
 #+end_src
 
 *** log
+
 + Backend :: decide where the data is written.
   ~boost::log::sinks::text_ostream_backend~ is initialized with a stream of type
   ~std::ostream~ and writes log entries to it.
@@ -1218,8 +1219,6 @@ int main(){
 }
 
 #+end_src
-**** set up sinks
-You can add sinks to core at the beginning.
 **** sinks that rotate the file
 #+begin_src c++
   void init()

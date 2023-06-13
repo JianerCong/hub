@@ -1,4 +1,8 @@
-\documentclass{ctexart}
+% \documentclass{ctexart}
+
+
+\documentclass[dvipsnames]{article}
+
 \title{test}
 \usepackage{geometry}\geometry{
   a4paper,
@@ -7,6 +11,7 @@
   top=20mm,
 }
 
+\usepackage[skip=10pt plus1pt, indent=0pt]{parskip}
 % Color
 \newcommand{\mycola}{MidnightBlue}
 \newcommand{\mycolb}{Mahogany}
@@ -15,9 +20,13 @@
 \newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
 \newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
 \newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
-\newcommand{\Cola}[1]{\textcolor{\mycola}{\emph{#1}}}
-\let\emph\relax % there's no \RedeclareTextFontCommand
-\DeclareTextFontCommand{\emph}{\bfseries\em}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
+\renewcommand{\emph}[1]{\texbf{#1}}
+
+
 \usepackage{fontspec}
 \setmonofont{Cascadia}[
 Path=/usr/share/fonts/truetype/Cascadia_Code/,
@@ -53,6 +62,24 @@ BoldItalicFont=*CodePLItalic
 
 \date{\today}
 \author{me}
+
+\newtcblisting{simplec}{
+  listing engine=minted,
+  minted language=c++,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter, 
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20
+}
+
 \begin{document}
 \maketitle
 
@@ -61,7 +88,50 @@ BoldItalicFont=*CodePLItalic
 % sudo apt -y install fonts-symbola
 
 % The luatex emoji
-\emoji{leaves}
+Usually you need to initialize a \Cola{sink} in order to use \texttt{boost.log}.
+
+\begin{tcolorbox}
+  \emoji{parrot}  : But we still used trivial log all the time no? \\
+  \emoji{turtle} : Yeah, that's because the library contains a `default` sink.
+  (like the defualt constructor in C++).
+  Once you defined a sink yourself, the default one is gone. Although you will
+  still be able to use trivial logging macro.
+\end{tcolorbox}
+
+\section{File logging}
+
+Use the following to \Cola{initialize a logging sink} that stores log records into a text log.
+\begin{simplec}
+  void init(){
+    logging::add_file_log("sample.log");
+
+    logging::core::get()->set_filter(
+    logging::trivial::severity >= logging::trivial::info
+    );
+}
+\end{simplec}
+
+\section{More sinks}
+
+You can register sink manually. Previously we created a file sink which is almost like
+\begin{simplec}
+  void init()
+  {
+    // Construct the sink
+    typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
+    boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+    // Add a stream to write log to
+    sink->locked_backend()->add_stream(
+    boost::make_shared< std::ofstream >("sample.log"));
+
+    // Register the sink in the logging core
+    logging::core::get()->add_sink(sink);
+}
+\end{simplec}
+
+Okay, the 
+
 \end{document}
 
 
