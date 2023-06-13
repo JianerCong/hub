@@ -37,9 +37,9 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 using std::cout;
 using http::request;
 using http::response;
+
 class WeakHttpServer {
-private:
-  boost::asio::io_service ioc;
+public:
   // {{{ private (implementation)
 
   tuple<bool,string> getGetResponseBody(string  target /*e.g. "/"*/ ,
@@ -164,8 +164,7 @@ private:
     return res;
   }
 
-  void do_session(tcp::socket&& socket){
-
+  void do_session(tcp::socket & socket){
 
     // log the endpoint info
     boost::asio::ip::tcp::endpoint e1 = socket.remote_endpoint();
@@ -232,14 +231,15 @@ public:
   postMap_t postLisnMap;
   getMap_t getLisnMap;
   // The acceptor receives incoming connections
+  boost::asio::io_service ioc;
   tcp::acceptor acceptor{ioc};
-  boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), portToListen);
 
   WeakHttpServer(uint16_t portToListen = 7777,
     postMap_t pMap = {}, getMap_t gMap = {}):
     postLisnMap(pMap), getLisnMap(gMap){
 
 
+    boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), portToListen);
     acceptor.open(endpoint.protocol());
     acceptor.bind(endpoint);    // this throws exception if failed to bind port
     acceptor.listen();
@@ -262,12 +262,13 @@ public:
         BOOST_LOG_TRIVIAL(debug) << format("Accepted");
 
         // Launch the session, transferring ownership of the socket
-        std::thread{[&](){do_session(std::move(socket));}}.detach();
+        // 🦜 : You have to do it this way
+        std::thread{std::bind(&WeakHttpServer::do_session, this, std::move(socket))}.detach();
       }
     }}.detach();
   }
   ~WeakHttpServer(){
-    BOOST_LOG_TRIVIAL(debug) << format("Server closed");
+    BOOST_LOG_TRIVIAL(debug) << format("🐸 Server closed");
     ioc.stop();
   }
 };
