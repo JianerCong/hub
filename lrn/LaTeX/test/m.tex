@@ -336,9 +336,123 @@ There're attributes that are likely to be used in nearly any application. \textb
 The \verb|add_common_attributes| function is one of the several convenience
 helpers.
 
-Some attributes are registered automatically on logger construction.
-\end{document}
+Some attributes are registered automatically on logger construction. For
+example, \verb|severity_logger| register a source-specific attribute
+``Severity'' which can be used to add a level of emphasis for different log
+records:
+\begin{simplec}
+  // We define our own severity levels
+  enum severity_level {normal, notification, warning, error, critical};
 
+  void logging_function(){
+    // The logger implicitly adds a source-specific attribute 'Severity'
+    // of type 'severity_level' on construction
+    src::severity_logger< severity_level > slg;
+
+    BOOST_LOG_SEV(slg, normal) << "A regular message";
+    BOOST_LOG_SEV(slg, warning) << "Something bad is going on but I can handle it";
+    BOOST_LOG_SEV(slg, critical) << "Everything crumbles, shoot me now!";
+  }
+\end{simplec}
+The \verb|BOOST_LOG_SEV| macro acts as if the following:
+\begin{simplec}
+  void manual_logging(){
+    src::severity_logger< severity_level > slg;
+
+    logging::record rec = slg.open_record(keywords::severity = normal);
+    //                        ***********Provide named arguments
+    if (rec){
+      logging::record_ostream strm(rec);
+      strm << "A regular message";
+      strm.flush();
+      slg.push_record(boost::move(rec));
+    }
+  }
+\end{simplec}
+
+\subsection{More attributes}
+
+\verb|add_common_attributes| works somehow like
+\begin{simplec}
+  void add_common_attributes(){
+    boost::shared_ptr< logging::core > core = logging::core::get();
+    core->add_global_attribute("LineID", attrs::counter< unsigned int >(1));
+    //                                   ************** attribute classes
+    core->add_global_attribute("TimeStamp", attrs::local_clock());
+    //                                      **** derive from attribute
+
+    // other attributes skipped for brevity
+  }
+\end{simplec}
+The library provides a number of other \Cola{attribute classes}, including the
+\texttt{function} attribute that calls some function object on value
+acquisition. For example, we can register a \texttt{name\_scope} attribute:
+\begin{simplec}
+  core->add_global_attribute("Scope", attrs::named_scope());
+\end{simplec}
+This will give us the ability to \textbf{store scope names in log} for every log
+record:
+\begin{simplec}
+  void named_scope_logging(){
+    BOOST_LOG_NAMED_SCOPE("named_scope_logging");
+    src::severity_logger< severity_level > slg;
+    BOOST_LOG_SEV(slg, normal) << "Hello from the function
+    named_scope_logging!";
+  }
+\end{simplec}
+\begin{tcolorbox}
+  \emoji{parrot} : What does \verb|BOOST_LOG_NAMED_SCOPE| mean ?\\
+  \emoji{turtle} : ...I don't find it on the manual either...
+\end{tcolorbox}
+
+Logger-specific attributes (source-level) are also useful. \textbf{Severity
+  levels} and \textbf{channel} names are the most obvious candidates to be
+implemented on this level.
+
+\begin{tcolorbox}
+  \emoji{parrot} : So after all, how do I add my own attributes any way?\\
+  \emoji{turtle} : Here:
+\end{tcolorbox}
+\begin{simplec}
+  void tagged_logging(){
+    src::severity_logger< severity_level > slg;
+    slg.add_attribute("Tag", attrs::constant< std::string >("My tag value"));
+
+    BOOST_LOG_SEV(slg, normal) << "Here goes the tagged record";
+  }
+\end{simplec}
+\emoji{turtle} : And now log records made through \textbf{this logger} will be
+tagged with \texttt{"Tag"}. This attribute value may be used later in filtering
+and formatting.
+
+Another use of attributes is the ability to mark log records made by different
+application in order to hight \emph{activity related to a single process}. One
+can even implement a rough profiling tool to detect performance bottlenecks. For
+example:
+
+\begin{simplec}
+  void timed_logging(){
+    BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+    src::severity_logger< severity_level > slg;
+    BOOST_LOG_SEV(slg, normal) << "Starting to time nested functions";
+    logging_function();
+    BOOST_LOG_SEV(slg, normal) << "Stopping to time nested functions";
+  }
+\end{simplec}
+Now every log record made from the \verb|logging_function()|, will contain the
+\texttt{"Timeline"} attribute with a \textbf{time duration passed since the
+  attribute was registered.}.
+\begin{tcolorbox}
+  \emoji{parrot} : This is pretty useful. At least I understand this. But how do
+  I get (print these attributes?)\\
+  \emoji{turtle} : Patience, Later..
+\end{tcolorbox}
+
+Based on these readings, one will be able to detect which parts of the code
+require more or less time to execute. The \texttt{"Timeline"} attribute will be
+unregistered upon leaving the scope of function \verb|timed_logging|.
+
+\end{document}
 
 % Local Variables:
 % TeX-engine: luatex
