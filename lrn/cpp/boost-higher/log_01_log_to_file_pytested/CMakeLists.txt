@@ -30,5 +30,5 @@ target_link_libraries(myexe PUBLIC Boost::log)
 file(COPY test_one.py DESTINATION .)
 
 # make sure we have virtual env enabled $ pyenv
-add_custom_target(run ALL v COMMENT "Runing pytest 🐸")
+add_custom_target(run ALL pytest -v COMMENT "Runing pytest 🐸")
 # add_custom_target(run ALL myexe COMMENT "Runing 🐸")

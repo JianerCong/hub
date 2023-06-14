@@ -4,6 +4,8 @@
 \documentclass[dvipsnames]{article}
 
 \title{Boost log}
+
+
 \usepackage{geometry}\geometry{
   a4paper,
   total={170mm,257mm},
@@ -22,8 +24,8 @@
 \newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
 \newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
 
-\let\emph\relax % there's no \RedeclareTextFontCommand
-\DeclareTextFontCommand{\emph}{\bfseries}
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
 % \renewcommand{\emph}[1]{\texbf{#1}}
 
 \usepackage{fontspec}
@@ -54,7 +56,7 @@ BoldItalicFont=*CodePLItalic
 \let\emph\relax % there's no \RedeclareTextFontCommand
 \DeclareTextFontCommand{\emph}{\bfseries\em}
 \usepackage{amsmath}
-
+\usepackage{cleveref}           %must be loaded after amsmath
 % ??? still xelatex?
 % \usepackage{xeCJK}
 \usepackage{emoji}
@@ -444,13 +446,136 @@ Now every log record made from the \verb|logging_function()|, will contain the
   attribute was registered.}.
 \begin{tcolorbox}
   \emoji{parrot} : This is pretty useful. At least I understand this. But how do
-  I get (print these attributes?)\\
+  I get (print) these attributes?\\
   \emoji{turtle} : Patience, Later..
 \end{tcolorbox}
 
 Based on these readings, one will be able to detect which parts of the code
 require more or less time to execute. The \texttt{"Timeline"} attribute will be
 unregistered upon leaving the scope of function \verb|timed_logging|.
+
+\subsection{Defining attribute placeholders}
+\label{sec:def_attr_placeholders}
+
+
+It is useful to define a \textbf{keyword describing a particular attribute} the
+app uses. This keyword will be able to participate in
+\begin{itemize}
+\item filtering, and
+\item formatting expression
+\end{itemize}
+like the \texttt{severity} placeholder we have used:
+\begin{simplec}
+  BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+  BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
+  BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
+  BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope", attrs::named_scope::value_type)
+  BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type) 
+\end{simplec}
+
+\section{Log record formatting}
+By default, \Cola{formatter} is set, only the \textbf{log record messages} are
+written to the files. Even if you added attributes to the logging core or a
+logger, the attribute values \emph{will not} reach the output unless you specify
+a formatter that will use these values.
+
+Returning to one of the previous examples:
+
+\begin{simplec}
+  void init(){
+    logging::add_file_log(
+    /*...*/
+    keywords::format = "[%TimeStamp%]: %Message%"
+    );
+
+    logging::core::get()->set_filter(
+    logging::trivial::severity >= logging::trivial::info
+    );
+  }
+\end{simplec}
+
+\begin{tcolorbox}
+  \emoji{parrot} : Hey, I see a \texttt{format} option.\\
+  \emoji{turtle} : Yeah, if you prefer to \emph{set up sinks manually},
+  \textbf{sink frontends} provide the \texttt{set\_formatter} member function
+  for this purpose. \\
+  \emoji{parrot} : I think I do like to set up sinks manually...Because I want
+  to write to different log file No?
+\end{tcolorbox}
+
+The syntex for a format is
+\begin{center}
+  \texttt{keywords::format = \cola{<format-spec>}}
+\end{center}
+And you can specify \texttt{<format-spec>} in a couple of ways.
+\subsection{$\lambda$-style formatter}
+\begin{simplec}
+  void init() {
+    logging::add_file_log (keywords::file_name = "sample_%N.log",
+    // This makes the sink to write log records that look like this:
+    // 1: <normal> A normal severity message
+    // 2: <error> An error severity message
+    keywords::format = (
+    expr::stream << expr::attr< unsigned int >("LineID") << ": <" << logging::trivial::severity
+    << "> " << expr::smessage
+    ));
+  }
+\end{simplec}
+Here the \texttt{stream} is a placeholder for the stream to format the record
+in.
+
+Other insertion arguments, such as \texttt{attr} and
+\texttt{message}, are manupulators that define what should be stored in the
+stream.
+
+\begin{tcolorbox}
+  \emoji{parrot} : What? I saw \texttt{smessage} ?\\
+  \emoji{turtle} : \texttt{smessage} means \texttt{string}, \texttt{wmessage}
+  means \texttt{wstring}, \texttt{message} means one of the two.
+\end{tcolorbox}
+
+We have already seen the \texttt{severity} placeholder in \Cola{filtering expressions:}
+\begin{simplec}
+  logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+\end{simplec}
+\begin{tcolorbox}
+  \emoji{turtle} : The author finds it a nice unification to be able to use the
+  same \textbf{placeholder} in both filters and formatter.
+\end{tcolorbox}
+
+The \texttt{attr} placeholder is similar to the \texttt{severity} placeholder as
+it represents the attribute value, too. The difference is that
+\begin{itemize}
+\item \texttt{severity} represents the particular attribute,
+  with the name ``Severity'' and type \texttt{trivial::severity\_level}
+\item \texttt{attr} can be used to represent \textbf{any} attribute.
+\end{itemize}
+Otherwise the two are equivalent. So \texttt{logging::trivial::severity} is
+essentially
+\begin{simplec}
+  expr::attr< logging::trivial::severity_level >("Severity")
+\end{simplec}
+
+\begin{tcolorbox}
+  \emoji{parrot} : I prefer the explicit... It's simpler for me...\\
+  \emoji{turtle} : But the author recommends defining these placeholder for
+  \textbf{user-defined} attributes as in \cref{sec:def_attr_placeholders},
+  because it's less error-prone.\\
+  \emoji{parrot} : That makes sense, but we're not defining format a lot of
+  time right?
+\end{tcolorbox}
+
+There are other \Cola{formatter manipulators} that provide advanced support for
+date, time and other types. Some manipulators accept additional arguments that
+customize their behavior. Most of these arguments are named and can be passedin
+\texttt{Boost.Parameter} style.
+
+\begin{tcolorbox}
+  \emoji{parrot} : What is \texttt{Boost.Parameter} ?\\
+  \emoji{turtle} : It's a magical library that allows you to specify
+  ``named-parameter'' in C++. like \texttt{f(a=123,b=true)}.\\
+  \emoji{parrot} : I am not gonna attempt that (for now)...
+\end{tcolorbox}
 
 \end{document}
 
