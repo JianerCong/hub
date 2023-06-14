@@ -35,7 +35,6 @@ def test_f():
             '[AAA] aaa with AAA\n',
             '[AAA] bbb with AAA\n',
             ]
-
     # l = open(f).readlines()
     # assert len(l) == 2
     # 🦜 :  It seems that both \\n and \n is ok in regex

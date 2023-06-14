@@ -785,6 +785,52 @@ predicate, but it is also possible to specify them in the \verb|has_attr()|.
 \emoji{parrot} : There's an example using \texttt{Boost.Phoenix} (a $\lambda$
 library) to write filters, but I am gonna leave that.
 
+\section{Wide character logging}
+
+There are two ways:
+\begin{itemize}
+\item On \textbf{UNIX}, typically fome multibyte character encoding (e.g. UTF-8) is used
+  to represent national characters. In this case \textbf{no additional setup is
+    required}.
+\item On \textbf{Windows} the common practice is to use \cola{wide strings} to
+  represent national characters. Also, most of the system API is \cola{wide
+    character oriented}, which requires \textbf{Windows-specific sinks} to also
+  support wide strings.
+\end{itemize}
+On the other hand, generic sinks, like the \cola{text file sink}, are
+byte-oriented (\emoji{turtle} : because, you write bytes to files.) This forces
+the library to perform \cola{character code conversion} when needed by the sink.
+
+To set up the library for this, one has to \cola{imbue the sink with a locale
+  with appropriate \texttt{codecvt} facet}.
+\begin{tcolorbox}
+  \emoji{parrot} : I've never heard of that...\\
+  \emoji{turtle} : \texttt{Boost.Locale} can help
+\end{tcolorbox}
+
+\begin{simplec}
+  // Declare attribute keywords
+  BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
+  BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
+
+  void init_logging(){
+    boost::shared_ptr< sinks::synchronous_sink< sinks::text_file_backend > > sink = logging::add_file_log(
+    "sample.log",
+    keywords::format = expr::stream
+    << expr::format_date_time(timestamp, "%Y-%m-%d, %H:%M:%S.%f")
+    << " <" << severity.or_default(normal)
+    << "> " << expr::message // note the message not smessage anymore
+    );
+
+    // The sink will perform character code conversion as needed, according to the locale set with imbue()
+    std::locale loc = boost::locale::generator()("en_US.UTF-8");
+    sink->imbue(loc);
+
+    // Let's add some commonly used attributes, like timestamp and record counter.
+    logging::add_common_attributes();
+}
+\end{simplec}
+
 \end{document}
 
 % Local Variables:
