@@ -723,6 +723,68 @@ stored in log.
 }
 \end{simplec}
 
+\section{Filtering revisited}
+Two sinks in action:
+\begin{simplec}
+BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
+BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
+
+void init(){
+  // Setup the common formatter for all sinks
+  logging::formatter fmt = expr::stream
+    << ": <" << severity << ">\t"
+    << expr::if_(expr::has_attr(tag_attr)) [expr::stream << "[" << tag_attr << "] "]
+    << expr::smessage;
+
+  // Initialize sinks
+  typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
+
+  boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >(); // sink 1
+  sink->locked_backend()->add_stream(boost::make_shared< std::ofstream >("full.log"));
+  sink->set_formatter(fmt);
+  logging::core::get()->add_sink(sink); // add sink 1
+
+  sink = boost::make_shared< text_sink >(); // sink 2
+  sink->locked_backend()->add_stream(boost::make_shared< std::ofstream >("important.log"));
+  sink->set_formatter(fmt);
+  sink->set_filter(severity >= warning ||
+                   (expr::has_attr(tag_attr) &&
+                    tag_attr == "IMPORTANT_MESSAGE")); // when the sink 2 is streamed to
+
+  logging::core::get()->add_sink(sink); // add sink 2
+  logging::add_common_attributes(); // Add attributes
+}
+\end{simplec}
+
+The formatter itself contains filter here. The \verb|has_attr| predicate checks
+whether the record contains the \cola{``Tag'' attribute value} and controls whether it
+is put into the file or not.
+
+\begin{tcolorbox}
+  \emoji{parrot} : So in fact we can just make two sinks, each with a \cola{dedicated
+  formatter} that will only print under certain conditions. In that case, we
+  don't need a filter anymore right?\\
+  \emoji{turtle} : Don't be too smart. Use filter.
+\end{tcolorbox}
+
+We used attribute keyword to specify the name and type of the attribute for the
+predicate, but it is also possible to specify them in the \verb|has_attr()|.
+
+\begin{tcolorbox}
+  \emoji{turtle} : The filter syntex resembles C++ very much when attribute
+  keywords are used. The author seems to be quite proud of it.\\
+  \emoji{parrot} : So \cola{formatter} is a function. Is \colb{filter} so?\\
+  \emoji{turtle} : Yes. Here:
+\end{tcolorbox}
+
+\begin{simplec}
+  bool (logging::attribute_value_set const& attrs); // returns whether the message (record) will pass
+\end{simplec}
+
+\emoji{parrot} : There's an example using \texttt{Boost.Phoenix} (a $\lambda$
+library) to write filters, but I am gonna leave that.
+
 \end{document}
 
 % Local Variables:
