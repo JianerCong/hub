@@ -65,6 +65,10 @@ out: printf("\1\\n");
   \s)   close delimiter character   \s!   generic comment delimiter
   \s"   string quote character      \s|   generic string delimiter
   \s\   escape character
+*** cheat sheet
++ \d :: [0-9]
++ \D :: [^0-9]
++ \w :: [A-Za-z0-9]
 
 ** emoji
 Add _emoji_ to your dotspacemacs-configuration-layers.

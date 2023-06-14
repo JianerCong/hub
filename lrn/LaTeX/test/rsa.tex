@@ -103,11 +103,12 @@ row sep=1cm,column sep=2cm]
   \begin{tikzpicture}
     \matrix (M1) [myMatrix]{
       \emoji{crocodile} \\
-      \emoji{lizard} & \emoji{t-rex}\\
+      \emoji{lizard} &[3cm] {\Huge \emoji{t-rex}}\\
       \emoji{snake} \\
     };
     \foreach \i in {1,2,3}{
-      \draw[-latex] (M1-\i-1) -- (M1-2-2);
+      \draw[-latex,very thick] (M1-\i-1) -- (M1-2-2)
+      node[pos=0.4,sloped,above] {\small Encrypted message};
     }
 
     % The left speaking box
@@ -116,11 +117,11 @@ row sep=1cm,column sep=2cm]
         nobeforeafter,
         boxsep=0pt,
         % show bounding box,
-        colback=gray!10,
+        colback=\mycola!10,
         overlay={
           \begin{scope}
             % \fill[gray!10] (frame.east) circle (2pt);
-            \fill[gray!10] (frame.east) --
+            \fill[\mycola!10] (frame.east) --
             +(0,2mm) --
             +(3mm,0) --
             +(0,-2mm)
@@ -137,23 +138,102 @@ row sep=1cm,column sep=2cm]
         nobeforeafter,
         boxsep=0pt,
         % show bounding box,
-        colback=gray!10,
+        colback=\mycola!10,
         overlay={
           \begin{scope}
             % \fill[gray!10] (frame.east) circle (2pt);
-            \fill[gray!10] (frame.west) --
+            \fill[\mycola!10] (frame.west) --
             +(0,2mm) --
             +(-3mm,0) --
             +(0,-2mm)
             ;
           \end{scope}
-        }
-        ]
+        }]
         I will decrypt them all.
       \end{tcolorbox}
-     };
+    };
   \end{tikzpicture}
 \end{center}
+
+To set up asymemetric encryption, you first need to generate a \textbf{key pair} via some
+algorithm. As with any setup function or cryptographic algorithms, the key
+generation algorithm accepts a \Cola{security parameter}. This security
+parameter usually translates to \cola{``how big do you want your keys to be?''},
+where bigger means more secure.
+
+\begin{center}
+  \begin{tikzpicture}
+    \node (a1) {Security parameter};
+    \node[text width=5cm] (a2) at ([yshift=-1.5cm]a1.south) {
+      \begin{tcolorbox}[tile,colback=black,colupper=white,nobeforeafter,halign=flush
+        center]
+        Generate asymemetric key pair
+      \end{tcolorbox}
+    };
+    
+    \matrix (M2) [myMatrix,below] at ([yshift=-1cm]a2.south){
+      |[text width=1.5cm,text badly centered]| Private key &
+      |[text width=1.5cm,text badly centered]| Public key\\
+    };
+
+    \draw[latex-,thick] (M2-1-1) -- (M2-1-1.north |- a2.south);
+    \draw[latex-,thick] (M2-1-2) -- (M2-1-2.north |- a2.south);
+    \draw[-latex,thick] ([yshift=-2mm]a1.south) -- (a2.north);
+  \end{tikzpicture}
+\end{center}
+
+The generated key pair comprised of two different parts:
+\begin{description}
+\item[public key] can be published and shared.
+\item[private key] must remain secret.
+\end{description}
+
+Anyone can use the public key part to encrypt messages, and you can use the
+private key part to decrypt.
+
+\begin{center}
+  \begin{tikzpicture}
+    \matrix (M1) [myMatrix,above, column sep=1cm]{
+      Message & Public key &[2cm] Ciphertext & Private key\\
+    };
+
+    \matrix (M2) [myMatrix,below,column sep=3cm,text width=4cm,text centered] at ([yshift=-1cm]M1.south){
+      % |[text width=3cm]|
+      \begin{tcolorbox}[tile,colback=black,colupper=white,nobeforeafter,halign=flush
+        center]
+        Asymmetric encryption
+      \end{tcolorbox}
+      &
+      % |[text width=3cm]|
+      \begin{tcolorbox}[tile,colback=black,colupper=white,nobeforeafter,halign=flush
+        center]
+        Asymmetric decryption
+      \end{tcolorbox}
+      \\
+      % |[text centered]|
+      % 🦜 : They can be specified in the matrix definition
+      Ciphertext &
+      % |[text centered]|
+      Plaintext or error
+      \\
+    };
+
+    \foreach \i in {1,2}{
+      \draw[-latex,thick] (M2-1-\i.south) -- (M2-2-\i.north);
+
+      \draw[-latex,thick] (M1-1-\i.south) -- (M1-1-\i.south |- M2-1-1.north);
+    }
+
+    \foreach \i in {3,4}{
+      \draw[-latex,thick] (M1-1-\i.south) -- (M1-1-\i.south |- M2-1-2.north);
+    }
+
+    % draw the cypher texts
+    \draw[thick, -latex] (M2-2-1.east) -| (0,0) |- ([xshift=-0.3cm] M1-1-3.west);
+    
+  \end{tikzpicture}
+\end{center}
+
 
 \end{document}
 

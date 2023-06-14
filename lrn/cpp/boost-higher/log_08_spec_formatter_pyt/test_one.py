@@ -20,20 +20,23 @@ def test_f():
 
     # check the file content
     assert Path(f).exists()
-    assert open(f).readlines() \
-        == [
-            '1: <trace> aaa\n',
-            '2: <debug> bbb\n',
-            ]
-
-    # l = open(f).readlines()
-    # assert len(l) == 2
+    # assert open(f).readlines() \
+    #     == [
+    #         '1: <trace> aaa\n',
+    #         '2: <debug> bbb\n',
+    #         ]
+    l = open(f).readlines()
+    assert len(l) == 2
     # 🦜 :  It seems that both \\n and \n is ok in regex
     # assert re.fullmatch('\\d\\d\\d\\d-\\d{1,}-\\d{1,} (.*): <trace> aaa\\n', l[0])
     # assert re.fullmatch('\\d\\d\\d\\d-\\d{1,}-\\d{1,} (.*): <debug> bbb\n', l[1])
 
     # 🦜 : Use r'' to avoid \\
-    # assert re.fullmatch(r'\d\d\d\d-\d{1,}-\d{1,} (.*): <trace> aaa\n', l[0])
-    # assert re.fullmatch(r'\d\d\d\d-\d{1,}-\d{1,} (.*): <debug> bbb\n', l[1])
+    assert re.fullmatch(r'\d\d\d\d-\d{1,}-\d{1,} (.*): <trace> aaa\n', l[0])
+    assert re.fullmatch(r'\d\d\d\d-\d{1,}-\d{1,} (.*): <debug> bbb\n', l[1])
+    # assert bool(re.fullmatch('\\[(.*)\\] aaa\n', l[1]))
+    # assert bool(re.fullmatch('\\[(.*)\\] bbb\n', l[2]))
+    # assert bool(re.fullmatch('\\[(.*)\\] timmer ended\n', l[3]))
+    # assert bool(re.fullmatch('aaa untimed\n', l[4]))
 
 

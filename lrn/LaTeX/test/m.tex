@@ -1,10 +1,11 @@
 % \documentclass{ctexart}
-
-
 \documentclass[dvipsnames]{article}
 
 \title{Boost log}
 
+% better description list
+\usepackage{enumitem}
+\setlist[description]{leftmargin=\parindent,labelindent=\parindent}
 
 \usepackage{geometry}\geometry{
   a4paper,
@@ -192,9 +193,9 @@ how we emit log records. In order to be able to make log records one has to
 create a \Cola{logging source} first. This would be a logger object:
 
 \begin{simplec}
-  src::logger lg;
+  #include <boost/log/sources/severity_logger.hpp>
+  boost::log::sources::severity_logger<logging::trivial::severity_level> slg;
 \end{simplec}
-
 \begin{tcolorbox}
   \emoji{parrot} : What's the logger for trivial logging?\\
   \emoji{turtle} : The library provide one and is used behind the scene. 
@@ -576,6 +577,151 @@ customize their behavior. Most of these arguments are named and can be passedin
   ``named-parameter'' in C++. like \texttt{f(a=123,b=true)}.\\
   \emoji{parrot} : I am not gonna attempt that (for now)...
 \end{tcolorbox}
+
+For a change, here's how we manually initialize sinks:
+
+\begin{simplec}
+  void init(){
+    typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
+    boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+    sink->locked_backend()->add_stream(boost::make_shared< std::ofstream >("sample.log"));
+
+    sink->set_formatter(
+    expr::stream
+    // line id will be written in hex, 8-digits, zero-filled
+    << std::hex << std::setw(8) << std::setfill('0') << expr::attr< unsigned int >("LineID")
+    << ": <" << logging::trivial::severity
+    << "> " << expr::smessage
+    );
+
+    logging::core::get()->add_sink(sink);
+} 
+\end{simplec}
+
+\subsection{\texttt{Boost.Format}-style formatters}
+Familiar with \texttt{Boost.Format} ?
+
+\begin{simplec}
+  void init(){
+    typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
+    boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+    sink->locked_backend()->add_stream(
+    boost::make_shared< std::ofstream >("sample.log"));
+
+    // This makes the sink to write log records that look like this:
+    // 1: <normal> A normal severity message
+    // 2: <error> An error severity message
+    sink->set_formatter
+    (
+    expr::format("%1%: <%2%> %3%")
+    % expr::attr< unsigned int >("LineID")
+    % logging::trivial::severity
+    % expr::smessage
+    );
+
+    logging::core::get()->add_sink(sink);
+  }
+\end{simplec}
+
+The \texttt{format} placeholder accepts the format string with
+\textbf{positional specification} of all args being formatted.
+The same format specification can be
+used with the \verb|add_file_log| and similar functions.
+
+\begin{tcolorbox}
+  \emoji{turtle} : Note that \emph{only positional format is currently supported}.
+\end{tcolorbox}
+
+\subsection{Specialized formatters}
+
+The library provides specialized formatters for a number of types, such as
+\begin{itemize}
+\item data
+\item time, and
+\item named scope
+\end{itemize}
+
+These formatters provide \emph{control over formatted values}.
+For example, here we use a format string compatible with
+\texttt{Boost.DateTime}.
+
+\begin{simplec}
+  void init(){
+    logging::add_file_log(
+    keywords::file_name = "sample_%N.log",
+    // This makes the sink to write log records that look like this:
+    // YYYY-MM-DD HH:MI:SS: <normal> A normal severity message
+    // YYYY-MM-DD HH:MI:SS: <error> An error severity message
+    keywords::format = (expr::stream
+    << expr::format_date_time< boost::posix_time::ptime >("TimeStamp", "%Y-%m-%d %H:%M:%S")
+    << ": <" << logging::trivial::severity
+    << "> " << expr::smessage));
+}
+\end{simplec}
+
+\subsection{String templates as formatters}
+\begin{simplec}
+  void init(){
+    logging::add_file_log
+    (
+    keywords::file_name = "sample_%N.log",
+    keywords::format = "[%TimeStamp%]: %Message%"
+    );
+  }
+\end{simplec}
+
+The template may contain a number of placeholders enclosed with percent signs
+(\verb|%|). Each placeholder must contain an attribute value name to insert
+instead of the placeholder. The \verb|%Message%| placeholder will be replaced
+with the logging record message.
+
+\begin{tcolorbox}
+  \emoji{parrot} : Can \cola{textual format templates} be accepted by sink backends in
+  the \verb|set_formatter| method? \\
+  \emoji{turtle} : No. In order to parse textual template into a formatter
+  function one has to call \verb|parse_formatter()|.
+\end{tcolorbox}
+
+\subsection{Custom formatting functions}
+
+You can add a custom formatter to a sink backend that supports formatting. The
+formatter is actually a function object that supports the following signature:
+\begin{simplec}
+  void (logging::record_view const& rec,
+        logging::basic_formatting_ostream< CharT >& strm);
+\end{simplec}
+Here \texttt{CharT} is the target character type. The \cola{formatter} will be invoked
+whenever a \cola{log record view \texttt{rec}} \textbf{passes filtering} and is to be
+stored in log.
+
+\begin{tcolorbox}
+  \emoji{parrot} : I guess the \texttt{record\_view} is like a read-only
+  \texttt{record} ? Like \verb|string_view| and \verb|string|...\\
+  \emoji{turtle} : Yeah.
+\end{tcolorbox}
+
+\begin{simplec}
+  void my_formatter(logging::record_view const& rec,
+       logging::formatting_ostream& strm){
+    // Get the LineID attribute value and put it into the stream
+    strm << logging::extract< unsigned int >("LineID", rec) << ": ";
+
+    // The same for the severity level.
+    // The simplified syntax is possible if attribute keywords are used.
+    strm << "<" << rec[logging::trivial::severity] << "> ";
+
+    // Finally, put the record message to the stream
+    strm << rec[expr::smessage];
+  }
+
+  void init(){
+    // ...
+    sink->set_formatter(&my_formatter);
+    logging::core::get()->add_sink(sink);
+}
+\end{simplec}
 
 \end{document}
 
