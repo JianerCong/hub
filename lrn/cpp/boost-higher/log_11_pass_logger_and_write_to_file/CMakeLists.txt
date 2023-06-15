@@ -26,12 +26,6 @@ target_link_libraries(myexe PUBLIC Boost::log)
 # Although beast and axio are all header-only, we need to link to at least one
 # Boost-target in order to bring in the include dirs
 
-# copy the py file to build dir
-configure_file(test_one.py test_one.py)
-# file(COPY test_one.py DESTINATION .)
-
-add_custom_target(run ALL pytest -v COMMENT "Runing pytest 🐸")
-
 # add_custom_target(run ALL
 #   weak-server 0.0.0.0 7777
 #   COMMENT "Runing App 🐸")

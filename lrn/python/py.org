@@ -4,6 +4,7 @@
   time.sleep(4)                   # 4 sec
 #+end_src
 ** subprocess
+*** run() for simple one-shot command
 #+begin_src python
   import subprocess
 
@@ -38,6 +39,44 @@ def test_cwd_spec():
     assert c.returncode == 0
     assert c.stderr == ''
     assert c.stdout == '/home/me\n'
+
+#+end_src
+*** Popen(): if you need to send stdin to it later
+#+begin_src python
+  import shutil
+  import sys
+  from subprocess import Popen, PIPE
+
+  def test_shutil():
+      assert '/home/me/work/lcode/myenv/bin/python' == shutil.which('python')
+      assert sys.executable ==  shutil.which('python3')
+      assert '/usr/bin/cat' == shutil.which('cat')
+
+  def test_popen():
+      # open a process and send stdin
+      p = Popen([shutil.which('cat')],stdin=PIPE,stdout=PIPE,stderr=PIPE)
+      # PIPE has to be specified in order to get these to python
+      out, err = p.communicate(input=b'abc\nabc',timeout=15)
+      # this will send the input and wait for it to terminate, this set the returncode.
+      assert p.returncode == 0
+      assert out == b'abc\nabc'
+      assert err == b''
+
+  def test_popen_text():
+      # open a process and send stdin
+      p = Popen([shutil.which('cat')],stdin=PIPE,stdout=PIPE,stderr=PIPE,text=True)
+      out, err = p.communicate(input='abc\nabc',timeout=15)
+      # this will send the input and wait for it to terminate, this set the returncode.
+      assert p.returncode == 0
+      assert out == 'abc\nabc'
+      assert err == ''
+
+  def test_terminate():
+      # open a process and send stdin
+      p = Popen([shutil.which('cat')],stdin=PIPE,stdout=PIPE,stderr=PIPE)
+      p.terminate()
+      assert p.returncode != 0
+
 
 #+end_src
 ** function

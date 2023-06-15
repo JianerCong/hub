@@ -568,3 +568,15 @@ You should avoid the eqnarray environment.
   cp /usr/local/texlive/2023/texmf-dist/doc/latex/beamer/solutions/conference-talks/conference-ornate-20min.en.tex m.tex
 
 #+end_src
+** svg
++ install inkscape
++ -shell-escape
+
+#+begin_src latex
+  \usepackage{svg}
+% --------------------------------------------------
+  \begin{center}
+    \includesvg[width=0.2\linewidth]{/home/me/Pictures/myfirstsvg.svg}
+  \end{center}
+
+#+end_src

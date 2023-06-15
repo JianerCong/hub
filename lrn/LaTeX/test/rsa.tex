@@ -8,6 +8,8 @@
   top=20mm,
 }
 
+\usepackage{svg}
+
 \usepackage[skip=10pt plus1pt, indent=0pt]{parskip}
 % Color
 \newcommand{\mycola}{MidnightBlue}
@@ -76,6 +78,17 @@ BoldItalicFont=*CodePLItalic
   colback=gray!20
 }
 
+\newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
+
+\tikzstyle{myMatrix}=[matrix of nodes,below right,
+nodes={above,text centered},                  %apply to all nodes
+row sep=1cm,column sep=2cm]
+\tikzstyle{every node}=[inner sep=0pt]
+
+\newcommand\uptoleft[3][-o]{\draw[very thick,#1](#2.south) |- (#3.west);}
+\newcommand\uptodown[3][-o]{\draw[very thick,#1](#2.south) to [out=270,in=90] (#3.north);}
+\newcommand\downtoup[3][-latex]{\draw[very thick,#1](#2.north) to [out=90,in=270] (#3.south);}
+
 \begin{document}
 \maketitle
 
@@ -95,10 +108,6 @@ possesion of your public key to encrypt messages to you.\\
 Furthurmore, you are the only one who can decrypt these messages using the
 associated private key that only you own.
 
-\tikzstyle{myMatrix}=[matrix of nodes,below right,
-nodes={right},                  %apply to all nodes
-row sep=1cm,column sep=2cm]
-\tikzstyle{every node}=[inner sep=0pt]
 \begin{center}
   \begin{tikzpicture}
     \matrix (M1) [myMatrix]{
@@ -234,6 +243,61 @@ private key part to decrypt.
   \end{tikzpicture}
 \end{center}
 
+Note that so far we haven't talked about authentication. Consider both sides of the wire:
+\begin{itemize}
+\item You are encrypting to a public key which you think is owned by Alice.
+\item Alice does not know or sure who sent this message.
+\end{itemize}
+
+For now, we will imagine that we obtained Alice's public key in a really secure way. In 
+
+\section{Asymmetric encryption in practice and hybrid encryption}
+
+In reality, asymemetric encryption is quite limited due to the restricted\textbf{ length
+of messages} it can encrypt. The \cola{speed of asymmetric encryption and
+decryption} is also slow in comparison to symmetric encryption.
+
+This is due to asymmetric constructions implementing math operations, as opposed
+to symmetric primitives that often just manipulate bits.
+
+\subsection{Key exchange and key encapsulation}
+It turns out that asymmetric encryption can be used to perform a key exchange,
+you can start by generating a symmetric key and encrypt it with Alice's public
+key --- what we also call \Cola{encapsulating a key}.
+
+\begin{center}
+  \begin{tikzpicture}
+    \matrix[myMatrix] (M1) {
+      Security parameter & \\
+      |[text width=4cm]|
+      \begin{blackbox}
+        Generate \\
+        symmetric key
+      \end{blackbox}  & \\
+      Symmetric key \emoji{key} & Alice's public key\\
+    };
+
+    \matrix(M2) [myMatrix,below] at ([yshift=-1.5cm,xshift=0.5cm]M1.south){
+      |[text width=4cm]|
+      \begin{blackbox}
+        Asymmetric \\ encryption
+      \end{blackbox} \\
+      Encrypted symmetric key \emoji{locked-with-key}\\
+    };
+
+    \uptodown[-latex]{M1-1-1}{M1-2-1};
+    \uptodown[-latex]{M1-2-1}{M1-3-1};
+
+    \uptodown[-latex]{M1-3-1}{M2-1-1}
+    \uptodown[-latex]{M1-3-2}{M2-1-1}
+
+    \uptodown[-latex]{M2-1-1}{M2-2-1}
+  \end{tikzpicture}
+\end{center}
+
+\begin{center}
+  \includesvg[width=0.2\linewidth]{/home/me/Pictures/myfirstsvg.svg}
+\end{center}
 
 \end{document}
 

@@ -145,6 +145,30 @@ z is not present in string
     std::cout << new_s << '\n';
   }
 #+end_src
+**** wchar_t
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_wide_char) {
+  wchar_t w = L'A';
+  char c = 'A';
+
+  BOOST_CHECK_EQUAL(w,65);
+  BOOST_CHECK_EQUAL(sizeof(w),4);
+  BOOST_CHECK_EQUAL(sizeof(c),1);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(test_wide_char_string) {
+  wchar_t w[] = L"ABC";
+
+  BOOST_CHECK_EQUAL(sizeof(w),4*4);
+  BOOST_CHECK_EQUAL(w[0],L'A');
+  // NULL-ended
+
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+#+end_src
 *** assert
 #+begin_src c++
   #include <cstdio>

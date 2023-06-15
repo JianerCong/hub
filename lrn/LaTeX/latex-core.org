@@ -1099,4 +1099,17 @@ Registered: \textregistered Math-Linux.Com \\
 
   \url{http://www.overleaf.com}
 #+end_src
+** comment
 
+
+#+begin_src latex
+\usepackage{comment}
+\begin{document}
+\section{Multi-line comments}}
+\begin{comment}
+This is a comment,
+a multi-line comment,
+indeed.
+\end{comment}
+\end{document}
+#+end_src
