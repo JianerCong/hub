@@ -151,7 +151,7 @@ s1 <prompt s2> s3 _ s4
       ("tx" "\\text")
       ("Ep" "\\emoji{parrot}")
       ("Et" "\\emoji{turtle}")
-      ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
+      ;; ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
       ("Ca" "" (lambda () (skeleton-insert '(nil "\\Cola{" _ "}"))))
       ("ttt" "" (lambda () (skeleton-insert '(nil "[title=\\texttt{" _ "}]"))))
       ;; ("vb" "" (lambda () (skeleton-insert '(nil "\\verb|" _ "|"))))

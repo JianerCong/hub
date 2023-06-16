@@ -1045,6 +1045,106 @@ public:
   }
 };
 \end{simplec}
+
+\emoji{parrot} : ?? The I can't find \texttt{logging::add\_value()}...Fine...
+
+\section{Loggers with channel support}
+
+Sometimes it is important to associate log records with some application
+component, such as the
+\begin{itemize}
+\item module 
+\item or class name
+\item the relation of the \cola{logged information} to some specific domain of
+  appl functionality.
+\item or some arbitraty tag that can be used later to route these records to a
+  specific sink. This feature is fullfilled with loggers
+  \verb|[w_]channel_logger[_mt]|
+\end{itemize}
+These loggers \textbf{automatically register an attribute named \cola{``Channel''}}
+\begin{simplec}
+  #include <boost/log/sources/channel_feature.hpp>
+  #include <boost/log/sources/channel_logger.hpp>
+
+  src::channel_logger< > m_net(keywords::channel = "net");
+\end{simplec}
+
+\section{Lambda expressions}
+\begin{simplec}
+  #include <boost/log/expressions/attr_fwd.hpp>
+  #include <boost/log/expressions/attr.hpp>
+\end{simplec}
+The \texttt{attr} placeholder represents an attribute value in template
+expressions. Given the record view or a set of attribute values, the placeholder
+will attempt to extract the specified value from the argument upon invocation.
+This can be roughly described with the following pseudo-code:
+
+\begin{simplec}
+  logging::value_ref< T, TagT > val = expr::attr< T, TagT >(name)(rec);
+\end{simplec}
+
+where \texttt{val} is the \cola{reference} to the \textbf{extracted value},
+\texttt{name} and \texttt{T} are the \cola{attribute value name} and
+\cola{type}, \texttt{TagT} is an optional tag and \texttt{rec} is the log
+\texttt{record view} or \texttt{attribute value set}.
+
+\subsection{Customizing fallback policy}
+
+By default, when the \cola{requested attribute value} is not found,
+\texttt{attr} will return an empty reference.
+\begin{itemize}
+\item In case of filters, this result in \texttt{false} in any ordering
+  expressions.
+\item in case of formatters the output from the placeholder will be empty. This
+  behavior can be changed: 
+\end{itemize}
+
+\begin{enumerate}
+\item to throw
+  \begin{simplec}
+    sink->set_filter(
+      expr::attr< int >("Severity").or_throw() >= 5 &&
+      expr::attr< std::string >("Channel").or_throw() == "net"
+    );
+  \end{simplec}
+\item to use a default
+  \begin{simplec}
+    sink->set_filter(
+      expr::attr< int >("Severity").or_default(0) >= 5 &&
+      expr::attr< std::string >("Channel").or_default(std::string("general")) == "net"
+    );
+  \end{simplec}
+\end{enumerate}
+\begin{tcolorbox}
+  \emoji{turtle} : Remember you always have \texttt{has\_attr}
+\end{tcolorbox}
+The default behavior is actually \texttt{or\_none}.
+
+\subsection{Attribute tags and custom formatting operators}
+
+\begin{tcolorbox}
+  \emoji{parrot} : Although this section is a bit too advanced, there's in fact
+  a new function I found handy: \verb|add_console_log()|
+\end{tcolorbox}
+The \texttt{TagT} type above defaults to \texttt{void}. \Cola{This is an
+  attribute tag which can be used to customize the output formatters produce for
+different attributes}. This tag is forwarded to the \verb|to_log()| manipulator
+when the extracted attribute value is put to a stream:
+
+\subsection{Defining attribute keywords}
+\begin{simplec}
+  #include <boost/log/expressions/keyword_fwd.hpp>
+  #include <boost/log/expressions/keyword.hpp> 
+\end{simplec}
+Attribute keywords can be used as replacements for the \texttt{attr}
+placeholders in filters and formatters. Use:
+\begin{simplec}
+  BOOST_LOG_ATTRIBUTE_KEYWORD(keyword, "Keyword", type)
+\end{simplec}
+\begin{tcolorbox}
+  \emoji{parrot} : We have used this a lot.
+\end{tcolorbox}
+
 \end{document}
 
 % Local Variables:
