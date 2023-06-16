@@ -89,6 +89,8 @@ row sep=1cm,column sep=2cm]
 \newcommand\uptodown[3][-o]{\draw[very thick,#1](#2.south) to [out=270,in=90] (#3.north);}
 \newcommand\downtoup[3][-latex]{\draw[very thick,#1](#2.north) to [out=90,in=270] (#3.south);}
 
+\newcommand\lefttoright[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=180] (#3.west);}
+\newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
 \begin{document}
 \maketitle
 
@@ -295,10 +297,103 @@ key --- what we also call \Cola{encapsulating a key}.
   \end{tikzpicture}
 \end{center}
 
-\begin{center}
-  \includesvg[width=0.2\linewidth]{/home/me/Pictures/myfirstsvg.svg}
-\end{center}
+You can then send the ciphertext to Alice, who will be able to decrypt it and
+learn the symmetric key. Subsequently, you will have both a shared secret.
 
+\begin{center}
+  \begin{tikzpicture}
+
+    \fill[color=\mycola!20,rounded corners] (-0.2cm,0.2cm) rectangle +(9cm,-9cm);
+    \fill[color=\mycolb!20,rounded corners] (9cm,0.2cm) rectangle +(9cm,-9cm);
+    \node[text width=3cm] at (6cm,-2cm) {
+      \begin{center}
+        \includesvg[width=1cm]{/home/me/Pictures/hip-hop-boy-svgrepo-com.svg}\\
+        \textbf{Bob}
+      \end{center}
+    };
+
+    \node[text width=3cm] at (14cm,-2cm) {
+      \begin{center}
+        \includesvg[width=1cm]{/home/me/Pictures/indian-princess-svgrepo-com.svg}\\
+        \textbf{Alice}
+      \end{center}
+    };
+
+    \matrix[myMatrix,column sep=1cm] (M1) {
+      Security parameter & \\
+      |[text width=4cm]|
+      \begin{blackbox}
+        Generate \\
+        symmetric key
+      \end{blackbox}  & \\
+      Symmetric key \emoji{key} & Alice's public key\\
+    };
+
+    \matrix(M2) [myMatrix,below] at ([yshift=-1.5cm,xshift=0.5cm]M1.south){
+      |[text width=4cm]|
+      \begin{blackbox}
+        Asymmetric \\ encryption
+      \end{blackbox} \\
+      Encrypted symmetric key \emoji{locked-with-key}\\
+    };
+
+    % -> Generate key ->
+    \uptodown[-latex]{M1-1-1}{M1-2-1};
+    \uptodown[-latex]{M1-2-1}{M1-3-1};
+
+    % -> Asynm encryption
+    \uptodown[-latex]{M1-3-1}{M2-1-1}
+    \uptodown[-latex]{M1-3-2}{M2-1-1}
+
+    % symmetric
+    \uptodown[-latex]{M2-1-1}{M2-2-1}
+
+    
+    \matrix[myMatrix,above right] (M12) at ([shift={(3cm,3cm)}]M2.east){
+      |[text width= 3cm]|
+      Encrypted symmetric key \emoji{locked-with-key}
+      & Alice's private key\\
+    };
+
+    \matrix(M22) [myMatrix,below] at ([yshift=-1.5cm,xshift=0.5cm]M12.south){
+      |[text width=4cm]|
+      \begin{blackbox}
+        Asymmetric \\ decryption
+      \end{blackbox} \\
+      Symmetric key \emoji{key}\\
+    };
+
+    % -> Asynm encryption
+    \uptodown[-latex]{M12-1-1}{M22-1-1}
+    \uptodown[-latex]{M12-1-2}{M22-1-1}
+
+    % symmetric
+    \uptodown[-latex]{M22-1-1}{M22-2-1}
+    
+    % draw the cypher texts
+    % \draw[thick, -latex] (M2-2-1.east) -| (9cm,-6cm) |- ([xshift=-0.3cm] M12-1-1.west);
+    \lefttoright[gray,-latex]{M2-2-1}{M12-1-1}
+  \end{tikzpicture}
+\end{center}
+Using asymmetric encryption to perform a key change is usually done with an
+algorithm called \Cola{RSA} (following the names of its inventors Rivest,
+Shamir, and Adleman) and used in many internet protocols. Today, RSA is often
+\textbf{not} the preferred way of doing a key exchange, and it is being used
+\cola{less and less in protovals in favor of \textbf{Elliptic Curve
+    Diffie-Hellman(ECDH)}}. This is mostly due to historical reasons (many
+vulnerabilities have been discovered), and that ECDH's parameter sizes are smaller.
+
+\subsection{Hybrid encryption}
+
+In practice, asymmetric encryption can only encrypt messages \textbf{up to a certain
+  length}.
+\begin{tcolorbox}
+  \emoji{parrot} : Yeah, I remember it's about factoring numbers.. something
+  like that..  
+\end{tcolorbox}
+For example, the size of plaintext messages that can be encrypted by RSA are
+limited by the \cola{security parameters} that were used during the generation
+of the key pair (and more specifically by the \cola{size of the modulus}). 
 \end{document}
 
 

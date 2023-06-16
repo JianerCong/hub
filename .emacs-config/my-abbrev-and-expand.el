@@ -18,6 +18,8 @@
   '(
     ;; programing
     ("rt" "return" )
+    ("sth" "something" )
+
     ;; ("str" "string" )
     ("stru" "struct" )
     ("ifc" "interface")

@@ -1348,6 +1348,80 @@ int main(int, char*[])
 }
 
 #+end_src
+
+**** TODO learn value?
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/log/sources/basic_logger.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <string>
+using std::string;
+
+#include <boost/mpl/vector.hpp>
+#include <boost/log/attributes/value_extraction.hpp>
+#include <boost/log/attributes/attribute_value_impl.hpp>
+#include <boost/log/utility/value_ref.hpp>
+
+#include <boost/log/attributes.hpp> //include all in attributes
+using boost::log::attribute_name;
+using boost::log::attribute_set;
+using boost::log::attribute_value;
+using boost::log::attribute_value_set;
+BOOST_AUTO_TEST_CASE(test_attr_name){
+  // Just a string
+  attribute_name n{"abc"};
+  BOOST_CHECK_EQUAL(n.string(),"abc");
+  // == operator is supported
+  BOOST_CHECK_EQUAL(n,"abc");
+  BOOST_CHECK_NE(n,"cba");
+}
+
+/*
+  🦜: the attribute value is very complex
+ */
+// #include <boost/log/attributes/constant.hpp>
+// using boost::log::attribute_value;
+// BOOST_AUTO_TEST_CASE(test_attr_value){
+//   attribute_value v(&boost::log::attributes::make_constant(10));
+// }
+
+// namespace log = boost::log;
+BOOST_AUTO_TEST_CASE(test_attribute_set) {
+  boost::log::sources::logger lg;
+  lg.add_attribute("aaa", boost::log::attributes::make_constant(10));
+  lg.add_attribute("bbb", boost::log::attributes::constant<string>("abc"));
+
+  attribute_set s = lg.get_attributes();
+  BOOST_CHECK(not s.empty());
+  BOOST_CHECK_EQUAL(s.count("aaa"),1);
+  BOOST_CHECK_EQUAL(s.count("ccc"),0);
+
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+BOOST_AUTO_TEST_CASE(test_attribute_value_set) {
+  boost::log::sources::logger lg;
+  lg.add_attribute("aaa", boost::log::attributes::make_constant(10));
+  lg.add_attribute("bbb", boost::log::attributes::constant<string>("abc"));
+
+  attribute_set s = lg.get_attributes();
+  attribute_value_set v{s,{},{}};
+  attribute_value a = v["abc"];
+  BOOST_CHECK_EQUAL(v.size(),2);
+
+  boost::log::value_ref< string > o = boost::log::extract< string >(a);
+  BOOST_CHECK(o);               // 🦜 : ???
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(test_extract) {
+  attribute_value a = boost::log::attributes::make_attribute_value(10);
+  boost::log::value_ref< int > o = boost::log::extract< int >(a);
+  BOOST_CHECK(o);
+  BOOST_CHECK_EQUAL(o.get(),10);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+// ?? Cannot extract the value in v?
+
+#+end_src
 *** Install on Windows
 **** install location
 Usually C:\Program Files\boost\boost_1_82_0,

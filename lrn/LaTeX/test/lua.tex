@@ -1,0 +1,22 @@
+\documentclass{article} 
+\begin{document} 
+\let\\\relax %redefine meaning of \\ to avoid expansion problems 
+Here is the current value of {\ttfamily\string\hsize} (via \LaTeX): 
+\the\hsize\par 
+\directlua{ 
+  % Get the current value of \hsize using the Lua API 
+  local hs=tex.hsize  
+  % Use a Lua API function to print some  
+  % LaTeX code and the value of \hsize 
+  tex.print("Here is the value of {\\ttfamily\\string\\hsize}  
+  reported from Lua code (in scaled points): ") 
+  tex.print(hs.."\\par") 
+  % Set a new value for \hsize using the Lua aPI 
+  tex.hsize="400pt" % or use tex.hsize=400*65536 (in scaled points) 
+}% 
+% After \directlua has finished, ask LaTeX  
+% to tell us the new value of \hsize 
+Here is the value of {\ttfamily\string\hsize} reported  
+by \LaTeX{} after {\tt\string\directlua} has finished: 
+\the\hsize\par 
+\end{document}

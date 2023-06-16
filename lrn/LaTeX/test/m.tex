@@ -1145,6 +1145,49 @@ placeholders in filters and formatters. Use:
   \emoji{parrot} : We have used this a lot.
 \end{tcolorbox}
 
+Here the macro declares a keyword \texttt{keyword} for an attribute named
+``Keyword'' with the value type of \texttt{type}. Additionally, the macro
+\cola{defines an attribute tag type \texttt{keyword} within the \texttt{tag}
+  namespace}.
+
+\begin{tcolorbox}
+  \emoji{turtle} : So we can use \verb|logging::to_log_manip< A, tag::my_attr > const& manip|
+  when defining the custom formatter.
+\end{tcolorbox}
+
+Attribute keywords behave the same way as the \texttt{attr} placeholders and can
+be used both in \cola{filters and formatters}. The  \verb|or_throw| and
+\verb|or_default| modifiers are also supported.
+
+\texttt{rec[\cola{<keyword>}]} is also OK:
+\begin{simplec}
+  void print_severity(logging::record_view const& rec){
+    logging::value_ref< severity_level, tag::severity > level = rec[severity];
+    std::cout << level << std::endl;
+}
+\end{simplec}
+
+\section{Predicate expressions}
+
+\subsection{Attribute presence filter}
+\begin{simplec}
+  #include <boost/log/expressions/predicates/has_attr.hpp>
+\end{simplec}
+The filter \verb|has_attr| checks if an attribute value with the \cola{specified name}
+and , optionally, \cola{type} is attached to a log record.
+
+If no type specified to the filter: return \texttt{true} if any value with the
+specified name is found.
+
+This filter is usually used in conjection with \texttt{conditional formatters},
+but it also can be used as a \cola{quick filter} based on the \cola{log record
+  structure}. 
+
+\subsection{Attribute names}
+\begin{simplec}
+  #include <boost/log/attributes/attribute_name.hpp>
+\end{simplec}
+
 \end{document}
 
 % Local Variables:
