@@ -24,6 +24,11 @@
 (define-key evil-normal-state-map (kbd "m") 'bookmark-set)
 (define-key evil-normal-state-map (kbd "`") 'bookmark-jump)
 
+
+(when (member "Segoe UI Emoji" (font-family-list))
+  (set-fontset-font
+   t 'symbol (font-spec :family "Segoe UI Emoji") nil 'prepend))
+
 (require 'myy-code-folding)
 (require 'myy-code-outline-modes)
 (provide 'my-default)
