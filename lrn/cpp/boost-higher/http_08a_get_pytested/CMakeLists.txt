@@ -30,6 +30,5 @@ configure_file(test_one.py test_one.py)
 configure_file(m.py m.py)
 
 # cmake .. && cmake --build .
-# add_custom_target(run ALL pytest -v COMMENT "Runing App 🐸 ")
-add_custom_target(run ALL myexe  COMMENT "Runing App 🐸 ")
+add_custom_target(run ALL pytest -v COMMENT "Runing App 🐸 ")
 
