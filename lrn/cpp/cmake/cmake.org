@@ -1,4 +1,53 @@
 ** Cmake-lang
+*** macro and set list
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.20)
+project(Hi)
+
+message("🐸 start scripting")
+set(x a;b)
+message("x: ${x}")              #a;b
+list(APPEND x c d)              #✅️
+message("x: ${x}")              #a;b;c;d
+# list(APPEND ${x} c d)           #❌️
+# message("x: ${x}")              #a;b;c;d
+
+list(LENGTH x my-len)
+message("L = ${my-len}")
+
+# --------------------------------------------------
+# won't work
+# macro(f l elem)
+#   list(APPEND l elem)           #append elem to l
+#   # 🐢 : Passed-in parameter not used.
+# endmacro()
+# f(x abc)
+# message("x: ${x}")              #a;b;c;d
+
+# # --------------------------------------------------
+# list(APPEND l a b)
+# message("l: ${l}")              #elem;a;b;
+
+# 🦜 : Impatient I think that it's too complex
+
+macro(f)
+  message("macro called with ${ARGV0} ${ARGV1}")
+  list(APPEND ${ARGV0} ${ARGV1})           #append elem to l
+  # 🐢 : Passed-in parameter not used.
+endmacro()
+f(x abc)
+message("x: ${x}")              #a;b;c;d;abc
+
+# 🦜 : function cannot change passed-int var
+function(g l v)
+  message("function called with ${l} ${v}")
+  list(APPEND ${l} ${v})           #append elem to l
+endfunction()
+
+g(x bcd)
+message("x: ${x}")              #a;b;c;d;abc
+
+#+end_src
 *** file operation / config
 #+begin_src cmake
 cmake_minimum_required(VERSION 3.20)

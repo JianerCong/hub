@@ -891,6 +891,48 @@ BOOST_AUTO_TEST_CASE(friend_func){
 }
 
 #+end_src
+**** upcast
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <memory>
+
+using std::shared_ptr;
+
+class A {public: int x{1};};
+class A1 : public A{int y{2};};
+
+int f(const A & a){return a.x + 1;}
+int f(const A1 & a){return a.x + 2;}
+
+BOOST_AUTO_TEST_CASE(test_upcast_always_succeed){
+  A1 a1;
+
+  A* a = dynamic_cast<A*>(&a1); // you have to take it out
+
+  int r = f(*a);
+  BOOST_CHECK_EQUAL(r,2);
+}
+
+BOOST_AUTO_TEST_CASE(test_upcast_always_succeed_reference){
+  A1 a1;
+  A& a = dynamic_cast<A&>(a1); // you have to take it out
+  int r = f(a);
+  BOOST_CHECK_EQUAL(r,2);
+}
+
+// 🦜 : The following won't work.
+
+// BOOST_AUTO_TEST_CASE(test_upcast_always_succeed_shared_ptr){
+//   A1 a1;
+
+//   shared_ptr<A> a{dynamic_cast<A*>(&a1)};
+
+//   int r = f(*a);
+//   BOOST_CHECK_EQUAL(r,2);
+// }
+
+#+end_src
 *** Exception
 1. domain_error
 2. invalid_argument

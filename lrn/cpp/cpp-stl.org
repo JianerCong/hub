@@ -560,6 +560,18 @@ BOOST_AUTO_TEST_CASE(t1) {
     BOOST_CHECK_EQUAL(x,0);
   }
 #+end_src
+*** shared_ptr [A very important caveat]
+Do not ever use
+#+begin_src c++
+  A a = ...;
+  shared_ptr<A> p{&a};            // a is on STACK, don't try to manage it.
+#+end_src
+This will not make the object managed. And worst of all the compiler won't
+complain anything. It will later simply give you a
+#+begin_quote
+[stack smashing detected ]: terminated
+unknown location(0): fatal error: in "test_postExec/test_makeBlk2": signal: SIGABRT (application abort requested)
+#+end_quote
 
 *** basic_string
 Defined in header <string>
