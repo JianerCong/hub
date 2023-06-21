@@ -542,6 +542,21 @@ void show_contents(FILE *fp){
 | a+   | read/write append if file dosn't exist |
 | x    | exclusive access                       |
 | b    | binary mode                            |
+*** const ptr
+#+begin_src c
+int A[5] = {1,2};
+const int * p = A;              // can not change (pointed-to value)
+*p = 10;//No
+p[2] = 10;//No
+p++;      // OK
+p = &A[3]; // OK
+
+
+int * const q = A;              // can not point to other thing
+q++;                            // No
+*q = 10;                        // OK
+
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c"

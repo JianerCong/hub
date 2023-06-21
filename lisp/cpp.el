@@ -10,6 +10,21 @@
  "} // BOOST_AUTO_TEST_CASE(test_no_1)" \n
 )
 
+
+
+;; (define-skeleton cpp-one-off-skeleton
+;;   "🦜 : Use this to show a series of something"
+;;   nil
+;;   > "BOOST_CHECK_EQUAL(b1."
+;;   (setq s (skeleton-read "next: ")) ",b." s ");" \n
+;;   )
+(define-skeleton cpp-one-off-skeleton
+  "🦜 : Use this to show a series of something"
+  nil
+  > "BOOST_CHECK_EQUAL(b1."
+  (setq s (skeleton-read "next: ")) ",b." s ");" \n
+  )
+
 (define-skeleton cpp-show-one-values
   "insert a r.show(a,b,c)"
   nil
@@ -23,23 +38,16 @@
      )
   )
 
-(define-skeleton cpp-ostream-say
-  "insert the cout << overloading"
-  nil
-  "friend ostream& operator<<(ostream& os, const "
-  (setq c (skeleton-read "Class name ?"))
-   "& " (substring c 0 1) "){" \n
-  _ \n
-  "return os;" \n
-  "};")
+;; (define-skeleton cpp-ostream-say
+;;   "insert the cout << overloading"
+;;   nil
+;;   "friend ostream& operator<<(ostream& os, const "
+;;   (setq c (skeleton-read "Class name ?"))
+;;    "& " (substring c 0 1) "){" \n
+;;   _ \n
+;;   "return os;" \n
+;;   "};")
 
-(define-skeleton cpp-say
-  "say something "
-  > "cout << " _  ";")
-
-(define-skeleton cpp-say-err
-  "say something to stderr"
-  > "cerr << " _  ";")
 
 (setq c-my-using-alist
       '(
@@ -167,8 +175,7 @@
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")
 
-(define-key c++-mode-map (kbd "\C-c v") 'c-say)
-(define-key c++-mode-map (kbd "\C-c o") 'cpp-ostream-say)
+(define-key c++-mode-map (kbd "\C-c o") 'cpp-one-off-skeleton)
 (define-key c++-mode-map (kbd "\C-c u") 'cpp-using-std)
 (define-key c++-mode-map (kbd "\C-c w") 'cpp-add-my-lib)
 (define-key c++-mode-map (kbd "\C-c i") 'cpp-include)

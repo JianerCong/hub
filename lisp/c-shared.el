@@ -69,7 +69,8 @@ s if not found."
   "Insert a void function named test()."
   nil
   > "void test_" (setq s (skeleton-read "What function to test: ")) "()"
-  > "{" \n "report(\"" s "\");" \n _ "}")
+  > "{" \n "report(\"" s "\");" \n _ "}"
+  )
 
 
 (defun c-paste-defun-header-here ()
