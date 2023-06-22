@@ -67,7 +67,7 @@ def g() -> None:
     1 + 'x'  # Type check error (statically typed)
 
     #+end_src
-*** Mark the arguments 
+*** Mark the arguments
 #+begin_src python
 def greeting(name: str, excited: bool = False) -> str:
     message = 'Hello, {}'.format(name)
@@ -177,6 +177,23 @@ my_global_dict: dict[int, float] = {}
 To install the stub for a pkg such as <requests>, do
 #+begin_src bash
 python3 -m pip install types-requests
+#+end_src
+** Callable
+Use ~Callable[[<args>],<return type>]~
+#+begin_src python
+  from collections.abc import Callable
+
+def feeder(get_next_item: Callable[[], str]) -> None:
+    ...  # Body
+
+def async_query(on_success: Callable[[int], None],
+                on_error: Callable[[int, Exception], None]) -> None:
+    ...  # Body
+
+async def on_update(value: str) -> None:
+    ...  # Body
+
+callback: Callable[[str], Awaitable[None]] = on_update
 #+end_src
 ** Cheet sheet
 https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html

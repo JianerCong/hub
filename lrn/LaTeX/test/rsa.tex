@@ -1,0 +1,466 @@
+\documentclass[dvipsnames]{article}
+
+\title{RSA}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+\usepackage{svg}
+
+\usepackage[skip=10pt plus1pt, indent=0pt]{parskip}
+% Color
+\newcommand{\mycola}{MidnightBlue}
+\newcommand{\mycolb}{Mahogany}
+\newcommand{\mycolc}{OliveGreen}
+
+\newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
+\newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
+\newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
+\renewcommand{\emph}[1]{\texbf{#1}}
+
+\usepackage{fontspec}
+
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+
+
+\usepackage{minted}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usepackage{tikz}
+\usetikzlibrary{shapes} % ellipse node shape
+\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\usetikzlibrary{arrows.meta}    %-o arrow head
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+
+
+% Redefine em
+% latex.sty just do: \DeclareTextFontCommand{\emph}{\em}
+
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+\usepackage{amsmath}
+
+% ??? still xelatex?
+% \usepackage{xeCJK}
+\usepackage{emoji}
+
+\date{\today}
+\author{me}
+
+\newtcblisting{simplec}{
+  listing engine=minted,
+  minted language=c++,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter, 
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20
+}
+
+\newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
+
+\tikzstyle{myMatrix}=[matrix of nodes,below right,
+nodes={above,text centered},                  %apply to all nodes
+row sep=1cm,column sep=2cm]
+\tikzstyle{every node}=[inner sep=0pt]
+
+\newcommand\uptoleft[3][-o]{\draw[very thick,#1](#2.south) |- (#3.west);}
+\newcommand\uptodown[3][-o]{\draw[very thick,#1](#2.south) to [out=270,in=90] (#3.north);}
+\newcommand\downtoup[3][-latex]{\draw[very thick,#1](#2.north) to [out=90,in=270] (#3.south);}
+
+\newcommand\lefttoright[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=180] (#3.west);}
+\newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
+\begin{document}
+\maketitle
+
+\section{What is asymmetric encryption?}
+
+The first step in knowing how to encrypt a message is understanding \Cola{
+  asymmetric encryption} (also called \Cola{public key encryption} ).
+
+\emoji{turtle}  : You probably know that all the emails you send are ``in the clear'' for anyone
+sitting in between you and your recipients's email provider to read. That's not
+great. How do you fix this? You could use a cryptographic primitive like
+AES-GCM. To do that, you would need to set up a shared symmetric secret for each
+person that wants to message you.\\
+\emoji{parrot}  :But you don't known in advance who'll want to message you.\\
+\emoji{turtle}  :This is where \Cola{ asymmetric encryption} helps by allowing anyone in
+possesion of your public key to encrypt messages to you.\\
+Furthurmore, you are the only one who can decrypt these messages using the
+associated private key that only you own.
+
+\begin{center}
+  \begin{tikzpicture}
+    \matrix (M1) [myMatrix]{
+      \emoji{crocodile} \\
+      \emoji{lizard} &[3cm] {\Huge \emoji{t-rex}}\\
+      \emoji{snake} \\
+    };
+    \foreach \i in {1,2,3}{
+      \draw[-latex,very thick] (M1-\i-1) -- (M1-2-2)
+      node[pos=0.4,sloped,above] {\small Encrypted message};
+    }
+
+    % The left speaking box
+    \node[left,text width=5cm] at ([xshift=-0.5cm]M1-3-1.west) {
+      \begin{tcolorbox}[tile,
+        nobeforeafter,
+        boxsep=0pt,
+        % show bounding box,
+        colback=\mycola!10,
+        overlay={
+          \begin{scope}
+            % \fill[gray!10] (frame.east) circle (2pt);
+            \fill[\mycola!10] (frame.east) --
+            +(0,2mm) --
+            +(3mm,0) --
+            +(0,-2mm)
+            ;
+          \end{scope}
+        }
+        ]
+        I can't decrypt other's messages.
+      \end{tcolorbox}
+    };
+
+    \node[right,text width=5cm] at ([xshift=0.5cm]M1-2-2.east) {
+      \begin{tcolorbox}[tile,
+        nobeforeafter,
+        boxsep=0pt,
+        % show bounding box,
+        colback=\mycola!10,
+        overlay={
+          \begin{scope}
+            % \fill[gray!10] (frame.east) circle (2pt);
+            \fill[\mycola!10] (frame.west) --
+            +(0,2mm) --
+            +(-3mm,0) --
+            +(0,-2mm)
+            ;
+          \end{scope}
+        }]
+        I will decrypt them all.
+      \end{tcolorbox}
+    };
+  \end{tikzpicture}
+\end{center}
+
+To set up asymemetric encryption, you first need to generate a \textbf{key pair} via some
+algorithm. As with any setup function or cryptographic algorithms, the key
+generation algorithm accepts a \Cola{security parameter}. This security
+parameter usually translates to \cola{``how big do you want your keys to be?''},
+where bigger means more secure.
+
+\begin{center}
+  \begin{tikzpicture}
+    \node (a1) {Security parameter};
+    \node[text width=5cm] (a2) at ([yshift=-1.5cm]a1.south) {
+      \begin{tcolorbox}[tile,colback=black,colupper=white,nobeforeafter,halign=flush
+        center]
+        Generate asymemetric key pair
+      \end{tcolorbox}
+    };
+    
+    \matrix (M2) [myMatrix,below] at ([yshift=-1cm]a2.south){
+      |[text width=1.5cm,text badly centered]| Private key &
+      |[text width=1.5cm,text badly centered]| Public key\\
+    };
+
+    \draw[latex-,thick] (M2-1-1) -- (M2-1-1.north |- a2.south);
+    \draw[latex-,thick] (M2-1-2) -- (M2-1-2.north |- a2.south);
+    \draw[-latex,thick] ([yshift=-2mm]a1.south) -- (a2.north);
+  \end{tikzpicture}
+\end{center}
+
+The generated key pair comprised of two different parts:
+\begin{description}
+\item[public key] can be published and shared.
+\item[private key] must remain secret.
+\end{description}
+
+Anyone can use the public key part to encrypt messages, and you can use the
+private key part to decrypt.
+
+\begin{center}
+  \begin{tikzpicture}
+    \matrix (M1) [myMatrix,above, column sep=1cm]{
+      Message & Public key &[2cm] Ciphertext & Private key\\
+    };
+
+    \matrix (M2) [myMatrix,below,column sep=3cm,text width=4cm,text centered] at ([yshift=-1cm]M1.south){
+      % |[text width=3cm]|
+      \begin{tcolorbox}[tile,colback=black,colupper=white,nobeforeafter,halign=flush
+        center]
+        Asymmetric encryption
+      \end{tcolorbox}
+      &
+      % |[text width=3cm]|
+      \begin{tcolorbox}[tile,colback=black,colupper=white,nobeforeafter,halign=flush
+        center]
+        Asymmetric decryption
+      \end{tcolorbox}
+      \\
+      % |[text centered]|
+      % 🦜 : They can be specified in the matrix definition
+      Ciphertext &
+      % |[text centered]|
+      Plaintext or error
+      \\
+    };
+
+    \foreach \i in {1,2}{
+      \draw[-latex,thick] (M2-1-\i.south) -- (M2-2-\i.north);
+
+      \draw[-latex,thick] (M1-1-\i.south) -- (M1-1-\i.south |- M2-1-1.north);
+    }
+
+    \foreach \i in {3,4}{
+      \draw[-latex,thick] (M1-1-\i.south) -- (M1-1-\i.south |- M2-1-2.north);
+    }
+
+    % draw the cypher texts
+    \draw[thick, -latex] (M2-2-1.east) -| (0,0) |- ([xshift=-0.3cm] M1-1-3.west);
+    
+  \end{tikzpicture}
+\end{center}
+
+Note that so far we haven't talked about authentication. Consider both sides of the wire:
+\begin{itemize}
+\item You are encrypting to a public key which you think is owned by Alice.
+\item Alice does not know or sure who sent this message.
+\end{itemize}
+
+For now, we will imagine that we obtained Alice's public key in a really secure way. In 
+
+\section{Asymmetric encryption in practice and hybrid encryption}
+
+In reality, asymemetric encryption is quite limited due to the restricted\textbf{ length
+of messages} it can encrypt. The \cola{speed of asymmetric encryption and
+decryption} is also slow in comparison to symmetric encryption.
+
+This is due to asymmetric constructions implementing math operations, as opposed
+to symmetric primitives that often just manipulate bits.
+
+\subsection{Key exchange and key encapsulation}
+It turns out that asymmetric encryption can be used to perform a key exchange,
+you can start by generating a symmetric key and encrypt it with Alice's public
+key --- what we also call \Cola{encapsulating a key}.
+
+\begin{center}
+  \begin{tikzpicture}
+    \matrix[myMatrix] (M1) {
+      Security parameter & \\
+      |[text width=4cm]|
+      \begin{blackbox}
+        Generate \\
+        symmetric key
+      \end{blackbox}  & \\
+      Symmetric key \emoji{key} & Alice's public key\\
+    };
+
+    \matrix(M2) [myMatrix,below] at ([yshift=-1.5cm,xshift=0.5cm]M1.south){
+      |[text width=4cm]|
+      \begin{blackbox}
+        Asymmetric \\ encryption
+      \end{blackbox} \\
+      Encrypted symmetric key \emoji{locked-with-key}\\
+    };
+
+    \uptodown[-latex]{M1-1-1}{M1-2-1};
+    \uptodown[-latex]{M1-2-1}{M1-3-1};
+
+    \uptodown[-latex]{M1-3-1}{M2-1-1}
+    \uptodown[-latex]{M1-3-2}{M2-1-1}
+
+    \uptodown[-latex]{M2-1-1}{M2-2-1}
+  \end{tikzpicture}
+\end{center}
+
+You can then send the ciphertext to Alice, who will be able to decrypt it and
+learn the symmetric key. Subsequently, you will have both a shared secret.
+
+\begin{center}
+  \begin{tikzpicture}
+
+    \fill[color=\mycola!20,rounded corners] (-0.2cm,0.2cm) rectangle +(9cm,-9cm);
+    \fill[color=\mycolb!20,rounded corners] (9cm,0.2cm) rectangle +(9cm,-9cm);
+    \node[text width=3cm] at (6cm,-2cm) {
+      \begin{center}
+        \includesvg[width=1cm]{/home/me/Pictures/hip-hop-boy-svgrepo-com.svg}\\
+        \textbf{Bob}
+      \end{center}
+    };
+
+    \node[text width=3cm] at (14cm,-2cm) {
+      \begin{center}
+        \includesvg[width=1cm]{/home/me/Pictures/indian-princess-svgrepo-com.svg}\\
+        \textbf{Alice}
+      \end{center}
+    };
+
+    \matrix[myMatrix,column sep=1cm] (M1) {
+      Security parameter & \\
+      |[text width=4cm]|
+      \begin{blackbox}
+        Generate \\
+        symmetric key
+      \end{blackbox}  & \\
+      Symmetric key \emoji{key} & Alice's public key\\
+    };
+
+    \matrix(M2) [myMatrix,below] at ([yshift=-1.5cm,xshift=0.5cm]M1.south){
+      |[text width=4cm]|
+      \begin{blackbox}
+        Asymmetric \\ encryption
+      \end{blackbox} \\
+      Encrypted symmetric key \emoji{locked-with-key}\\
+    };
+
+    % -> Generate key ->
+    \uptodown[-latex]{M1-1-1}{M1-2-1};
+    \uptodown[-latex]{M1-2-1}{M1-3-1};
+
+    % -> Asynm encryption
+    \uptodown[-latex]{M1-3-1}{M2-1-1}
+    \uptodown[-latex]{M1-3-2}{M2-1-1}
+
+    % symmetric
+    \uptodown[-latex]{M2-1-1}{M2-2-1}
+
+    
+    \matrix[myMatrix,above right] (M12) at ([shift={(3cm,3cm)}]M2.east){
+      |[text width= 3cm]|
+      Encrypted symmetric key \emoji{locked-with-key}
+      & Alice's private key\\
+    };
+
+    \matrix(M22) [myMatrix,below] at ([yshift=-1.5cm,xshift=0.5cm]M12.south){
+      |[text width=4cm]|
+      \begin{blackbox}
+        Asymmetric \\ decryption
+      \end{blackbox} \\
+      Symmetric key \emoji{key}\\
+    };
+
+    % -> Asynm encryption
+    \uptodown[-latex]{M12-1-1}{M22-1-1}
+    \uptodown[-latex]{M12-1-2}{M22-1-1}
+
+    % symmetric
+    \uptodown[-latex]{M22-1-1}{M22-2-1}
+    
+    % draw the cypher texts
+    % \draw[thick, -latex] (M2-2-1.east) -| (9cm,-6cm) |- ([xshift=-0.3cm] M12-1-1.west);
+    \lefttoright[gray,-latex]{M2-2-1}{M12-1-1}
+  \end{tikzpicture}
+\end{center}
+Using asymmetric encryption to perform a key change is usually done with an
+algorithm called \Cola{RSA} (following the names of its inventors Rivest,
+Shamir, and Adleman) and used in many internet protocols. Today, RSA is often
+\textbf{not} the preferred way of doing a key exchange, and it is being used
+\cola{less and less in protovals in favor of \textbf{Elliptic Curve
+    Diffie-Hellman(ECDH)}}. This is mostly due to historical reasons (many
+vulnerabilities have been discovered), and that ECDH's parameter sizes are smaller.
+
+\subsection{Hybrid encryption}
+
+In practice, asymmetric encryption can only encrypt messages \textbf{up to a certain
+  length}.
+\begin{tcolorbox}
+  \emoji{parrot} : Yeah, I remember it's about factoring numbers.. something
+  like that..  
+\end{tcolorbox}
+For example, the size of plaintext messages that can be encrypted by RSA are
+limited by the \cola{security parameters} that were used during the generation
+of the key pair (and more specifically by the \cola{size of the modulus}). 
+
+Nowadays,with the security parameters used (4,096-bit modulus), the limit is
+approximately 500 ASCII characters -- pretty small.
+\Cola{Hybrid encryption has the same interface as asymmetric encryption} except
+that messages that can be encrypted are much larger in size. 
+
+\begin{center}
+  \begin{tikzpicture}
+
+    \begin{scope}
+      \matrix[myMatrix,above right] (M1){
+        |[text width= 3cm]| Message
+        & Public key\\
+      };
+      \matrix(M2) [myMatrix,below] at
+      ([yshift=-1.5cm,xshift=0.5cm]M1.south){ |[text width=4cm]|
+        \begin{blackbox}
+          Hybrid \\ encryption
+        \end{blackbox} \\
+        \cola{Ciphertext} \\
+      };
+      \uptodown[-latex]{M1-1-1}{M2-1-1}
+      \uptodown[-latex]{M1-1-2}{M2-1-1}
+      \uptodown[-latex]{M2-1-1}{M2-2-1}
+    \end{scope}
+    \begin{scope}[xshift=8cm]
+      \matrix[myMatrix,above right] (MM1){ |[text width= 3cm]|
+        \cola{Ciphertext} 
+        & private key\\
+      };
+      \matrix(MM2) [myMatrix,below] at
+      ([yshift=-1.5cm,xshift=0.5cm]MM1.south){ |[text width=4cm]|
+        \begin{blackbox}
+          Hybrid \\ decryption
+        \end{blackbox} \\
+        Plaintext \emoji{spiral-notepad} or error \emoji{prohibited}
+        \\
+      };
+      \uptodown[-latex]{MM1-1-1}{MM2-1-1}
+      \uptodown[-latex]{MM1-1-2}{MM2-1-1}
+      \uptodown[-latex]{MM2-1-1}{MM2-2-1}
+    \end{scope}
+
+    \matrix (M3) [myMatrix,below] at (7.6cm,6cm){
+      Security parameter
+      \\
+      |[text width=7cm,name=key-gen]|
+      \begin{blackbox}
+        Generate \\
+        hybrid key pair
+      \end{blackbox}\\
+    };
+    \uptodown[-latex]{M3-1-1}{key-gen}
+    \uptodown[-latex]{key-gen}{MM1-1-2}
+    \uptodown[-latex]{key-gen}{M1-1-2}
+    
+  \end{tikzpicture}
+\end{center}
+
+
+\end{document}
+
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% End:
