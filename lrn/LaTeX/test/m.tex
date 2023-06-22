@@ -64,17 +64,16 @@ BoldItalicFont=*Code
 \usetikzlibrary{matrix}
 
 
-% Redefine em
-% latex.sty just do: \DeclareTextFontCommand{\emph}{\em}
-
-\let\emph\relax % there's no \RedeclareTextFontCommand
-\DeclareTextFontCommand{\emph}{\bfseries\em}
 \usepackage{amsmath}
-
 % ??? still xelatex?
 % \usepackage{xeCJK}
 \usepackage{emoji}
 
+\newtcolorbox[auto counter]{myBox}[2][]{
+  fonttitle=\bfseries,title={共识~\thetcbcounter: #2},#1
+}
+
+\tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
 \date{\today}
 \author{作者}
 
@@ -128,24 +127,25 @@ row sep=1cm,column sep=2cm]
 \maketitle
 
 \section{听一个共识}
-\emoji{turtle} : 让我们来想一个共识。优先要求这几点：
+让我们来想一个共识。优先要求这几点：
 \begin{itemize}
 \item 单节点可跑
 \item 可（相对方便地）动态新增节点
 \end{itemize}
 \emoji{parrot} : 那么最简单的应该就是
-\begin{tcolorbox}[title=\textbf{听一个共识}]
+\begin{myBox}{听一个共识 Listen-to-one Consensus}
+  \label{cons-a}
   \begin{itemize}
   \item 第一个起的节点为Primary。
   \item 新增的节点往Primary上连接。
   \end{itemize}
-\end{tcolorbox}
+\end{myBox}
+
 \emoji{parrot} : 这个其实本质上就是在集群内部的一个 Server-Client 架构嘛。
 也就是所有人都只听Primary的。
 \begin{center}
   \begin{tikzpicture}
     % \tikzstyle{every node}=[inner sep=2pt]
-    \tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
     \node[myNode,fill=\mycola,minimum height=4em] (a1) {主节点};
     \foreach \d in {0,60,...,300}{
       \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray]{新增节点};
@@ -196,7 +196,50 @@ class IExecutable:
 \end{simplepy}
 
 \subsection{\textbf{听一个共识}，伪代码实现}
-那么现在我们可以开始码了
+那么现在我们可以开始码了,先从构建函数开始，除了执行和网络以外，构建函数还接受一
+个可选的\texttt{nodeToConnect}，如果没给，则说明这个是第一个起的节点（主节点）。
+\begin{simplepy}
+class ListenToOneConsensus:
+    def __init__(self,
+                 n: IEndpointBasedNetworkable,
+                 e: IExecutable,
+                 nodeToConnect=''):
+        self.net = n
+        self.exe = e
+        if nodeToConnect:
+            self.primary = nodeToConnect
+            self.is_primary = false
+            self.start_listening_as_sub()
+        else:
+            self.is_primary = true
+            self.start_listening_as_primary()
+    ...
+\end{simplepy}
+\emoji{parrot} ： 那么具体primary和非primary节点都要监听哪些事件呢？
+在介绍具体要监听哪些事件之前，我们最好先看一下在“时光静好”的情况下，集群是怎么
+工作的：
+\begin{center}
+  \begin{tikzpicture}
+    \node[myNode,fill=\mycola,minimum height=4em] (a1) {主节点};
+    \foreach \d in {300,20}{
+      \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray]{新增节点};
+      % \node[myNode,fill=gray]  at (\d:2cm) {};
+    }
+    \node[text width=7cm,above left] at ([shift={(-2cm,0cm)}]a1.west){
+      \begin{tcolorbox}[tile]
+        \begin{itemize}
+        \item 每收到一个请求：
+          \begin{enumerate}
+          \item 先执行一下，
+          \item 然后添加到一个\cola{笔记本}里。
+          \item 然后发给所有\colb{已知下级}。
+          \end{enumerate}
+        \item 每当有
+        \end{itemize}
+      \end{tcolorbox}
+    }
+  \end{tikzpicture}
+\end{center}
 
 \end{document}
 
