@@ -93,7 +93,7 @@ BoldItalicFont=*Code
   opacityback=0.5,
   colback=gray!20
 }
-
+\tcbuselibrary{breakable}
 \newtcblisting{simplepy}{
   listing engine=minted,
   minted language=python,
@@ -108,7 +108,8 @@ BoldItalicFont=*Code
   boxsep=0mm,
   left=1mm,
   opacityback=0.5,
-  colback=gray!20
+  colback=gray!20,
+  breakable
 }
 \newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
 
@@ -183,7 +184,9 @@ class IEndpointBasedNetworkable:
                # returns the result
                ):
         pass
-    def send(self,endpoint: str, target: str) -> str:
+    def listened_endpoint() -> str:
+        pass
+    def send(self,endpoint: str, target: str, data: str) -> str:
         # endpoint: the target, e.g. "localhost:8080"
         # target: e.g. "/hi"
         pass
@@ -209,42 +212,229 @@ class ListenToOneConsensus:
         if nodeToConnect:
             self.primary = nodeToConnect
             self.is_primary = false
+            self.ask_primary_for_entry()
             self.start_listening_as_sub()
         else:
             self.is_primary = true
             self.start_listening_as_primary()
-    ...
 \end{simplepy}
 \emoji{parrot} ： 那么具体primary和非primary节点都要监听哪些事件呢？
+
 在介绍具体要监听哪些事件之前，我们最好先看一下在“时光静好”的情况下，集群是怎么
 工作的：
 \begin{center}
   \begin{tikzpicture}
     \node[myNode,fill=\mycola,minimum height=4em] (a1) {主节点};
     \foreach \d in {300,20}{
-      \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray]{新增节点};
+      \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray,name=s-\d]{新增节点};
       % \node[myNode,fill=gray]  at (\d:2cm) {};
     }
-    \node[text width=7cm,above left] at ([shift={(-2cm,0cm)}]a1.west){
-      \begin{tcolorbox}[tile]
+    \node (a1n) [text width=7cm,above left] at ([shift={(-2cm,0cm)}]a1.west){
+      \begin{tcolorbox}[tile,fontupper=\small,
+        left=0mm,
+        boxsep=0mm
+        ]
         \begin{itemize}
-        \item 每收到一个请求：
+        \item 每收到一个\colc{请求}：
           \begin{enumerate}
           \item 先执行一下，
-          \item 然后添加到一个\cola{笔记本}里。
+          \item 然后添加到一个\cola{笔记本}里，
           \item 然后发给所有\colb{已知下级}。
           \end{enumerate}
-        \item 每当有
+        \item 每当有\colb{新节点}要求加入时：
+          \begin{enumerate}
+          \item 先把\colb{它}加入\colb{已知下级}，
+          \item 然后把\cola{笔记本}发给\colc{它}一份。
+          \end{enumerate}
         \end{itemize}
       \end{tcolorbox}
-    }
+    };
+    \draw[help lines,-o] (a1n) -- (a1);
+
+    \node (s2n) [text width=7cm,above] at ([shift={(0cm,2cm)}] s-20.north){
+      \begin{tcolorbox}[tile,fontupper=\small,
+        left=0.5mm,
+        boxsep=0mm]
+        在刚开始的时候请求\cola{primary}加入。
+        \begin{itemize}
+        \item 每收到来自\cola{primary}的\colc{请求}： 执行
+        \item 每收到来自\colb{client}的\colc{请求}： 传给\cola{primary}
+        \end{itemize}
+      \end{tcolorbox}
+    };
+
+    \draw[help lines,o-] (s-20) -- (s2n);
   \end{tikzpicture}
 \end{center}
+Emm,那么看来，主节点和非主节点所要监听的（和发送的)也就很明显了。首先我们来看
+primary需要用到的方法。
+\begin{simplepy}
+    def start_listening_as_primary(self):
+        self.known_subs = []
+        self.command_history = []
+        self.net.listen('/pleaseAddMe',
+                        self.handle_add_new_node)
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_primary)
+
+    def handle_add_new_node(self,sub_endpoint: str,
+                            data: str) -> str:
+        """[For primary] to add new node"""
+        self.known_subs.append(sub_endpoint)
+        return f"""
+        Dear {sub_endpoint}
+            You are in. and here is what we have so far:
+            {''.join(self.command_history)}
+                   Sincerely
+                   {self.net.listened_endpoint()}, The primary.
+        """
+
+    def handle_execute_for_primary(self, endpoint: str,
+                                   data: str) -> str:
+        cmd = data
+        self.command_history.append(cmd)
+        self.exe.execute(cmd)
+        for sub in self.known_subs:
+            self.net.send(sub,'/pleaseExecuteThis',cmd)
+        return f"""
+        Dear {endpoint}
+             Your request has been carried out by our group.
+             Members: {self.known_subs}
+                 Sincerely
+                 {self.net.listened_endpoint()}, The primary.
+        """
+    def start_listening_as_sub(self):
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_sub)
+\end{simplepy}
+然后是其他节点用到的方法:
+\begin{simplepy}
+    def ask_primary_for_entry(self):
+        r = self.net.send(self.primary,
+                    '/pleaseAddMe',
+                    self.n.listened_endpoint())
+        # In response, the primary should send you the history .
+        cmd = r.split('\n')[3]  # forth line is the command
+        if cmd:
+            self.exe.execute(cmd)
+    def start_listening_as_sub(self):
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_sub)
+    def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
+        cmd = data
+        if (endpoint == self.primary):
+            self.exe.execute(cmd)
+            return f"""
+            Dear boss,
+                 Mission accomplished.
+                     Sincerely
+                     {self.net.listened_endpoint()}
+            """
+        else:
+            # forward
+            return self.net.send(self.primary,
+                                 '/pleaseExecuteThis',data)
+\end{simplepy}
+所以最后总结起来应该就是：
+\begin{simplepy}
+class ListenToOneConsensus:
+    def __init__(self,
+                 n: IEndpointBasedNetworkable,
+                 e: IExecutable,
+                 nodeToConnect=''):
+        self.net = n
+        self.exe = e
+        if nodeToConnect:
+            self.primary = nodeToConnect
+            self.is_primary = false
+            self.ask_primary_for_entry()
+            self.start_listening_as_sub()
+        else:
+            self.is_primary = true
+            self.start_listening_as_primary()
+
+    def ask_primary_for_entry(self):
+        r = self.net.send(self.primary,
+                    '/pleaseAddMe',
+                    self.n.listened_endpoint())
+        # In response, the primary should send you the history .
+        cmd = r.split('\n')[3]  # forth line is the command
+        if cmd:
+            self.exe.execute(cmd)
+
+    def start_listening_as_primary(self):
+        self.known_subs = []
+        self.command_history = []
+        self.net.listen('/pleaseAddMe',
+                        self.handle_add_new_node)
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_primary)
+
+    def handle_add_new_node(self,sub_endpoint: str,
+                            data: str) -> str:
+        """[For primary] to add new node"""
+        self.known_subs.append(sub_endpoint)
+        return f"""
+        Dear {sub_endpoint}
+            You are in. and here is what we have so far:
+            {''.join(self.command_history)}
+                   Sincerely
+                   {self.net.listened_endpoint()}, The primary.
+        """
+
+    def handle_execute_for_primary(self, endpoint: str,
+                                   data: str) -> str:
+        cmd = data
+        self.command_history.append(cmd)
+        self.exe.execute(cmd)
+        for sub in self.known_subs:
+            self.net.send(sub,'/pleaseExecuteThis',cmd)
+        return f"""
+        Dear {endpoint}
+             Your request has been carried out by our group.
+             Members: {self.known_subs}
+                 Sincerely
+                 {self.net.listened_endpoint()}, The primary.
+        """
+    def start_listening_as_sub(self):
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_sub)
+    def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
+        cmd = data
+        if (endpoint == self.primary):
+            self.exe.execute(cmd)
+            return f"""
+            Dear boss,
+                 Mission accomplished.
+                     Sincerely
+                     {self.net.listened_endpoint()}
+            """
+        else:
+            # forward
+            return self.net.send(self.primary,
+                                 '/pleaseExecuteThis',data)
+\end{simplepy}
+
+\section{听一个共识-留一手版}
+
+让我们稍微再复杂复杂一点，看看能不能新增这两个功能：
+\begin{enumerate}
+\item 在\cola{primary}死的时候希望可以有接班的。
+\item 我们希望新增节点的时候可以连接到任何一个节点。
+\end{enumerate}
+\emoji{parrot} : 既然\cola{primary}可以给命令编号，那么自然也可以给新加的节点编号
+不是吗？ 而我们也就可以用这个编号来决定\cola{谁是下一任primary}。
+
+是的那么这样以来我们的集群就变成了一个有序号的了:
+
+
+\begin{myBox}{听一个共识-留一手版 （Follow-me Consensus）}
+  
+\end{myBox}
 
 \end{document}
 
 
 % Local Variables:
 % TeX-engine: luatex
-% TeX-command-extra-options: "-shell-escape"
-% End:
+% TeX
