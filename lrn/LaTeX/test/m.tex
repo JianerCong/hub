@@ -68,9 +68,15 @@ BoldItalicFont=*Code
 % ??? still xelatex?
 % \usepackage{xeCJK}
 \usepackage{emoji}
+\setemojifont{NotoColorEmoji.ttf}[Path=C:/Users/congj/repo/myFonts/]
+% \setemojifont{TwitterColorEmoji-SVGinOT.ttf}[Path=C:/Users/congj/repo/myFonts/]
+
 
 \newtcolorbox[auto counter]{myBox}[2][]{
   fonttitle=\bfseries,title={共识~\thetcbcounter: #2},#1
+}
+\newtcolorbox[]{noteBox}[1][]{
+  tile,left=1mm,nobeforeafter,fontupper=\small,#1
 }
 
 \tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
@@ -124,6 +130,42 @@ row sep=1cm,column sep=2cm]
 
 \newcommand\lefttoright[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=180] (#3.west);}
 \newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
+
+
+\newtcolorbox{leftDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.east) --
+      +(0,2mm) --
+      +(3mm,0) --
+      +(0,-2mm)
+      ;
+    \end{scope}
+  }}
+
+
+\newtcolorbox{rightDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.west) --
+      +(0,2mm) --
+      +(-3mm,0) --
+      +(0,-2mm);
+    \end{scope}
+  }}
+
+\newcommand{\mycolaa}{\mycola!20}
+
+
+% --------------------------------------------------
 \begin{document}
 \maketitle
 
@@ -147,7 +189,7 @@ row sep=1cm,column sep=2cm]
 \begin{center}
   \begin{tikzpicture}
     % \tikzstyle{every node}=[inner sep=2pt]
-    \node[myNode,fill=\mycola,minimum height=4em] (a1) {主节点};
+    \node[myNode,fill=\mycola,minimum height=4em] (a1) {primary};
     \foreach \d in {0,60,...,300}{
       \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray]{新增节点};
       % \node[myNode,fill=gray]  at (\d:2cm) {};
@@ -155,7 +197,7 @@ row sep=1cm,column sep=2cm]
   \end{tikzpicture}
 \end{center}
 这个的缺点就是\cola{主机down了，集群就down了}。它的优点就是新增的节点只需要和主
-节点连接就行，而且非主节点彼此不需要知道彼此。
+节点连接就行，而且非primary彼此不需要知道彼此。
 
 \begin{tikzpicture}
   \emoji{parrot} 那么代码该怎么写呢？\\
@@ -200,7 +242,7 @@ class IExecutable:
 
 \subsection{\textbf{听一个共识}，伪代码实现}
 那么现在我们可以开始码了,先从构建函数开始，除了执行和网络以外，构建函数还接受一
-个可选的\texttt{nodeToConnect}，如果没给，则说明这个是第一个起的节点（主节点）。
+个可选的\texttt{nodeToConnect}，如果没给，则说明这个是第一个起的节点（primary）。
 \begin{simplepy}
 class ListenToOneConsensus:
     def __init__(self,
@@ -224,7 +266,7 @@ class ListenToOneConsensus:
 工作的：
 \begin{center}
   \begin{tikzpicture}
-    \node[myNode,fill=\mycola,minimum height=4em] (a1) {主节点};
+    \node[myNode,fill=\mycola,minimum height=4em] (a1) {primary};
     \foreach \d in {300,20}{
       \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray,name=s-\d]{新增节点};
       % \node[myNode,fill=gray]  at (\d:2cm) {};
@@ -266,7 +308,7 @@ class ListenToOneConsensus:
     \draw[help lines,o-] (s-20) -- (s2n);
   \end{tikzpicture}
 \end{center}
-Emm,那么看来，主节点和非主节点所要监听的（和发送的)也就很明显了。首先我们来看
+Emm,那么看来，primary和非主节点所要监听的（和发送的)也就很明显了。首先我们来看
 primary需要用到的方法。
 \begin{simplepy}
     def start_listening_as_primary(self):
@@ -426,10 +468,149 @@ class ListenToOneConsensus:
 不是吗？ 而我们也就可以用这个编号来决定\cola{谁是下一任primary}。
 
 是的那么这样以来我们的集群就变成了一个有序号的了:
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node[myNode,fill=\mycola,minimum height=4em] (a0) {primary};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=gray,name=a2]{...};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=gray,name=a4]{...};
 
+      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycolc,name=a1]{1};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=gray,name=a3]{...};
+
+      \node[text width=6cm,below] at ([shift={(0,-3cm)}]a0.south) {
+        \begin{noteBox}
+          1.新增的节点可以通过\textbf{任意现
+            有集群节点}连接，之后会管\cola{primary}要一个序号。
+        \end{noteBox}
+      };
+      \node[left,text width=2cm] at ([xshift=-0.5cm]a3.west) {
+        \begin{leftDialogBox}
+          求加入
+        \end{leftDialogBox}
+      };
+
+      \foreach \n in {a2}{
+        \node[right,text width=2cm] at ([xshift=0.5cm,yshift=0.5cm]\n.east) {
+          \begin{rightDialogBox}
+            求加入
+          \end{rightDialogBox}
+        };
+      }
+
+    \end{scope}
+
+
+    \begin{scope}[shift={(9.5cm,0)}]
+      \node[myNode,fill=\mycola,minimum height=4em] (a0) {primary};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=\mycolaa,name=a2]{2};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=\mycolaa,name=a4]{4};
+
+      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycolc,name=a1]{1};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=\mycolaa,name=a3]{3};
+
+      \draw[-latex,very thick] (a4) -- (a1);
+      \draw[-latex,very thick] (a2) -- (a1);
+      \draw[-latex,very thick] (a3) -- (a0);
+
+      \node[text width=6cm,below] at ([shift={(0,-3cm)}]a0.south) {
+        \begin{noteBox}
+          2.在完成以下两个步骤后，新增的节点就算加入集群了：
+          \begin{enumerate}
+          \item 记住\cola{primary}和下任\cola{primary}的地址
+          \item 获得自己的序列号。
+          \item 同步命令历史记录
+          \end{enumerate}
+        \end{noteBox}
+      };
+
+      \node[left,text width=4cm] at ([xshift=-0.5cm]a0.west) {
+        \begin{leftDialogBox}
+          \small
+          来吧，给你们\textbf{过往我们执行的记录}，如果我没了就找下一任\colc{节点1}吧。
+        \end{leftDialogBox}
+      };
+    \end{scope}
+      \end{tikzpicture}
+\end{center}
+
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node[myNode,fill=red!40!black,minimum height=4em] (a0) {primary};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=\mycolaa,name=a2]{2};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=\mycolaa,name=a4]{4};
+
+      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycolc,name=a1]{1};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=\mycolaa,name=a3]{3};
+
+      \draw[-latex,very thick] (a4) -- (a1);
+      \draw[-latex,very thick] (a2) -- (a1);
+      \draw[-latex,very thick, red] (a3) -- node[midway] {\emoji{cross-mark}}(a0);
+
+      \node[left,text width=4cm] at ([xshift=-0.5cm]a3.west) {
+        \begin{leftDialogBox}
+          欸？ \cola{primary}老不回我，它应该没了，\colc{你}上呗？
+        \end{leftDialogBox}
+      };
+
+      \node[right,text width=4cm] at ([xshift=0.5cm,yshift=0.5cm]a1.east) {
+        \begin{rightDialogBox}
+          是吗？ 让我确认一下....喂喂喂？ \cola{primary}在吗？
+        \end{rightDialogBox}
+      };
+
+      \node[text width=8cm,below] at ([shift={(0,-4cm)}]a0.south) {
+        \begin{noteBox}
+          3. 当有人往\cola{primary}发消息失败后就会和\colc{接班人}说，请求\textbf{view-change}。
+          然后，\colc{接班人}会：
+          \begin{enumerate}
+          \item 确认一下\cola{primary}是不是真的没了
+          \item 如果不是，那说明是这个小节点自己的问题
+          \end{enumerate}
+        \end{noteBox}
+      };
+    \end{scope}
+
+    \begin{scope}[shift={(6cm,-6cm)}]
+      \node[myNode,fill=red!40!black,minimum height=4em] (a0) {dead};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=\mycolc,name=a2]{2};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=\mycolaa,name=a4]{4};
+
+      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycola,
+      name=a1,minimum height=4em]{primary};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=\mycolaa,name=a3]{3};
+
+      \draw[-latex,very thick] (a4) -- (a1);
+      \draw[-latex,very thick] (a2) -- (a1);
+      \draw[-latex,very thick, red] (a3) -- node[midway] {\emoji{cross-mark}}(a0);
+
+      % \node[left,text width=4cm] at ([xshift=-0.5cm]a3.west) {
+      %   \begin{leftDialogBox}
+      %     欸？ \cola{primary}老不回我，它应该没了，\colc{你}上呗？
+      %   \end{leftDialogBox}
+      % };
+
+      \node[right,text width=4cm] at ([xshift=0.5cm,yshift=0.5cm]a1.east) {
+        \begin{rightDialogBox}
+          诶呦，还真没了...那好吧。\textbf{大家听好了}，\cola{primary}该换我
+          了，\colc{下一个是节点\textbf{2}}，你们都记住啊。
+        \end{rightDialogBox}
+      };
+
+      \node[text width=6cm,below] at ([shift={(0,-3cm)}]a0.south) {
+        \begin{noteBox}
+          4.如果确实\colc{接班人自己}也没有连上\cola{主节点}，则广播\textbf{view-change},并让大家了
+          解下一任\colc{接班人}。
+        \end{noteBox}
+      };
+    \end{scope}
+
+  \end{tikzpicture}
+\end{center}
 
 \begin{myBox}{听一个共识-留一手版 （Follow-me Consensus）}
-  
+
 \end{myBox}
 
 \end{document}
@@ -437,4 +618,5 @@ class ListenToOneConsensus:
 
 % Local Variables:
 % TeX-engine: luatex
-% TeX
+% TeX-command-extra-options: "-shell-escape"
+% End:
