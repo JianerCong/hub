@@ -11,7 +11,7 @@ class IEndpointBasedNetworkable:
         pass
     def listened_endpoint() -> str:
         pass
-    def send(self,endpoint: str, target: str, data: str) -> str:
+    def send(self,endpoint: str, target: str, data: str) -> Optional[str]:
         # endpoint: the target, e.g. "localhost:8080"
         # target: e.g. "/hi"
         pass
@@ -41,6 +41,8 @@ class ListenToOneConsensus:
         r = self.net.send(self.primary,
                     '/pleaseAddMe',
                     self.n.listened_endpoint())
+        if not r:
+            raise Exception('Failed to join the group')
         # In response, the primary should send you the history .
         cmd = r.split('\n')[3]  # forth line is the command
         if cmd:
@@ -72,7 +74,11 @@ class ListenToOneConsensus:
         self.command_history.append(cmd)
         self.exe.execute(cmd)
         for sub in self.known_subs:
-            self.net.send(sub,'/pleaseExecuteThis',cmd)
+            r = self.net.send(sub,'/pleaseExecuteThis',cmd)
+            if not r:
+                print(f'Node-{sub} is down,kick it off the group.')
+                self.known_subs.remove(sub)
+
         return f"""
         Dear {endpoint}
              Your request has been carried out by our group.
@@ -95,5 +101,8 @@ class ListenToOneConsensus:
             """
         else:
             # forward
-            return self.net.send(self.primary,
+            r = self.net.send(self.primary,
                                  '/pleaseExecuteThis',data)
+            if not r:
+                raise Exception('failed to forward message to primary')
+            return r

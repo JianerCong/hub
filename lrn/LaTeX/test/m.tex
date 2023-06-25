@@ -29,27 +29,25 @@
 
 \usepackage{fontspec}
 
-% \setmonofont{Cascadia}[
-% Path=/usr/share/fonts/truetype/Cascadia_Code/,
-% Scale=0.85,
-% Extension = .ttf,
-% UprightFont=*Code,              %find CascadiaCode.ttf
-% BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
-% ItalicFont=*CodeItalic,
-% BoldItalicFont=*CodePLItalic
-% ]
-
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
 % --------------------------------------------------
 % Windows
-\setmonofont{Cascadia}[
-Path=C:/Windows/Fonts/,
-% Path=C:\\Windows\\Fonts\\,
-Extension = .ttf,
-UprightFont=*Mono,              %find CascadiaMono.ttf
-BoldFont=*Code,               %find CascadiaCodePL.ttf ...
-ItalicFont=*Code,
-BoldItalicFont=*Code
-]
+% \setmonofont{Cascadia}[
+% Path=C:/Windows/Fonts/,
+% Extension = .ttf,
+% UprightFont=*Mono,              %find CascadiaMono.ttf
+% BoldFont=*Code,               %find CascadiaCodePL.ttf ...
+% ItalicFont=*Code,
+% BoldItalicFont=*Code
+% ]
 
 
 \usepackage{minted}
@@ -68,7 +66,7 @@ BoldItalicFont=*Code
 % ??? still xelatex?
 % \usepackage{xeCJK}
 \usepackage{emoji}
-\setemojifont{NotoColorEmoji.ttf}[Path=C:/Users/congj/repo/myFonts/]
+% \setemojifont{NotoColorEmoji.ttf}[Path=C:/Users/congj/repo/myFonts/]
 % \setemojifont{TwitterColorEmoji-SVGinOT.ttf}[Path=C:/Users/congj/repo/myFonts/]
 
 
@@ -228,7 +226,7 @@ class IEndpointBasedNetworkable:
         pass
     def listened_endpoint() -> str:
         pass
-    def send(self,endpoint: str, target: str, data: str) -> str:
+    def send(self,endpoint: str, target: str, data: str) -> Optional[str]:
         # endpoint: the target, e.g. "localhost:8080"
         # target: e.g. "/hi"
         pass
@@ -337,7 +335,11 @@ primary需要用到的方法。
         self.command_history.append(cmd)
         self.exe.execute(cmd)
         for sub in self.known_subs:
-            self.net.send(sub,'/pleaseExecuteThis',cmd)
+            r = self.net.send(sub,'/pleaseExecuteThis',cmd)
+            if not r:
+                print(f'Node-{sub} is down,kick it off the group.')
+                self.known_subs.remove(sub)
+
         return f"""
         Dear {endpoint}
              Your request has been carried out by our group.
@@ -345,9 +347,6 @@ primary需要用到的方法。
                  Sincerely
                  {self.net.listened_endpoint()}, The primary.
         """
-    def start_listening_as_sub(self):
-        self.net.listen('/pleaseExecuteThis',
-                        self.handle_execute_for_sub)
 \end{simplepy}
 然后是其他节点用到的方法:
 \begin{simplepy}
@@ -355,6 +354,8 @@ primary需要用到的方法。
         r = self.net.send(self.primary,
                     '/pleaseAddMe',
                     self.n.listened_endpoint())
+        if not r:
+            raise Exception('Failed to join the group')
         # In response, the primary should send you the history .
         cmd = r.split('\n')[3]  # forth line is the command
         if cmd:
@@ -374,8 +375,11 @@ primary需要用到的方法。
             """
         else:
             # forward
-            return self.net.send(self.primary,
+            r = self.net.send(self.primary,
                                  '/pleaseExecuteThis',data)
+            if not r:
+                raise Exception('failed to forward message to primary')
+            return r
 \end{simplepy}
 所以最后总结起来应该就是：
 \begin{simplepy}
@@ -399,6 +403,8 @@ class ListenToOneConsensus:
         r = self.net.send(self.primary,
                     '/pleaseAddMe',
                     self.n.listened_endpoint())
+        if not r:
+            raise Exception('Failed to join the group')
         # In response, the primary should send you the history .
         cmd = r.split('\n')[3]  # forth line is the command
         if cmd:
@@ -430,7 +436,11 @@ class ListenToOneConsensus:
         self.command_history.append(cmd)
         self.exe.execute(cmd)
         for sub in self.known_subs:
-            self.net.send(sub,'/pleaseExecuteThis',cmd)
+            r = self.net.send(sub,'/pleaseExecuteThis',cmd)
+            if not r:
+                print(f'Node-{sub} is down,kick it off the group.')
+                self.known_subs.remove(sub)
+
         return f"""
         Dear {endpoint}
              Your request has been carried out by our group.
@@ -453,8 +463,11 @@ class ListenToOneConsensus:
             """
         else:
             # forward
-            return self.net.send(self.primary,
+            r = self.net.send(self.primary,
                                  '/pleaseExecuteThis',data)
+            if not r:
+                raise Exception('failed to forward message to primary')
+            return r
 \end{simplepy}
 
 \section{听一个共识-留一手版}
@@ -550,7 +563,7 @@ class ListenToOneConsensus:
 
       \node[left,text width=4cm] at ([xshift=-0.5cm]a3.west) {
         \begin{leftDialogBox}
-          欸？ \cola{primary}老不回我，它应该没了，\colc{你}上呗？
+          ？ \cola{primary}老不回我，它应该没了，\colc{你}上呗？
         \end{leftDialogBox}
       };
 
@@ -577,13 +590,14 @@ class ListenToOneConsensus:
       \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=\mycolc,name=a2]{2};
       \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=\mycolaa,name=a4]{4};
 
-      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycola,
+      \draw[latex-, very thick,red] (a0) -- node[midway] {\emoji{cross-mark}}
+      (300:3cm) node[myNode,fill=\mycola,
       name=a1,minimum height=4em]{primary};
       \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=\mycolaa,name=a3]{3};
 
       \draw[-latex,very thick] (a4) -- (a1);
       \draw[-latex,very thick] (a2) -- (a1);
-      \draw[-latex,very thick, red] (a3) -- node[midway] {\emoji{cross-mark}}(a0);
+      \draw[-latex,very thick, red] (a3) -- node[midway,sloped] {\emoji{cross-mark}}(a0);
 
       % \node[left,text width=4cm] at ([xshift=-0.5cm]a3.west) {
       %   \begin{leftDialogBox}
@@ -610,8 +624,15 @@ class ListenToOneConsensus:
 \end{center}
 
 \begin{myBox}{听一个共识-留一手版 （Follow-me Consensus）}
-
+ 见上图 
 \end{myBox}
+
+\emoji{parrot} : 那如果一个节点同时收到两个\cola{primary}的消息怎么办呢？
+那么就和其他的共识算法一样（Raft，PBFT）， 节点只需要接受最新的命令就行了。
+
+\section{联盟链的执行器}
+
+共识不需要联盟链，但联盟链需要共识。
 
 \end{document}
 

@@ -1318,6 +1318,95 @@ BOOST_AUTO_TEST_CASE(bind_ignore){
 16      return out.str();
 17   }
 #+end_src
+**** paralleled algorithm
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+#include <algorithm>
+#include <chrono> // for timing operations
+#include <execution> // for execution policies
+#include <iostream>
+#include <iterator>
+#include <random>
+#include <vector>
+
+using std::vector;
+
+BOOST_AUTO_TEST_CASE(test_para){
+  std::random_device rd;
+  std::default_random_engine engine{rd()};
+  std::uniform_int_distribution ints{};
+
+  // vector<int> v1(100'000'000); // 100,000,000 element vector
+  vector<int> v1(1e5); // 🦜 : Let's do 5
+  // fill with random ints
+  std::generate(v1.begin(), v1.end(), [&](){return ints(engine);});
+  vector<int> v2{v1};           // copy
+
+  // <chrono> library features we'll use for timing
+  using std::chrono::steady_clock;
+  using std::chrono::duration_cast;
+  using std::chrono::milliseconds;
+
+  auto start1{steady_clock::now()}; // get current time
+  std::sort(v1.begin(), v1.end()); // sequential sort
+  auto end1{steady_clock::now()}; // get current time
+
+  auto time1{duration_cast<milliseconds>(end1 - start1)};
+
+  // 1. --------------------------------------------------
+  // Parallel sort
+  auto start2{steady_clock::now()}; // get current time
+  std::sort(std::execution::par, v2.begin(), v2.end()); // parallel sort
+  auto end2{steady_clock::now()}; // get current time
+  auto time2{duration_cast<milliseconds>(end2 - start2)};
+  // std::cout << "Time: " << (time2.count() / 1000.0) << " seconds\n";
+
+  BOOST_TEST_MESSAGE(format("serial: %.4e secs, parallel: %.4e secs") % (time1.count() /1000.0) %
+                     (time2.count() /1000.0)
+                     );
+
+  BOOST_CHECK(time1.count() != time2.count());
+  // 🦜 : When n=1e5, serial is actually faster
+}
+
+double timeTransform(auto policy, const std::vector<int>& v) {
+  using std::chrono::steady_clock;
+  using std::chrono::duration_cast;
+  using std::chrono::milliseconds;
+
+  auto start{steady_clock::now()}; // get current time
+  std::vector<double> r(v.size());
+  std::transform(policy,
+                 v.begin(),v.end(),
+                 r.begin(),[](auto x){return std::sqrt(x);});
+
+  auto end{steady_clock::now()}; // get current time
+  auto time{duration_cast<milliseconds>(end - start)};
+  return time.count() / 1000.0;
+}
+
+BOOST_AUTO_TEST_CASE(test_vectorised){
+  std::random_device rd;
+  std::default_random_engine engine{rd()};
+  std::uniform_int_distribution ints{};
+  vector<int> v1(1e6); // 🦜 : Let's do 5
+
+  // fill with random ints
+  double r1 = timeTransform(std::execution::par,v1),
+    r2 = timeTransform(std::execution::unseq,v1);
+  std::generate(v1.begin(), v1.end(), [&](){return ints(engine);});
+  BOOST_TEST_MESSAGE(format("par : %.2e sec, unseq: %.2e")
+                     % r1
+                     % r2);
+  BOOST_CHECK_NE(r1,r2);
+  // 🦜 : unseq is a bit faster..
+}
+
+#+end_src
 
 * End
 # Local Variables:
