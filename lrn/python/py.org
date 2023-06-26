@@ -865,6 +865,95 @@ def test_timer_cancel():
     assert x == 0
 
     #+end_src
+*** timer and triggered (simulate a Raft Consensus)
+🦜 [CAUTION]: If there's a exception, by default, it fails silently.
+
+🦜 : Here we assumed everything happens to x is thread safe.
+#+begin_src python
+import time
+from time import sleep
+from concurrent.futures import ThreadPoolExecutor
+from random import randrange
+def test_countdown():
+    x = 5
+    triggered = False
+
+    def trigger():
+        nonlocal triggered
+        print(f'🐸 Triggered')
+        triggered = True
+
+    def down_x():
+        nonlocal x
+        while x > 0:
+            print(f'❄ {x}')
+            sleep(1)
+            x -= 1
+            print(f'After: {x}')
+        print(f'❄ Trigger')
+        trigger()
+
+    def add_x():
+        nonlocal x
+        while x > 0:
+            t = randrange(0,8)  # coming in 0-7 secs
+            print(f'🐸 Comming in {t}')
+            sleep(t)
+            x = 5
+            if triggered:
+                break
+        print(f'🐸 : bye')
+
+    e = ThreadPoolExecutor(max_workers=3)
+    a = e.submit(add_x)
+    b = e.submit(down_x)
+test_countdown()
+#+end_src
+*** timer and triggered with lock
+#+begin_src python
+import time
+from time import sleep
+from concurrent.futures import ThreadPoolExecutor
+from random import randrange
+from threading import Lock
+def test_countdown():
+    x = 5
+    lock_for_x  = Lock()
+    triggered = False
+
+    def trigger():
+        nonlocal triggered
+        print(f'🐸 Triggered')
+        triggered = True
+
+    def down_x():
+        nonlocal x
+        while x > 0:
+            print(f'❄ {x}')
+            sleep(1)
+            with lock_for_x:
+                x -= 1
+            print(f'After: {x}')
+        print(f'❄ Trigger')
+        trigger()
+
+    def add_x():
+        nonlocal x
+        while x > 0:
+            t = randrange(0,8)  # coming in 0-7 secs
+            print(f'🐸 Comming in {t}')
+            sleep(t)
+            with lock_for_x:
+                x = 5
+            if triggered:
+                break
+        print(f'🐸 : bye')
+
+    e = ThreadPoolExecutor(max_workers=3)
+    a = e.submit(add_x)
+    b = e.submit(down_x)
+test_countdown()
+#+end_src
 ** bytes
 #+begin_src python
   # python code demonstrating
