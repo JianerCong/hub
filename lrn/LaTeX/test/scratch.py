@@ -1,3 +1,13 @@
+import threading
+from threading import Thread, Timer, Lock
+import random
+# from random import randrange
+from time import sleep
+
+lock_for_print = Lock()
+def print_mt(*args,**kwargs):
+    with lock_for_print:
+        print(*args,**kwargs)
 class S:
     HEADER = '\033[95m'
     BLUE = '\033[94m'
@@ -40,11 +50,6 @@ class IStaticIdBasedNetworkable(ABC):
     def clear(self):                # clears up all the listeners
         pass
 
-import threading
-from threading import Thread, Timer, Lock
-import random
-# from random import randrange
-from time import sleep
 class RaftConsensus:
     def __init__(self,
                  n: IStaticIdBasedNetworkable,
@@ -88,13 +93,13 @@ class RaftConsensus:
             self.exe.execute(d)     # only primary will append entry
             return f"""
             Dear {i}, the primary
-                 I have appended your requested entry.
+                 I have appended your requested entry. ✅️
                         Yours {self.net.my_id()}
             """
         return f"""
-        Sorry, {i}
+        Sorry, {i} ❌️
              My primary is {self.primary}, and I will only listen to him/her.
-                Regards
+                Regards {self.net.my_id()}
         """
 
     def comfort(self):          # reset timer
@@ -103,11 +108,12 @@ class RaftConsensus:
         self.say(f'patience set to = {self.patience}')
 
     def say(self,s: str):
-        print(f'[{self.net.my_id()}]: ' + s)
+        print_mt(f'[{self.net.my_id()}]: ' + s)
 
     def ask_for_votes(self):
         self.dynasty += 1
-        c : int = 0
+        self.voted_dynasty[self.dynasty] = self.net.my_id()
+        c : int = 1
         for i in [i for i in self.net.all_ids() if i != self.net.my_id()]:
             r: str = self.net.send(i,'/pleaseVoteMe',f"""
             Hi {i}, vote me in the
@@ -119,20 +125,20 @@ class RaftConsensus:
                 c += 1
 
         if c >= len(self.net.all_ids()) / 2:
-            self.start_listening_as_primary()
+            self.start_listening_as_primary(c)
         else:
             self.start_listening_as_follower()
 
-    def start_listening_as_primary(self):
+    def start_listening_as_primary(self, c: int):
         self.primary = self.net.my_id()
 
         self.say(f'Listening as primary')
         for i in [i for i in self.net.all_ids() if i != self.net.my_id()]:
             self.net.send(i,'/IamThePrimary',f"""
-            Hi, I am the new primary,{self.net.my_id()}
+            Hi, I got {c} votes to be the new primary,{self.net.my_id()}
                 the dynasty number is:
                    {self.dynasty}
-                               Regards
+                               Regards {self.net.my_id()}
             """)
 
         self.net.clear()
@@ -144,6 +150,7 @@ class RaftConsensus:
                 self.net.send(i,'/pleaseAppendEntry','Beep')
 
     def handle_ask_for_vote(self, i: int, d: str) -> Optional[str]:
+        self.comfort()
         asked_dynasty = int(d.splitlines()[2].strip())
         if asked_dynasty not in self.voted_dynasty:
             self.voted_dynasty[asked_dynasty] = i
@@ -151,7 +158,7 @@ class RaftConsensus:
         return f"""Sorry,
               I have already voted for this term for
                      {self.voted_dynasty[asked_dynasty]}
-                               Regards
+                               Regards {self.net.my_id()}
         """
 
     def handle_primary(self, i: int, d: str) -> Optional[str]:
@@ -160,7 +167,7 @@ class RaftConsensus:
         return f"""
         Dear primary {i},
              from now on I will listen to you in term {self.dynasty}.
-                      Regards
+                      Regards {self.net.my_id()}
         """
 
     def handle_execute(self, i: int, d: str) -> Optional[str]:
@@ -175,7 +182,7 @@ class MockedExecutable(IExecutable):
     def __init__(self, i: int):
         self.id = i
     def execute(self,command: str):
-        print(f'[{i}] Exec: {command}')
+        print_mt(f'[{i}] Exec: {command}')
 
 network_hub : dict[str, Callable[[int,str],Optional[str]]] = dict()
 lock_for_netwok_hub = Lock()
@@ -190,20 +197,20 @@ class MockedIdNetworkNode(IStaticIdBasedNetworkable):
         return network_nodes
     def send(self,i: int, target: str, data: str) -> Optional[str]:
         k = f'{i}-{target}'
-        print(f'{S.CYAN} Calling handler: {k} {S.NOR}')
+        print_mt(f'{S.CYAN} Calling handler: {k} {S.NOR} with data:\n {S.CYAN} {data} {S.NOR}')
         with lock_for_netwok_hub:
             if k in network_hub:
                 r = network_hub[k](self.id,data)
             else:
-                print(f'Handler {k} not found')
+                print_mt(f'Handler {k} not found')
                 r = None
-        print(f'Got result:{S.GREEN} {r} {S.NOR}')
+        print_mt(f'Got result:{S.GREEN} {r} {S.NOR}')
         return r
 
     def clear(self):                # clears up all the listeners
         for k in list(network_hub.keys()):
             if k.startswith(f'{self.id}-'):
-                print(f'Removing handler: {k}')
+                print_mt(f'Removing handler: {k}')
                 network_hub.pop(k)
 
     def listen(self,
@@ -211,7 +218,7 @@ class MockedIdNetworkNode(IStaticIdBasedNetworkable):
                handler: Callable[[int,str],Optional[str]]
                ):
         k = f'{self.id}-{target}'
-        print(f'Adding handler: {k}')
+        print_mt(f'Adding handler: {k}')
         network_hub[k] = handler
 
 for i in network_nodes:
