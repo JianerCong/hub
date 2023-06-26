@@ -166,7 +166,7 @@ row sep=1cm,column sep=2cm]
 % --------------------------------------------------
 \begin{document}
 \maketitle
-
+\begin{comment}
 \section{听一个共识}
 让我们来想一个共识。优先要求这几点：
 \begin{itemize}
@@ -629,10 +629,50 @@ class ListenToOneConsensus:
 
 \emoji{parrot} : 那如果一个节点同时收到两个\cola{primary}的消息怎么办呢？
 那么就和其他的共识算法一样（Raft，PBFT）， 节点只需要接受最新的命令就行了。
+\end{comment}
 
-\section{联盟链的执行器}
+\section{静态节点集群共识}
 
-共识不需要联盟链，但联盟链需要共识。
+很多教科书里的集群都是基于\Cola{静态集群}的，也就是说集群节点的数量从头到尾都不变，
+而且是已知的。这些共识包括：Raft，PBFT 等等。它们多多少少都要依赖一个``投票''的机制。
+
+\emoji{parrot} : 确实，你得知道有一共有多少人才能知道\cola{“大多数”}是多少人。
+
+\begin{center}
+  \begin{tikzpicture}
+    \matrix[column sep=1cm,row sep=1cm,nodes={myNode,fill=gray}]{
+      \node[name=a1]{1}; & 
+      \node[name=a2]{2}; \\
+      \node[name=a3]{3}; & 
+      \node[name=a4]{4}; \\
+    };
+
+    \foreach \i / \j in {1/2,1/3,1/4,2/3,2/4,3/4}{
+      \draw[thick,latex-latex] (a\j) -- (a\i);
+    }
+
+  \end{tikzpicture}
+\end{center}
+那么对于这样的共识他们的网络应该是这样的:
+\begin{simplepy}
+class IStaticIdBasedNetworkable:
+    def listen(self,
+               target: str,
+               handler: Callable[[int,str],Optional[str]]
+               ):
+        pass
+    def my_id() -> int:
+        pass
+    def all_ids() -> list[int]:
+        pass
+    def send(self,i: int, target: str, data: str) -> Optional[str]:
+        # i: the target, e.g. 2
+        # target: e.g. "/hi"
+        pass
+\end{simplepy}
+那么我们看到大部分和之前\texttt{IEndpointBasedNetworkable}是一样的，有才华的同学
+可能想把这两个写成一个\texttt{template<T>}，不过请暂时先别。
+
 
 \end{document}
 

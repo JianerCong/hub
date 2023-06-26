@@ -516,6 +516,28 @@ async def run():
 asyncio.run(run())
 
 #+end_src
+*** random
+#+begin_src python
+  import random
+  random.seed(123)
+  # --------------------------------------------------
+  # int
+  random.randrange(0,10) # draw from 0,9
+  random.randrange(0,10,2) #[0,2,...,8]
+  random.randint(0,10) # = randrange(0,11)
+  random.choice([1,2,3]) # pick one
+  random.choices([1,2,3],k=5) # pick five
+  l = [1,2,3]
+  random.shuffle(l)
+  l
+  random.sample(['red', 'blue'], counts=[4, 2], k=5)
+  # sample(['red', 'red', 'red', 'red', 'blue', 'blue'], k=5).
+
+  # --------------------------------------------------
+  # real
+  random.uniform(1,10) #uniform between 1 ~ 10
+  random.gauss(mu=0,sigma=1) #normal
+#+end_src
 ** eth-hash
 #+begin_src bash
   pyenv
