@@ -73,6 +73,9 @@ p + coord_cartesian(xlim =c(Sys.Date() - 30, NA), ylim = c(10, 20))
 
 
 #+end_src
+*** Q/A:
+**** WARNING: Removed 4 rows containing missing values (`geom_bar()`). 
+You manually set the xlim/ylim, and some points are out of your sight
 *** Legend
 **** position
     #+begin_src R
