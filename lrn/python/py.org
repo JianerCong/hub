@@ -954,6 +954,29 @@ def test_countdown():
     b = e.submit(down_x)
 test_countdown()
 #+end_src
+*** simple deadlock
+#+begin_src python
+from threading import Thread, Timer, Lock
+
+lock_for_a = Lock()
+a = 2
+def f():
+    with lock_for_a:
+        print('Trigger a deadlock')
+        g()
+def g():
+    with lock_for_a:
+        print('Hi')
+#f() #Trigger a deadlock
+
+def f2():
+    with lock_for_a:
+        print('Won\'t trigger a deadlock')
+        Thread(target=g).start()
+f2()
+#Won't trigger a deadlock
+#Hi
+#+end_src
 ** bytes
 #+begin_src python
   # python code demonstrating
