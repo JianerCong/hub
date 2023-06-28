@@ -172,3 +172,53 @@ determined moment.
 # Local Variables:
 # org-what-lang-is-for: "latex"
 # End:
+** counter
+*** yours
+#+begin_src latex
+  \newcounter{somecounter}[anothercounter]
+  \setcounter{somecounter}{number}
+  \addtocounter{somecounter}{number}
+  \stepcounter{somecounter}
+  \refstepcounter{somecounter}    %makes \ref,\label aware of it
+
+  % Access counter
+  \arabic{somecounter}
+  \roman{somecounter}
+  \Roman{somecounter}
+  \alph{somecounter}
+  \Alph{somecounter}
+  \fnsymbol{somecounter}
+  \value{somecounter}
+
+  % other counter
+  \counterwithin{somecounter}{anothercounter}
+  \counterwithout{somecounter}{anothercounter}
+#+end_src
+Example
+#+begin_src latex
+\newcounter{mycounter}
+\setcounter{mycounter}{42}
+You can now write \verb|\themycounter| to obtain \themycounter.
+#+end_src
+*** laTeX default
++ part
++ chapter
++ section
++ subsection
++ subsubsection
++ paragraph
++ subparagraph
++ page
+For floats	
++ equation
++ figure
+table
+For footnotes	
++ footnote
++ mpfootnote
+For the enumerate environment	
++ enumi
++ enumii
++ enumiii
++ enumiv
+
