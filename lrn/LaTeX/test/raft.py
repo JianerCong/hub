@@ -223,8 +223,10 @@ class MockedExecutable(IExecutable):
 
 
 class MockedIdNetworkNode(IStaticIdBasedNetworkable):
+
     def __init__(self,i:int):
         self.id = i
+
     def my_id(self) -> int:
         return self.id
     def all_ids(self) -> list[int]:
@@ -265,6 +267,10 @@ executor_iface = [MockedExecutable(i) for i in network_nodes]
 consensus_nodes = [
     RaftConsensus(network_iface[i],executor_iface[i]) for i in network_nodes
 ]
+
+"""🦜 : The MockedIdNetworkNode is kinda like a 'view' for the network hub.
+all NetworkNode share a common hub, so don't try to make the network hub local.
+"""
 
 nClient = MockedIdNetworkNode(1234)
 while True:

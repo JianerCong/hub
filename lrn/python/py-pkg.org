@@ -538,6 +538,31 @@ asyncio.run(run())
   random.uniform(1,10) #uniform between 1 ~ 10
   random.gauss(mu=0,sigma=1) #normal
 #+end_src
+*** random word
+#+begin_src python
+#pip install wonderwords
+from wonderwords import RandomWord
+
+r = RandomWord()
+
+# generate a random word
+r.word()
+
+# random word that starts with a and ends with en
+r.word(starts_with="a", ends_with="en")
+
+# generate a random noun or adjective, by default all parts of speech are included
+r.word(include_parts_of_speech=["nouns", "adjectives"])
+
+# generate a random word between the length of 3 and 8 characters
+r.word(word_min_length=3, word_max_length=8)
+
+# generate a random word with a custom regular expression
+r.word(regex=".*a")
+
+# you can combine multiple filtering options
+r.word(starts_with="ru", word_max_length=10, include_parts_of_speech=["verbs"])
+#+end_src
 ** eth-hash
 #+begin_src bash
   pyenv
