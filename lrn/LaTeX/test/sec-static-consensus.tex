@@ -1,0 +1,559 @@
+\section{静态节点集群共识}
+
+很多教科书里的集群都是基于\Cola{静态集群}的，也就是说集群节点的数量从头到尾都不变，
+而且是已知的。这些共识包括：Raft，PBFT 等等。它们多多少少都要依赖一个``投票''的机制。
+
+\emoji{parrot} : 确实，你得知道有一共有多少人才能知道\cola{“大多数”}是多少人。
+
+\begin{center}
+  \begin{tikzpicture}
+    \matrix[column sep=1cm,row sep=1cm,nodes={myNode,fill=gray}]{
+      \node[name=a1]{1}; & 
+      \node[name=a2]{2}; \\
+      \node[name=a3]{3}; & 
+      \node[name=a4]{4}; \\
+    };
+
+    \foreach \i / \j in {1/2,1/3,1/4,2/3,2/4,3/4}{
+      \draw[thick,latex-latex] (a\j) -- (a\i);
+    }
+
+  \end{tikzpicture}
+\end{center}
+
+那么对于这样的共识他们的网络应该是这样的:
+\begin{simplepy}
+from abc import ABC
+class IStaticIdBasedNetworkable(ABC):
+    def listen(self,
+               target: str,
+               handler: Callable[[int,str],Optional[str]]
+               ):
+        pass
+    def my_id(self) -> int:
+        pass
+    def all_ids(self) -> list[int]:
+        pass
+    def send(self,i: int, target: str, data: str) -> Optional[str]:
+        # i: the target, e.g. 2
+        # target: e.g. "/hi"
+        pass
+    def clear(self):                # clears up all the listeners
+        pass
+\end{simplepy}
+那么我们看到大部分和之前\texttt{IEndpointBasedNetworkable}是一样的，有才华的同学
+可能想把这两个写成一个\texttt{template<T>}，不过请暂时先别。
+
+\section{例子: Raft 共识实现}
+那么基于上面的这个接口，我们的Raft共识应该就是这样的：
+\begin{simplepy}
+class RaftConsensus:
+    def __init__(self,
+                 n: IStaticIdBasedNetworkable,
+                 e: IExecutable):
+        self.net = n
+        self.exe = e
+        self.lock_for_patience = Lock()
+        self.primary = None
+        self.dynasty = 0
+        self.voted_dynasty = dict()
+        self.lock_for_voted_dynasty = Lock()
+
+        self.start_listening_as_follower()
+
+    def start_listening_as_follower(self):
+
+        self.say('Started as follower')
+        self.net.clear()
+        self.net.listen('/pleaseAppendEntry', self.handle_append_entry)
+        self.net.listen('/pleaseExecute', self.handle_execute)
+        self.net.listen('/pleaseVoteMe', self.handle_ask_for_vote)
+        self.net.listen('/IamThePrimary', self.handle_primary)
+
+        Thread(target=self.start_internal_clock).start()  # here the ctor ends
+
+    def start_internal_clock(self):
+        self.comfort()
+
+        p = -1
+        with self.lock_for_patience:
+            p = self.patience
+
+        while p > 0:
+            sleep(2)
+            with self.lock_for_patience:
+                self.patience -= 1
+                p = self.patience
+            self.say(f' patience >> {self.patience}, 🐢PR: {self.primary}')
+
+        self.have_enough()
+
+    def have_enough(self):
+        self.say(f' have had enough')
+        self.ask_for_votes()
+
+    def handle_append_entry(self, i: int, d: str) -> Optional[str]:
+        if i == self.primary:
+            self.comfort()
+            self.exe.execute(d)     # only primary will append entry
+            return f"""
+            Dear {i}, the primary
+                 I have appended your requested entry. ✅️ {d}
+                        Yours {self.net.my_id()}
+            """
+        return f"""
+        Sorry, {i} ❌️
+             My primary is {self.primary}, and I will only listen to him/her.
+                Regards {self.net.my_id()}
+        """
+
+    def comfort(self):          # reset timer
+        with self.lock_for_patience:
+            self.patience = random.randrange(start=10,stop=20,step=2)
+            self.say(f'patience set to = {self.patience}')
+
+    def say(self,s: str):
+        print_mt(f'[{self.net.my_id()}]: ' + s)
+
+    def ask_for_votes(self):
+        self.dynasty += 1
+        with self.lock_for_voted_dynasty:
+            self.voted_dynasty[self.dynasty] = self.net.my_id()
+        c : int = 1
+        for i in [i for i in self.net.all_ids() if i != self.net.my_id()]:
+            r: str = self.net.send(i,'/pleaseVoteMe',f"""
+            Hi {i}, vote me in the
+               {self.dynasty}
+                     compaign
+                       Yours, {self.net.my_id()}
+            """)
+            if (r and r.startswith('Yes')):
+                c += 1
+
+        if c >= len(self.net.all_ids()) / 2:
+            self.start_listening_as_primary(c)
+        else:
+            self.start_listening_as_follower()
+
+    def start_listening_as_primary(self, c: int):
+        self.primary = self.net.my_id()
+
+        self.say(f'Listening as primary')
+        for i in [i for i in self.net.all_ids() if i != self.net.my_id()]:
+            self.net.send(i,'/IamThePrimary',f"""
+            Hi, I got {c} votes to be the new primary,{self.net.my_id()}
+                the dynasty number is:
+                   {self.dynasty}
+                               Regards {self.net.my_id()}
+            """)
+
+        self.net.clear()
+        self.net.listen('/pleaseExecute',self.handle_execute_for_primary)
+
+
+
+        # Make the following a thread
+        self.alive = True
+        Thread(target=self.heart_beat).start()
+
+    def heart_beat(self):
+        while self.alive:
+            sleep(6)
+            self.say(f'[Primary 💙]')
+            for i in [i for i in self.net.all_ids() if i != self.net.my_id()]:
+                self.net.send(i,'/pleaseAppendEntry','Beep')
+
+
+    def handle_ask_for_vote(self, i: int, d: str) -> Optional[str]:
+        self.primary = None
+        self.comfort()
+        asked_dynasty = int(d.splitlines()[2].strip())
+        with self.lock_for_voted_dynasty:
+            if asked_dynasty not in self.voted_dynasty:
+                self.voted_dynasty[asked_dynasty] = i
+                return 'Yes'
+        return f"""Sorry,
+              I have already voted for this term for
+                     {self.voted_dynasty[asked_dynasty]}
+                               Regards {self.net.my_id()}
+        """
+
+    def handle_primary(self, i: int, d: str) -> Optional[str]:
+        self.primary = i
+        self.dynasty = int(d.splitlines()[3].strip())
+        return f"""
+        Dear primary {i},
+             from now on I will listen to you in term {self.dynasty}.
+                      Regards {self.net.my_id()}
+        """
+
+    def handle_execute(self, i: int, d: str) -> Optional[str]:
+        if self.primary == None:
+            return f"""
+            Dear client {i},
+                Sorry, our group is electing primary for the moment,
+                please try again latter.
+                    Regards {self.net.my_id()}
+            """
+        return self.net.send(self.primary,'/pleaseExecute',d)  # forward
+
+    def handle_execute_for_primary(self, i: int, d: str) -> Optional[str]:
+        self.say(f'Primary executing {d}')
+        self.exe.execute(d)
+        subs = [s for s in self.net.all_ids() if s != self.net.my_id()]
+        self.say(f'Asking subs: {subs}')
+        for sub in subs:
+            self.say(f'Ask {sub} to execute {d}')
+            self.net.send(sub,'/pleaseAppendEntry',d)
+            # Thread(target=
+            #        lambda : 
+            #        ).start()
+        return f"""
+        Dear client,
+             Your requests {d} have been executed by our group
+                  Regards {self.net.my_id()}, the primary
+        """
+\end{simplepy}
+然后,如果想要把集群跑起来，我们还需要一个假的网络和执行器：
+\begin{simplepy}
+class MockedExecutable(IExecutable):
+    def __init__(self, i: int):
+        self.id = i
+    def execute(self,command: str):
+        print_mt(f'🦜 {S.RED} [{self.id}] Exec: {command} {S.NOR}')
+
+
+class MockedIdNetworkNode(IStaticIdBasedNetworkable):
+    def __init__(self,i:int):
+        self.id = i
+    def my_id(self) -> int:
+        return self.id
+    def all_ids(self) -> list[int]:
+        return network_nodes
+    def send(self,i: int, target: str, data: str) -> Optional[str]:
+        k = f'{i}-{target}'
+        print_mt(f'{S.CYAN} Calling handler: {k} {S.NOR} with data:\n {S.CYAN} {data} {S.NOR}')
+        if k in network_hub:
+            r = network_hub[k](self.id,data)
+        else:
+            print_mt(f'Handler {k} not found')
+            r = None
+        print_mt(f'Got result:{S.GREEN} {r} {S.NOR}')
+        return r
+
+    def clear(self):                # clears up all the listeners
+        with lock_for_netwok_hub:
+            for k in list(network_hub.keys()):
+                if k.startswith(f'{self.id}-'):
+                    print_mt(f'Removing handler: {k}')
+                    network_hub.pop(k)
+
+    def listen(self,
+               target: str,
+               handler: Callable[[int,str],Optional[str]]
+               ):
+        k = f'{self.id}-{target}'
+        print_mt(f'Adding handler: {k}')
+        network_hub[k] = handler
+
+\end{simplepy}
+\begin{tcolorbox}
+  \emoji{parrot} 这里我们还用了一些帮手函数：这些函数没啥重要的，就是用来方便打印
+  日志的。
+  \begin{simplepy}
+import threading
+from threading import Thread, Timer, Lock
+import random
+# from random import randrange
+from time import sleep
+
+lock_for_print = Lock()
+def print_mt(*args,**kwargs):
+    with lock_for_print:
+        print(*args,**kwargs)
+
+class S:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    MAG = '\033[93m'
+    RED = '\033[91m'
+    NOR = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+  \end{simplepy}
+\end{tcolorbox}
+而使用的话就是这么用：
+\begin{simplepy}
+network_hub : dict[str, Callable[[int,str],Optional[str]]] = dict()
+lock_for_netwok_hub = Lock()
+network_nodes = list(range(3))
+
+network_iface = [MockedIdNetworkNode(i) for i in network_nodes]
+executor_iface = [MockedExecutable(i) for i in network_nodes]
+consensus_nodes = [
+    RaftConsensus(network_iface[i],executor_iface[i]) for i in network_nodes
+]
+
+nClient = MockedIdNetworkNode(1234)
+while True:
+    # reply = input('Enter cmd: <id> <cmd>')
+    reply = input('Enter: ')
+    if reply == 'stop': break
+
+    l = reply.split(' ')
+
+    # Simulate a dead node
+    if l[0] == 'down':
+        i = int(l[1])
+        print_mt(f'{S.HEADER} Turning down node-{i} {S.NOR}')
+        consensus_nodes[i].net.clear()
+        consensus_nodes[i].alive = False
+    else:
+        # Execute a command
+        i = int(l[0])
+        print_mt(f'{S.HEADER} Sending {l[1]} to node-{i} {S.NOR}')
+        nClient.send(i,'/pleaseExecute',l[1])
+  
+\end{simplepy}
+
+然后在命令行里我们就可以部署集群并发送消息了。 如果想要往集群发送命令使用：
+\begin{center}
+  \cola{\texttt{<节点id>}} \colb{\texttt{<命令>}}
+\end{center}
+比如：
+\begin{center}
+  \cola{\texttt{1}} \colb{\texttt{aaa}} （往1发送\texttt{aaa}） \\
+  \cola{\texttt{2}} \colb{\texttt{bbb}} （往2发送\texttt{bbb}）\\
+\end{center}
+
+而如果想要模拟一个节点down了，那就用：
+\begin{center}
+  \cola{\texttt{down}} \colb{\texttt{<节点id>}}
+\end{center}
+
+ \begin{tcolorbox}[breakable,title=Raft共识模拟的命令行输出（部分没啥用的输出被省略了）]
+  \begin{verbatim}
+从这里开始 --------------------------------------------------
+[0]: Started as follower
+Adding handler: 0-/pleaseAppendEntry
+Adding handler: 0-/pleaseExecute
+Adding handler: 0-/pleaseVoteMe
+Adding handler: 0-/IamThePrimary
+[0]: patience set to = 18
+[1]: Started as follower
+Adding handler: 1-/pleaseAppendEntry
+Adding handler: 1-/pleaseExecute
+Adding handler: 1-/pleaseVoteMe
+Adding handler: 1-/IamThePrimary
+[1]: patience set to = 18
+[2]: Started as follower
+Adding handler: 2-/pleaseAppendEntry
+Adding handler: 2-/pleaseExecute
+Adding handler: 2-/pleaseVoteMe
+Adding handler: 2-/IamThePrimary
+[2]: patience set to = 16
+Enter: [0]:  patience >> 17, 🐢PR: None
+[1]:  patience >> 17, 🐢PR: None
+... 略 ... 
+[2]:  patience >> 0, 🐢PR: None
+[2]:  have had enough
+ Calling handler: 0-/pleaseVoteMe  with data:
+  
+            Hi 0, vote me in the
+               1
+                     compaign
+                       Yours, 2
+             
+[0]: patience set to = 10
+Got result: Yes 
+ Calling handler: 1-/pleaseVoteMe  with data:
+  
+            Hi 1, vote me in the
+               1
+                     compaign
+                       Yours, 2
+             
+[1]: patience set to = 14
+Got result: Yes 
+[2]: Listening as primary
+ Calling handler: 0-/IamThePrimary  with data:
+  
+            Hi, I got 3 votes to be the new primary,2
+                the dynasty number is:
+                   1
+                               Regards 2
+             
+Got result: 
+        Dear primary 2,
+             from now on I will listen to you in term 1.
+                      Regards 0
+         
+ Calling handler: 1-/IamThePrimary  with data:
+  
+            Hi, I got 3 votes to be the new primary,2
+                the dynasty number is:
+                   1
+                               Regards 2
+             
+Got result: 
+        Dear primary 2,
+             from now on I will listen to you in term 1.
+                      Regards 1
+         
+Removing handler: 2-/pleaseAppendEntry
+Removing handler: 2-/pleaseExecute
+Removing handler: 2-/pleaseVoteMe
+Removing handler: 2-/IamThePrimary
+Adding handler: 2-/pleaseExecute
+从这里开始 2 就是 primary--------------------------------------------------
+[0]:  patience >> 9, 🐢PR: 2
+[1]:  patience >> 13, 🐢PR: 2
+[0]:  patience >> 8, 🐢PR: 2
+[1]:  patience >> 12, 🐢PR: 2
+[0]:  patience >> 7, 🐢PR: 2
+[1]:  patience >> 11, 🐢PR: 2
+[2]: [Primary 💙]
+ Calling handler: 0-/pleaseAppendEntry  with data:
+  Beep 
+[0]: patience set to = 18
+🦜  [0] Exec: Beep 
+..... 略
+这里往节点 1 发送命令 （a）--------------------------------------------------
+ Sending a to node-1 
+ Calling handler: 1-/pleaseExecute  with data:
+  a 
+ Calling handler: 2-/pleaseExecute  with data:
+  a 
+[2]: Primary executing a
+🦜  [2] Exec: a  （这里primary执行了) --------------------------------------------------
+[2]: Asking subs: [0, 1]
+[2]: Ask 0 to execute a
+ Calling handler: 0-/pleaseAppendEntry  with data:
+  a 
+[0]: patience set to = 16
+🦜  [0] Exec: a  (0 执行了) --------------------------------------------------
+Got result: 
+            Dear 2, the primary
+                 I have appended your requested entry. ✅️ a
+                        Yours 0
+             
+[2]: Ask 1 to execute a
+ Calling handler: 1-/pleaseAppendEntry  with data:
+  a 
+[1]: patience set to = 18
+🦜  [1] Exec: a  (1 也执行了)
+Got result: 
+            Dear 2, the primary
+                 I have appended your requested entry. ✅️ a
+                        Yours 1
+             
+Got result: 
+        Dear client,
+             Your requests a have been executed by our group
+                  Regards 2, the primary
+         
+... 略...
+down 2
+(这里关掉节点2 （primary）心跳不再发送) ------------------------------------------
+ Turning down node-2 
+Removing handler: 2-/pleaseExecute
+Enter: [2]: [Primary 💙]
+[1]:  patience >> 10, 🐢PR: 2
+ Calling handler: 0-/pleaseAppendEntry  with data:
+  Beep 
+[0]: patience set to = 14
+🦜  [0] Exec: Beep 
+Got result: 
+            Dear 2, the primary
+                 I have appended your requested entry. ✅️ Beep
+                        Yours 0
+             
+ Calling handler: 1-/pleaseAppendEntry  with data:
+  Beep 
+[1]: patience set to = 16
+🦜  [1] Exec: Beep 
+Got result: 
+            Dear 2, the primary
+                 I have appended your requested entry. ✅️ Beep
+                        Yours 1
+（还在等心跳的其他节点） --------------------------------------------------
+[0]:  patience >> 13, 🐢PR: 2
+... 略 ...
+[0]:  patience >> 1, 🐢PR: 2
+[1]:  patience >> 3, 🐢PR: 2
+[0]:  patience >> 0, 🐢PR: 2
+[0]:  have had enough
+(没有等到心跳，节点0发起投票)----------------------------------------------
+ Calling handler: 1-/pleaseVoteMe  with data:
+  
+            Hi 1, vote me in the
+               2
+                     compaign
+                       Yours, 0
+             
+[1]: patience set to = 10
+Got result: Yes 
+ Calling handler: 2-/pleaseVoteMe  with data:
+  
+            Hi 2, vote me in the
+               2
+                     compaign
+                       Yours, 0
+             
+Handler 2-/pleaseVoteMe not found
+Got result: None 
+--------------------------------------------------
+(节点0 成为新的primary)
+[0]: Listening as primary
+ Calling handler: 1-/IamThePrimary  with data:
+  
+            Hi, I got 2 votes to be the new primary,0
+                the dynasty number is:
+                   2
+                               Regards 0
+             
+Got result: 
+        Dear primary 0,
+             from now on I will listen to you in term 2.
+                      Regards 1
+         
+ Calling handler: 2-/IamThePrimary  with data:
+  
+            Hi, I got 2 votes to be the new primary,0
+                the dynasty number is:
+                   2
+                               Regards 0
+             
+Handler 2-/IamThePrimary not found
+Got result: None 
+Removing handler: 0-/pleaseAppendEntry
+Removing handler: 0-/pleaseExecute
+Removing handler: 0-/pleaseVoteMe
+Removing handler: 0-/IamThePrimary
+Adding handler: 0-/pleaseExecute
+[1]:  patience >> 9, 🐢PR: 0
+[1]:  patience >> 8, 🐢PR: 0
+[1]:  patience >> 7, 🐢PR: 0
+节点 0 发送心跳 --------------------------------------------------
+[0]: [Primary 💙] 
+ Calling handler: 1-/pleaseAppendEntry  with data:
+  Beep 
+[1]: patience set to = 10
+🦜  [1] Exec: Beep 
+Got result: 
+            Dear 0, the primary
+                 I have appended your requested entry. ✅️ Beep
+                        Yours 1
+             
+ Calling handler: 2-/pleaseAppendEntry  with data:
+  Beep 
+Handler 2-/pleaseAppendEntry not found
+Got result: None 
+[1]:  patience >> 9, 🐢PR: 0
+[1]:  patience >> 8, 🐢PR: 0
+[0]: [Primary 💙]
+..略...
+\end{verbatim}
+\end{tcolorbox}
