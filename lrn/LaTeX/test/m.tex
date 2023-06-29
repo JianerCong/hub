@@ -173,7 +173,7 @@ row sep=1cm,column sep=2cm]
 这样其实就相当一有一个\textbf{队列}（节点们排队想当primary）:
 \begin{center}
   \begin{tikzpicture}
-    \draw[style=help lines] (-5cm,5cm) grid +(15cm,-10cm);
+    % \draw[style=help lines] (-5cm,5cm) grid +(15cm,-10cm);
     \begin{scope}
       \matrix[left,matrix of nodes,nodes={draw=black,fill=\mycola!20,minimum size=1.2cm,anchor=center}] (M1){
         节点1 & 节点2 & ...
@@ -205,6 +205,54 @@ row sep=1cm,column sep=2cm]
     \end{scope}
   \end{tikzpicture}
 \end{center}
+\begin{tcolorbox}
+\emoji{parrot} : 但是我觉得这一步还是有点太远了，暂时先每个节点记住两个吧。
+\end{tcolorbox}
+那么其实我们节点之间的架构就变成了这样的：
+\begin{center}
+  \begin{tikzpicture}
+    % \draw[style=help lines] (-2cm,5cm) grid +(15cm,-10cm);
+    \begin{scope}
+      \node[myNode,fill=\mycola,minimum height=4em] (a0) {primary};
+      \node[myNode,fill=\mycolc,minimum height=2em] (a1) at (4cm,0){1};
+
+      \tikzstyle{myArrow}=[latex-,draw=gray,opacity=0.5,thick]
+
+      \foreach \i / \j in {
+        2/120,
+        3/180,
+        4/240
+      }{
+        \path (a0) -- (\j:3cm) node[myNode,fill=\mycolaa,name=a\i]{\i};
+      }
+      
+      \foreach \i / \j in {
+        5/60,
+        6/0,
+        7/300
+      }{
+        \path (a1) -- +(\j:3cm) node[myNode,fill=\mycolaa,name=a\i]{\i};
+      }
+
+      % draw the arrows
+      \foreach \i in {2,3,4,5,7}{
+        % \draw[myArrow] (a1) -- (a\i);
+        \draw[myArrow] (a0) -- (a\i);
+      }
+
+      \foreach \i in {2,4,5,6,7}{
+        \draw[myArrow] (a1) -- (a\i);
+        % \draw[myArrow] (a0) -- (a\i);
+      }
+      \draw[myArrow] (a0.south east) parabola bend (2cm,-1cm) (a6.south west);
+      \draw[myArrow] (a1.north west) parabola bend (2cm,1cm) (a3.north east);
+    \end{scope}
+
+
+    
+  \end{tikzpicture}
+\end{center}
+还是中心化的，只不过没有中心变成了两个。
 
 \end{document}
 
@@ -212,4 +260,5 @@ row sep=1cm,column sep=2cm]
 % Local Variables:
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
 % End:
