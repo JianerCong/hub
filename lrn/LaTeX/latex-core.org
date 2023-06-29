@@ -1070,6 +1070,29 @@ As you can see in the figure \ref{fig:mesh1}, the
 function grows near 0. Also, in the page \pageref{fig:mesh1} 
 is the same example.
 #+end_src
+**** Make the caption narrower
+#+begin_src latex
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\newlength\mylength
+
+\usepackage{lipsum}
+\begin{document}
+
+\lipsum
+
+\begin{figure}
+  \adjustimage{height=5cm, gstore width=\mylength, center}{/home/me/Pictures/cloud.jpg}
+  % alternative: \adjustbox{gstore width=\mylength,center}{\includegraphics[height=10cm]{example-image}}
+  \par% or empty line, needed to get caption below the image, not to the rigth
+  \adjustbox{minipage=\mylength,center}{\caption{My very long long long long long long long long long long long long long long long long long long long caption }}
+\end{figure}
+
+\lipsum
+
+\end{document}
+#+end_src
 ** symbols
 *** trademarks, copyright
 #+begin_src latex

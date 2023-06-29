@@ -266,3 +266,8 @@ BoldItalicFont=*CodePLItalic
       ;; if the char-after == l[char-before]
       (and (char-after) (delete-char 1)))
   )
+
+;; 🦜 : Ask AucTex not to play with indentation in these environments
+(add-to-list 'LaTeX-indent-environment-list '("simplepy"  current-indentation))
+(add-to-list 'LaTeX-indent-environment-list '("simplec"  current-indentation))
+(add-to-list 'LaTeX-indent-environment-list '("numberedc"  current-indentation))
