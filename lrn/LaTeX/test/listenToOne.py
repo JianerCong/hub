@@ -62,13 +62,11 @@ class ListenToOneConsensus:
         self.exe = e
         if nodeToConnect:
             self.primary = nodeToConnect
-            self.is_primary = False
             self.ask_primary_for_entry()
             self.start_listening_as_sub()
             print_mt(f'{self.net.listened_endpoint()} started as sub 🐸')
         else:
             print_mt(f'{self.net.listened_endpoint()} started as primary 🐸')
-            self.is_primary = True
             self.start_listening_as_primary()
     def start_listening_as_primary(self):
         self.known_subs = []

@@ -235,4 +235,9 @@ C-x C-k C-f
 + C-x C-x :: exchange-point-and-mark
 ** expand
 + M-/ :: expand at point
+* Spacemacs Q/A
+** problem with python import magic?
+pip install epc
+pip install importmagic
+
 

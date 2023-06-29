@@ -9,6 +9,7 @@ def print_mt(*args,**kwargs):
     with lock_for_print:
         print(*args,**kwargs)
 
+
 class S:
     HEADER = '\033[95m'
     BLUE = '\033[94m'
@@ -52,27 +53,33 @@ class IExecutable(ABC):
     def execute(self,command: str) -> str:
         pass
 
-
-class ListenToOneConsensus:
+class FollowMeConsensus:
     def __init__(self,
                  n: IEndpointBasedNetworkable,
                  e: IExecutable,
                  nodeToConnect=''):
-        self.net = n
+        self.net: IEndpointBasedNetworkable = n
         self.exe = e
+
+        # All nodes keep these two, but only the primary's and next-primary's
+        # are valid.
+        self.known_subs = []
+        self.command_history = []
+
         if nodeToConnect:
             self.primary = nodeToConnect
-            self.is_primary = False
             self.ask_primary_for_entry()
             self.start_listening_as_sub()
             print_mt(f'{self.net.listened_endpoint()} started as sub 🐸')
         else:
             print_mt(f'{self.net.listened_endpoint()} started as primary 🐸')
-            self.is_primary = True
             self.start_listening_as_primary()
+
     def start_listening_as_primary(self):
-        self.known_subs = []
-        self.command_history = []
+        # Add my self
+        self.known_subs.append(self.net.listened_endpoint())
+
+        self.net.clear()
         self.net.listen('/pleaseAddMe',
                         self.handle_add_new_node)
         self.net.listen('/pleaseExecuteThis',
@@ -90,26 +97,6 @@ class ListenToOneConsensus:
                    {self.net.listened_endpoint()}, The primary.
         """
 
-    def handle_execute_for_primary(self, endpoint: str,
-                                   data: str) -> str:
-        cmd = data
-        self.command_history.append(cmd)
-        self.exe.execute(cmd)
-        for sub in self.known_subs:
-            r = self.net.send(sub,'/pleaseExecuteThis',cmd)
-            if r == None:
-                print(f'❌️ Node-{sub} is down,kick it off the group.')
-                self.known_subs.remove(sub)
-
-        return f"""
-        Dear {endpoint}
-             Your request has been carried out by our group.
-             Members: {self.known_subs}
-                 Sincerely
-                 {self.net.listened_endpoint()}, The primary.
-        """
-
-    # --------------------------------------------------
     def ask_primary_for_entry(self):
         r = self.net.send(self.primary,
                     '/pleaseAddMe',f"""
@@ -125,26 +112,7 @@ class ListenToOneConsensus:
         if cmd:
             self.exe.execute(cmd)
 
-    def start_listening_as_sub(self):
-        self.net.listen('/pleaseExecuteThis',
-                        self.handle_execute_for_sub)
-    def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
-        cmd = data
-        if (endpoint == self.primary):
-            self.exe.execute(cmd)
-            return f"""
-            Dear boss {self.primary},
-                 Mission [{data}] is accomplished.
-                     Sincerely
-                     {self.net.listened_endpoint()}
-            """
-        else:
-            # forward
-            r = self.net.send(self.primary,
-                                 '/pleaseExecuteThis',data)
-            if r == None:
-                raise Exception('failed to forward message to primary')
-            return r
+
 
 class MockedExecutable(IExecutable):
     def __init__(self, i: str):
