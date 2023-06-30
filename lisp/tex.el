@@ -274,6 +274,13 @@ BoldItalicFont=*CodePLItalic
 
 
 ;; 🦜 add our own Font-Inserting command
-(add-to-list 'LaTeX-font-list '(24 "\\cola{" "}"))                       ;C-c C-f C-x
-;; (add-to-list 'LaTeX-font-list '(25 "\\colb{" "}" "\\colb{" "}"))                       ;C-c C-f C-y
-;; (add-to-list 'LaTeX-font-list '(26 "\\colc{" "}" "\\colc{" "}"))                       ;C-c C-f C-z
+LaTeX-font-list
+
+(setq-default TeX-master "m") ; All master files by default called "m".
+
+(add-to-list 'LaTeX-font-list '(?a "\\cola{" "}"))                       ;C-c C-f a
+(add-to-list 'LaTeX-font-list '(?b "\\colb{" "}"))                       ;C-c C-f b
+(add-to-list 'LaTeX-font-list '(?c "\\colc{" "}"))                       ;C-c C-f c
+
+;; (LaTeX-mode)                            ;This reload the 'LaTeX-font-list
+(TeX-normal-mode)

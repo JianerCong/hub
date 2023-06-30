@@ -118,6 +118,13 @@ C-c . : mark env
 *** font specifier
 C-u prefix change the font of the selecting text
 https://tex.stackexchange.com/questions/523675/custom-font-specifiers-in-auctex/689941#689941
+*** parse the buffer
+#+begin_src latex
+%%% Local Variables:
+%%% TeX-parse-self: t
+%%% TeX-auto-save: t
+%%% End:
+#+end_src
 
 *** mupdf
 #+begin_src bash
