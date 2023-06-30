@@ -66,8 +66,9 @@ class FollowMeConsensus:
         self.known_subs: list[str] = []
         self.command_history = []
 
+        self.net.listen('/down', self.handle_down)
+
         if nodeToConnect:
-            self.primary = nodeToConnect
             self.ask_primary_for_entry()
             self.start_listening_as_sub()
             print_mt(f'{self.net.listened_endpoint()} started as sub 🐸')
@@ -82,6 +83,13 @@ class FollowMeConsensus:
                         self.handle_add_new_node)
         self.net.listen('/pleaseExecuteThis',
                         self.handle_execute_for_primary)
+
+    def self_destruct(self):
+        self.net.clear()
+        self.say(f'I am done')
+
+    def handle_down(self,sub_endpoint: str, data: str) -> str:
+        self.self_destruct()
 
     def handle_add_new_node(self,sub_endpoint: str, data: str) -> str:
         """[For primary] to add new node"""
@@ -139,9 +147,9 @@ class FollowMeConsensus:
         """
 
     def ask_primary_for_entry(self):
-        r = self.net.send(self.primary,
+        r = self.net.send(self.known_subs[0],
                     '/pleaseAddMe',f"""
-                    Hi primary {self.primary},
+                    Hi primary {self.known_subs[0]},
                        please add me in the group
                           Regards {self.net.listened_endpoint()}
                     """
@@ -160,6 +168,11 @@ class FollowMeConsensus:
         self.net.listen('/pleaseSyncColleage', self.handle_sync_colleage)
         self.net.listen('/pleaseBePrimary', self.handle_be_primary)
         self.net.listen('/pleaseBeMySub', self.handle_be_my_sub)
+        self.net.listen('/pleaseAddMe', self.handle_add_new_node_for_sub)
+
+    def handle_add_new_node_for_sub(self,endpoint: str,data: str) -> str:
+        return self.net.send(self.known_subs[0],'pleaseAddMe',endpoint)
+    # In fact here we can also trigger a view-change but I am not 
 
     def handle_sync_colleage(self,endpoint: str,data: str) -> str:
         self.known_subs = data.split(',')
@@ -198,25 +211,34 @@ class FollowMeConsensus:
         self.sync_subs()
         self.start_listening_as_primary()
 
+        # The first thing is to execute the pending data
+        return self.handle_execute_for_primary(data)
+
+
     def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
         cmd = data
-        if (endpoint == self.primary):
+        if (endpoint == self.known_subs[0]):
             self.exe.execute(cmd)
             return f"""
-            Dear boss {self.primary},
+            Dear boss {self.known_subs[0]},
                  Mission [{data}] is accomplished.
                      Sincerely
                      {self.net.listened_endpoint()}
             """
         else:
             # forward
-            r = self.net.send(self.primary,
+            r = self.net.send(self.known_subs[0],
                                  '/pleaseExecuteThis',data)
             if r == None:
-                r = self.net.send(self.primary, '/pleaseExecuteThis',data)
-                raise Exception('failed to forward message to primary')
+                r = self.net.send(self.known_subs[1], '/pleaseBePrimary','')
+                if r == None:
+                    self.fatal_group_down('❌️ Both primary and next are dead, this is unacceptable.')
             return r
 
+    def fatal_group_down(self, reason : str = ''):
+        self.say(f'❌️ Fatal')
+        for sub in self.known_subs:
+            self.net.send(sub,'\down',reason)
 
 
 class MockedExecutable(IExecutable):
@@ -264,23 +286,24 @@ class MockedEndpointNetworkNode(IEndpointBasedNetworkable):
 
 from wonderwords import RandomWord
 class NodeFactory:
-    nodes: dict[str,ListenToOneConsensus] = dict()
+    nodes: dict[str,FollowMeConsensus] = dict()
+    nodes_names : list[str] = []
     r = RandomWord()
-    primary_name = ''
-    def make_node(self):
+    def make_node(self, nodeToConnect: str):
         i = len(self.nodes)
         s = self.r.word(word_max_length=4)
+        self.nodes_names.append(s)
         e = MockedExecutable(s)
         n = MockedEndpointNetworkNode(s)
         if i == 0:
-            self.nodes[s] = ListenToOneConsensus(n=n,e=e)
-            self.primary_name = s
+            self.nodes[s] = FollowMeConsensus(n=n,e=e)
             return
-        self.nodes[s] = ListenToOneConsensus(n=n,e=e,
-                                             nodeToConnect=self.primary_name)
+        self.nodes[s] = FollowMeConsensus(n=n,e=e,
+                                             nodeToConnect=nodeToConnect)
 
 fac = NodeFactory()
-for i in range(3): fac.make_node()
+for i in range(3):
+    fac.make_node(nodeToConnect=fac.nodes_names[i-1])
 
 nClient = MockedEndpointNetworkNode('ClientAAA')
 while True:
