@@ -63,7 +63,7 @@ class FollowMeConsensus:
 
         # All nodes keep these two, but only the primary's and next-primary's
         # are valid.
-        self.known_subs = []
+        self.known_subs: list[str] = []
         self.command_history = []
 
         if nodeToConnect:
@@ -72,29 +72,70 @@ class FollowMeConsensus:
             self.start_listening_as_sub()
             print_mt(f'{self.net.listened_endpoint()} started as sub 🐸')
         else:
+            self.known_subs.append(self.net.listened_endpoint())
             print_mt(f'{self.net.listened_endpoint()} started as primary 🐸')
             self.start_listening_as_primary()
 
     def start_listening_as_primary(self):
-        # Add my self
-        self.known_subs.append(self.net.listened_endpoint())
-
         self.net.clear()
         self.net.listen('/pleaseAddMe',
                         self.handle_add_new_node)
         self.net.listen('/pleaseExecuteThis',
                         self.handle_execute_for_primary)
 
-    def handle_add_new_node(self,sub_endpoint: str,
-                            data: str) -> str:
+    def handle_add_new_node(self,sub_endpoint: str, data: str) -> str:
         """[For primary] to add new node"""
         self.known_subs.append(sub_endpoint)
+        self.sync_subs()
+
         return f"""
         Dear {sub_endpoint}
-            You are in. and here is what we have so far:
+            You are in, and here is what we have so far:
             {','.join(self.command_history)}
+            Our team has:
+            {','.join(self.known_subs)}
                    Sincerely
                    {self.net.listened_endpoint()}, The primary.
+        """
+
+    def sync_subs(self):
+        # Board-cast the add-node msg
+        while True:
+
+            ok = True
+            for sub in self.known_subs[1:]:
+                r =  self.net.send(sub,'/pleaseSyncColleage',
+                                   ','.join(self.known_subs)
+                                   )
+                if r == None:
+                    ok = False
+                    print(f'sub {sub} is down, kick it out of the group')
+                    self.known_subs.remove(sub)
+
+            if ok:
+                print(f'All nodes synced: {self.known_subs}')
+                break
+
+    def handle_execute_for_primary(self, endpoint: str,
+                                   data: str) -> str:
+
+        cmd = data
+        self.command_history.append(cmd)
+        self.exe.execute(cmd)
+        for sub in self.known_subs:
+            r = self.net.send(sub,'/pleaseExecuteThis',cmd)
+            if r == None:
+                print(f'❌️ Node-{sub} is down,kick it off the group.')
+                self.known_subs.remove(sub)
+
+        self.sync_subs()
+
+        return f"""
+        Dear client {endpoint}
+             Your request has been carried out by our group.
+             Members: {self.known_subs}
+                 Sincerely
+                 {self.net.listened_endpoint()}, The primary.
         """
 
     def ask_primary_for_entry(self):
@@ -108,9 +149,73 @@ class FollowMeConsensus:
         if r == None:
             raise Exception('Failed to join the group')
         # In response, the primary should send you the history .
-        cmd = r.split('\n')[3]  # forth line is the command
-        if cmd:
+        res = r.split('\n')  # forth line is the command
+        cmd = res[3].strip()
+        if cmd!='':
             self.exe.execute(cmd)
+        self.known_subs = res[5].split(',')
+
+    def start_listening_as_sub(self):
+        self.net.listen('/pleaseExecuteThis', self.handle_execute_for_sub)
+        self.net.listen('/pleaseSyncColleage', self.handle_sync_colleage)
+        self.net.listen('/pleaseBePrimary', self.handle_be_primary)
+        self.net.listen('/pleaseBeMySub', self.handle_be_my_sub)
+
+    def handle_sync_colleage(self,endpoint: str,data: str) -> str:
+        self.known_subs = data.split(',')
+        return """Dear {endpoint}:
+                       I have sync my subs to :{self.known_subs}
+                            Regards {self.net.listened_endpoint()}
+        """
+
+    def handle_be_my_sub(self,endpoint: str,data: str) -> str:
+        """
+        As long as one of the primary and next-primary is alive, the group should be okay.
+        """
+        while endpoint != self.known_subs[0]:
+            if self.known_subs[0] == self.net.listened_endpoint():
+                raise Exception('What? I,{self.net.listened_endpoint()} should be primary before {endpoint}')
+            self.known_subs = self.known_subs[1:]  # pop front
+
+        self.say(f'updating known_subs to {self.known_subs}')
+        return 'Yes'
+
+    def say(self,s: str):
+        print_mt(f'[{self.net.listened_endpoint()}]: ' + s)
+
+    def handle_be_primary(self,endpoint: str,data: str) -> str:
+        while self.known_subs[0] != self.net.listened_endpoint():
+            self.known_subs = self.known_subs[1:]  # pop front until I'm the sub
+
+        self.say(f'updating known_subs to {self.known_subs}')
+
+        for sub in self.known_subs:
+            r = self.net.send(sub,'/pleaseBeMySub','')
+            if r == None:
+                print(f'❌️ Node-{sub} is down,kick it off the group.')
+                self.known_subs.remove(sub)
+
+        self.sync_subs()
+        self.start_listening_as_primary()
+
+    def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
+        cmd = data
+        if (endpoint == self.primary):
+            self.exe.execute(cmd)
+            return f"""
+            Dear boss {self.primary},
+                 Mission [{data}] is accomplished.
+                     Sincerely
+                     {self.net.listened_endpoint()}
+            """
+        else:
+            # forward
+            r = self.net.send(self.primary,
+                                 '/pleaseExecuteThis',data)
+            if r == None:
+                r = self.net.send(self.primary, '/pleaseExecuteThis',data)
+                raise Exception('failed to forward message to primary')
+            return r
 
 
 
