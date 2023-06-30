@@ -1093,6 +1093,10 @@ is the same example.
 
 \end{document}
 #+end_src
+*** flush the floats without adding a new page
+#+begin_src latex
+\FloatBarrier                   % \usepackage{placeins}
+#+end_src
 ** symbols
 *** trademarks, copyright
 #+begin_src latex

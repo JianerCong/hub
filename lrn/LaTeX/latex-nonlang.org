@@ -112,6 +112,13 @@ C-c . : mark env
 <a> C-e : fill env
 <a> C-s : fill sec
 <a> C-r : fill region 
+*** outline
++ C-c @ C-n/C-p :: Next/Previous visible heading
++ C-c @ C-d/C-s :: Hide/Show sub tree
+*** font specifier
+C-u prefix change the font of the selecting text
+https://tex.stackexchange.com/questions/523675/custom-font-specifiers-in-auctex/689941#689941
+
 *** mupdf
 #+begin_src bash
   sudo apt install mupdf

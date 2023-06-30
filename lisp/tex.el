@@ -271,3 +271,9 @@ BoldItalicFont=*CodePLItalic
 (add-to-list 'LaTeX-indent-environment-list '("simplepy"  current-indentation))
 (add-to-list 'LaTeX-indent-environment-list '("simplec"  current-indentation))
 (add-to-list 'LaTeX-indent-environment-list '("numberedc"  current-indentation))
+
+
+;; 🦜 add our own Font-Inserting command
+(add-to-list 'LaTeX-font-list '(24 "\\cola{" "}"))                       ;C-c C-f C-x
+;; (add-to-list 'LaTeX-font-list '(25 "\\colb{" "}" "\\colb{" "}"))                       ;C-c C-f C-y
+;; (add-to-list 'LaTeX-font-list '(26 "\\colc{" "}" "\\colc{" "}"))                       ;C-c C-f C-z

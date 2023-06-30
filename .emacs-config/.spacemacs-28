@@ -614,6 +614,23 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(LaTeX-font-list
+   '((97 "\\cola{" "}")
+     (1 "" "" "\\mathcal{" "}")
+     (2 "\\textbf{" "}" "\\mathbf{" "}")
+     (3 "\\textsc{" "}")
+     (5 "\\emph{" "}")
+     (6 "\\textsf{" "}" "\\mathsf{" "}")
+     (9 "\\textit{" "}" "\\mathit{" "}")
+     (12 "\\textulc{" "}")
+     (13 "\\textmd{" "}")
+     (14 "\\textnormal{" "}" "\\mathnormal{" "}")
+     (18 "\\textrm{" "}" "\\mathrm{" "}")
+     (19 "\\textsl{" "}" "\\mathbb{" "}")
+     (20 "\\texttt{" "}" "\\mathtt{" "}")
+     (21 "\\textup{" "}")
+     (23 "\\textsw{" "}")
+     (4 "" "" t)))
  '(TeX-command-list
    '(("TeX" "%(PDF)%(tex) %(file-line-error) %`%(extraopts) %S%(PDFout)%(mode)%' %(output-dir) %t" TeX-run-TeX nil
       (plain-tex-mode texinfo-mode ams-tex-mode)

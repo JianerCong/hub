@@ -29,6 +29,7 @@
       (add-hook 'LaTeX-mode-hook 'outline-minor-mode)
       (add-hook 'LaTeX-mode-hook 'yas-minor-mode)
       (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
+
       )
   (message "Library `auctex' not found, skipping config")
 )
