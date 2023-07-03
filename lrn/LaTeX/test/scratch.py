@@ -119,7 +119,7 @@ class FollowMeConsensus:
                     self.known_subs.remove(sub)
 
             if ok:
-                print(f'All nodes synced: {self.known_subs}')
+                print(f'✅️ All nodes synced: {self.known_subs}')
                 break
 
     def handle_execute_for_primary(self, endpoint: str,
@@ -195,7 +195,7 @@ class FollowMeConsensus:
 
         self.say(f'updating known_subs to {self.known_subs}')
 
-        for sub in self.known_subs:
+        for sub in self.known_subs[1:]:
             r = self.net.send(sub,'/pleaseBeMySub','')
             if r == None:
                 print(f'❌️ Node-{sub} is down,kick it off the group.')
@@ -205,7 +205,7 @@ class FollowMeConsensus:
         self.start_listening_as_primary()
 
         # The first thing is to execute the pending data
-        return self.handle_execute_for_primary(data)
+        return self.handle_execute_for_primary(endpoint=endpoint,data=data)
 
 
     def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
@@ -223,7 +223,7 @@ class FollowMeConsensus:
             r = self.net.send(self.known_subs[0],
                                  '/pleaseExecuteThis',data)
             if r == None:
-                r = self.net.send(self.known_subs[1], '/pleaseBePrimary','')
+                r = self.net.send(self.known_subs[1], '/pleaseBePrimary',data)
                 if r == None:
                     self.fatal_group_down('❌️ Both primary and next are dead, this is unacceptable.')
             return r
