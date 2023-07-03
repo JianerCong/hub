@@ -30,7 +30,7 @@ target_link_libraries(myexe PUBLIC Boost::log)
 configure_file(test_one.py test_one.py)
 # file(COPY test_one.py DESTINATION .)
 
-add_custom_target(run ALL pytest -v COMMENT "Runing pytest 🐸")
+# add_custom_target(run ALL pytest -v COMMENT "Runing pytest 🐸")
 
 # add_custom_target(run ALL
 #   weak-server 0.0.0.0 7777

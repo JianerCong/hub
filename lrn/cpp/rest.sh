@@ -1,5 +1,5 @@
 Url="http://localhost:7777/"
-
+curl http://localhost:7777/aaa
 # Post
 
 # --include : include header in the output

@@ -1,5 +1,7 @@
 ** Network on linex
 *** Lower
+**** ? My exe can't bound to port?
+turn off your network proxy
 **** listening port
 #+begin_src bash
   sudo lsof -i -P -n | grep LISTEN

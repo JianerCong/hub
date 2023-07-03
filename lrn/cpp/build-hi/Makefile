@@ -129,19 +129,6 @@ myexe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/build
 .PHONY : myexe/fast
 
-#=============================================================================
-# Target rules for targets named run
-
-# Build rule for target.
-run: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 run
-.PHONY : run
-
-# fast build rule for target.
-run/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
-.PHONY : run/fast
-
 m.o: m.cpp.o
 .PHONY : m.o
 
@@ -174,7 +161,6 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... run"
 	@echo "... myexe"
 	@echo "... m.o"
 	@echo "... m.i"

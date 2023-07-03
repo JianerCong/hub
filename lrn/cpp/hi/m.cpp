@@ -77,41 +77,40 @@ int main(int argc, char* argv[]){
 
     // <! the function dispatch map, each entry accepts (string address, uint16_t
     // port, string body). the key is the target such as "\hi", "\"
-  //   unordered_map<string,
-  //                 function<tuple<bool,string>
-  //                          (string, uint16_t, string)
-  //                          >
-  //                 > postLisnMap{
-  //     {"/aaa", [](string ,uint16_t,string){return make_tuple(true,"\"aaa from POST too\"");}},
-  //       {"/bbb", [](string a,uint16_t p, string d){return make_tuple(true,
-  //     (format("\"bbb too %s:%d, recieved data: %s\"") % a % p % d).str()
-  //     );}}
-  // };
 
-  //   unordered_map<string,
-  //                 function<tuple<bool,string>
-  //                          (string, uint16_t)
-  //                          >
-  //                 > getLisnMap{
-  //   {"/aaa", [](string,uint16_t){return make_tuple(true,"\"aaa too\"");}},
-  //     {"/bbb", [](string a,uint16_t p){return make_tuple(true,
-  //     (format("\"bbb too %s:%d\"") % a % p).str()
-  //     );}}
-  // };
+    //   unordered_map<string,
+    //                 function<tuple<bool,string>
+    //                          (string, uint16_t, string)
+    //                          >
+    //                 > postLisnMap{
+    //     {"/aaa", [](string ,uint16_t,string){return make_tuple(true,"\"aaa from POST too\"");}},
+    //       {"/bbb", [](string a,uint16_t p, string d){return make_tuple(true,
+    //     (format("\"bbb too %s:%d, recieved data: %s\"") % a % p % d).str()
+    //     );}}
+    // };
+
+    //   unordered_map<string,
+    //                 function<tuple<bool,string>
+    //                          (string, uint16_t)
+    //                          >
+    //                 > getLisnMap{
+    // {"/aaa", [](string,uint16_t){return make_tuple(true,"\"aaa too\"");}},
+    //     {"/bbb", [](string a,uint16_t p){return make_tuple(true,
+    //     (format("\"bbb too %s:%d\"") % a % p).str()
+    //     );}}
+    // };
 
     // 1. --------------------------------------------------
-
     // Initialize a logger and add Tag to it, logging to this logger will be
     // written to file.
     boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
     // ^^^ 🦜 : Yes, this is the simplest logger in Boost.Log
-
     namespace attrs = boost::log::attributes;
     lg.add_attribute("Tag", attrs::constant<std::string>("AAA"));
 
 
     WeakHttpServer serv{7777,lg};
-
+    serv.getLisnMap["/aaa"] = [](string,uint16_t){return make_tuple(true,"\"aaa too\"");};
 
     BOOST_LOG_TRIVIAL(debug) << format("Press any key to quit: ");
     std::cin.get();

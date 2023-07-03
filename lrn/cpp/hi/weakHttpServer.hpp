@@ -236,19 +236,17 @@ public:
 
   postMap_t postLisnMap;
   getMap_t getLisnMap;
+//   getMap_t getLisnMap{
+//     {"/aaa", [](string,uint16_t){return make_tuple(true,"\"aaa too\"");}}
+// };
   logger_t lg;
-
 
   // The acceptor receives incoming connections
   boost::asio::io_service ioc;
   tcp::acceptor acceptor{ioc};
 
-  void listenPost(string target, postHandler_t f){
-    this->postLisnMap[target] = f;
-  };
-
   WeakHttpServer(uint16_t portToListen = 7777,
-                 logger_t l = {})lg{l}{
+                 logger_t l = {}):lg{l}{
 
 
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), portToListen);

@@ -562,6 +562,98 @@ add_custom_target(run ALL myexe --log_level=all COMMENT "Runing App 🐸 ")
 
   BOOST_AUTO_TEST_SUITE_END();
 #+end_src
+*** pheonix
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+#include <boost/phoenix/phoenix.hpp>
+
+#include <vector>
+using std::vector;
+#include <algorithm>
+
+BOOST_AUTO_TEST_CASE(basic_phonix){
+  using boost::phoenix::placeholders::arg1;
+  vector<int> v{1,2,3,4,5};
+  BOOST_CHECK_EQUAL(std::count_if(v.begin(),v.end(), arg1 % 2 == 1), 3);
+}
+
+#include <boost/phoenix/core.hpp>
+BOOST_AUTO_TEST_CASE(const_val){
+  using boost::phoenix::val;
+  BOOST_CHECK_EQUAL(val(3)(),3); // return value
+  BOOST_CHECK_EQUAL(val("abc")(),"abc");
+}
+
+BOOST_AUTO_TEST_CASE(const_ref){
+  using boost::phoenix::ref;
+  int i = 3;
+  char const * s = "abc";
+  BOOST_CHECK_EQUAL(ref(i)(),3); // return reference
+  BOOST_CHECK_EQUAL(ref(s)(),"abc");
+}
+
+using boost::phoenix::arg_names::arg1;
+using boost::phoenix::arg_names::arg2;
+BOOST_AUTO_TEST_CASE(args_are_functions){
+  int i = 3;
+  char const* s = "abc";
+  BOOST_CHECK_EQUAL(arg1(i,s),i);
+  BOOST_CHECK_EQUAL(arg2(i,s),s);
+}
+
+BOOST_AUTO_TEST_CASE(lazy_if){
+  using boost::phoenix::if_;
+  using boost::phoenix::ref;
+
+  vector<int> v{1,2,3,4,5};
+
+  int c{0};
+  std::for_each(v.begin(),v.end(),
+                if_(arg1 > 3)[ref(c) += arg1]);
+  BOOST_CHECK_EQUAL(c,4 + 5);
+}
+
+#include <string>
+using std::string;
+
+namespace ranges = std::ranges;
+#include <boost/phoenix/object/construct.hpp>
+BOOST_AUTO_TEST_CASE(lazy_construct){
+  using boost::phoenix::construct;
+  vector<int> v = {1,2,3};
+  vector<string> v1;// we use back_inserter
+
+  ranges::transform(v,std::back_inserter(v1),
+                    // [](int c) -> string {return (format("%d") % c).str();}
+                    construct<string>(arg1,'a')
+                    );
+  BOOST_CHECK_EQUAL(v1[0],"a");
+  BOOST_CHECK_EQUAL(v1[1],"aa");
+  BOOST_CHECK_EQUAL(v1[2],"aaa");
+}
+
+#include <boost/phoenix/function.hpp>
+using boost::phoenix::function;
+struct is_odd_{
+  typedef bool result_type;     // Used by boost::result_of
+  // 🦜 : This is a protocol, do it.
+  template <typename Arg>
+  bool operator()(Arg arg1) const{
+    return arg1 % 2 == 1;
+  }
+};
+BOOST_AUTO_TEST_CASE(makes_existing_functor_a_phoenix){
+  function<is_odd_> is_odd;
+
+  using boost::phoenix::placeholders::arg1;
+  vector<int> v{1,2,3,4,5};
+  BOOST_CHECK_EQUAL(std::count_if(v.begin(),v.end(), is_odd(arg1)), 3);
+}
+
+#+end_src
 *** Q/A
 **** cannot find link library?
 By default, the linker ld dosen't known the non-standard locations of shared
