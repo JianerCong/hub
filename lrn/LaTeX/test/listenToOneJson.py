@@ -3,6 +3,7 @@ from threading import Thread, Timer, Lock
 import random
 # from random import randrange
 from time import sleep
+import json
 
 lock_for_print = Lock()
 def print_mt(*args,**kwargs):
@@ -80,13 +81,10 @@ class ListenToOneConsensus:
                             data: str) -> str:
         """[For primary] to add new node"""
         self.known_subs.append(sub_endpoint)
-        return f"""
-        Dear {sub_endpoint}
-            You are in. and here is what we have so far:
-            {','.join(self.command_history)}
-                   Sincerely
-                   {self.net.listened_endpoint()}, The primary.
-        """
+        return json.dumps({
+            'msg' : f" Dear {sub_endpoint}, you are in. {self.net.listened_endpoint()},The primary.",
+            'command_history' : self.command_history
+        })
 
     def handle_execute_for_primary(self, endpoint: str,
                                    data: str) -> str:
@@ -119,13 +117,17 @@ class ListenToOneConsensus:
         if r == None:
             raise Exception('Failed to join the group')
         # In response, the primary should send you the history .
-        cmd = r.split('\n')[3]  # forth line is the command
-        if cmd:
-            self.exe.execute(cmd)
+        o = json.loads(r)
+        cmds = o['command_history']
+
+        if cmds != []:
+            for cmd in cmds:
+                self.exe.execute(cmd)
 
     def start_listening_as_sub(self):
         self.net.listen('/pleaseExecuteThis',
                         self.handle_execute_for_sub)
+
     def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
         cmd = data
         if (endpoint == self.primary):

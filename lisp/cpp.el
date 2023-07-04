@@ -161,7 +161,7 @@
 (define-abbrev c++-mode-abbrev-table "sv" "string_view")
 (define-abbrev c++-mode-abbrev-table "sb" "" (lambda () (skeleton-insert '(nil "std::begin(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "se" "" (lambda () (skeleton-insert '(nil "std::end(" _ ")"))))
-(define-abbrev c++-mode-abbrev-table "fmt" "" (lambda () (skeleton-insert '(nil "format(\"" _ "\")"))))
+(define-abbrev c++-mode-abbrev-table "fmt" "" (lambda () (skeleton-insert '(nil "(format(\"" _ "\")).str()"))))
 (define-abbrev c++-mode-abbrev-table "ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
 
 ;; json::value_to...

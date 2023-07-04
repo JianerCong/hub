@@ -1003,7 +1003,20 @@ f2()
 #+end_src
 ** json
 #+begin_src python
-  
+  import json
+
+def test_dumps():
+    o =  {'x': ('b', None, 1.0, 2)}
+    s = json.dumps(o)
+    assert s == '{"x": ["b", null, 1.0, 2]}'
+
+    s = json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4)  # indent
+
+def test_loads():
+    s = '{"x": ["b", null, 1.0, 2]}'
+    o = json.loads(s)
+    assert o ==  {'x': ['b', None, 1.0, 2]}
+
 #+end_src
 * End
 
