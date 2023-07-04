@@ -21,6 +21,11 @@ using std::unique_ptr;
 #include <fstream>
 #include <ostream>
 
+
+#include <boost/json.hpp>
+namespace json = boost::json;
+using std::string;
+
 BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
 void init(){
   namespace log = boost::log;
@@ -67,39 +72,39 @@ void init(){
   log::add_common_attributes();
 }
 
+tuple<bool,string> addHandler(WeakHttpServer & serv,
+                              string a,uint16_t p, string d){
+  // expected json: {"url" : "..."}
+
+  json::error_code ec;
+  json::value jv = json::parse(d, ec );
+
+  if (ec || not jv.is_object()){
+    return make_tuple(false,(format("%s is not valid json") % d).str());
+  }
+
+  using json::value_to;
+  string s;
+
+  try {
+    json::object const& obj = jv.as_object();
+    s = value_to<string>(obj.at("url"));
+    auto g = [s](string ,uint16_t,string)->tuple<bool,string> {return make_tuple(true,
+                                                                                 (format("%s is handled") % s).str());};
+
+    serv.listenToPost(s,g);
+  }catch (std::exception &e){
+    return make_tuple(false,(format("%s is not valid json") % d).str());
+  }
+
+  return make_tuple(true,(format("%s is added to the url too") % s).str());
+};
+
+#include <functional>
+
 int main(int argc, char* argv[]){
   try{
-
     init();
-
-    // --------------------------------------------------
-    // The handlers
-
-    // <! the function dispatch map, each entry accepts (string address, uint16_t
-    // port, string body). the key is the target such as "\hi", "\"
-
-    //   unordered_map<string,
-    //                 function<tuple<bool,string>
-    //                          (string, uint16_t, string)
-    //                          >
-    //                 > postLisnMap{
-    //     {"/aaa", [](string ,uint16_t,string){return make_tuple(true,"\"aaa from POST too\"");}},
-    //       {"/bbb", [](string a,uint16_t p, string d){return make_tuple(true,
-    //     (format("\"bbb too %s:%d, recieved data: %s\"") % a % p % d).str()
-    //     );}}
-    // };
-
-    //   unordered_map<string,
-    //                 function<tuple<bool,string>
-    //                          (string, uint16_t)
-    //                          >
-    //                 > getLisnMap{
-    // {"/aaa", [](string,uint16_t){return make_tuple(true,"\"aaa too\"");}},
-    //     {"/bbb", [](string a,uint16_t p){return make_tuple(true,
-    //     (format("\"bbb too %s:%d\"") % a % p).str()
-    //     );}}
-    // };
-
     // 1. --------------------------------------------------
     // Initialize a logger and add Tag to it, logging to this logger will be
     // written to file.
@@ -108,10 +113,10 @@ int main(int argc, char* argv[]){
     namespace attrs = boost::log::attributes;
     lg.add_attribute("Tag", attrs::constant<std::string>("AAA"));
 
-
     WeakHttpServer serv{7777,lg};
-    serv.getLisnMap["/aaa"] = [](string,uint16_t){return make_tuple(true,"\"aaa too\"");};
 
+    using namespace std::placeholders;  // for _1, _2, _3...
+    serv.postLisnMap["/addHandler"] = std::bind(addHandler,std::ref(serv),_1,_2,_3);
     BOOST_LOG_TRIVIAL(debug) << format("Press any key to quit: ");
     std::cin.get();
   } // here the server is closed
@@ -134,7 +139,7 @@ int main(int argc, char* argv[]){
   ⇒ "bbb too 127.0.0.1:35656" 
   curl http://localhost:7777/aaa -d "123"
   ⇒ "aaa from POST too" 
-  curl http://localhost:7777/bbb -d "123"
+  curl http://localhost:7777/bbb -d "{\"url\" : \"/ccc\"}"
   ⇒ "bbb too 127.0.0.1:45732, recieved data: 123" 
 
 */

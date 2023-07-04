@@ -1,0 +1,70 @@
+** stl
+*** lock
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  using boost::format;
+
+  #include <vector>
+  using std::vector;
+  #include <algorithm>
+
+  #include <map>
+  #include <string>
+  #include <chrono>
+  #include <thread>
+  #include <mutex>
+  using std::string;
+
+  BOOST_AUTO_TEST_CASE(basic_lock){
+    std::map<std::string, std::string> m;
+    std::mutex lock_for_m;
+
+    auto f = [&](const string &k){
+      // simulate a long page fetch
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+      std::string r = "aaa";
+
+      std::lock_guard<std::mutex> g(lock_for_m);
+      m[k] = r;
+    };                            // unlock here
+
+    {
+      std::jthread t1(f,"k1");
+      std::jthread t2(f,"k2");
+    } // join here
+
+    BOOST_CHECK_EQUAL(m.size(),2);
+    BOOST_CHECK_EQUAL(m["k1"],"aaa");
+    BOOST_CHECK_EQUAL(m["k2"],"aaa");
+  }
+
+  BOOST_AUTO_TEST_CASE(unique_lock){
+    std::map<std::string, std::string> m;
+    std::mutex lock_for_m;
+
+    auto f = [&](const string &k){
+      // simulate a long page fetch
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+      std::string r = "aaa";
+
+      std::unique_lock g(lock_for_m); // movable lock
+      m[k] = r;
+    };                            // unlock here
+
+    {
+      std::jthread t1(f,"k1");
+      std::jthread t2(f,"k2");
+    } // join here
+
+    BOOST_CHECK_EQUAL(m.size(),2);
+    BOOST_CHECK_EQUAL(m["k1"],"aaa");
+    BOOST_CHECK_EQUAL(m["k2"],"aaa");
+  }
+#+end_src
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

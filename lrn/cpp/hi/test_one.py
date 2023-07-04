@@ -75,8 +75,11 @@ def test_serv_basic_request():
     p = Popen(['./myexe'],stdin=PIPE,stdout=PIPE,stderr=PIPE,text=True)
 
     # send request --------------------------------------------------
-    result = requests.get(url + 'aaa')
+
+    a={'url' : '/ccc'}
+    result = requests.post(url + 'addHandler',json=a)
     assert result.ok
+    assert result.content == b'/ccc is added to the url too'
 
     # stop server--------------------------------------------------
     o,e = p.communicate('\n')         # send a \n and wait for completion
@@ -86,17 +89,8 @@ def test_serv_basic_request():
     print(e)
 
     assert p.returncode == 0
-    assert Path(f).exists()
-    # now can be read
 
-    i = open(f).read()                 # default to read
-    assert re.fullmatch(r'2023-\d{1,}-\d{1,} (.*): <debug> \[AAA\] This will go to hi.log\n', i)
-
-
-
-
-
-def test_serv_get():
+def test_serv_dynamically_added_handler():
     time.sleep(2)                   #  1sec
     f = 'hi.log'
     # Remove file if exists
@@ -105,11 +99,14 @@ def test_serv_get():
     p = Popen(['./myexe'],stdin=PIPE,stdout=PIPE,stderr=PIPE,text=True)
 
     # send request --------------------------------------------------
-    result = requests.get(url)
-    assert result.ok
-    r = json.loads(result.content)
-    assert r['x'] == 'target / is not known to GET-server'
 
+    a={'url' : '/ccc'}
+    result = requests.post(url + 'addHandler',json=a)
+    assert result.ok
+    assert result.content == b'/ccc is added to the url too'
+
+    result = requests.post(url + 'ccc',json=a)
+    assert result.ok
 
     # stop server--------------------------------------------------
     o,e = p.communicate('\n')         # send a \n and wait for completion
@@ -119,8 +116,3 @@ def test_serv_get():
     print(e)
 
     assert p.returncode == 0
-    assert Path(f).exists()
-    # now can be read
-
-    i = open(f).read()                 # default to read
-    assert re.fullmatch(r'2023-\d{1,}-\d{1,} (.*): <debug> \[AAA\] This will go to hi.log\n', i)

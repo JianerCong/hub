@@ -720,11 +720,12 @@ BOOST_AUTO_TEST_CASE(test_1) {
 }
 
 #+end_src
-*** std::function
+*** COMMENT std::function
 #+begin_src c++
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 #include <functional>
+#include <memory>
 
 using std::function;
 
@@ -747,6 +748,91 @@ BOOST_AUTO_TEST_CASE(test_1) {
   BOOST_CHECK_EQUAL(234,x1());
   BOOST_CHECK_EQUAL(345,x2());
   BOOST_CHECK_EQUAL(456,x3());
+}
+
+int g(int n1, int n2){
+  return n1 + 10 * n2;
+}
+BOOST_AUTO_TEST_CASE(test_reordering){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  int n = 1;
+  auto f1 = std::bind(g,n,_1);
+  BOOST_CHECK_EQUAL(f1(2,"I am unused"),g(n,2));
+}
+
+int g2(int n1, const int & n2){
+  return n1 + 10 * n2;
+}
+
+BOOST_AUTO_TEST_CASE(test_const_ref){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  int n = 1;
+  auto f1 = std::bind(g,std::cref(n),_1); // ref is bound
+  n = 10;
+  BOOST_CHECK_EQUAL(f1(2,"I am unused"),
+                    g(n,2));
+}
+
+BOOST_AUTO_TEST_CASE(test_rebind_using_lambda){
+  int n = 1;
+  auto f1 = [&nref = n](auto a, auto /*unused*/){
+    return g2(a,nref);
+  };
+
+  BOOST_CHECK_EQUAL(f1(2,"I am unused"),
+                    g(2,n));
+}
+
+int g3(int x,int y){return x + y;}
+int g4(int x,int y){return x + y;}
+using std::bind;
+BOOST_AUTO_TEST_CASE(test_nested_bind){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  auto g5 = bind(g3,bind(g4,_1,10),_1);
+  BOOST_CHECK_EQUAL(g5(123),
+                    g3(g4(123,10),123)
+                    );
+}
+
+struct A{
+  int g(int x ,int y){
+    return x + y + this->data;
+  }
+  int data = 10;
+};
+
+BOOST_AUTO_TEST_CASE(test_bind_member_function){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  A a;
+  auto f = bind(&A::g,&a,1,_1);
+  BOOST_CHECK_EQUAL(f(2),a.g(1,2));
+}
+
+BOOST_AUTO_TEST_CASE(test_bind_member_function2){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  A a;
+  auto ptr_to_g = std::mem_fn(&A::g);
+  auto f = bind(ptr_to_g,&a,1,_1);
+  BOOST_CHECK_EQUAL(f(2),a.g(1,2));
+}
+
+// 🦜 ? 这也行
+BOOST_AUTO_TEST_CASE(test_bind_to_data){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  A a;
+  auto ptr_to_data = std::mem_fn(&A::data);
+  auto f = bind(ptr_to_data,_1);
+  BOOST_CHECK_EQUAL(f(a),a.data);
+}
+
+BOOST_AUTO_TEST_CASE(test_bind_to_data2){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  auto ptr_to_data = std::mem_fn(&A::data);
+  auto f = bind(ptr_to_data,_1);
+
+  A a;
+  BOOST_CHECK_EQUAL(f(std::make_shared<A>(a)),a.data);
+  BOOST_CHECK_EQUAL(f(std::make_unique<A>(a)),a.data);
 }
 
 #+end_src

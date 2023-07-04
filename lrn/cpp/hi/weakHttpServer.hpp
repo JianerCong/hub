@@ -24,6 +24,7 @@ using std::string;
 using std::tuple;
 using std::make_tuple;
 
+#include <mutex>                // std::mutex
 
 #include <unordered_map>
 using std::unordered_map;
@@ -234,6 +235,8 @@ public:
     thread");
    */
 
+
+  std::mutex lockForPostLisnMap;
   postMap_t postLisnMap;
   getMap_t getLisnMap;
 //   getMap_t getLisnMap{
@@ -244,6 +247,16 @@ public:
   // The acceptor receives incoming connections
   boost::asio::io_service ioc;
   tcp::acceptor acceptor{ioc};
+
+  void clearPost(){
+    std::unique_lock g(this->lockForPostLisnMap);
+    this->postLisnMap.clear();
+  }
+
+  void listenToPost(string k, postHandler_t f){
+    std::unique_lock g(this->lockForPostLisnMap);
+    this->postLisnMap[k] = f;
+  }
 
   WeakHttpServer(uint16_t portToListen = 7777,
                  logger_t l = {}):lg{l}{
