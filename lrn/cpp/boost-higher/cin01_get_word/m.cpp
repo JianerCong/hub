@@ -7,8 +7,8 @@ using std::cout;
 using std::string;
 
 int main(int argc, char *argv[]){
-  string s, s2;
-  cin >> s >> s2;
-  cout << s << " " << s2;
+  string s;
+  cin >> s;
+  cout << s;
   return 0;
 }
