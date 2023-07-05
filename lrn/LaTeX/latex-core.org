@@ -561,7 +561,15 @@ Or better
 \end{center}
 \end{document}
 #+end_src
-*** Specify the width of column, then let TeX evenly distributes em
+*** tabularx
+**** theory: apecification for a column
+>{Your thing}X
+e.g.
+>{\small}X
+>{\raggedright\arraybackslash}X.
+#             ^^^^^^^^^^^^^^^ add this after \raggedright, the corrects the
+# blackslash magic of \raggedright
+**** Specify the width of column, then let TeX evenly distributes em
 #+begin_src latex
 \documentclass{article}
 \usepackage{tabularx}
@@ -576,6 +584,51 @@ Or better
   item 21  & item 22  & item 23  \\
   \hline
 \end{tabularx}
+\end{document}
+#+end_src
+**** 2:1:1 column width
+#+begin_src latex
+\documentclass{article}
+\usepackage{tabularx}
+
+\newcolumntype{b}{X}
+\newcolumntype{s}{>{\hsize=.5\hsize}X}
+
+\begin{document}
+
+\begin{table}[htbp]
+  \centering
+  % \begin{tabularx}{\textwidth}{| X | X | X |}
+  \begin{tabularx}{\textwidth}{bss}
+    \hline
+    Alpha     & Beta     & Gamma     \\ \hline
+    0         & 2        & 4         \\ \hline
+    1         & 3        & 5         \\ \hline
+  \end{tabularx}
+\end{table}
+\end{document}
+#+end_src
+**** center the heading only
+#+begin_src latex
+\documentclass{article}
+\usepackage{tabularx}
+
+\newcolumntype{b}{X}
+\newcolumntype{s}{>{\hsize=.5\hsize}X}
+\newcommand{\heading}[1]{\multicolumn{1}{c}{#1}}
+
+\begin{document}
+
+\begin{table}[htbp]
+  \centering
+  % \begin{tabularx}{\textwidth}{| X | X | X |}
+  \begin{tabularx}{\textwidth}{bss}
+    \hline
+    \heading{Alpha}     & \heading{Beta}     & \heading{Gamma}     \\ \hline
+    0         & 2        & 4         \\ \hline
+    1         & 3        & 5         \\ \hline
+  \end{tabularx}
+\end{table}
 \end{document}
 #+end_src
 *** Merge cells horizontally
