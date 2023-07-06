@@ -720,122 +720,6 @@ BOOST_AUTO_TEST_CASE(test_1) {
 }
 
 #+end_src
-*** COMMENT std::function
-#+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <functional>
-#include <memory>
-
-using std::function;
-
-int f(){return 123;}
-int f1(int i){return i;}
-
-struct f2 { //callable object
-  int i = 456;
-  int operator()(void) const{return this->i;}
-};
-
-
-BOOST_AUTO_TEST_CASE(test_1) {
-  function<int(void)> x = f;
-  function<int(void)> x1 = std::bind(f1,234);
-  function<int(void)> x2 = [](){return 345;}; // store lambda
-  function<int(void)> x3 = f2();
-
-  BOOST_CHECK_EQUAL(123,x());
-  BOOST_CHECK_EQUAL(234,x1());
-  BOOST_CHECK_EQUAL(345,x2());
-  BOOST_CHECK_EQUAL(456,x3());
-}
-
-int g(int n1, int n2){
-  return n1 + 10 * n2;
-}
-BOOST_AUTO_TEST_CASE(test_reordering){
-  using namespace std::placeholders;  // for _1, _2, _3...
-  int n = 1;
-  auto f1 = std::bind(g,n,_1);
-  BOOST_CHECK_EQUAL(f1(2,"I am unused"),g(n,2));
-}
-
-int g2(int n1, const int & n2){
-  return n1 + 10 * n2;
-}
-
-BOOST_AUTO_TEST_CASE(test_const_ref){
-  using namespace std::placeholders;  // for _1, _2, _3...
-  int n = 1;
-  auto f1 = std::bind(g,std::cref(n),_1); // ref is bound
-  n = 10;
-  BOOST_CHECK_EQUAL(f1(2,"I am unused"),
-                    g(n,2));
-}
-
-BOOST_AUTO_TEST_CASE(test_rebind_using_lambda){
-  int n = 1;
-  auto f1 = [&nref = n](auto a, auto /*unused*/){
-    return g2(a,nref);
-  };
-
-  BOOST_CHECK_EQUAL(f1(2,"I am unused"),
-                    g(2,n));
-}
-
-int g3(int x,int y){return x + y;}
-int g4(int x,int y){return x + y;}
-using std::bind;
-BOOST_AUTO_TEST_CASE(test_nested_bind){
-  using namespace std::placeholders;  // for _1, _2, _3...
-  auto g5 = bind(g3,bind(g4,_1,10),_1);
-  BOOST_CHECK_EQUAL(g5(123),
-                    g3(g4(123,10),123)
-                    );
-}
-
-struct A{
-  int g(int x ,int y){
-    return x + y + this->data;
-  }
-  int data = 10;
-};
-
-BOOST_AUTO_TEST_CASE(test_bind_member_function){
-  using namespace std::placeholders;  // for _1, _2, _3...
-  A a;
-  auto f = bind(&A::g,&a,1,_1);
-  BOOST_CHECK_EQUAL(f(2),a.g(1,2));
-}
-
-BOOST_AUTO_TEST_CASE(test_bind_member_function2){
-  using namespace std::placeholders;  // for _1, _2, _3...
-  A a;
-  auto ptr_to_g = std::mem_fn(&A::g);
-  auto f = bind(ptr_to_g,&a,1,_1);
-  BOOST_CHECK_EQUAL(f(2),a.g(1,2));
-}
-
-// 🦜 ? 这也行
-BOOST_AUTO_TEST_CASE(test_bind_to_data){
-  using namespace std::placeholders;  // for _1, _2, _3...
-  A a;
-  auto ptr_to_data = std::mem_fn(&A::data);
-  auto f = bind(ptr_to_data,_1);
-  BOOST_CHECK_EQUAL(f(a),a.data);
-}
-
-BOOST_AUTO_TEST_CASE(test_bind_to_data2){
-  using namespace std::placeholders;  // for _1, _2, _3...
-  auto ptr_to_data = std::mem_fn(&A::data);
-  auto f = bind(ptr_to_data,_1);
-
-  A a;
-  BOOST_CHECK_EQUAL(f(std::make_shared<A>(a)),a.data);
-  BOOST_CHECK_EQUAL(f(std::make_unique<A>(a)),a.data);
-}
-
-#+end_src
 *** hash
 #+begin_src c++
 #define BOOST_TEST_MAIN
@@ -1145,6 +1029,80 @@ int main ()
 *** map
 **** basic
    #+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+#include <string>
+
+#include <unordered_map>
+#include <string>
+using std::string;
+
+using std::unordered_map;
+
+BOOST_AUTO_TEST_CASE(basic_iter){
+  int c{0};
+  string s;
+  unordered_map<int, const char*> m = {
+    {1, "aa"},
+      {2, "bb"}
+  };
+  for (const auto &[k, v]: m){
+    c += k;
+    BOOST_TEST_MESSAGE(format("(k,v) = (%d,%s)") % k % v);
+    // not sorted
+  }
+  BOOST_CHECK_EQUAL(c,3);
+}
+
+BOOST_AUTO_TEST_CASE(test_insert){
+  // 🦜 : insert() is successful only if the key dosen't exist already. Usually
+  // you probably means insert_or_assign()
+
+  unordered_map<int, string> m = {{1, "aa"}, {2, "bb"}};
+  BOOST_REQUIRE(m.insert({3,"cc"}).second); // ok
+  BOOST_CHECK_EQUAL(m.size(),3);
+  BOOST_REQUIRE(not m.insert({2,"bbb"}).second); // failed
+  BOOST_CHECK_EQUAL(m.size(),3);
+  BOOST_CHECK_EQUAL(m[2],"bb");
+
+  // use insert_or_assign() 🦜 : you usually mean this
+  BOOST_REQUIRE(not m.insert_or_assign(2,"bbb").second); // false means "ASSIGN"
+  // 🦜 : Note that we don't have init_list now ^^^^
+  BOOST_CHECK_EQUAL(m[2],"bbb");
+}
+
+BOOST_AUTO_TEST_CASE(erase){
+  unordered_map<int, string> m = {{1, "aa"}, {2, "bb"}};
+  BOOST_REQUIRE(m.contains(1));
+  m.erase(1);
+  BOOST_REQUIRE(not m.contains(1));
+}
+
+BOOST_AUTO_TEST_CASE(inplace_assignement){
+  unordered_map<int, string> m = {{1, "aa"}, {2, "bb"}};
+  m[1] = "aaa";
+  BOOST_CHECK_EQUAL(m[1],"aaa");
+  }
+
+struct A{
+  int x;
+  unordered_map<int,int> m;
+};
+BOOST_AUTO_TEST_CASE(map_to_struct){
+  unordered_map<int, A> m = {
+    {
+      1, {10,{}}
+    },
+    {
+      2, {20,{}}
+    }
+  };
+  BOOST_CHECK_EQUAL(m[1].x,10);
+  BOOST_CHECK_EQUAL(m[1].m.size(),0);
+}
+
    #+end_src
 **** caveat: [] access create member
 #+begin_src c++
