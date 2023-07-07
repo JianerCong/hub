@@ -124,6 +124,134 @@ add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App üê
   }
 
 #+end_src
+**** cmdline
+#+begin_src c++
+// #define BOOST_TEST_MODULE test_module_name
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/program_options.hpp>
+
+// #include <iostream>
+#include <sstream>
+using std::stringstream;
+namespace program_options = boost::program_options;
+
+using std::vector;
+using std::string;
+using std::cout;
+using std::endl;
+
+using program_options::options_description;
+BOOST_AUTO_TEST_CASE(test_parse_help){
+  options_description o1("Generic options");
+  string s;
+  o1.add_options()
+    ("help,h", "help")
+    ("config,c", program_options::value<string>(&s)->default_value("m.cfg"),
+     "name of a file of a configuration.");
+
+  int argc = 4;
+  const char* argv[] = {"m","--help","--config","b.cfg"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("config"),1);
+  BOOST_CHECK_EQUAL(s,"b.cfg");
+  BOOST_CHECK_EQUAL(s,m["config"].as<string>());
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_default){
+  options_description o1("Generic options");
+  string s;
+  o1.add_options()
+    ("help,h", "help")
+    ("config,c", program_options::value<string>(&s)->default_value("m.cfg"),
+     "name of a file of a configuration.");
+
+  int argc = 1;
+  const char* argv[] = {"m"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("config"),1);
+  BOOST_CHECK_EQUAL(s,"m.cfg");
+  BOOST_CHECK_EQUAL(s,m["config"].as<string>());
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_shorthand){
+  options_description o1("Generic options");
+  string s;
+  o1.add_options()
+    ("help,h", "help")
+    ("config,c", program_options::value<string>(&s)->default_value("m.cfg"),
+     "name of a file of a configuration.");
+
+  int argc = 4;
+  const char* argv[] = {"m","--help","-c","b.cfg"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("config"),1);
+  BOOST_CHECK_EQUAL(s,"b.cfg");
+  BOOST_CHECK_EQUAL(s,m["config"].as<string>());
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_vectpr){
+  using program_options::value;
+  options_description o1("Generic options");
+  o1.add_options()
+    ("compression", value<string>(), "compression level")
+    ("verbose", value<string>()->implicit_value("0"), "verbosity level")
+    ("email", value<vector<string>>()->multitoken(), "email to send to")
+    ;
+
+  int argc = 7;
+  const char* argv[] = {"m","--compression","10","--verbose","--email","aaa","bbb"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("compression"),1);
+  BOOST_CHECK_EQUAL(m["compression"].as<string>(),"10");
+  BOOST_CHECK_EQUAL(m["verbose"].as<string>(),"0");
+  vector<string> v = m["email"].as<vector<string>>();
+  BOOST_CHECK_EQUAL(v.size(),2);
+  BOOST_CHECK_EQUAL(v[0],"aaa");
+  BOOST_CHECK_EQUAL(v[1],"bbb");
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_positional){
+  using program_options::value;
+  options_description o1("Generic options");
+  o1.add_options()
+    ("compression", value<string>(), "compression level")
+    ("verbose", value<string>()->implicit_value("0"), "verbosity level")
+    ("email", value<vector<string>>()->multitoken(), "email to send to")
+    ;
+
+  program_options::positional_options_description p;
+  p.add("email",-1);            // map arg[-1] to email
+
+  int argc = 7;
+  const char* argv[] = {"m","--compression","10","--verbose","DEBUG","aaa","bbb"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).positional(p).run(), m);
+  program_options::notify(m);
+
+  BOOST_CHECK_EQUAL(m.count("compression"),1);
+  BOOST_CHECK_EQUAL(m["compression"].as<string>(),"10");
+  BOOST_CHECK_EQUAL(m["verbose"].as<string>(),"DEBUG");
+  vector<string> v = m["email"].as<vector<string>>();
+  BOOST_CHECK_EQUAL(v.size(),2);
+  BOOST_CHECK_EQUAL(v[0],"aaa");
+  BOOST_CHECK_EQUAL(v[1],"bbb");
+}
+
+#+end_src
 *** beast
 **** header fields
 ***** c++

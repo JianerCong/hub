@@ -182,183 +182,192 @@ BOOST_AUTO_TEST_CASE(test_bind_to_data2){
 #+end_src
 **** bind member function, wrong way and good way
 #+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <functional>
-#include <memory>
-#include <unordered_map>
-using std::unordered_map;
-#include <iostream>
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <functional>
+  #include <memory>
+  #include <unordered_map>
+  using std::unordered_map;
+  #include <iostream>
 
 
-using std::function;
-using std::bind;
+  using std::function;
+  using std::bind;
 
-// using namespace std::placeholders;  // for _1, _2, _3...
+  // using namespace std::placeholders;  // for _1, _2, _3...
 
-struct A{
-  int x;
-  int get_x(){
-    return this->x;
-  };
-  A (char c, int xx,
-     unordered_map<char,function<int()> > &m
-     ): x(xx){
-    BOOST_TEST_MESSAGE("bind in A");
-    m[c] = bind(&A::get_x,this);
-    // BOOST_CHECK_EQUAL(m[c](),xx);
-    // m[c] = bind(std::mem_fn(&A::get_x),this);
-  };
-  ~A(){
-    BOOST_TEST_MESSAGE("❌️ A");
-  }
-};
-
-/*
-  LESSON: 🦜 : Use shared_ptr if the object is not simple enough to be copied
-  around, which tamper with the address.
-*/
-BOOST_AUTO_TEST_CASE(test_bind_memfunc){
-
-  unordered_map<char,function<int()> > m;
-  unordered_map<char,std::shared_ptr<A>> ma;
-  for (char c : {'a','b','c'}){
-    ma.insert({c, make_shared<A>(c,2,m)});
-  }
-
-  BOOST_CHECK_EQUAL(m.size(),3);
-  BOOST_CHECK(m.contains('a'));
-  // BOOST_CHECK_EQUAL(m.at('a')(),2);
-
-  BOOST_TEST_MESSAGE("loop starts");
-  for (char c : {'a','b','c'}){
-    BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
-    // BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
-    // BOOST_CHECK_NE(m[c](),2); // Wrong
-  }
-  BOOST_TEST_MESSAGE("map ends here");
-}
-
-
-// --------------------------------------------------
-// enable_shared_from_this
-class Good : public std::enable_shared_from_this<Good>{
-public:
-  std::shared_ptr<Good> getptr(){
-    return shared_from_this();
-  }
-};
-
-class Best : public std::enable_shared_from_this<Best>{
-public:
-  std::shared_ptr<Best> getptr(){
-    return shared_from_this();
-  }
-  // No public constructor, only a factory function,
-  // so there's no way to have getptr return nullptr.
-  [[nodiscard]] static std::shared_ptr<Best> create(){
-    // Not using std::make_shared<Best> because the c'tor is private.
-    return std::shared_ptr<Best>(new Best());
-  }
-private:
-  Best() = default;
-};
-
-struct Bad{
-  std::shared_ptr<Bad> getptr(){
-    return std::shared_ptr<Bad>(this);
-  }
-  ~Bad() { std::cout << "Bad::~Bad() called\n"; }
-};
-
-using std::make_shared;
-using std::shared_ptr;
-BOOST_AUTO_TEST_CASE(test_good){
-  // Good: the two shared_ptr's share the same object
-  std::shared_ptr<Good> good0 = std::make_shared<Good>();
-  std::shared_ptr<Good> good1 = good0->getptr();
-  BOOST_CHECK_EQUAL(good1.use_count(),2);
-}
-
-BOOST_AUTO_TEST_CASE(test_misuse_good){
-  // 🐢 Bad: shared_from_this is called without having std::shared_ptr owning the caller
-  // 🦜 : Oh, so the getPtr() is only supposed to be used by shared_ptr<>
-  BOOST_CHECK_THROW(
-                    {
-                      Good not_so_good;
-                      std::shared_ptr<Good> gp1 = not_so_good.getptr();
-                    }
-                    ,std::bad_weak_ptr); // undefined behavior until C++17
-}
-
-BOOST_AUTO_TEST_CASE(test_best){
-  // Best: Same but can't stack-allocate it:
-  shared_ptr<Best> best0 = Best::create();
-  shared_ptr<Best> best1 = best0->getptr();
-  BOOST_CHECK_EQUAL(best1.use_count(),2);
-  // std::cout << "best1.use_count() = " << best1.use_count() << '\n';
-  // Best stackBest; // <- Will not compile because Best::Best() is private.
-}
-
-// BOOST_AUTO_TEST_CASE(test_bad){
-//   // Bad, each shared_ptr thinks it's the only owner of the object
-//   std::shared_ptr<Bad> bad0 = std::make_shared<Bad>();
-//   std::shared_ptr<Bad> bad1 = bad0->getptr();
-//   // std::cout << "bad1.use_count() = " << bad1.use_count() << '\n';
-// } // double free or corruption
-
-// --------------------------------------------------
-// Use shared_ptr to bind A
-
-class B : public std::enable_shared_from_this<B>{
-public:
-  int x;
-  int get_x(){
-    return this->x;
+  struct A{
+    int x;
+    int get_x(){
+      return this->x;
+    };
+    A (char c, int xx,
+       unordered_map<char,function<int()> > &m
+       ): x(xx){
+      BOOST_TEST_MESSAGE("bind in A");
+      m[c] = bind(&A::get_x,this);
+      // BOOST_CHECK_EQUAL(m[c](),xx);
+      // m[c] = bind(std::mem_fn(&A::get_x),this);
+    };
+    ~A(){
+      BOOST_TEST_MESSAGE("❌️ A");
+    }
   };
 
-  std::shared_ptr<B> getptr(){
-    return shared_from_this();
+  /*
+    LESSON: 🦜 : Use shared_ptr if the object is not simple enough to be copied
+    around, which tamper with the address.
+  ,*/
+  BOOST_AUTO_TEST_CASE(test_bind_memfunc){
+
+    unordered_map<char,function<int()> > m;
+    unordered_map<char,std::shared_ptr<A>> ma;
+    for (char c : {'a','b','c'}){
+      ma.insert({c, make_shared<A>(c,2,m)});
+    }
+
+    BOOST_CHECK_EQUAL(m.size(),3);
+    BOOST_CHECK(m.contains('a'));
+    // BOOST_CHECK_EQUAL(m.at('a')(),2);
+
+    BOOST_TEST_MESSAGE("loop starts");
+    for (char c : {'a','b','c'}){
+      BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_NE(m[c](),2); // Wrong
+    }
+    BOOST_TEST_MESSAGE("map ends here");
   }
-  // No public constructor, only a factory function,
-  // so there's no way to have getptr return nullptr.
-  [[nodiscard]] static std::shared_ptr<B> create(char c, int xx, unordered_map<char,function<int()> > &m){
-    // Not using std::make_shared<B> because the c'tor is private.
-    return std::shared_ptr<B>(new B(c,xx,m));
-  }
-  ~B(){
-    BOOST_TEST_MESSAGE("❌️ B");
-  }
-private:
-  B (char c, int xx,
-     unordered_map<char,function<int()> > &m
-     ): x(xx){
-    BOOST_TEST_MESSAGE("bind in B");
-    m[c] = bind(&B::get_x,this); // OK
-    // m[c] = bind(&B::get_x,getptr()); // throw std::bad_weak_ptr
+
+
+  // --------------------------------------------------
+  // enable_shared_from_this
+  class Good : public std::enable_shared_from_this<Good>{
+  public:
+    std::shared_ptr<Good> getptr(){
+      return shared_from_this();
+    }
   };
-};
 
-BOOST_AUTO_TEST_CASE(test_bind_memfunc_native_shared_ptr){
+  class Best : public std::enable_shared_from_this<Best>{
+  public:
+    std::shared_ptr<Best> getptr(){
+      return shared_from_this();
+    }
+    // No public constructor, only a factory function,
+    // so there's no way to have getptr return nullptr.
+    [[nodiscard]] static std::shared_ptr<Best> create(){
+      // Not using std::make_shared<Best> because the c'tor is private.
+      return std::shared_ptr<Best>(new Best());
+    }
+  private:
+    Best() = default;
+  };
 
-  unordered_map<char,function<int()> > m;
-  unordered_map<char,std::shared_ptr<B>> ma;
-  for (char c : {'a','b','c'}){
-    ma.insert({c, B::create(c,2,m)});
+  struct Bad{
+    std::shared_ptr<Bad> getptr(){
+      return std::shared_ptr<Bad>(this);
+    }
+    ~Bad() { std::cout << "Bad::~Bad() called\n"; }
+  };
+
+  using std::make_shared;
+  using std::shared_ptr;
+  BOOST_AUTO_TEST_CASE(test_good){
+    // Good: the two shared_ptr's share the same object
+    std::shared_ptr<Good> good0 = std::make_shared<Good>();
+    std::shared_ptr<Good> good1 = good0->getptr();
+    BOOST_CHECK_EQUAL(good1.use_count(),2);
   }
 
-  BOOST_CHECK_EQUAL(m.size(),3);
-  BOOST_CHECK(m.contains('a'));
-
-  BOOST_TEST_MESSAGE("loop starts");
-  for (char c : {'a','b','c'}){
-    BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
-    // BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
-    // BOOST_CHECK_NE(m[c](),2); // Wrong
+  BOOST_AUTO_TEST_CASE(test_misuse_good){
+    // 🐢 Bad: shared_from_this is called without having std::shared_ptr owning the caller
+    // 🦜 : Oh, so the getPtr() is only supposed to be used by shared_ptr<>
+    BOOST_CHECK_THROW(
+                      {
+                        Good not_so_good;
+                        std::shared_ptr<Good> gp1 = not_so_good.getptr();
+                      }
+                      ,std::bad_weak_ptr); // undefined behavior until C++17
   }
-  BOOST_TEST_MESSAGE("map ends here");
-}
 
+  BOOST_AUTO_TEST_CASE(test_best){
+    // Best: Same but can't stack-allocate it:
+    shared_ptr<Best> best0 = Best::create();
+    shared_ptr<Best> best1 = best0->getptr();
+    BOOST_CHECK_EQUAL(best1.use_count(),2);
+    // std::cout << "best1.use_count() = " << best1.use_count() << '\n';
+    // Best stackBest; // <- Will not compile because Best::Best() is private.
+  }
+
+  BOOST_AUTO_TEST_CASE(test_best2){
+    // Best: Same but can't stack-allocate it:
+    shared_ptr<Best> best0 = Best::create();
+    shared_ptr<Best> best1 = best0->shared_from_this();
+    BOOST_CHECK_EQUAL(best1.use_count(),2);
+
+    // std::cout << "best1.use_count() = " << best1.use_count() << '\n';
+    // Best stackBest; // <- Will not compile because Best::Best() is private.
+  }
+
+  // BOOST_AUTO_TEST_CASE(test_bad){
+  //   // Bad, each shared_ptr thinks it's the only owner of the object
+  //   std::shared_ptr<Bad> bad0 = std::make_shared<Bad>();
+  //   std::shared_ptr<Bad> bad1 = bad0->getptr();
+  //   // std::cout << "bad1.use_count() = " << bad1.use_count() << '\n';
+  // } // double free or corruption
+
+  // --------------------------------------------------
+  // Use shared_ptr to bind A
+
+  class B : public std::enable_shared_from_this<B>{
+  public:
+    int x;
+    int get_x(){
+      return this->x;
+    };
+
+    std::shared_ptr<B> getptr(){
+      return shared_from_this();
+    }
+    // No public constructor, only a factory function,
+    // so there's no way to have getptr return nullptr.
+    [[nodiscard]] static std::shared_ptr<B> create(char c, int xx, unordered_map<char,function<int()> > &m){
+      // Not using std::make_shared<B> because the c'tor is private.
+      return std::shared_ptr<B>(new B(c,xx,m));
+    }
+    ~B(){
+      BOOST_TEST_MESSAGE("❌️ B");
+    }
+  private:
+    B (char c, int xx,
+       unordered_map<char,function<int()> > &m
+       ): x(xx){
+      BOOST_TEST_MESSAGE("bind in B");
+      m[c] = bind(&B::get_x,this); // OK
+      // m[c] = bind(&B::get_x,getptr()); // throw std::bad_weak_ptr
+    };
+  };
+
+  BOOST_AUTO_TEST_CASE(test_bind_memfunc_native_shared_ptr){
+
+    unordered_map<char,function<int()> > m;
+    unordered_map<char,std::shared_ptr<B>> ma;
+    for (char c : {'a','b','c'}){
+      ma.insert({c, B::create(c,2,m)});
+    }
+
+    BOOST_CHECK_EQUAL(m.size(),3);
+    BOOST_CHECK(m.contains('a'));
+
+    BOOST_TEST_MESSAGE("loop starts");
+    for (char c : {'a','b','c'}){
+      BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_NE(m[c](),2); // Wrong
+    }
+    BOOST_TEST_MESSAGE("map ends here");
+  }
 #+end_src
 
 * End

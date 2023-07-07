@@ -13,25 +13,14 @@ IF (WIN32)
   message("🐸 Setting Boost_DIR: ${Boost_DIR}")
 ELSE()
   # set stuff for other systems
-  set(Boost_USE_STATIC_LIBS ON)
-  set(Boost_DIR "/home/me/.local/boost_1_82_0/stage/lib/cmake/Boost-1.82.0/")
 ENDIF()
-
-find_package(Boost 1.75...1.82
-  CONFIG REQUIRED COMPONENTS json unit_test_framework log
+find_package(Boost REQUIRED COMPONENTS unit_test_framework log
+  program_options
 )
 
-add_executable(myexe m.cpp)
-target_link_libraries(myexe PUBLIC Boost::log Boost::json)
-# Although beast and axio are all header-only, we need to link to at least one
-# Boost-target in order to bring in the include dirs
 
-# copy the py file to build dir
-configure_file(test_one.py test_one.py)
-# file(COPY test_one.py DESTINATION .)
-
-add_custom_target(run ALL pytest -v COMMENT "Runing pytest 🐸")
-
-# add_custom_target(run ALL
-#   weak-server 0.0.0.0 7777
-#   COMMENT "Runing App 🐸")
+# add the executable
+add_executable(main m.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework
+  Boost::program_options
+)
