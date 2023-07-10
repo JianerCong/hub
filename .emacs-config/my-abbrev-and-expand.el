@@ -37,6 +37,7 @@
     ("eturtle" "🐢")
     ;; ("esloth" "🦥")
     ("enice" "👍")
+    ("ebye" "👋")
     ("edrip" "💧")
     ("eheart" "💙")
     ("esnow" "❄")

@@ -76,6 +76,7 @@
 
 #+end_src
 *** set
+**** for basic create
 #+begin_src c++
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
@@ -200,6 +201,45 @@ BOOST_AUTO_TEST_CASE(custom_set_4_operator){
   BOOST_CHECK(s.contains(S2{2,"b"}));
   BOOST_CHECK(not s.contains(S2{3,"b"}));
   BOOST_CHECK_EQUAL(s.count(S2{2,"b"}),1);
+}
+
+#+end_src
+**** basic operation
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+#include <set>
+
+using std::set;
+
+
+BOOST_AUTO_TEST_CASE(set_basic){
+  set<int> s{1,2,3};
+  BOOST_REQUIRE(s.contains(1));
+  BOOST_CHECK_EQUAL(s.size(),3);
+}
+
+BOOST_AUTO_TEST_CASE(set_basic_erase){
+  set<int> s{1,2,3};
+  BOOST_CHECK_EQUAL(s.erase(1),1);
+  BOOST_CHECK_EQUAL(s.erase(4),0);
+}
+
+BOOST_AUTO_TEST_CASE(set_basic_erase_iter){
+  set<int> s{1,2,3,4};
+  // Erase all odd
+  for (auto it = s.begin(); it != s.end();){
+    if (*it % 2 != 0)
+      it = s.erase(it);
+    else
+      ++it;
+  }
+
+  BOOST_CHECK_EQUAL(s.size(),2);
+  BOOST_CHECK(s.contains(2));
+  BOOST_CHECK(s.contains(4));
 }
 
 #+end_src
