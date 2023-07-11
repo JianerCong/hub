@@ -13,7 +13,7 @@ alias cpmail="echo congjianer@xinhuaxia.com | xclip -i -selection clipboard"
 
 alias g="git log --oneline --decorate --all -n"
 alias ga="git add -A && git status"
-alias got=". ~/Templates/scripts/got.sh"
+alias got=". ~/Templates/scripts/got.zsh"
 alias gpsh=". ~/Templates/scripts/gpsh.sh"
 alias pyenv=". ~/work/lcode/myenv/bin/activate"
 alias cb=". ~/Templates/scripts/cmakebuild.sh"

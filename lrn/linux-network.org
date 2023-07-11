@@ -644,6 +644,15 @@ server {
 #+begin_src bash
 add_header Strict-Transport-Security max-age=31536000;
  #+end_src
+*** start/stop/enable/disable
+#+begin_src bash
+  sudo systemctl start nginx.service
+  sudo systemctl stop nginx.service
+  sudo systemctl reload nginx.service
+  sudo systemctl disable nginx.service
+  sudo systemctl enable nginx.service
+
+#+end_src
 ** Clash
 *** add proxy
 #+begin_src bash
