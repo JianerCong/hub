@@ -782,6 +782,86 @@ BOOST_AUTO_TEST_CASE(makes_existing_functor_a_phoenix){
 }
 
 #+end_src
+*** multi_indexed
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
+
+#include <string>
+using std::string;
+#include <vector>
+using std::vector;
+
+
+struct A{
+  int x;
+  string y;
+
+  bool operator<(const A& e)const{return x<e.x;} // x is index
+};
+
+// define a multiply indexed set with indices by id and name
+
+
+// using namespace ::boost;
+// using namespace ::boost::multi_index;
+namespace multi_index = boost::multi_index;
+using multi_index::ordered_unique;
+using multi_index::identity;
+// using boost::multi_index::identity;
+using multi_index::member;
+using multi_index::ordered_non_unique;
+using multi_index::multi_index_container;
+using multi_index::indexed_by;
+
+typedef multi_index_container<
+  A,
+  indexed_by<
+    // sort by A::operator<
+    ordered_unique<identity<A>>,
+    // sort by less<string> on name
+    ordered_non_unique<member<A,std::string,&A::y> >
+    >
+  > A_set;
+
+BOOST_AUTO_TEST_CASE(test_basic_multi_indexed){
+  vector<A> o;
+  A_set as = {
+    {1, "c"}, {2,"b"} , {3,"a"}
+  };
+  // get a view to index #1 (name)
+  const A_set::nth_index<1>::type& y_index=as.get<1>();
+
+  // use y_index as a regular std::set
+  std::copy(y_index.begin(),y_index.end(), std::back_inserter(o));
+
+  BOOST_CHECK_EQUAL(o[0].y,"a");
+  BOOST_CHECK_EQUAL(o[1].y,"b");
+  BOOST_CHECK_EQUAL(o[2].y,"c");
+}
+
+BOOST_AUTO_TEST_CASE(test_basic_multi_indexed_default_index){
+  vector<A> o;
+  A_set as = {
+    {1, "c"}, {2,"b"} , {3,"a"}
+  };
+
+  // use y_index as a regular std::set
+  std::copy(as.begin(),as.end(), std::back_inserter(o));
+
+  BOOST_CHECK_EQUAL(o[0].y,"c");
+  BOOST_CHECK_EQUAL(o[1].y,"b");
+  BOOST_CHECK_EQUAL(o[2].y,"a");
+}
+
+#+end_src
 *** Q/A
 **** cannot find link library?
 By default, the linker ld dosen't known the non-standard locations of shared
