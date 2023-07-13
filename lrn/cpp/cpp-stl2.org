@@ -1,67 +1,89 @@
 ** stl
 *** lock
 #+begin_src c++
-  #define BOOST_TEST_MAIN
-  #include <boost/test/unit_test.hpp>
-  #include <boost/format.hpp>
-  using boost::format;
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
 
-  #include <vector>
-  using std::vector;
-  #include <algorithm>
+#include <vector>
+using std::vector;
+#include <algorithm>
 
-  #include <map>
-  #include <string>
-  #include <chrono>
-  #include <thread>
-  #include <mutex>
-  using std::string;
+#include <map>
+#include <string>
+#include <chrono>
+#include <thread>
+#include <mutex>
+using std::string;
 
-  BOOST_AUTO_TEST_CASE(basic_lock){
-    std::map<std::string, std::string> m;
-    std::mutex lock_for_m;
+BOOST_AUTO_TEST_CASE(basic_lock){
+  std::map<std::string, std::string> m;
+  std::mutex lock_for_m;
 
-    auto f = [&](const string &k){
-      // simulate a long page fetch
-      std::this_thread::sleep_for(std::chrono::seconds(2));
-      std::string r = "aaa";
+  auto f = [&](const string &k){
+    // simulate a long page fetch
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::string r = "aaa";
 
-      std::lock_guard<std::mutex> g(lock_for_m);
-      m[k] = r;
-    };                            // unlock here
+    std::lock_guard<std::mutex> g(lock_for_m);
+    m[k] = r;
+  };                            // unlock here
 
-    {
-      std::jthread t1(f,"k1");
-      std::jthread t2(f,"k2");
-    } // join here
+  {
+    std::jthread t1(f,"k1");
+    std::jthread t2(f,"k2");
+  } // join here
 
-    BOOST_CHECK_EQUAL(m.size(),2);
-    BOOST_CHECK_EQUAL(m["k1"],"aaa");
-    BOOST_CHECK_EQUAL(m["k2"],"aaa");
-  }
+  BOOST_CHECK_EQUAL(m.size(),2);
+  BOOST_CHECK_EQUAL(m["k1"],"aaa");
+  BOOST_CHECK_EQUAL(m["k2"],"aaa");
+}
 
-  BOOST_AUTO_TEST_CASE(unique_lock){
-    std::map<std::string, std::string> m;
-    std::mutex lock_for_m;
+BOOST_AUTO_TEST_CASE(unique_lock){
+  std::map<std::string, std::string> m;
+  std::mutex lock_for_m;
 
-    auto f = [&](const string &k){
-      // simulate a long page fetch
-      std::this_thread::sleep_for(std::chrono::seconds(2));
-      std::string r = "aaa";
+  auto f = [&](const string &k){
+    // simulate a long page fetch
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::string r = "aaa";
 
-      std::unique_lock g(lock_for_m); // movable lock
-      m[k] = r;
-    };                            // unlock here
+    std::unique_lock g(lock_for_m); // movable lock
+    m[k] = r;
+  };                            // unlock here
 
-    {
-      std::jthread t1(f,"k1");
-      std::jthread t2(f,"k2");
-    } // join here
+  {
+    std::jthread t1(f,"k1");
+    std::jthread t2(f,"k2");
+  } // join here
 
-    BOOST_CHECK_EQUAL(m.size(),2);
-    BOOST_CHECK_EQUAL(m["k1"],"aaa");
-    BOOST_CHECK_EQUAL(m["k2"],"aaa");
-  }
+  BOOST_CHECK_EQUAL(m.size(),2);
+  BOOST_CHECK_EQUAL(m["k1"],"aaa");
+  BOOST_CHECK_EQUAL(m["k2"],"aaa");
+}
+
+BOOST_AUTO_TEST_CASE(test_move_lock){
+  std::map<std::string, std::string> m;
+  std::mutex lock_for_m;
+
+  auto g = [&](){
+    BOOST_TEST_MESSAGE("Deadlock here if the calling function forgot to unlock.");
+    std::unique_lock l(lock_for_m); // movable lock
+    m["B"] = "b";
+  };                            // unlock here
+
+  auto f = [&](){
+    std::unique_lock l(lock_for_m); // movable lock
+    m["A"] = "a";
+    l.unlock();                 // call this before pass it
+    g();
+  };                            // unlock here
+  f();
+  BOOST_CHECK_EQUAL(m.size(),2);
+}
+
+
 #+end_src
 *** std::function
 **** basic bind
@@ -368,6 +390,54 @@ BOOST_AUTO_TEST_CASE(test_bind_to_data2){
     }
     BOOST_TEST_MESSAGE("map ends here");
   }
+#+end_src
+*** atomic
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+#include <atomic>
+#include <thread>
+#include <vector>
+
+// with and without atomic
+
+BOOST_AUTO_TEST_CASE(test_basic_atomic){
+  std::atomic_int acnt;
+  int cnt;
+  auto f = [&acnt,&cnt](){
+    for (int n = 0; n < 1e3; ++n){
+      ++acnt;
+      ++cnt;
+      // Note: for this example, relaxed memory order
+      // is sufficient, e.g. acnt.fetch_add(1, std::memory_order_relaxed);
+    }
+  };
+
+  {
+    std::vector<std::jthread> pool;
+    for (int n = 0; n < 10; ++n)
+      pool.emplace_back(f);
+  } // joins here
+  BOOST_CHECK_EQUAL(acnt,1e4);  // acnt is incremented sanely
+  BOOST_CHECK_NE(cnt,1e4);      // cnt is crazy
+}
+
+BOOST_AUTO_TEST_CASE(test_bool_atomic){
+  // ALL atomic
+  std::atomic_flag b = ATOMIC_FLAG_INIT;
+  BOOST_CHECK_EQUAL(b.test(),false);
+
+  BOOST_CHECK_EQUAL(b.test_and_set(),false); // set to true, return current
+  BOOST_CHECK_EQUAL(b.test_and_set(),true); // set to true, return current
+  BOOST_CHECK_EQUAL(b.test(),true);
+
+  b.clear();                    // set to false
+  BOOST_CHECK_EQUAL(b.test(),false);
+}
+
 #+end_src
 
 * End
