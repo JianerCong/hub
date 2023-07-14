@@ -1,5 +1,5 @@
 ** stl
-*** transform foreach
+*** transform foreach (range)
 #+begin_src c++
   #define BOOST_TEST_MAIN
   #include <boost/test/unit_test.hpp>
@@ -857,192 +857,171 @@ BOOST_AUTO_TEST_CASE(test_1) {
 #+end_src
 
 *** Vector
-**** init
 #+begin_src c++
-// CPP program to initialize a vector like
-// an array.
-#include <iostream>
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
 #include <vector>
-using namespace std;
-
-int main()
-{
-	vector<int> vect{ 10, 20, 30 };
-
-	for (int x : vect)
-		cout << x << " ";
-
-	return 0;
-}
-
-#+end_src
-**** erase
-#+BEGIN_SRC c++
-// erasing from vector
-
-#include <iostream>
-#include <vector>
-using std::cout;
-
-#define SHOW std::cout << "myvector contains:"; \
-  for (unsigned i=0; i<myvector.size(); ++i)    \
-    std::cout << ' ' << myvector[i];            \
-  std::cout << '\n'
-
-int main ()
-{
-  std::vector<int> myvector;
-
-  // set some values (from 1 to 10)
-  for (int i=1; i<=10; i++) myvector.push_back(i);
-  SHOW;
-
-  cout << "erase the 6th element: \n";
-  myvector.erase (myvector.begin()+5);
-  SHOW;
-
-  cout << "erase the first 3 elements: \n";
-  myvector.erase (myvector.begin(),myvector.begin()+3);
-  SHOW;
-
-
-  return 0;
-}
-
-#+END_SRC
-**** toString
-#+begin_src c++
-
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
-
-#include <cstdio>
-#include <iostream>
-#include <string>
-#include <stack>
-#include <vector>
-
-using std::string;
 using std::vector;
-using std::cout;
+#include <algorithm>
 
+template<typename T>
+void veq(vector<T> v, vector<T> v2){
+  for (int i=0;i<v.size();i++) \
+    BOOST_CHECK_EQUAL(v[i],v2[i]);
+};
+
+
+BOOST_AUTO_TEST_CASE(test_init){
+	vector<int> v{ 10, 20, 30 };
+  veq(v,{10,20,30});
+}
+
+BOOST_AUTO_TEST_CASE(test_ctor){
+  vector<int> v(3,123);         // three copies
+  veq(v,{123,123,123});
+
+  vector<int> v1(3);
+  BOOST_CHECK_EQUAL(v1.size(),3); // no copies made
+
+  vector<int> v2{3};            // init-list
+  BOOST_CHECK_EQUAL(v2.size(),1);
+}
+
+#include <numeric>
+BOOST_AUTO_TEST_CASE(test_iota){ // increasing number
+  vector<int> v(3);              // reserve three
+  std::iota(v.begin(),v.end(),4);
+  veq(v,{4,5,6});
+}
+
+BOOST_AUTO_TEST_CASE(test_erase){
+  vector<int> v(4);              // reserve three
+  std::iota(v.begin(),v.end(),4);
+  veq(v,{4,5,6,7});
+
+  v.erase(v.begin() + 1);
+  veq(v,{4,6,7});
+  }
+
+BOOST_AUTO_TEST_CASE(test_erase_range){
+  vector<int> v(5);              // reserve three
+  std::iota(v.begin(),v.end(),4);
+  veq(v,{4,5,6,7,8});
+
+  v.erase(v.begin(),v.begin()+2); // first 2 element [a,b)
+  veq(v,{6,7,8});
+}
+
+#include <string>
+using std::string;
 
 // convert to vector to string
 #include <sstream>
-string v2s(vector<int> vec){
+template<typename T>
+string v2s(vector<T> vec){
   // the vector-to-string
   std::stringstream ss;
-  for(int i =0;i<vec.size();i++)
-    { if(i != 0)
-        { ss<<", ";
-        }
-      ss<< vec[i];
-    }
+  for(int i =0;i<vec.size();i++){
+    if(i != 0) ss<<",";
+    ss << vec[i];
+  }
   return ss.str();
 }
 
-#include <algorithm>            // for std::reverse
-using std::reverse;
-class Solution {
-public:
-  void nextPermutation(vector<int>& nums) {
-    int L = nums.size();
-    for (int i=L-2;i>-1;i--){
-      if (nums[i] < nums[i+1]){
-        int j = i + 1;
+BOOST_AUTO_TEST_CASE(test_to_string){
+  vector<int> v(3);              // reserve three
+  std::iota(v.begin(),v.end(),4);
+  BOOST_CHECK_EQUAL("4,5,6",v2s(v));
+}
 
-        while (j < (L - 1) && (nums[j+1] > nums[i])){
-          j++;
-        }
+BOOST_AUTO_TEST_CASE(test_iterator_and_distance){
+  vector<int> v(3);              // reserve three
+  std::iota(v.begin(),v.end(),4);
+  veq(v,{4,5,6});
+  auto p1 = v.begin();
+  auto p2 = v.end();
 
-        int temp = nums[i];
-        nums[i] = nums[j];
-        nums[j] = temp;
+  BOOST_CHECK_EQUAL(*p1,4);
+  BOOST_CHECK_EQUAL(*(p2-1),6);
+  BOOST_CHECK_EQUAL(p2-p1,3L);  // long int
+}
 
+BOOST_AUTO_TEST_CASE(test_find){
+  vector<int> v{1,2,3,3,4};
 
-        // Reverse the tail-values
-        // j = 1;
-        // while((L - j) - (i+j) > 0){
-        //   temp = nums[i+j];
-        //   nums[i+j] = nums[L-j];
-        //   nums[L-j] = temp;
-        //   j++;
-        // }
-        reverse(nums.begin()+i+1, nums.end());
+	std::vector<int>::iterator it =  std::find (v.begin(), v.end(), 3);
+  BOOST_CHECK(it != v.end());   // found (the first 3)
+  BOOST_CHECK_EQUAL(it - v.begin(),2);
 
-        return;
-      }
-    }
+	it =  std::find (v.begin(), v.end(), 2);
+  BOOST_CHECK(it != v.end());   // not found
+  BOOST_CHECK_EQUAL(it - v.begin(),1);
 
-    reverse(nums.begin(),nums.end());
+	it =  std::find (v.begin(), v.end(), 123);
+  BOOST_CHECK(it == v.end());   // not found
+}
+
+// --------------------------------------------------
+// Reserve and memory allocator
+#include <cstddef>
+#include <iostream>
+#include <new>
+
+// minimal C++11 allocator with debug output
+template<class Tp>
+struct NAlloc{
+  static int allocate_count;
+
+  typedef Tp value_type;
+  NAlloc() = default;
+  template<class T>
+  NAlloc(const NAlloc<T>&) {}
+  Tp* allocate(std::size_t n){
+    allocate_count+=1;
+    n *= sizeof(Tp);
+    Tp* p = static_cast<Tp*>(::operator new(n));
+    std::cout << "allocating " << n << " bytes @ " << p << '\n';
+    // BOOST_TEST_MESSAGE((format("allocating %d bytes @%s") % n % p).str());
+    return p;
+  }
+  void deallocate(Tp* p, std::size_t n){
+    std::cout << "deallocating " << n * sizeof *p << " bytes @ " << p << "\n\n";
+    // BOOST_TEST_MESSAGE((format("decallocating %d bytes @%s") % (n * sizeof *p) % p).str());
+    ::operator delete(p);
   }
 };
+template<class T, class U>
+bool operator==(const NAlloc<T>&, const NAlloc<U>&) { return true; }
+template<class T, class U>
+bool operator!=(const NAlloc<T>&, const NAlloc<U>&) { return false; }
 
-int main(int argc, char *argv[]){
-  Solution S;
+// initialize the static member
+// 🦜 : Must be done here, outside the class.
+template<>
+int NAlloc<int>::allocate_count=0;
 
-  vector<int> nums{3,2,1};
-  vector<int> nums2{1,2,3};
+BOOST_AUTO_TEST_CASE(test_reserve){
+  constexpr int max_elements = 8;
+  BOOST_TEST_MESSAGE("With reserve --------------------------");
+  {
+    std::vector<int, NAlloc<int>> v1;
+    v1.reserve(max_elements); // reserves at least max_elements * sizeof(int) bytes
 
-  S.nextPermutation(nums);
-  printf("Should be %s \n it's %s \n", v2s(nums).c_str(), v2s(nums2).c_str());
-
-
-  return 0;
-}
-
-#+end_src
-**** iterator and distance
-#+begin_src c++
-  #include <cstdio>
-  #include <vector>
-
-  using std::vector;
-
-  int main(){
-    vector<int> v({1,2,3});
-
-    auto p1 = v.begin();
-    auto p2 = v.end();
-    printf("*p1 is %d\n",*p1);//1
-    printf("*(p2 - 1) is %d\n",*(p2 - 1)); // 3
-    // Note: long int
-    printf("*(p2 - p1) is %ld\n",p2 - p1); // 3
+    for (int n = 0; n < max_elements; ++n) v1.push_back(n);
   }
 
-#+end_src
-**** find
-#+begin_src c++
-// CPP program to illustrate
-// std::find
-// CPP program to illustrate
-// std::find
-#include<bits/stdc++.h>
-
-int main ()
-{
-	std::vector<int> vec { 10, 20, 30, 40 };
-	// Element to be searched
-	int ser = 30;
-
-	// std::find function call
-	std::vector<int>::iterator it =  std::find (vec.begin(), vec.end(), ser);
-	if (it != vec.end())
-    {
-      std::cout << "Element " << ser <<" found at position : " ;
-      std::cout << it - vec.begin() << " (counting from zero) \n" ;
-    }
-	else
-		std::cout << "Element not found.\n\n";
-
-	return 0;
+  BOOST_CHECK_EQUAL(NAlloc<int>::allocate_count,1);
+  NAlloc<int>::allocate_count=0; // reset
+  BOOST_TEST_MESSAGE("Without reserve --------------------------");
+  {
+    std::vector<int, NAlloc<int>> v1;
+    for (int n = 0; n < max_elements; ++n) v1.push_back(n);
+  }
+  BOOST_CHECK(NAlloc<int>::allocate_count > 1); // it will keep lengthening the array.
 }
-// Output: 
-// Original vector : 10 20 30 40
-// Element 30 found at position : 2 (counting from zero)
 
 #+end_src
 *** List
