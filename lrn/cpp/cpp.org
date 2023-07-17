@@ -296,7 +296,6 @@ non-template > explicit specialization > template
 #+BEGIN_SRC c++
 /**
  * @file file.cpp
- * @author Jianer Cong
  * @brief Simple file input and output
  */
 #include <iostream>
@@ -1011,18 +1010,6 @@ bool isGood(){return ::isGood(a);}
 
     return 0;
   }
-
-#+end_src
-*** sleep
-**** old way
-#+begin_src c++
-  #ifdef _WIN32
-  #include <Windows.h>
-  #else
-  #include <unistd.h>
-  #endif
-  // unsigned sleep(unsigned seconds);
-
 
 #+end_src
 *** this pointer

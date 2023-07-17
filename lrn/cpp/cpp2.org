@@ -1,0 +1,91 @@
+*** enum
+In short, use ~enum struct~
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  using boost::format;
+
+  BOOST_AUTO_TEST_CASE(test_enum_convert){
+    enum A{a,b,c=20,d};
+    int n = d;
+    BOOST_CHECK_EQUAL(a,0);
+    BOOST_CHECK_EQUAL(b,1);
+    BOOST_CHECK_EQUAL(n,21);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_enum_convert_using_scope){
+    // >C++11
+    enum A{a,b,c=20,d};
+    int n = A::d;
+    BOOST_CHECK_EQUAL(A::a,0);
+    BOOST_CHECK_EQUAL(n,21);
+  }
+
+  struct X{enum A{a='a',b='b'};};
+  BOOST_AUTO_TEST_CASE(test_enum_in_struct){
+    BOOST_CHECK_EQUAL(X::a,'a');
+    BOOST_CHECK_EQUAL(X::b,'b');
+  }
+
+  /*
+    🦜 : What ? It feels like enum is so dangerous. It can be converted to int
+    (and related) freely can declares a lot of names in the scope...
+
+    🐢 : Yeah, so here is `enum struct | class`
+  ,*/
+
+  BOOST_AUTO_TEST_CASE(test_enum_class){
+    enum class Y {a,b=20,c};
+    Y r = Y::c;
+    // int n=r //error: no implicit conversion from scoped enum to int
+    int n = static_cast<int>(r);
+    BOOST_CHECK_EQUAL(n,21);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_explicit_type){
+    enum class X: char {a='a',b,c};
+    char x = static_cast<char>(X::a);
+    BOOST_CHECK_EQUAL(x,'a');
+    BOOST_CHECK_EQUAL(static_cast<char>(X::b),'b');
+    BOOST_CHECK_EQUAL(static_cast<char>(X::c),'c');
+    }
+
+  /*
+    🦜 : What if I just wanna "import" all enum name?
+
+    🐢 : `using enum`. Use this when the enum name is too long. You should be
+    carefule with that.
+   ,*/
+  BOOST_AUTO_TEST_CASE(test_using_enum){ // C++20
+  #if defined(__cpp_using_enum)
+    enum class X: char {a='a',b,c};
+    using enum X;
+    char x = static_cast<char>(a);
+    BOOST_CHECK_EQUAL(x,'a');
+    BOOST_CHECK_EQUAL(static_cast<char>(b),'b');
+    BOOST_CHECK_EQUAL(static_cast<char>(c),'c');
+  #else
+    BOOST_TEST_MESSAGE("This c++ doesn't support using enum...");
+  #endif
+  }
+
+  BOOST_AUTO_TEST_CASE(test_ctor_and_switch){
+    enum class X: char {a='a',b,c};
+
+    X x{'c'};
+    int y;
+    switch (x){
+    case X::a: y = 1; break;
+    case X::b: y = 2;break;
+    case X::c: y = 3;break;
+    default: y = 4;
+    }
+
+    BOOST_CHECK_EQUAL(y,3);
+  }
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

@@ -405,6 +405,76 @@ In other laptop's browser: > 10.0.0.1:8000
   #Could not open file or uri for loading CA private key from ./demoCA/private/cakey.pem
 
 #+end_src
+*** cmdline
+#+begin_src python
+import subprocess
+
+import pathlib
+from pathlib import Path
+
+def make_tmp_file(f: str='tmp.txt', content: str = 'abc'):
+    # Remove file if exists
+    Path(f).unlink(missing_ok=True)
+    o = open(f,'w')
+    assert 3 == o.write(content)
+    o.close()                   # flush and close
+
+import hashlib
+def test_sha1_cmdline():
+    f = 'tmp.txt'
+    make_tmp_file(f,'abc')
+
+    c = subprocess.run(['openssl','dgst','-sha1',f],capture_output=True, text=True)
+    # c is the CompletedProcess class
+    assert c.returncode == 0
+    assert c.stderr == ''
+    s = c.stdout
+
+    assert s == 'SHA1(tmp.txt)= a9993e364706816aba3e25717850c26c9cd0d89d\n'
+    # compare with that of hashlib
+    h = s.split('=')[-1].strip()
+    assert h == 'a9993e364706816aba3e25717850c26c9cd0d89d'
+    assert h == hashlib.sha1(b'abc').hexdigest()
+
+    Path(f).unlink(missing_ok=True)
+    # openssl sha1 -out d.txt tmp.txt
+
+def test_encrypt_decrypt():
+    p = 'aaaaa'                 # password
+
+    f = 'tmp.txt'
+    f1 = 'tmp-out.txt'
+
+    make_tmp_file(f,'abc')
+
+    # --------------------------------------------------
+    # encrypt
+    c = subprocess.run(['openssl','enc','-aes-128-cbc',
+                        '-in',f,
+                        '-k',p,  # passphrase
+                        '-pbkdf2',
+                        '-out',f1],capture_output=True, text=True)
+    # c is the CompletedProcess class
+    assert c.returncode == 0
+    assert c.stderr == ''
+    assert c.stdout == ''
+
+    # --------------------------------------------------
+    # decrypt
+    c = subprocess.run(['openssl','enc','-d',  # decrypt
+                        '-aes-128-cbc',
+                        '-in',f1,
+                        '-k',p,  # passphrase
+                        '-pbkdf2'],capture_output=True, text=True)
+    # c is the CompletedProcess class
+    assert c.returncode == 0
+    assert c.stderr == ''
+    assert c.stdout == 'abc'
+
+    Path(f).unlink(missing_ok=True)
+    Path(f1).unlink(missing_ok=True)
+
+    #+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "bash"
