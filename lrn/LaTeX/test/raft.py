@@ -51,6 +51,12 @@ class IStaticIdBasedNetworkable(ABC):
     def clear(self):                # clears up all the listeners
         pass
 
+"""
+
+🦜 : There's an important observation: If a node failed to become the primary,
+all the node needs to become the sub again is to restart the clock.
+
+"""
 class RaftConsensus:
     def __init__(self,
                  n: IStaticIdBasedNetworkable,
@@ -61,7 +67,6 @@ class RaftConsensus:
         self.primary = None
         self.dynasty = 0
         self.voted_dynasty = dict()
-
         self.start_listening_as_follower()
 
     def start_listening_as_follower(self):
@@ -87,13 +92,26 @@ class RaftConsensus:
             with self.lock_for_patience:
                 self.patience -= 1
                 p = self.patience
-            self.say(f' patience >> {self.patience}, 🐢PR: {self.primary}')
+            self.say(f' patience >> {self.patience}, 🐢PR: {S.BLUE} {self.primary} {S.NOR}')
 
-        self.have_enough()
+        self.have_enough(self.primary)  # here the clock ends
 
-    def have_enough(self):
-        self.say(f' have had enough')
-        self.ask_for_votes()
+    def have_enough(self, primary :str):
+
+        # with self.lock_for_patience:  # check the patience again
+        if self.patience > 0:  # comforted
+            self.say(f' ❄ comforted by the someone')
+            Thread(target=self.start_internal_clock).start()  # start the clock again (that's what followers do)
+            return
+
+        if primary != self.primary:
+            self.say(f' ❄ comforted by the new primary: {S.CYAN} {self.primary} {S.NOR}')
+            Thread(target=self.start_internal_clock).start()  # start the clock again (that's what followers do)
+            return
+
+        else:
+            self.say(f' have had enough for {primary} being primary')
+            self.ask_for_votes()
 
     def handle_append_entry(self, i: int, d: str) -> Optional[str]:
         if i == self.primary:
@@ -112,8 +130,8 @@ class RaftConsensus:
 
     def comfort(self):          # reset timer
         with self.lock_for_patience:
-            self.patience = random.randrange(start=10,stop=20,step=2)
-            self.say(f'patience set to = {self.patience}')
+            self.patience = random.randrange(start=5,stop=8,step=2)
+            self.say(f'❄ patience set to = {self.patience}')
 
     def say(self,s: str):
         print_mt(f'[{self.net.my_id()}]: ' + s)
@@ -135,7 +153,8 @@ class RaftConsensus:
         if c >= len(self.net.all_ids()) / 2:
             self.start_listening_as_primary(c)
         else:
-            self.start_listening_as_follower()
+            self.say(f'I only got {c} votes, I am gonna stay follower')
+            Thread(target=self.start_internal_clock).start()  # start the clock again (that's what followers do)
 
     def start_listening_as_primary(self, c: int):
         self.primary = self.net.my_id()

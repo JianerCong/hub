@@ -515,6 +515,27 @@ previous/next: n/p
 + vertically :: "
 + move to  :: <- ->
 + resize ::  <--> (holding ctrl)
+* misc
+** compare two directories
+#+begin_src bash
+  d1=/home/me/.local/openssl
+  d2=/usr/share/zsh/functions/Zle
+  sudo diff --brief --recursive $d2 $d1
+  diff --brief --recursive Dir1 Dir2 --exclude '*.log'
+
+  # -q: report only when files differ
+  diff -q directory-1/ directory-2/
+
+  # Use meld
+  sudo apt install meld
+
+  # to_remove=(certs  ct_log_list.cnf  ct_log_list.cnf.dist  misc  openssl.cnf  openssl.cnf.dist  private  share)
+  # for a in $to_remove; do
+  #     echo "removing $a"
+  #     sudo rm -rv $a
+  # done
+
+#+end_src
 
 * End
 # Local Variables:
