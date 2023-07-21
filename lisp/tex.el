@@ -151,7 +151,7 @@ s1 <prompt s2> s3 _ s4
       ("tx" "\\text")
       ("Ep" "\\emoji{parrot}")
       ("Et" "\\emoji{turtle}")
-      ;; ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
+      ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
       ("Ca" "" (lambda () (skeleton-insert '(nil "\\Cola{" _ "}"))))
       ("ttt" "" (lambda () (skeleton-insert '(nil "[title=\\texttt{" _ "}]"))))
       ;; ("vb" "" (lambda () (skeleton-insert '(nil "\\verb|" _ "|"))))
@@ -175,51 +175,7 @@ s1 <prompt s2> s3 _ s4
       ("qd" "\\quad")
       ("ni" "\\noindent")
       ("ddd" "\\cdots")
-      ("myHeader" 
-  "
-% Color
-\\newcommand{\\mycola}{MidnightBlue}
-\\newcommand{\\mycolb}{Mahogany}
-\\newcommand{\\mycolc}{OliveGreen}
-
-\\newcommand{\\cola}[1]{\\textcolor{\\mycola}{#1}}
-\\newcommand{\\colb}[1]{\\textcolor{\\mycolb}{#1}}
-\\newcommand{\\colc}[1]{\\textcolor{\\mycolc}{#1}}
-\\newcommand{\\Cola}[1]{\\textcolor{\\mycola}{\\emph{#1}}}
-\\let\\emph\\relax % there's no \\RedeclareTextFontCommand
-\\DeclareTextFontCommand{\\emph}{\\bfseries\\em}
-\\usepackage{fontspec}
-\\setmonofont{Cascadia}[
-Path=/usr/share/fonts/truetype/Cascadia_Code/,
-Scale=0.85,
-Extension = .ttf,
-UprightFont=*Code,              %find CascadiaCode.ttf
-BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
-ItalicFont=*CodeItalic,
-BoldItalicFont=*CodePLItalic
-]
-\\usepackage{minted}
-\\usepackage{tcolorbox}
-\\tcbuselibrary{skins}
-\\tcbuselibrary{minted}
-\\usepackage{tikz}
-\\usetikzlibrary{shapes} % ellipse node shape
-\\usetikzlibrary{shapes.multipart} % for line breaks in node text
-\\usetikzlibrary{arrows.meta}    %-o arrow head
-\\usetikzlibrary{arrows}
-\\usetikzlibrary{matrix}
-
-
-% Redefine em
-% latex.sty just do: \\DeclareTextFontCommand{\\emph}{\\em}
-
-\\let\\emph\\relax % there's no \\RedeclareTextFontCommand
-\\DeclareTextFontCommand{\\emph}{\\bfseries\\em}
-% cjk
-\\usepackage{xeCJK}
-\\usepackage{amsmath}
-" \n
-       )
+      
       ))                                  ;nil
   )
 
@@ -279,8 +235,9 @@ LaTeX-font-list
 (setq-default TeX-master "m") ; All master files by default called "m".
 
 (add-to-list 'LaTeX-font-list '(?a "\\cola{" "}"))                       ;C-c C-f a
+(add-to-list 'LaTeX-font-list '(?A "\\Cola{" "}"))                       ;C-c C-f a
 (add-to-list 'LaTeX-font-list '(?b "\\colb{" "}"))                       ;C-c C-f b
 (add-to-list 'LaTeX-font-list '(?c "\\colc{" "}"))                       ;C-c C-f c
 
-;; (LaTeX-mode)                            ;This reload the 'LaTeX-font-list
+;;This reload the 'LaTeX-font-list
 (TeX-normal-mode)

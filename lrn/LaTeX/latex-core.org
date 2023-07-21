@@ -91,6 +91,13 @@ S = \{ z \in \mathbb{C}\, |\, |z| < 1 \} \quad \textrm{and} \quad S_2=\partial{S
 \]
 \end{document}
 #+END_SRC
++ \quad :: 18mu
++ \, :: 3mu
++ \: :: 4mu
++ \; :: 5mu
++ \! :: -3mu
++ \<space> ::  <space>
++ \qquad :: 36mu
 *** line spacing
 #+BEGIN_SRC latex
         \\[-.7cm]               %remove the extra spacing
@@ -268,6 +275,17 @@ The same limit on display:
   $f^{(k)}(x)$
   $\frac{\partial^2 f}{\partial x^2}$
   $\frac{\partial^{k} f}{\partial x^k}$
+#+end_src
+*** mathfont
+#+begin_src latex
+  \usepackage{amsmath}
+  % \usepackage{amssymb}
+  \begin{document}
+  \begin{align*}
+    RQSZ \\
+    \mathcal{RQSZ} \\
+    \mathbb{RQSZ}
+  \end{align*}
 #+end_src
 ** indent and paragraphs
 *** alignment

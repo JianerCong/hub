@@ -1428,8 +1428,6 @@ BOOST_AUTO_TEST_CASE(test_vectorised){
 }
 
 #+end_src
-**** thread
-
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

@@ -39,6 +39,12 @@
                          )
                 )
      )
+
+    ("cmcm" "" (lambda () (skeleton-insert
+                          '(nil "#[=[" \n _ "#]=]")
+                          )
+                )
+     )
     ))
 
 

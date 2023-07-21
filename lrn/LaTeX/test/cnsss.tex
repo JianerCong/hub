@@ -1,7 +1,7 @@
-\documentclass[dvipsnames]{article}
-% \documentclass[dvipsnames]{ctexart}
+% \documentclass[dvipsnames]{article}
+\documentclass[dvipsnames]{ctexart}
 
-\title{number theory}
+\title{FollowMe 共识}
 \usepackage{geometry}\geometry{
   a4paper,
   total={170mm,257mm},
@@ -26,7 +26,6 @@
 % \let\emph\relax % there's no \RedeclareTextFontCommand
 % \DeclareTextFontCommand{\emph}{\bfseries}
 \renewcommand{\emph}[1]{\texbf{#1}}
-\usepackage{amssymb}            %\mathbb
 
 \usepackage{fontspec}
 
@@ -167,34 +166,9 @@ row sep=1cm,column sep=2cm]
 % --------------------------------------------------
 \begin{document}
 \maketitle
+% \input{sec-dynamic-consensus}
+% \input{sec-static-consensus}
 
-\section{The series of primes}
-
-\subsection{Divisibility of intergers}
-
-The numbers
-% dots for commas
-\[ \dotsc,-3,-2,-1,0,1,2, \dotsc\]
-are the \Cola{intergers}, denoted by $\mathbb{Z}$. The number
-\[ 0,1,2,3,\dotsc\] are the \Cola{non-negative integers} or \Cola{natural
-  numbers}, denoted by $\mathbb{N}$, and the numbers \[1,2,3,\dotsc\] are the
-\Cola{positive integers}, denoted by $\mathbb{N^{\times}}$. We also denote
-\Cola{non-zero intergers} by $\mathbb{Z^{\times}}$
-
-Let $a,\in \mathbb{Z}, b \in \mathbb{Z^{\times}}$, $a$ is saied to be
-\Cola{devisible} by $b$ if there exists $c \in \mathbb{Z}$ such that
-\[ a = bc.\] If $a,c, > 0$, so does $c$. If $a$ is divisable by $b$, we say $b$
-is a \Cola{divisor} of $a$ and write \[ b \mid a.\] Thus
-\[ 1 \mid n, \quad n \mid n, \quad \forall n \in \mathbb{Z}.\] If $b$ doesn't
-divide $a$, we write $b \nmid a$.
-
-It's plain that
-\begin{align*}
-  b \mid a \;,\; c \mid b &\Rightarrow   c \mid a\\
-  b \mid a  &\Rightarrow   bc \mid ac\\
-  c \mid a \;,\; c \mid b &\Rightarrow   c \mid ma + nb \quad \forall a,b,m,n
-                            \in \mathbb{Z} \quad c \in \mathbb{Z^{\times}}
-\end{align*}
 
 \end{document}
 

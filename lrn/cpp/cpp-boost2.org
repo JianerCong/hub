@@ -868,6 +868,63 @@ By default, the linker ld dosen't known the non-standard locations of shared
 libraries.
 
 Solution: before ~find_package~ set
+*** lock_free: ringbuffer
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+#include <thread>
+
+
+
+using boost::format;
+#include <string>
+using std::string;
+
+#include <boost/lockfree/spsc_queue.hpp>
+
+using boost::lockfree::spsc_queue;
+
+BOOST_AUTO_TEST_CASE(test_ctor_spec_queue){
+  spsc_queue<int, boost::lockfree::capacity<32> > q;
+  BOOST_CHECK(q.is_lock_free());
+}
+#include <boost/atomic.hpp>
+
+BOOST_AUTO_TEST_CASE(test_consumer_producer){
+  int producer_count = 0;
+  boost::atomic_int consumer_count (0);
+  boost::atomic<bool> done (false);
+  spsc_queue<int, boost::lockfree::capacity<1024> > q;
+
+  const int iterations = 1000;
+  auto producer = [&producer_count,iterations,&q](){
+    for (int i = 0; i != iterations; ++i) {
+      int value = ++producer_count;
+      while (not q.push(value)) ;
+    }
+  };
+
+  auto consumer = [&consumer_count,iterations,&q,&done](){
+    int value;
+    while (!done) {
+      while (q.pop(value)) ++consumer_count;
+    } // producer ends here
+
+    while (q.pop(value)) ++consumer_count;
+  };
+
+  {std::jthread consumer_thread(consumer);
+    {std::jthread producer_thread(producer);
+    } // producer ends here
+    done = true;
+  } // consumer ends here
+
+  BOOST_CHECK_EQUAL(producer_count,iterations);
+  BOOST_CHECK_EQUAL(consumer_count,iterations);
+}
+
+#+end_src
 
 * End
 # Local Variables:

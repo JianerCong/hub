@@ -335,8 +335,7 @@ class ListenToOneConsensus:
 \end{itemize}
 
 示例：
-\begin{tcolorbox}[breakable]
-  
+% \begin{tcolorbox}[breakable]
 \begin{verbatim}
 mark started as primary 🐸 节点【mark】加入了集群----------------------------
 Adding handler: mark-/pleaseAddMe
@@ -547,8 +546,7 @@ Got result:
                  mark, The primary.
 
 \end{verbatim}
-
-\end{tcolorbox}
+% \end{tcolorbox}
 \section{听一个共识-留一手版}
 
 让我们稍微再复杂复杂一点，看看能不能新增这两个功能：
@@ -714,6 +712,91 @@ Got result:
   \emoji{parrot} : 那如果一个节点同时收到两个\cola{primary}的消息怎么办呢？\\
   \emoji{turtle} : 那么就和其他的共识算法一样（Raft，PBFT）， 节点只需要接受最新的命令就行了。
 \end{tcolorbox}
+
+那么其实我们可以再往前走一步。直接让所有的节点都记住所有的节点，
+这样其实就相当一有一个\textbf{队列}（节点们排队想当primary）:
+\begin{center}
+  \begin{tikzpicture}
+    % \draw[style=help lines] (-5cm,5cm) grid +(15cm,-10cm);
+    \begin{scope}
+      \matrix[left,matrix of nodes,nodes={draw=black,fill=\mycola!20,minimum size=1.2cm,anchor=center}] (M1){
+        节点1 & 节点2 & ...
+        \\
+      };
+      \fill[black] ([shift={(0,1.5cm)}]M1-1-1) circle (3pt) coordinate (a1);
+      \draw[-latex,thick] (a1) -- ([yshift=2pt]M1-1-1.north);
+      \node[above,text width=3cm,text badly centered] at ([yshift=0.5cm]a1){
+        节点眼里当前的\cola{primary}
+      };
+    \end{scope}
+    \node[fill=\mycolb!80,circle,text=white,minimum size=1.2cm,name=N2] at (3cm,4cm) {
+      节点2
+    };
+    \begin{scope}[xshift=6cm]
+      \matrix[right,matrix of nodes,nodes={draw=black,fill=\mycola!20,minimum size=1.2cm,anchor=center}] (M11){
+        节点1 & 节点2 & ...
+        \\
+      };
+      \fill[black] ([shift={(0,1.5cm)}]M11-1-2) circle (3pt) coordinate (a1);
+      \draw[-latex,thick] (a1) -- ([yshift=2pt]M11-1-2.north);
+      \node[above,text width=3cm,text badly centered] at ([yshift=0.5cm]a1){
+        节点眼里当前的\cola{primary}
+      };
+      \draw[-latex,thick] (M1.east) -- (M11.west) node[pos=0.5,above,text width=4cm,name=trigger]{
+        节点2触发\textbf{view-change}（它想换人）
+      };
+      \draw[snake=expanding waves,segment angle=15] (N2)-- (trigger);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+\begin{tcolorbox}
+\emoji{parrot} : 但是我觉得这一步还是有点太远了，暂时先每个节点记住两个吧。
+\end{tcolorbox}
+那么其实我们节点之间的架构就变成了这样的：
+\begin{center}
+  \begin{tikzpicture}
+    % \draw[style=help lines] (-2cm,5cm) grid +(15cm,-10cm);
+    \begin{scope}
+      \node[myNode,fill=\mycola,minimum height=4em] (a0) {primary};
+      \node[myNode,fill=\mycolc,minimum height=2em] (a1) at (4cm,0){1};
+
+      \tikzstyle{myArrow}=[latex-,draw=gray,opacity=0.5,thick]
+
+      \foreach \i / \j in {
+        2/120,
+        3/180,
+        4/240
+      }{
+        \path (a0) -- (\j:3cm) node[myNode,fill=\mycolaa,name=a\i]{\i};
+      }
+      
+      \foreach \i / \j in {
+        5/60,
+        6/0,
+        7/300
+      }{
+        \path (a1) -- +(\j:3cm) node[myNode,fill=\mycolaa,name=a\i]{\i};
+      }
+
+      % draw the arrows
+      \foreach \i in {2,3,4,5,7}{
+        % \draw[myArrow] (a1) -- (a\i);
+        \draw[myArrow] (a0) -- (a\i);
+      }
+
+      \foreach \i in {2,4,5,6,7}{
+        \draw[myArrow] (a1) -- (a\i);
+        % \draw[myArrow] (a0) -- (a\i);
+      }
+      \draw[myArrow] (a0.south east) parabola bend (2cm,-1cm) (a6.south west);
+      \draw[myArrow] (a1.north west) parabola bend (2cm,1cm) (a3.north east);
+    \end{scope}
+
+
+    
+  \end{tikzpicture}
+\end{center}
+还是中心化的，只不过没有中心变成了两个。
 
 % Local Variables:
 % TeX-engine: luatex
