@@ -235,6 +235,18 @@ C-x C-k C-f
 + C-x C-x :: exchange-point-and-mark
 ** expand
 + M-/ :: expand at point
+** encoding
++ C-x RET f coding RET
+Use coding system coding to save or revisit the file in the current buffer (set-buffer-file-coding-system).
+
++ C-x RET c coding RET
+Specify coding system coding for the immediately following command (universal-coding-system-argument).
+
++ C-x RET r coding RET
+Revisit the current file using the coding system coding (revert-buffer-with-coding-system).
+
++ M-x recode-region RET right RET wrong RET
+Convert a region that was decoded using coding system wrong, decoding it using coding system right instead.
 * Spacemacs Q/A
 ** problem with python import magic?
 pip install epc
