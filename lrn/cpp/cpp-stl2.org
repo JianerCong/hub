@@ -439,6 +439,26 @@ BOOST_AUTO_TEST_CASE(test_bool_atomic){
 }
 
 #+end_src
+*** bit_cast (C++20)
+#+begin_src c++
+#include <bit>
+
+using std::bit_cast;
+BOOST_AUTO_TEST_CASE(test_basic_bit_cast){
+  constexpr double f64 = 19880124.0;
+  constexpr auto u64 = bit_cast<std::uint64_t>(f64);
+
+  BOOST_CHECK_EQUAL(bit_cast<double>(u64),f64); // round trip
+}
+
+BOOST_AUTO_TEST_CASE(test_char_bit_cast){
+  char c = uint8_t{60};
+  uint8_t b = bit_cast<uint8_t>(c);
+  BOOST_CHECK_EQUAL(b,60);
+}
+
+
+#+end_src
 
 * End
 # Local Variables:

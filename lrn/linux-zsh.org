@@ -4,6 +4,10 @@
       echo $n
   done
 #+end_src
+** theme
+#+begin_src shell
+  omz theme use agnoster
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "shell"
