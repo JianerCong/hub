@@ -508,6 +508,7 @@ but ensure the \rmfamily font is used,
 \text{for $x= x_0 + I x_1$.}
 #+end_src
 ** cleveref
+*** no config : what cref did to default counters
 #+begin_src latex
 \documentclass{article}
 \title{Try cleveref}
@@ -560,6 +561,27 @@ You should avoid the eqnarray environment.
 \lipsum[2]
 
 \end{document}
+
+#+end_src
+*** config yours
+#+begin_src latex
+\usepackage{cleveref}
+\crefname{figure}{图}{图}
+%                    ^^^ plural
+\Crefname{figure}{图}{图}
+%         ^^^^^^ type = counter name
+
+\crefname{table}{表}{表}
+\Crefname{table}{表}{表}
+
+\crefname{section}{}{}
+\crefname{section}{}{}
+\creflabelformat{section}{第#2#1#3章节}
+
+
+% #2 : start of hyperlink
+% #3 : end of hyperlink
+% #1 : The counter
 
 #+end_src
 ** beamer

@@ -164,6 +164,32 @@ row sep=1cm,column sep=2cm]
 \newcommand{\mycolaa}{\mycola!20}
 
 
+\newcounter{myDefCounter}
+\newcounter{myTheoCounter}
+
+\tcbuselibrary{theorems}
+\newtcbtheorem[use counter=myDefCounter,number within=section]{myDef}{Definition}%
+{
+  % colback=green!5,colframe=green!35!black,
+  fonttitle=\bfseries}{def}
+
+\newtcbtheorem[use counter=myTheoCounter,number within=section]{myTheo}{Theorem}%
+{
+  % colback=green!5,
+  colframe=\mycola,
+  fonttitle=\bfseries}{thm}
+
+\usepackage{cleveref}
+\crefname{myDefCounter}{definition}{definitions}
+                                   % ^^^ plural
+\Crefname{myDefCounter}{Definition}{Definitions}
+         % ^^^^^^ type = counter name
+
+\crefname{myTheoCounter}{theorem}{theorems}
+\Crefname{myTheoCounter}{Theorem}{Theorems}
+
+\usepackage{amsthm}             %for {proof}
+
 % --------------------------------------------------
 \begin{document}
 \maketitle
@@ -195,6 +221,42 @@ It's plain that
   c \mid a \;,\; c \mid b &\Rightarrow   c \mid ma + nb \quad \forall a,b,m,n
                             \in \mathbb{Z} \quad c \in \mathbb{Z^{\times}}
 \end{align*}
+
+\subsection{Prime numbers}
+
+\begin{myDef}{Prime number}{prime-number}
+  A number $p \in \mathbb{N}$ is said to be \Cola{prime}, if
+  \begin{itemize}
+  \item $p > 1$
+  \item $p$ has no positive divisors except 1 and $p$
+  \end{itemize}
+\end{myDef}
+
+% The \cref{def:prime-number}.
+A number greater than 1 and not prime is called \Cola{composite}.
+Our first theorem is
+\begin{myTheo}{}{product-of-primes}
+  Every positive integer $n$ > 1, is a product of primes.
+  \tcblower
+  This is a normal paragraph.
+
+  {\narrower\smallskip\noindent
+    This should be a narrower paragraph.
+    It was created using plain \TeX's ``narrower'' feature as described in the \TeX book.
+    However, it does not really appear to be narrower.
+    \smallskip
+  }
+
+  {\narrower\smallskip\noindent
+    This is a narrower paragraph.
+    It was created using plain \TeX's ``narrower'' feature with a trailing \verb|\par|.
+    Nowadays, you should use a \LaTeX\ environment, though.
+    \par\smallskip
+  }
+
+  This is a normal paragraph again.
+  Let's make it a bit longer, in order to see its right margin.
+\end{myTheo}
 
 \end{document}
 

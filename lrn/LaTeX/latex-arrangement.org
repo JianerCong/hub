@@ -298,19 +298,19 @@ some text and \Blindtext to get a long text. With \blinddocument (or
 \usepackage{blindtext}
 \blindtext{}
 #+end_src
-** horizontal
+** horizontal (landscape)
 #+begin_src latex
-\documentclass{article}
-\usepackage[a4paper,margin=1in]{geometry}
-\usepackage{kantlipsum}
-\usepackage{lscape}
-\usepackage{pdflscape} %uncomment this  and comment above line to see the difference
-\begin{document}
-\begin{landscape}
-  \kant[1-4]
-\end{landscape}
-\kant[5-10]
-\end{document}
+  \documentclass{article}
+  \usepackage[a4paper,margin=1in]{geometry}
+  \usepackage{kantlipsum}
+  % \usepackage{lscape}
+  \usepackage{pdflscape} %uncomment this  and comment above line to see the difference
+  \begin{document}
+  \begin{landscape}
+    \kant[1-4]
+  \end{landscape}
+  \kant[5-10]
+  \end{document}
 #+end_src
 * End
 
