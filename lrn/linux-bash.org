@@ -423,6 +423,13 @@ rsync -av from-dir to-dir
     command &| grep 'something'   # pipe both
     command 2| grep 'something'   # pipe stderr
 #+end_src
+** comment
+🦜 : But it's not that good because it lost the syntax highlighting...
+#+begin_src bash
+<<comment
+ "Code" or "Comments"
+comment
+#+end_src
 * Tmux
 https://tmuxcheatsheet.com/
 ** basic

@@ -994,7 +994,10 @@ f2()
   bs = bytes(l)              # b'\x01\x02\x03\x04\x05'
   bs.hex()
   b'abc'.hex()               # '616263'
-  
+
+
+  import codecs
+  codecs.decode(b'123')           # ⇒ '123' (utf-8 decoding)
   # a = bytearray(bs)
   # len(a)                          # 5
   # hex_string = a.hex()
