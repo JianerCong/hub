@@ -1,20 +1,30 @@
-\documentclass{article}
-\usepackage{tabularx}
+\documentclass{report}
 
-\newcolumntype{b}{X}
-\newcolumntype{s}{>{\hsize=.5\hsize}X}
-\newcommand{\heading}[1]{\multicolumn{1}{c}{#1}}
+\usepackage{lipsum}       % for sample text
+\usepackage{changepage}   % for the adjustwidth environment
 
 \begin{document}
+\lipsum[1]
 
-\begin{table}[htbp]
-  \centering
-  % \begin{tabularx}{\textwidth}{| X | X | X |}
-  \begin{tabularx}{\textwidth}{bss}
-    \hline
-    \heading{Alpha}     & \heading{Beta}     & \heading{Gamma}     \\ \hline
-    0         & 2        & 4         \\ \hline
-    1         & 3        & 5         \\ \hline
-  \end{tabularx}
-\end{table}
+
+\newenvironment{myIndent}[1][2cm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
+
+\begin{adjustwidth}{2cm}{}
+  %                 --- left
+  %                     -- right glue
+  \lipsum[1] % indented 2cm
+  \begin{adjustwidth}{2cm}{}
+    \lipsum[1] % indented 2 + 2cm
+  \end{adjustwidth}
+\end{adjustwidth}
+
+\begin{myIndent}
+  \lipsum[1]
+\end{myIndent}
 \end{document}
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
+% End:

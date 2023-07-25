@@ -164,6 +164,9 @@ row sep=1cm,column sep=2cm]
 \newcommand{\mycolaa}{\mycola!20}
 
 
+\usepackage{changepage}   % for the adjustwidth environment
+\newenvironment{myIndent}[1][7mm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
+
 \newcounter{myDefCounter}
 \newcounter{myTheoCounter}
 
@@ -177,7 +180,17 @@ row sep=1cm,column sep=2cm]
 {
   % colback=green!5,
   colframe=\mycola,
-  fonttitle=\bfseries}{thm}
+  fonttitle=\bfseries,
+  breakable,
+  before lower={
+    \texttt{Proof: }\par
+    \begin{myIndent}
+  },
+  after lower={
+    \end{myIndent}
+    \qed
+  }
+}{thm}
 
 \usepackage{cleveref}
 \crefname{myDefCounter}{definition}{definitions}
@@ -189,6 +202,7 @@ row sep=1cm,column sep=2cm]
 \Crefname{myTheoCounter}{Theorem}{Theorems}
 
 \usepackage{amsthm}             %for {proof}
+
 
 % --------------------------------------------------
 \begin{document}
@@ -235,27 +249,43 @@ It's plain that
 % The \cref{def:prime-number}.
 A number greater than 1 and not prime is called \Cola{composite}.
 Our first theorem is
-\begin{myTheo}{}{product-of-primes}
+\begin{myTheo}{Product of primes}{product-of-primes}
   Every positive integer $n$ > 1, is a product of primes.
   \tcblower
-  This is a normal paragraph.
-
-  {\narrower\smallskip\noindent
-    This should be a narrower paragraph.
-    It was created using plain \TeX's ``narrower'' feature as described in the \TeX book.
-    However, it does not really appear to be narrower.
-    \smallskip
-  }
-
-  {\narrower\smallskip\noindent
-    This is a narrower paragraph.
-    It was created using plain \TeX's ``narrower'' feature with a trailing \verb|\par|.
-    Nowadays, you should use a \LaTeX\ environment, though.
-    \par\smallskip
-  }
-
-  This is a normal paragraph again.
-  Let's make it a bit longer, in order to see its right margin.
+    \cola{If} $n$ \cola{is prime}:
+    \begin{myIndent}
+      There's nothing to prove.
+    \end{myIndent}
+    \cola{Else:}
+    \begin{myIndent}
+      $n$ has \colc{divisors} between 1 and $n$.\\
+      \emoji{pinching-hand} $m := \cola{\min{}} \{\colc{\text{these divisor of }n}\}$
+      \begin{myIndent}
+        \cola{If} $m$ \cola{is not prime}:
+            \begin{align*}
+              \exists l \in (1,m) \subset \mathbb{N}, l \mid m &\Rightarrow l \mid n \\
+              & \Rightarrow m \text{ is not the smallest as defined \emoji{cross-mark}}
+            \end{align*}
+        So, $m$ \cola{is prime}, say $m = p_1$, then we can draw a prime out of n:
+        \[
+          n = p_1n_1, \quad n_1 \in [p_1,n)
+        \]
+        \cola{If} $n_1$ is a prime:
+        \begin{myIndent}
+          Done.
+        \end{myIndent}
+        \cola{Else}:
+        \begin{myIndent}
+          We use the same process again to draw out another prime divisor of $n_1$
+          \begin{align*}
+            \text{\emoji{pinching-hand} } p_2 \in (1,n_1), p_2 \mid n_1 & \Rightarrow n_1 = p_2n_2 \\
+            & \Rightarrow n = p_1p_2n_2
+          \end{align*}
+          Sooner, or later we must meet a prime $n_i$, because \cola{we can't
+            keep factoring out numbers greater than one from a finite number.}
+        \end{myIndent}
+      \end{myIndent}
+    \end{myIndent}
 \end{myTheo}
 
 \end{document}

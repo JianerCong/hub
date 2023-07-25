@@ -305,6 +305,39 @@ The same limit on display:
   \usepackage[skip=10pt plus1pt, indent=40pt]{parskip}
   % parskip = 10 + 1
 #+end_src
+*** indent a whole paragraph
+#+begin_src latex
+\documentclass{report}
+
+\usepackage{lipsum}       % for sample text
+\usepackage{changepage}   % for the adjustwidth environment
+
+\begin{document}
+\lipsum[1]
+
+
+\newenvironment{myIndent}[1][2cm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
+
+\begin{adjustwidth}{2cm}{}
+  %                 --- left
+  %                     -- right glue
+  \lipsum[1] % indented 2cm
+  \begin{adjustwidth}{2cm}{}
+    \lipsum[1] % indented 2 + 2cm
+  \end{adjustwidth}
+\end{adjustwidth}
+
+\begin{myIndent}
+  \lipsum[1]
+\end{myIndent}
+\end{document}
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
+% End:
+#+end_src
 ** blank space
 #+begin_src latex
   Horizontal \hspace{1cm} spaces can be inserted manually. Useful 
