@@ -925,6 +925,62 @@ BOOST_AUTO_TEST_CASE(test_consumer_producer){
 }
 
 #+end_src
+*** string algorithm
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+#include <thread>
+
+
+
+using boost::format;
+#include <string>
+using std::string;
+
+#include <boost/algorithm/string.hpp>
+using boost::split;
+
+BOOST_AUTO_TEST_CASE(test_trim){
+  string s1,s2;
+  s1 = "   aaa   ";
+  s2 = boost::trim_left_copy(s1);
+  BOOST_CHECK_EQUAL(s1, "   aaa   ");
+  BOOST_CHECK_EQUAL(s2,"aaa   ");
+  boost::trim(s1);
+  BOOST_CHECK_EQUAL(s1,"aaa");
+}
+
+using boost::is_any_of;
+#include <vector>
+using std::vector;
+
+template<typename T>
+void veq(vector<T> v, vector<T> v2){
+  for (int i=0;i<v.size();i++) \
+    BOOST_CHECK_EQUAL(v[i],v2[i]);
+}
+
+BOOST_AUTO_TEST_CASE(test_split){
+  string s1 = "aa,bb,cc";
+  vector<string> v;
+  boost::split(v,s1,is_any_of(","));
+  BOOST_CHECK_EQUAL(v.size(),3);
+  veq(v,{"aa","bb","cc"});
+}
+
+
+BOOST_AUTO_TEST_CASE(test_substr){
+  string s = "/aaa?a=A&b=b";
+  string::size_type i = s.find_first_of('?');
+  BOOST_CHECK_EQUAL(i,4);       // s[4] = '?'
+  BOOST_CHECK_EQUAL(s[i],'?');
+
+  i = s.find_first_of('z');     // not found
+  BOOST_CHECK_EQUAL(i,string::npos);
+}
+
+#+end_src
 
 * End
 # Local Variables:

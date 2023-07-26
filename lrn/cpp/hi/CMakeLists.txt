@@ -18,9 +18,12 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework log
   program_options
 )
 
+add_executable(myexe m.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::log)
+# Although beast and axio are all header-only, we need to link to at least one
+# Boost-target in order to bring in the include dirs
 
-# add the executable
-add_executable(main m.cpp)
-target_link_libraries(main PUBLIC Boost::unit_test_framework
-  Boost::program_options
-)
+# add_custom_target(run ALL
+#   weak-server 0.0.0.0 7777
+#   COMMENT "Runing App 🐸")
