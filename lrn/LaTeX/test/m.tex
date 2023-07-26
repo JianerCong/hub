@@ -192,6 +192,37 @@ row sep=1cm,column sep=2cm]
   }
 }{thm}
 
+
+\newtcbtheorem[use counter=myTheoCounter,number within=section]{myCor}{Corollary}%
+{
+  % colback=green!5,
+  colframe=\mycola, fonttitle=\bfseries, breakable,
+  before lower={
+    \texttt{Proof: }\par
+    \begin{myIndent}
+    },
+    after lower={
+    \end{myIndent}
+    \qed
+  }
+}{cor}
+
+\newtcbtheorem[use counter=myTheoCounter,number within=section]{myLem}{Lemma}%
+{% colback=green!5,
+  colframe=\mycola, fonttitle=\bfseries, breakable,
+  before lower={
+    \texttt{Proof: }\par
+    \begin{myIndent}
+    },
+    after lower={
+    \end{myIndent}
+    \qed
+  }
+}{lem}
+
+\newcommand{\refCorollary}[1]{Corollary~\ref{cor:#1}}
+\newcommand{\refLemma}[1]{Lemma~\ref{lem:#1}}
+
 \usepackage{cleveref}
 \crefname{myDefCounter}{definition}{definitions}
                                    % ^^^ plural
@@ -286,6 +317,34 @@ Our first theorem is
         \end{myIndent}
       \end{myIndent}
     \end{myIndent}
+  \end{myTheo}
+
+  These prime factors are not necessarily distinct.
+
+  If we arrange them in increasing order, we obtain
+  \[
+    n = p_1^{a_1}p_2^{a_2}\dotsc{}p_n^{a_n}, \quad a_i \in \mathbb{N^{\times}},
+    p_1 < p_2 < \dotsm{} < p_n
+  \]
+  In this case, we say that $n$ is in \Cola{standard form}.
+  
+\subsection{The fundamental theorem of arithmetic}
+\label{sec:fund-theo-arth}
+
+We defer the proof for now but present a lemma:
+\begin{myLem}{Euclid's first theorem}{p-cut-ab} 
+  If $p$ is prime,$
+  p \mid ab \Rightarrow p \mid a \text{ or } p \mid b$
+\end{myLem}
+
+We take \refLemma{p-cut-ab} for granted for the moment and use that to prove
+\cref{thm:fund-theo-arth}
+
+\begin{myTheo}{Fundamental theorem of arithmetic}{fund-theo-arth}
+  The standard form of $n$ is unique, $\forall n \in \mathbb{N}^{\times}$.
+  \tcblower{}
+  From \refLemma{p-cut-ab}, we have:
+  \[ p\mid n_1\dotsm{} l \Rightarrow \]
 \end{myTheo}
 
 \end{document}
