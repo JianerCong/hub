@@ -51,10 +51,10 @@
 
 (setq c-my-using-alist
       '(
-        ("o" . "std::cout")
-        ("e" . "std::endl")
-        ("r" . "std::cerr")
-        ("i" . "std::cin")
+        ("o" . "std::optional")
+        ;; ("e" . "std::endl")
+        ;; ("r" . "std::cerr")
+        ;; ("i" . "std::cin")
         ("v" . "std::vector")
         ("m" . "std::unordered_map")
         ("s" . "std::string")
@@ -107,7 +107,7 @@
 (setq cpp-my-includes-alist
       '(
         ("i" . "<iostream>")
-        ("o" . "<cstdio>")
+        ("o" . "<optional>")
         ("s" . "<string>")
         ("sv" . "<string_view>")
         ("v" . "<vector>")
@@ -159,10 +159,18 @@
 (define-abbrev c++-mode-abbrev-table "fs" "filesystem::")
 (define-abbrev c++-mode-abbrev-table "st" "string")
 (define-abbrev c++-mode-abbrev-table "sv" "string_view")
+(define-abbrev c++-mode-abbrev-table "tbs" "tuple<bool,string>")
 (define-abbrev c++-mode-abbrev-table "sb" "" (lambda () (skeleton-insert '(nil "std::begin(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "se" "" (lambda () (skeleton-insert '(nil "std::end(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "fmt" "" (lambda () (skeleton-insert '(nil "(format(\"" _ "\")).str()"))))
 (define-abbrev c++-mode-abbrev-table "ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
+
+;; get handler for Rpc
+(define-abbrev c++-mode-abbrev-table "hget" "" (lambda () (skeleton-insert '(nil "tuple<bool,string> "
+                                                                                 _ "(optional<unordered_map<string,string>> query_param)"))))
+;; post handler for Rpc
+(define-abbrev c++-mode-abbrev-table "hpost" "" (lambda () (skeleton-insert '(nil "tuple<bool,string> "
+                                                                                 _ "(string data)"))))
 
 ;; json::value_to...
 (define-abbrev c++-mode-abbrev-table "vti" "" (lambda ()

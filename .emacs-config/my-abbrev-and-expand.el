@@ -48,8 +48,8 @@
     ("eearth" "🌍️")
     ("eglobe" "🌐️")
     ("ebook" "📗️")
+    ("ewarn" "⚠️")
     ))
-
 
 
 (set-default 'abbrev-mode t)
