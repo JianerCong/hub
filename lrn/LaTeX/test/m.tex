@@ -176,48 +176,44 @@ row sep=1cm,column sep=2cm]
   % colback=green!5,colframe=green!35!black,
   fonttitle=\bfseries}{def}
 
-\newtcbtheorem[use counter=myTheoCounter,number within=section]{myTheo}{Theorem}%
-{
+\newcommand{\myThmBeforeProof}{
+  \texttt{Proof: }\par
+  \begin{myIndent}
+}
+
+\newcommand{\myThmAfterProof}{
+\end{myIndent}
+\qed
+}
+
+\tcbuselibrary{skins}
+\tcbsubskin{myThmSkin}{enhanced}{
+  parbox=false,
   % colback=green!5,
   colframe=\mycola,
   fonttitle=\bfseries,
   breakable,
-  before lower={
-    \texttt{Proof: }\par
-    \begin{myIndent}
-  },
-  after lower={
-    \end{myIndent}
-    \qed
-  }
+  before lower={\myThmBeforeProof{}},
+  after lower={\myThmAfterProof{}}
+}
+
+\newtcbtheorem[
+use counter=myTheoCounter,number within=section
+]{myTheo}{Theorem}%
+{
+  skin=myThmSkin
 }{thm}
 
 
 \newtcbtheorem[use counter=myTheoCounter,number within=section]{myCor}{Corollary}%
 {
   % colback=green!5,
-  colframe=\mycola, fonttitle=\bfseries, breakable,
-  before lower={
-    \texttt{Proof: }\par
-    \begin{myIndent}
-    },
-    after lower={
-    \end{myIndent}
-    \qed
-  }
+  skin=myThmSkin
 }{cor}
 
 \newtcbtheorem[use counter=myTheoCounter,number within=section]{myLem}{Lemma}%
 {% colback=green!5,
-  colframe=\mycola, fonttitle=\bfseries, breakable,
-  before lower={
-    \texttt{Proof: }\par
-    \begin{myIndent}
-    },
-    after lower={
-    \end{myIndent}
-    \qed
-  }
+  skin=myThmSkin
 }{lem}
 
 \newcommand{\refCorollary}[1]{Corollary~\ref{cor:#1}}
@@ -333,7 +329,7 @@ Our first theorem is
 
 We defer the proof for now but present a lemma:
 \begin{myLem}{Euclid's first theorem}{p-cut-ab} 
-  If $p$ is prime,$
+  Let $p$ be prime, $a,b \in \mathbb{N^{\times}}$, then $
   p \mid ab \Rightarrow p \mid a \text{ or } p \mid b$
 \end{myLem}
 
@@ -344,7 +340,65 @@ We take \refLemma{p-cut-ab} for granted for the moment and use that to prove
   The standard form of $n$ is unique, $\forall n \in \mathbb{N}^{\times}$.
   \tcblower{}
   From \refLemma{p-cut-ab}, we have:
-  \[ p\mid n_1\dotsm{} l \Rightarrow \]
+  \[ p\mid n_1n_2\dotsm{}n_k \Rightarrow p \mid n_i \text{ for some }i\] In
+  particular, if $n_i$ are primes, then $p$ is one of $n_i$. In other words,
+  \cola{if a prime divides a product of primes, it must be one of them}.
+
+  Now suppose \cola{if} $n$ has two standard forms:
+  \begin{myIndent}
+    \newcommand{\myP}[3]{\ensuremath{{#1}_{#3}^{{#2}_{#3}}}}
+    We have
+    \[
+      n =
+      \colc{
+        \myP{p}{a}{1}
+        \myP{p}{a}{2}
+        \dotsm
+        \myP{p}{a}{k}
+      }
+      =
+      \colb{
+        \myP{q}{b}{1}
+        \myP{q}{b}{2}
+        \dotsm
+        \myP{q}{b}{j}
+      }
+    \]
+    So
+    $\forall i, \colc{p_i} \mid \colb{ \myP{q}{b}{1} \myP{q}{b}{2} \dotsm
+      \myP{q}{b}{j} } $. This means \cola{every \colc{$p$} is a \colb{$q$}}.
+    Symmetrically \cola{every \colb{$q$} is a \colc{$p$}}. Hence $k=j$ and,
+    since both sides are arranged in increasing order, $p_i = q_i$ for all $i$.
+
+    So now only the exponents may be different.
+
+    \cola{If} $a_i > b_i$ for some $i$:
+    \begin{myIndent}
+      Dividing both side by $\myP{p}{b}{i}$ gives:
+      \[
+        \colc{
+          \myP{p}{a}{1}
+          \dotsm{}
+          p_i^{a_i - b_i}
+          \dotsm{}
+          \myP{p}{a}{k}
+        }
+        = 
+        \colb{
+          \myP{p}{b}{1}
+          \dotsm{}
+          \myP{p}{b}{i-1}
+          \myP{p}{b}{i+1}
+          \dotsm{}
+          \myP{p}{a}{k}
+        }
+      \]
+      The left hand side is divisable by $p_i$ while the right hand side is not.
+      \emoji{cross-mark} a contradiction.
+    \end{myIndent}
+    Symmetrically $a_i$ can't be less than $b_i$.
+  \end{myIndent}
+  As as result, $n$ can't have two different normal forms.
 \end{myTheo}
 
 \end{document}

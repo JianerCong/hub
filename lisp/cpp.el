@@ -144,6 +144,7 @@
 (define-abbrev c++-mode-abbrev-table "lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "beq" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_EQUAL(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "beqr" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE_EQUAL(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "bck" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "bct" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_THROW(" _ ",std::exception);"))))
 (define-abbrev c++-mode-abbrev-table "brq" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE(" _ ");"))))
