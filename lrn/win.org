@@ -26,6 +26,8 @@ End Function
     #+end_src
 *** What does Add-Existing-Item in VS project explorer do ?
     It just copy-paste the file you specified to the project folder..
+*** VS2022 Error On start
++ run as Admin
 ** Windows troubleshoot
 *** msi电脑外接显示器没反应
 
@@ -222,7 +224,9 @@ affecting the rest of the image.
 
 + path are under the path tab of the layer panel.
 ** Record Audio
-#+begin_src c
++ 加Nuget Extension
++ 用Nuget 加包
+#+begin_src csharp
    using NAudio.Wave;
 
   string outputFilePath = @"C:\Users\congj\Desktop\hi.wav";
@@ -250,7 +254,7 @@ affecting the rest of the image.
   Console.ReadLine();
   CaptureInstance.StopRecording();
   Console.WriteLine("Recording stopped");
- 
+
 #+end_src
 Next in the shell
 #+begin_src powershell
