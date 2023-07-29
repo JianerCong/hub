@@ -1,16 +1,16 @@
-** Install and config R
+* Install and config R
 *** Install R on ubuntu
  #+BEGIN_SRC bash
  # update indices
- apt update -qq
+ sudo apt update -qq
  # install two helper packages we need
- apt install --no-install-recommends software-properties-common dirmngr
+ sudo apt install --no-install-recommends software-properties-common dirmngr
  # add the signing key (by Michael Rutter) for these repos
  # To verify key, run gpg --show-keys /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc 
  # Fingerprint: 298A3A825C0D65DFD57CBB651716619E084DAB9
  wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
  # add the R 4.0 repo from CRAN -- adjust 'focal' to 'groovy' or 'bionic' as needed
- add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+ sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
  #+END_SRC
 *** Install R on debian
 #+begin_src bash
@@ -40,7 +40,7 @@
  #+END_SRC
 *** Check library
  find /usr -name "Intrinsic.h" -print
-*** build from source
+** build from source
 *** pre-install
     #+begin_src bash
       sudo apt-get install libxt-dev

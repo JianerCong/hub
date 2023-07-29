@@ -1,0 +1,31 @@
+body {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  /* horizonallly center */
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+@keyframes k1 {
+  from {
+    color: white;
+  }
+  to {
+    color: black;
+  }
+}
+.box {
+  animation: k1 2s linear infinite;
+  box-sizing: border-box;
+  background: linear-gradient(90deg, rgb(17, 205, 19) 0%, rgb(0, 212, 255) 100%);
+  /* color: white */
+  width: 20%;
+  min-height: 100px;
+  border-radius: 10%;
+  /* padding: 2% */
+}
+
+/*# sourceMappingURL=style.css.map */

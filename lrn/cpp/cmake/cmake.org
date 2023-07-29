@@ -1,4 +1,129 @@
-** Custom commands and target
+** Cmake-lang
+*** macro and set list
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.20)
+project(Hi)
+
+message("🐸 start scripting")
+set(x a;b)
+message("x: ${x}")              #a;b
+list(APPEND x c d)              #✅️
+message("x: ${x}")              #a;b;c;d
+# list(APPEND ${x} c d)           #❌️
+# message("x: ${x}")              #a;b;c;d
+
+list(LENGTH x my-len)
+message("L = ${my-len}")
+
+# --------------------------------------------------
+# won't work
+# macro(f l elem)
+#   list(APPEND l elem)           #append elem to l
+#   # 🐢 : Passed-in parameter not used.
+# endmacro()
+# f(x abc)
+# message("x: ${x}")              #a;b;c;d
+
+# # --------------------------------------------------
+# list(APPEND l a b)
+# message("l: ${l}")              #elem;a;b;
+
+# 🦜 : Impatient I think that it's too complex
+
+macro(f)
+  message("macro called with ${ARGV0} ${ARGV1}")
+  list(APPEND ${ARGV0} ${ARGV1})           #append elem to l
+  # 🐢 : Passed-in parameter not used.
+endmacro()
+f(x abc)
+message("x: ${x}")              #a;b;c;d;abc
+
+# 🦜 : function cannot change passed-int var
+function(g l v)
+  message("function called with ${l} ${v}")
+  list(APPEND ${l} ${v})           #append elem to l
+endfunction()
+
+g(x bcd)
+message("x: ${x}")              #a;b;c;d;abc
+
+#+end_src
+*** file operation / config
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.20)
+project(Hi)
+
+message("🐸 start scripting")
+function(chk_streq s1 s2)
+  if (s1 STREQUAL s2)
+    message("✅️ OK ${s1} == ${s2}")
+  else()
+    message("❌️ Failed ${s1} != ${s2}")
+  endif()
+endfunction()
+
+function(chk_nexist f)
+  if (EXISTS ${f})
+    message("❌️ Failed file ${f} exists")
+  else()
+    message("✅️ OK file ${f} doesn't exist")
+  endif()
+endfunction()
+
+function(chk_exist f)
+  if (EXISTS ${f})
+    message("✅️ OK file ${f} exists")
+  else()
+    message("❌️ Failed file ${f} doesn't exist")
+  endif()
+endfunction()
+
+# insert file
+set(f ${PROJECT_BINARY_DIR}/hi.txt)
+file(WRITE ${f} "abc")
+chk_exist(${f})
+file(READ ${f} x)
+message("Wrote and Read ${x} from file ${f}")
+chk_streq(${x} abc)
+
+# append file
+file(APPEND ${f} "abc")
+file(READ ${f} x)
+message("Wrote and Read ${x} from file ${f}")
+chk_streq(${x} abcabc)
+
+set(f1 ${CMAKE_CURRENT_BINARY_DIR}/hi2.txt)
+# set(f1 hi2.txt)
+
+# config file
+set(n 123)
+file(CONFIGURE OUTPUT ${f1}
+  CONTENT "I have @n@ apples"
+)
+chk_exist(${f1})
+file(READ ${f1} x)
+message("Wrote and Read [${x}] from file ${f1}")
+chk_streq(${x} "I have ${n} apples")
+
+# remove file
+file(REMOVE_RECURSE ${f1})
+chk_nexist(${f1})
+
+#+end_src
+*** target include
+#+begin_src cmake
+target_include_directories(mylib PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/mylib>
+  $<INSTALL_INTERFACE:include/mylib>  # <prefix>/include/mylib
+)
+#+end_src
+*** public|interface|provate target_link_libraries
+Generally, a dependency should be specified in a use of target_link_libraries()
+with the PRIVATE keyword if it is used by only the implementation of a library,
+and not in the header files. If a dependency is additionally used in the header
+files of a library (e.g. for class inheritance), then it should be specified as
+a PUBLIC dependency.
+*** Custom commands and target
 #+BEGIN_SRC cmake
 # Use $make clean -> to clean the folder
 cmake_minimum_required(VERSION 3.10)
@@ -11,9 +136,9 @@ add_custom_target(MyTarget2 ALL echo 🐸 The dir is ${CMAKE_CURRENT_SOURCE_DIR}
 
 # "If you want a hi.txt: use the following commands":
 add_custom_command(OUTPUT hi.txt
-  COMMAND touch hi.txt
-  VERBATIM
-  )
+COMMAND touch hi.txt
+VERBATIM
+)
 
 # Build this target (ALL), which depends on hi.txt
 add_custom_target(MyTarget ALL echo hi DEPENDS hi.txt)
@@ -21,12 +146,12 @@ add_custom_target(MyTarget ALL echo hi DEPENDS hi.txt)
 
 
 #+END_SRC
-** the run target
+*** the run target
 #+begin_src cmake
-  add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
-  # run $myexe 1
+add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
+# run $myexe 1
 #+end_src
-** DONE POST_BUILD: do something to the build file after it's build
+*** DONE POST_BUILD: do something to the build file after it's build
 #+BEGIN_SRC cmake
 cmake_minimum_required(VERSION 3.10)
 project(Hi)
@@ -36,19 +161,19 @@ add_executable(hi hi.c)
 add_custom_target(run ALL hi COMMENT "Run the program")   #run the program
 
 add_custom_command(             #time the program
-  TARGET hi POST_BUILD
-  COMMAND time "$<TARGET_FILE:hi>"
-  VERBATIM
-  COMMENT "Time the program")
+TARGET hi POST_BUILD
+COMMAND time "$<TARGET_FILE:hi>"
+VERBATIM
+COMMENT "Time the program")
 #+END_SRC
-** var
-*** set my var
+*** var
+**** set my var
 #+BEGIN_SRC cmake
 cmake_minimum_required(VERSION 3.10)
 project(Hi)
 set(a 123)
 add_custom_target(myTarget ALL echo My var is ${a}
-  COMMENT "Yes, it's ${a}")
+COMMENT "Yes, it's ${a}")
 
 # me@linux-orange:~/Templates/lrn/cpp/cmake/fun/out$ cmake .. && cmake --build .
 # -- Configuring done
@@ -59,7 +184,7 @@ add_custom_target(myTarget ALL echo My var is ${a}
 # [100%] Built target myTarget
 
 #+END_SRC
-*** important cmake var
+**** important cmake var
 #+begin_src cmake
 cmake_minimum_required(VERSION 3.21)
 project(m VERSION 1.1)
@@ -70,10 +195,10 @@ message( "System Prefix path: ${CMAKE_SYSTEM_PREFIX_PATH}") #⇒ the prefix for 
 
 # rm -rf * && cmake .. && cmake --build .
 #+end_src
-*** generator expression
-**** View a generator expression
-     #+begin_src cmake
-     cmake_minimum_required(VERSION 3.21)
+**** generator expression
+***** View a generator expression
+    #+begin_src cmake
+    cmake_minimum_required(VERSION 3.21)
 project(m VERSION 1.1)
 
 add_executable(hi hi.c)
@@ -84,9 +209,9 @@ message( "CMAKE command : ${CMAKE_COMMAND}")
 # message( "C compiler version: ${C_COMPILER_VERSION}")
 
 function(show_gen_expr e)
-  add_custom_command(TARGET hi POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo
-    "${e} = $<${e}>")
+add_custom_command(TARGET hi POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo
+  "${e} = $<${e}>")
 endfunction()
 
 
@@ -96,7 +221,7 @@ show_gen_expr(CXX_COMPILER_ID)
 
 
 #+end_src
-**** More details
+***** More details
 #+begin_src cmake
 cmake_minimum_required(VERSION 3.21)
 project(m VERSION 1.1)
@@ -109,27 +234,27 @@ message( "CMAKE command : ${CMAKE_COMMAND}")
 # message( "C compiler version: ${C_COMPILER_VERSION}")
 
 function(format_it fmt s npad out)
-  # Set the var ${out}. Embed the string s in front of fmt. Also pad npad space
-  # in the front
+# Set the var ${out}. Embed the string s in front of fmt. Also pad npad space
+# in the front
 
-  string(LENGTH ${s} l)
-  # message("l is ${l}")
-  string(SUBSTRING ${fmt} ${l} -1 c)
-  # message("c is ${c}")
-  # message("out is ${out}")
-  string(REPEAT " " ${npad} npad)
-  # string(CONCAT ${out} "${npad}${s}" "${c}")
-  set(${out} "${npad}${s}${c}" PARENT_SCOPE) #return the value
-  endfunction()
-  # format_it(123456789 cmake 5 o)
+string(LENGTH ${s} l)
+# message("l is ${l}")
+string(SUBSTRING ${fmt} ${l} -1 c)
+# message("c is ${c}")
+# message("out is ${out}")
+string(REPEAT " " ${npad} npad)
+# string(CONCAT ${out} "${npad}${s}" "${c}")
+set(${out} "${npad}${s}${c}" PARENT_SCOPE) #return the value
+endfunction()
+# format_it(123456789 cmake 5 o)
 
-  function(show_gen_expr e)
-    string(REPEAT " " 60 spaces) #The left padding
-    format_it(${spaces} ${e} 5 pre)
-    add_custom_command(TARGET hi POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E echo
-      "${pre} : $<${e}>")
-  endfunction()
+function(show_gen_expr e)
+  string(REPEAT " " 60 spaces) #The left padding
+  format_it(${spaces} ${e} 5 pre)
+  add_custom_command(TARGET hi POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo
+    "${pre} : $<${e}>")
+endfunction()
 
 
 show_gen_expr(CXX_COMPILER_ID)
@@ -159,13 +284,13 @@ show_gen_expr(INSTALL_INTERFACE:include)
 
 
 #+end_src
-** function
+*** function
 #+BEGIN_SRC cmake
 cmake_minimum_required(VERSION 3.10)
 project(Hi)
 
 function(f)
-  add_custom_target(hi ALL echo "hiya" COMMENT hiya)
+add_custom_target(hi ALL echo "hiya" COMMENT hiya)
 endfunction()
 f()
 # -- Configuring done
@@ -177,7 +302,7 @@ f()
 
 
 function(g x y)
-  add_custom_target(hi2 ALL echo "x : ${x}" COMMENT "y is ${y}")
+add_custom_target(hi2 ALL echo "x : ${x}" COMMENT "y is ${y}")
 endfunction()
 g(XX YY)
 # [ 50%] y is YY
@@ -185,8 +310,8 @@ g(XX YY)
 
 
 #+END_SRC
-** file
-*** write
+*** file
+**** write
 #+BEGIN_SRC cmake
 
 cmake_minimum_required(VERSION 3.10)
@@ -200,8 +325,8 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/hi.txt "hi ")
 #by default write to the CMAKE_CURRENT_SOURCE_DIR
 
 #+END_SRC
-** Install
-*** change the install dir for a project
+*** Install
+**** change the install dir for a project
 
 CMake sets this variable (~CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT~) to a
 TRUE value when the CMAKE_INSTALL_PREFIX has just been initialized to its
@@ -211,52 +336,70 @@ user-provided value:
 
 #+BEGIN_SRC cmake
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "/my/default" CACHE PATH "..." FORCE)
+set(CMAKE_INSTALL_PREFIX "/my/default" CACHE PATH "..." FORCE)
 endif()
 #+END_SRC
 
-*** the CMAKE_INSTALL_PREFIX
+**** the CMAKE_INSTALL_PREFIX
 The installation prefix is also added to CMAKE_SYSTEM_PREFIX_PATH so that
 find_package(), find_program(), find_library(), find_path(), and find_file()
 will search the prefix for other software.
-**** For unix user
- DESTDIR¶
+***** For unix user
+DESTDIR¶
 
- This is a CMake Environment Variable. Its initial value is taken from the
- calling process environment.
+This is a CMake Environment Variable. Its initial value is taken from the
+calling process environment.
 
- On UNIX one can use the DESTDIR mechanism in order to relocate the whole
- installation. DESTDIR means DESTination DIRectory. It is commonly used by
- makefile users in order to install software at non-default location. It is
- usually invoked like this:
+On UNIX one can use the DESTDIR mechanism in order to relocate the whole
+installation. DESTDIR means DESTination DIRectory. It is commonly used by
+makefile users in order to install software at non-default location. It is
+usually invoked like this:
 
- #+BEGIN_SRC bash
- make DESTDIR=/home/john install
- #+END_SRC
+#+BEGIN_SRC bash
+make DESTDIR=/home/john install
+#+END_SRC
 
- which will install the concerned software using the installation prefix, e.g.
- /usr/local prepended with the DESTDIR value which finally gives
- /home/john/usr/local.
+which will install the concerned software using the installation prefix, e.g.
+/usr/local prepended with the DESTDIR value which finally gives
+/home/john/usr/local.
 
- WARNING: DESTDIR may not be used on Windows because installation prefix usually
- contains a drive letter like in C:/Program Files which cannot be prepended with
- some other prefix.
-** add target compile definition
+WARNING: DESTDIR may not be used on Windows because installation prefix usually
+contains a drive letter like in C:/Program Files which cannot be prepended with
+some other prefix.
+*** add target compile definition
 #+begin_src cmake
 target_compile_definitions(foo PUBLIC FOO)
 target_compile_definitions(foo PUBLIC -DFOO)  # -D removed
 target_compile_definitions(foo PUBLIC "" FOO) # "" ignored
 target_compile_definitions(foo PUBLIC -D FOO) # -D becomes "", then ignored
 #+end_src
-** Reuse cmake project
-*** link to obj to other folder 
- import all targets defined in the CMakeLists.txt in ../my_test whose objects are
- built in ../my_test_build
- #+begin_src cmake
-   add_subdirectory(../my_test ../my_test_build)
- #+end_src
-*** create cmake package
-**** server
+*** set compile option
+**** for whole dir
+#+begin_src cmake
+if (MSVC)
+    # warning level 4
+    add_compile_options(/W4)
+else()
+    # additional warnings
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+#+end_src
+**** for a target
+#+begin_src cmake
+  target_compile_options(mytarget
+    PUBLIC "-lm"
+    INTERFACE "-lpthread")
+  #+end_src
+
+*** Reuse cmake project
+**** link to obj to other folder 
+import all targets defined in the CMakeLists.txt in ../my_test whose objects are
+built in ../my_test_build
+#+begin_src cmake
+  add_subdirectory(../my_test ../my_test_build)
+#+end_src
+**** create cmake package
+***** server
 .
 ├── CMakeLists.txt
 ├── Config.cmake.in
@@ -265,7 +408,7 @@ target_compile_definitions(foo PUBLIC -D FOO) # -D becomes "", then ignored
 ├── my_config_and_install.cmake
 └── write_version.cmake
 In which:
-***** CMakeLists.txt
+****** CMakeLists.txt
 #+begin_src cmake
 cmake_minimum_required(VERSION 3.15)
 project(m)
@@ -276,10 +419,10 @@ message("The install_include_dir is ${CMAKE_INSTALL_INCLUDEDIR")
 
 add_library(my_cmake_lib STATIC my_cmake_lib.cpp)
 target_include_directories(my_cmake_lib
-  PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-  )
+PUBLIC
+"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+)
 
 include(CMakePackageConfigHelpers)
 include(my_config_and_install.cmake)
@@ -296,7 +439,7 @@ write_my_version(my_cmake_lib 1.2.3)
 
 
 #+end_src
-***** Config.cmake.in
+****** Config.cmake.in
 #+begin_src cmake
 # This file the is the input template, hand-typped by Jianer
 
@@ -311,105 +454,105 @@ include("${CMAKE_CURRENT_LIST_DIR}/my_cmake_libTargets.cmake")
 check_required_components(my_cmake_lib)
 
 #+end_src
-***** my_cmake_lib.cpp
+****** my_cmake_lib.cpp
 #+begin_src c++
 #include "my_cmake_lib.h"
 
 #include <cstdio>
 
 namespace my_cmake_lib {
-  void f1(){
-    printf("I am from my_cmake_lib 🐸\n");
-  }
+void f1(){
+  printf("I am from my_cmake_lib 🐸\n");
+}
 }
 
 #+end_src
-***** my_cmake_lib.h
+****** my_cmake_lib.h
 #+begin_src c
 #pragma once
 namespace my_cmake_lib{
-  void f1();
+void f1();
 }
 
 #+end_src
-***** my_config_and_install.cmake
+****** my_config_and_install.cmake
 #+begin_src cmake
 
 function(create_my_config_file pkg)
-  # Create the package configure file for the package named `pkg`
-  set(my_config_build_file
-    ${CMAKE_CURRENT_BINARY_DIR}/${pkg}Config.cmake)
-  set(my_config_install_dir
-    ${CMAKE_INSTALL_LIBDIR}/cmake/${pkg} )
+# Create the package configure file for the package named `pkg`
+set(my_config_build_file
+  ${CMAKE_CURRENT_BINARY_DIR}/${pkg}Config.cmake)
+set(my_config_install_dir
+  ${CMAKE_INSTALL_LIBDIR}/cmake/${pkg} )
 
-  message("The my_config_install_dir is ${my_config_install_dir}")
+message("The my_config_install_dir is ${my_config_install_dir}")
 
-  configure_package_config_file(
-    # The input template:
-    ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
-    # The output generated on build
-    ${my_config_build_file}
-    # The output generated on install
-    INSTALL_DESTINATION
-    ${my_config_install_dir}
-    )
+configure_package_config_file(
+  # The input template:
+  ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+  # The output generated on build
+  ${my_config_build_file}
+  # The output generated on install
+  INSTALL_DESTINATION
+  ${my_config_install_dir}
+  )
 
-  # Install the generated <pkg>Config.cmake and <pkg>ConfigVersion.cmake
-  install(FILES
-    ${my_config_build_file}
-    ${CMAKE_CURRENT_BINARY_DIR}/${pkg}ConfigVersion.cmake
-    DESTINATION
-    ${my_config_install_dir}
-    )
+# Install the generated <pkg>Config.cmake and <pkg>ConfigVersion.cmake
+install(FILES
+  ${my_config_build_file}
+  ${CMAKE_CURRENT_BINARY_DIR}/${pkg}ConfigVersion.cmake
+  DESTINATION
+  ${my_config_install_dir}
+  )
 
-  # return the value
-  set(my_config_install_dir ${my_config_install_dir} PARENT_SCOPE)
+# return the value
+set(my_config_install_dir ${my_config_install_dir} PARENT_SCOPE)
 endfunction()
 
 # Install the target
 function(install_my_target x)
-  #We use an install(targets) to install the library (the lib<pkg>.a file)
-  install(TARGETS ${x}
-    EXPORT ${x}Targets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
+#We use an install(targets) to install the library (the lib<pkg>.a file)
+install(TARGETS ${x}
+  EXPORT ${x}Targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
 
-  # Install the header file (<pkg>.h file)
-  install(FILES ${x}.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# Install the header file (<pkg>.h file)
+install(FILES ${x}.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-  # Install the target export details (the <pkg>Targets.cmake files)
-  install(EXPORT ${x}Targets
-    FILE ${x}Targets.cmake #⇒ ${x}Targets.cmake : the description file
-    NAMESPACE ${x}::       #The exported target name will have this prefix
-    DESTINATION ${my_config_install_dir}
-    )
+# Install the target export details (the <pkg>Targets.cmake files)
+install(EXPORT ${x}Targets
+  FILE ${x}Targets.cmake #⇒ ${x}Targets.cmake : the description file
+  NAMESPACE ${x}::       #The exported target name will have this prefix
+  DESTINATION ${my_config_install_dir}
+  )
 endfunction()
 
 
 #+end_src
-***** write_my_version.cmake
+****** write_my_version.cmake
 #+begin_src cmake
 set(version 1.2.3)
 function(write_my_version pkg v)
-  set_property(TARGET ${pkg} PROPERTY VERSION ${v})
+set_property(TARGET ${pkg} PROPERTY VERSION ${v})
 
-  # Macro from CMakePackageConfigHelpers
-  write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/${pkg}ConfigVersion.cmake"
-    VERSION "${v}"
-    COMPATIBILITY AnyNewerVersion
-    )
-  endfunction()
-  write_my_version(my_cmake_lib ${version})
+# Macro from CMakePackageConfigHelpers
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/${pkg}ConfigVersion.cmake"
+  VERSION "${v}"
+  COMPATIBILITY AnyNewerVersion
+  )
+endfunction()
+write_my_version(my_cmake_lib ${version})
 
 #+end_src
-**** client
+***** client
 ├── CMakeLists.txt
 └── m.cpp
-***** CMakeLists.txt
+****** CMakeLists.txt
 #+begin_src cmake
 cmake_minimum_required(VERSION 3.21)
 project(MyCMakeUser VERSION 1.1)
@@ -433,52 +576,257 @@ target_link_libraries(m PRIVATE my_cmake_lib::my_cmake_lib)
 add_custom_target(run ALL m COMMENTS "Running 🐸")
 
 #+end_src
-***** m.cpp
+****** m.cpp
 #+begin_src c++
 #include "my_cmake_lib.h"
 #include <cstdio>
 int main(int argc, char *argv[]){
-  printf("I will call the f1() in my_cmake_lib:\n\t");
-  my_cmake_lib::f1();
-  printf("Yep\n");
-  return 0;
-  }
+printf("I will call the f1() in my_cmake_lib:\n\t");
+my_cmake_lib::f1();
+printf("Yep\n");
+return 0;
+}
 
 #+end_src
-** string and format
-*** basic
+*** string and format
+**** basic
 #+begin_src cmake
 function(test_format)
-  set(a "123456789")
-  set(b "cmake")
+set(a "123456789")
+set(b "cmake")
 
-  string(LENGTH ${b} l)
-  message("l is ${l}")
-  string(SUBSTRING ${a} ${l} -1 c)
-  string(CONCAT d ${b} ${c})
-  message("c is ${c}")
-  message("d is ${d}")          #cmake6789
-  endfunction()
+string(LENGTH ${b} l)
+message("l is ${l}")
+string(SUBSTRING ${a} ${l} -1 c)
+string(CONCAT d ${b} ${c})
+message("c is ${c}")
+message("d is ${d}")          #cmake6789
+endfunction()
 
-  #+end_src
-*** my_format_print
+#+end_src
+**** my_format_print
 #+begin_src cmake
 function(format_it fmt s npad out)
-  # Set the var ${out}. Embed the string s in front of fmt. Also pad npad space
-  # in the front
+# Set the var ${out}. Embed the string s in front of fmt. Also pad npad space
+# in the front
 
-  string(LENGTH ${s} l)
-  # message("l is ${l}")
-  string(SUBSTRING ${fmt} ${l} -1 c)
-  # message("c is ${c}")
-  # message("out is ${out}")
-  string(REPEAT " " ${npad} npad)
-  # string(CONCAT ${out} "${npad}${s}" "${c}")
-  set(${out} "${npad}${s}${c}" PARENT_SCOPE) #return the value
-  endfunction()
+string(LENGTH ${s} l)
+# message("l is ${l}")
+string(SUBSTRING ${fmt} ${l} -1 c)
+# message("c is ${c}")
+# message("out is ${out}")
+string(REPEAT " " ${npad} npad)
+# string(CONCAT ${out} "${npad}${s}" "${c}")
+set(${out} "${npad}${s}${c}" PARENT_SCOPE) #return the value
+endfunction()
 
 
+#+end_src
+*** book
+**** first step
+***** script
+#+begin_src cmake
+# An example of a script
+
+cmake_minimum_required(VERSION 3.20.0)
+
+message("Hello world")
+
+file(WRITE Hello.txt "I am writing to a file")
+#+end_src
+run a script
+#+begin_src bash
+cmake -P script.cmake
+#+end_src
+***** Util module
+Modules are written in the CMake language and contain macro definitions,
+variables, and commands that perform all kinds of functions use
+~include(<module>)~.
+***** Find-modules
+CMake provides over 150 modules that are able to locate different packages in
+the system.e.g. ~FindCURL~ module searches cURL and defines
+following variables:
++ CURL_FOUND
++ CURL_INCLUDE_DIRS
++ CURL_INCLUDE_LIBRARIES
++ CURL_VERSION_STRING.
+
+**** lang
+***** block comment
+#+begin_src cmake
+
+#[=[
+
+bracket comment
+
+#]=]
+#+end_src
+
+**** Link
+Building a correctly linked executable heavily depends on a valid configuration
+(and taking care of such minute details as position-independent code (PIC).
+
+We'll learn about another nuisance of linking – the One Definition Rule (ODR).
+
+*** if()
+#+begin_src cmake
+if(<condition>)
+<commands>
+elseif(<condition>) # optional block, can be repeated
+<commands>
+else()              # optional block
+<commands>
+endif()
+#+end_src
+
+*** specify C++ standard fs
+
+**** global
+#+begin_src cmake
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
   #+end_src
+**** as interface
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.10)
+
+  # set the project name and version
+  project(Hi VERSION 1.0)
+
+  # specify the C++ standard
+
+  add_library(my_compiler_flags INTERFACE)
+  target_compile_features(my_compiler_flags INTERFACE cxx_std_11)
+
+  add_subdirectory(mylib)
+
+  # add the executable
+  add_executable(Hi hi.cpp)
+  target_link_libraries(Hi PUBLIC mylib my_compiler_flags)
+
+  # add the binary tree to the search path for include files
+  # so that we will find TutorialConfig.h
+  target_include_directories(Hi PUBLIC
+  "${PROJECT_BINARY_DIR}"
+  )
+
+  # run
+  add_custom_target(run ALL Hi COMMENT "Runing App 🐸")
+#+end_src
+** Target
+*** Target attributes
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.20.0)
+project(hi)
+
+find_Package(Boost COMPONENTS log)
+message("🐸 Find boost: ${Boost_FOUND}")
+include(CMakePrintHelpers)
+cmake_print_properties(TARGETS Boost::log PROPERTIES TYPE SOURCE_DIR)
+
+#+end_src
+*** build a particular target
+cmake --build . --target Library1 Library2
+** find_package
++ CONFIG keyward lets it find the <pkg>Config file
+*** write your own
+**** main
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.20.0)
+
+  project(FindPackageCustom CXX)
+  # 让findpackage 找这里
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/module/")
+
+  find_package(PQXX REQUIRED)
+  add_executable(main main.cpp)
+  target_link_libraries(main PRIVATE PQXX::PQXX)
+#+end_src
+**** ./cmake/module/FindPQXX.cmake
+
+如果用户已经提供lib和include的位置：
+#+begin_src cmake
+  if (PQXX_LIBRARIES AND PQXX_INCLUDES)
+  add_imported_library(${PQXX_LIBRARIES} ${PQXX_INCLUDES})
+  return()
+endif()
+#+end_src
+直接找>>
+#+begin_src cmake
+  function(add_imported_library library headers)
+    # init the target variable
+    add_library(PQXX::PQXX UNKNOWN IMPORTED)
+    # UNKNOWN can also be DYNAMIC | STATIC.Here, we don't care
+    set_target_properties(PQXX::PQXX PROPERTIES
+      IMPORTED_LOCATION ${library}
+      INTERFACE_INCLUDE_DIRECTORIES ${headers}
+    )
+
+    set(PQXX_FOUND 1 CACHE INTERNAL "PQXX found" FORCE)
+    set(PQXX_LIBRARIES ${library}
+        CACHE STRING "Path to pqxx library" FORCE)
+    set(PQXX_INCLUDES ${headers}
+        CACHE STRING "Path to pqxx headers" FORCE)
+
+    mark_as_advanced(FORCE PQXX_LIBRARIES)
+    mark_as_advanced(FORCE PQXX_INCLUDES)
+  endfunction()
+#+end_src
+
+如果用户没提供：
+
+找dependency
+#+begin_src cmake
+  # deliberately used in mind-module against the documentation
+  include(CMakeFindDependencyMacro)
+  find_dependency(PostgreSQL)     #this macro call return when not found
+#+end_src
+在系统里找lib和include
+#+begin_src cmake
+  file(TO_CMAKE_PATH "$ENV{PQXX_DIR}" _PQXX_DIR)
+  find_library(PQXX_LIBRARY_PATH NAMES libpqxx pqxx
+    PATHS
+    ${_PQXX_DIR}/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    # (...) many other paths - removed for brevity
+    /usr/lib
+    NO_DEFAULT_PATH
+  )
+
+  find_path(PQXX_HEADER_PATH NAMES pqxx/pqxx
+    PATHS
+    ${_PQXX_DIR}/include
+    # (...) many other paths - removed for brevity
+    /usr/include
+    NO_DEFAULT_PATH
+  )
+#+end_src
+根据找没找到加target
+#+begin_src cmake
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(
+    PQXX DEFAULT_MSG PQXX_LIBRARY_PATH PQXX_HEADER_PATH
+  )
+
+  if (PQXX_FOUND)
+    add_imported_library(
+      "${PQXX_LIBRARY_PATH};${POSTGRES_LIBRARIES}"
+      "${PQXX_HEADER_PATH};${POSTGRES_INCLUDE_DIRECTORIES}"
+    )
+
+  endif()
+#+end_src
+** ctest
+# cmake ..
+# cmake --build .
+# ctest -N                        #show what tests to run(no run)
+# ctest                           #run all tests
+# ctest -V                        #run all (verbosely)
+# ctest -R Runs                   #run the test match(regex) "Run"
+
+Specify test-dir
+#+begin_src bash
+ctest --test-dir rock-storage/ -N
+#+end_src
 * End
 
 

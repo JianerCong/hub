@@ -1,0 +1,60 @@
+** Illustrator
+*** Shaper builders (Boolean)
+Selct the shapes
++ alt click to substract
++ draw across to make union
+*** Scale
++ S-alt-drag :: scale from center
+*** group
++ select the group, double click the member to enter *isolation mode*, Esc to
+  escape.
+*** Erase/Cut
++ Only erase the selected obj
++ Shf-drag to erase straight line
+*** Color
+**** fill with other color
++ selct obj; eye-dropper-tool; drop
+**** swatch (color variable)
++ like a theme color;
++ color + new swatch
++ swatch are only saved in the current doc
+**** recolor
++ select the obj + recolor
+*** Text
+**** text on curve
++ make cureve
++ text-tool ; alt-click on curve
+**** text to shape
++ select the text + Type> Create outlines
++ lasso tool to select some vertices of the text
+*** Curve
+**** pen
++ alt-draw for straight line
++ redraw a part of a curve by begining and ending the drawing on that curve.
++ Double click the pencil tool > make it smooth
+**** curve
++ double-clicking on the anchor point to make the following path straight.
+**** join
++ select the paths : Object > Path > Join
+** AE
++ [P]，[S],[T],[U]:: reveal position/scale/opacity/all animated param/
++ alt-drag :: time-stretch key-frames
++ manually remark location :: use effect controls panel
++ [W] :: rotate tool
++ [ee] :: show expression
++ [.] :: zoomin
++ Shift-a :: add anchor to expressed properties
+*** layers & views
++ C-S-A :: deselect all layers
++ [.],[,],[/]:: zoom in/out/to 100%
++ [=],[-] :: zoom-in/out time
++ [;], S-[;] :: zoom-min/max
++ C-' :: show-hide grid
++ C-S-' :: snap to grid
+
+*** mv
++ M-Pgup :: go 10 frames back
++ M-arrow :: move selected key-frames
++ M-S-arrow :: move selected key-frames * 10
++ M-S-PgUp :: move selected layers
++  :: 

@@ -17,3 +17,5 @@
 
 *** remove packages from package.json
 npm uninstall --save <package_name>
+*** add pkg
+npm add three

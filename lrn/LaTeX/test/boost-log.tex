@@ -1,0 +1,1196 @@
+% \documentclass{ctexart}
+\documentclass[dvipsnames]{article}
+
+\title{Boost log}
+
+% better description list
+\usepackage{enumitem}
+\setlist[description]{leftmargin=\parindent,labelindent=\parindent}
+
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+\usepackage[skip=10pt plus1pt, indent=0pt]{parskip}
+% Color
+\newcommand{\mycola}{MidnightBlue}
+\newcommand{\mycolb}{Mahogany}
+\newcommand{\mycolc}{OliveGreen}
+
+\newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
+\newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
+\newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
+\newcommand{\colz}[1]{\textcolor{gray}{#1}}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
+% \renewcommand{\emph}[1]{\texbf{#1}}
+
+\usepackage{fontspec}
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+\usepackage{minted}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usepackage{tikz}
+\usetikzlibrary{shapes} % ellipse node shape
+\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\usetikzlibrary{arrows.meta}    %-o arrow head
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+
+
+% Redefine em
+% latex.sty just do: \DeclareTextFontCommand{\emph}{\em}
+
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+\usepackage{amsmath}
+\usepackage{cleveref}           %must be loaded after amsmath
+% ??? still xelatex?
+% \usepackage{xeCJK}
+\usepackage{emoji}
+
+\date{\today}
+\author{me}
+
+\newtcblisting{simplec}{
+  listing engine=minted,
+  minted language=c++,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter, 
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20
+}
+
+\usepackage{comment}
+\begin{document}
+\maketitle
+
+\begin{comment}
+  % black and white {\fontspec{Symbola}\symbol{"1F343}} sudo apt -y install
+  % fonts-symbola
+
+  % The luatex emoji
+  Usually you need to initialize a \Cola{sink} in order to use
+  \texttt{boost.log}.
+
+  \begin{tcolorbox}
+    \emoji{parrot}  : But we still used trivial log all the time no? \\
+    \emoji{turtle} : Yeah, that's because the library contains a `default` sink.
+    (like the defualt constructor in C++). Once you defined a sink yourself, the
+    default one is gone. Although you will still be able to use trivial logging
+    macro.
+  \end{tcolorbox}
+
+  \section{File logging}
+
+  Use the following to \Cola{initialize a logging sink} that stores log records
+  into a text log.
+  \begin{simplec}
+    void init(){ logging::add_file_log("sample.log");
+
+      logging::core::get()->set_filter( logging::trivial::severity >=
+      logging::trivial::info ); }
+  \end{simplec}
+
+  \section{More sinks}
+
+  You can register sink manually. Previously we created a file sink which is
+  almost like
+  \begin{simplec}
+    void init() { // Construct the sink typedef sinks::synchronous_sink<
+      sinks::text_ostream_backend > text_sink; boost::shared_ptr< text_sink > sink
+      = boost::make_shared< text_sink >();
+
+      // Add a stream to write log to sink->locked_backend()->add_stream(
+      boost::make_shared< std::ofstream >("sample.log"));
+
+      // Register the sink in the logging core
+      logging::core::get()->add_sink(sink); }
+  \end{simplec}
+
+  \begin{tcolorbox}
+    \emoji{parrot} : It looks like a sink has two classes: a \Cola{frontend} and a \Cola{ backend}.\\
+    \emoji{turtle} : Yeah
+  \end{tcolorbox}
+  The frontend, (\texttt{synchronous\_sink}) is responsible for various common
+  tasks for \emph{all sinks} such as
+  \begin{itemize}
+  \item thread synchronization model
+  \item filtering %M-Ret to change
+  \item formatting (for text-based sinks)
+  \end{itemize}
+  \begin{tcolorbox}
+    \emoji{parrot} : What there are ``non-text-based'' sinks?\\
+    \emoji{turtle} : Probably, but let's not dive in.
+  \end{tcolorbox}
+
+  The backend \verb|text_ostream_backend| implements everything specific to the
+  sink, such as ``writting to a file''. The library provides a number of frontends
+  and backends out of the box.
+
+  The \verb|synchronous_sink| class template above means that the \emph{sink} is
+  synchronous, that is, it allows for several threads to log simultaneously and
+  will block in case of contention.
+
+  This means that the backend \verb|text_ostream_backend| dosen't have to worry
+  about multithreading at all.
+
+  The \verb|text_ostream_backend| weites formatted log records into STL-compatible
+  streams. We have used a \emph{file stream} above, but we could have used any
+  type of stream. For example, adding output to console could look like as
+  follows:
+
+  \begin{simplec}
+    #include <boost/core/null_deleter.hpp>
+
+    // We have to provide an empty deleter to avoid destroying the global stream
+    object boost::shared_ptr< std::ostream > stream(&std::clog,
+    boost::null_deleter()); sink->locked_backend()->add_stream(stream);
+  \end{simplec}
+
+  The \verb|text_ostream_backend| supports adding several streams. In that case
+  its output will be duplicated to all added streams.
+
+  \begin{tcolorbox}
+    \emoji{parrot} : So if we add a file stream and a console stream to a single
+    backend, we got them both logged to?\\
+    \emoji{turtle} : Yeah, and that is a use case suggested by the official,
+    because all the formatting and filtering only happen once per record.\\
+
+    \emoji{parrot} : Fine, but I realize that duplicating the same content is not
+    that useful.\\
+    \emoji{turtle} : That's when you need multiple sinks.
+  \end{tcolorbox}
+
+  \section{Creating loggers and writting logs}
+
+  \subsection{Dedicated logger objects}
+  Now that we have defined where and how the log is to be stored, it's time to see
+  how we emit log records. In order to be able to make log records one has to
+  create a \Cola{logging source} first. This would be a logger object:
+
+  \begin{simplec}
+    #include <boost/log/sources/severity_logger.hpp>
+    boost::log::sources::severity_logger<logging::trivial::severity_level> slg;
+  \end{simplec}
+  \begin{tcolorbox}
+    \emoji{parrot} : What's the logger for trivial logging?\\
+    \emoji{turtle} : The library provide one and is used behind the scene.
+  \end{tcolorbox}
+
+  Unlike sinks, sources need \emph{not be} registered anywhere since they interact
+  directly with the \emph{logging core}.
+
+  Also note that there are two versions of loggers:
+  \begin{itemize}
+  \item thread-safe ones
+  \item non-thread-safe ones.
+  \end{itemize}
+
+  For non-thread-safe ones, it is safe for different threads to write logs through
+  different \Cola{instances} of loggers and thus there should be a seperate logger
+  for each thread that writes logs.
+
+  Thread-safe ones have \texttt{\_mt} suffix, and can potentially be very slow.
+
+  All loggers are \emph{default} , \emph{copy-constructible} and support
+  \emph{swapping}, so safe to be put into a class. (\emoji{turtle} : Actually it's
+  recommended to do so.)
+
+  The library provides a number of loggers with different features, such as
+  \begin{itemize}
+  \item severity
+  \item channel support
+  \end{itemize}
+
+  \subsection{Gobal logger objects}
+
+  In case you cannot put a logger into your class, the library provides a way of
+  declaring global loggers:
+  \begin{simplec}
+    BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
+  \end{simplec}
+  Here \verb|my_logger| is a \Cola{user-defined tag name } that will be used later
+  to retrieve the logger instance and \verb|logger_mt| is the logger type. Any
+  logger type
+  \begin{itemize}
+  \item provided by the library, or
+  \item defined by the user
+  \end{itemize}
+  can participate in such declaration.
+  \begin{tcolorbox}
+    \emoji{turtle} : Use thread-safe logger as the global one (if you need a
+    global logger).
+  \end{tcolorbox}
+  Later on you can acquire the logger like:
+  \begin{simplec}
+    src::logger_mt& lg = my_logger::get();
+  \end{simplec}
+  Then, \texttt{lg} will refer to the one and only one instance of the logger
+  throughout the application, even if the application consists of multiple
+  modules. The \texttt{get} function itself is thread-safe, so there is no need in
+  additional synchronization around it.
+
+  \subsection{Writing logs}
+
+  Write a record to a logger \texttt{lg}:
+  \begin{simplec}
+    logging::record rec = lg.open_record(); // check if consumed by at least one
+    sink [filtering applies here] if (rec){ logging::record_ostream strm(rec);
+      strm << "Hello, World!"; strm.flush(); lg.push_record(boost::move(rec)); }
+  \end{simplec}
+
+  Of course, users are recommended to write their own macros instead of using the
+  C++ logger interface directly like:
+  \begin{simplec}
+    BOOST_LOG(lg) << "Hello, World!"; //macro defined by library
+  \end{simplec}
+
+  \section{Add more information to \texttt{log::Attributes}}
+
+  Each log record can have a number of \Cola{named attribute values} attached.
+  Attributes can represent any essential information about the conditions in which
+  log record occurred, such as
+  \begin{itemize}
+  \item position in code
+  \item executable module name
+  \item current date and time
+  \item custom data
+  \end{itemize}
+
+  An attribute may behave as a \textbf{value generator}, in which case it would
+  return a different value for each \textbf{log record} it's involved in. As soon
+  as the attribute generates the value, the latter becomes independent from the
+  creator and can be used by
+  \begin{itemize}
+  \item filters
+  \item formatters
+  \item sinks
+  \end{itemize}
+
+  But in order to use the attribute value one has to know its name and type, or at
+  least a set of types it may have. There're a number of commonly used attributes
+  implemented in the library.
+
+  Aside from that, there're three \Cola{possible scopes} of attributes:
+  \begin{itemize}
+  \item source-specific
+  \item thread-specific
+  \item global
+  \end{itemize}
+  When a log record is made, attribute values from these three sets are joined
+  into a \textbf{single} set and passed to \textbf{sinks}.\\
+  \emoji{turtle} : So the origin of attributes makes no difference for sinks.
+
+  \textbf{Any} attribute can be registered in \textbf{any} scope. When registered,
+  an attribute is given a \textbf{unique name} in order to make it possible to
+  search for it (Lower scope overwrites higer scope). Such behavior makes it
+  possible to override global or thread-specific attributes with the ones
+  registered in your local logger.
+
+  \subsection{Commonly used attributes}
+
+  There're attributes that are likely to be used in nearly any application.
+  \textbf{Log record counter} and a \textbf{time stamp} for example. They can be
+  added by:
+  \begin{simplec}
+    logging::add_common_attributes(); // add : LineID (record
+    count),TimeStamp,ProcessID,ThreadID
+  \end{simplec}
+
+  \begin{tcolorbox}
+    \emoji{turtle} : By default, when app starts, no attributes are registered.
+    The app has to do it before writing any logs.\\
+    \emoji{parrot} : Well then, how trivial-logging works?\\
+    \emoji{turtle} : The answer is that \Cola{the default sink} dosen't really use
+    any attribute values, except for the severity level, to compose its output.
+    This is done to avoid need for any initialization for trivial-logging. Once
+    you use \textbf{filters} or \textbf{formatters} and \textbf{non-default sinks}
+    you will have to register the attributes you need.
+  \end{tcolorbox}
+
+  The \verb|add_common_attributes| function is one of the several convenience
+  helpers.
+
+  Some attributes are registered automatically on logger construction. For
+  example, \verb|severity_logger| register a source-specific attribute
+  ``Severity'' which can be used to add a level of emphasis for different log
+  records:
+  \begin{simplec}
+    // We define our own severity levels enum severity_level {normal,
+      notification, warning, error, critical};
+
+    void logging_function(){ // The logger implicitly adds a source-specific
+      attribute 'Severity' // of type 'severity_level' on construction
+      src::severity_logger< severity_level > slg;
+
+      BOOST_LOG_SEV(slg, normal) << "A regular message"; BOOST_LOG_SEV(slg,
+      warning) << "Something bad is going on but I can handle it";
+      BOOST_LOG_SEV(slg, critical) << "Everything crumbles, shoot me now!"; }
+  \end{simplec}
+  The \verb|BOOST_LOG_SEV| macro acts as if the following:
+  \begin{simplec}
+    void manual_logging(){ src::severity_logger< severity_level > slg;
+
+      logging::record rec = slg.open_record(keywords::severity = normal); //
+      ***********Provide named arguments if (rec){ logging::record_ostream
+        strm(rec); strm << "A regular message"; strm.flush();
+        slg.push_record(boost::move(rec)); } }
+  \end{simplec}
+
+  \subsection{More attributes}
+
+  \verb|add_common_attributes| works somehow like
+  \begin{simplec}
+    void add_common_attributes(){ boost::shared_ptr< logging::core > core =
+      logging::core::get(); core->add_global_attribute("LineID", attrs::counter<
+      unsigned int >(1)); // ************** attribute classes
+      core->add_global_attribute("TimeStamp", attrs::local_clock()); // ****
+      derive from attribute
+
+      // other attributes skipped for brevity }
+  \end{simplec}
+  The library provides a number of other \Cola{attribute classes}, including the
+  \texttt{function} attribute that calls some function object on value
+  acquisition. For example, we can register a \texttt{name\_scope} attribute:
+  \begin{simplec}
+    core->add_global_attribute("Scope", attrs::named_scope());
+  \end{simplec}
+  This will give us the ability to \textbf{store scope names in log} for every log
+  record:
+  \begin{simplec}
+    void named_scope_logging(){ BOOST_LOG_NAMED_SCOPE("named_scope_logging");
+      src::severity_logger< severity_level > slg; BOOST_LOG_SEV(slg, normal) <<
+      "Hello from the function named_scope_logging!"; }
+  \end{simplec}
+  \begin{tcolorbox}
+    \emoji{parrot} : What does \verb|BOOST_LOG_NAMED_SCOPE| mean ?\\
+    \emoji{turtle} : ...I don't find it on the manual either...
+  \end{tcolorbox}
+
+  Logger-specific attributes (source-level) are also useful. \textbf{Severity
+    levels} and \textbf{channel} names are the most obvious candidates to be
+  implemented on this level.
+
+  \begin{tcolorbox}
+    \emoji{parrot} : So after all, how do I add my own attributes any way?\\
+    \emoji{turtle} : Here:
+  \end{tcolorbox}
+  \begin{simplec}
+    void tagged_logging(){ src::severity_logger< severity_level > slg;
+      slg.add_attribute("Tag", attrs::constant< std::string >("My tag value"));
+
+      BOOST_LOG_SEV(slg, normal) << "Here goes the tagged record"; }
+  \end{simplec}
+  \emoji{turtle} : And now log records made through \textbf{this logger} will be
+  tagged with \texttt{"Tag"}. This attribute value may be used later in filtering
+  and formatting.
+
+  Another use of attributes is the ability to mark log records made by different
+  application in order to hight \emph{activity related to a single process}. One
+  can even implement a rough profiling tool to detect performance bottlenecks. For
+  example:
+
+  \begin{simplec}
+    void timed_logging(){ BOOST_LOG_SCOPED_THREAD_ATTR("Timeline",
+      attrs::timer()); src::severity_logger< severity_level > slg;
+      BOOST_LOG_SEV(slg, normal) << "Starting to time nested functions";
+      logging_function(); BOOST_LOG_SEV(slg, normal) << "Stopping to time nested
+      functions"; }
+  \end{simplec}
+  Now every log record made from the \verb|logging_function()|, will contain the
+  \texttt{"Timeline"} attribute with a \textbf{time duration passed since the
+    attribute was registered.}.
+  \begin{tcolorbox}
+    \emoji{parrot} : This is pretty useful. At least I understand this. But how do
+    I get (print) these attributes?\\
+    \emoji{turtle} : Patience, Later..
+  \end{tcolorbox}
+
+  Based on these readings, one will be able to detect which parts of the code
+  require more or less time to execute. The \texttt{"Timeline"} attribute will be
+  unregistered upon leaving the scope of function \verb|timed_logging|.
+
+  \subsection{Defining attribute placeholders}
+  \label{sec:def_attr_placeholders}
+
+
+  It is useful to define a \textbf{keyword describing a particular attribute} the
+  app uses. This keyword will be able to participate in
+  \begin{itemize}
+  \item filtering, and
+  \item formatting expression
+  \end{itemize}
+  like the \texttt{severity} placeholder we have used:
+  \begin{simplec}
+    BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope", attrs::named_scope::value_type)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type)
+  \end{simplec}
+
+  \section{Log record formatting}
+  By default, \Cola{formatter} is set, only the \textbf{log record messages} are
+  written to the files. Even if you added attributes to the logging core or a
+  logger, the attribute values \emph{will not} reach the output unless you specify
+  a formatter that will use these values.
+
+  Returning to one of the previous examples:
+
+  \begin{simplec}
+    void init(){ logging::add_file_log( /*...*/ keywords::format =
+      "[%TimeStamp%]: %Message%"
+      );
+
+      logging::core::get()->set_filter( logging::trivial::severity >=
+      logging::trivial::info ); }
+  \end{simplec}
+
+  \begin{tcolorbox}
+    \emoji{parrot} : Hey, I see a \texttt{format} option.\\
+    \emoji{turtle} : Yeah, if you prefer to \emph{set up sinks manually},
+    \textbf{sink frontends} provide the \texttt{set\_formatter} member function
+    for this purpose. \\
+    \emoji{parrot} : I think I do like to set up sinks manually...Because I want
+    to write to different log file No?
+  \end{tcolorbox}
+
+  The syntex for a format is
+  \begin{center}
+    \texttt{keywords::format = \cola{<format-spec>}}
+  \end{center}
+  And you can specify \texttt{<format-spec>} in a couple of ways.
+  \subsection{$\lambda$-style formatter}
+  \begin{simplec}
+    void init() { logging::add_file_log (keywords::file_name = "sample_%N.log",
+      // This makes the sink to write log records that look like this: // 1:
+      <normal> A normal severity message // 2: <error> An error severity message
+      keywords::format = ( expr::stream << expr::attr< unsigned int >("LineID") <<
+      ": <" << logging::trivial::severity << "> " << expr::smessage )); }
+  \end{simplec}
+  Here the \texttt{stream} is a placeholder for the stream to format the record
+  in.
+
+  Other insertion arguments, such as \texttt{attr} and \texttt{message}, are
+  manupulators that define what should be stored in the stream.
+
+  \begin{tcolorbox}
+    \emoji{parrot} : What? I saw \texttt{smessage} ?\\
+    \emoji{turtle} : \texttt{smessage} means \texttt{string}, \texttt{wmessage}
+    means \texttt{wstring}, \texttt{message} means one of the two.
+  \end{tcolorbox}
+
+  We have already seen the \texttt{severity} placeholder in \Cola{filtering
+    expressions:}
+  \begin{simplec}
+    logging::core::get()->set_filter(logging::trivial::severity >=
+    logging::trivial::info);
+  \end{simplec}
+  \begin{tcolorbox}
+    \emoji{turtle} : The author finds it a nice unification to be able to use the
+    same \textbf{placeholder} in both filters and formatter.
+  \end{tcolorbox}
+
+  The \texttt{attr} placeholder is similar to the \texttt{severity} placeholder as
+  it represents the attribute value, too. The difference is that
+  \begin{itemize}
+  \item \texttt{severity} represents the particular attribute, with the name
+    ``Severity'' and type \texttt{trivial::severity\_level}
+  \item \texttt{attr} can be used to represent \textbf{any} attribute.
+  \end{itemize}
+  Otherwise the two are equivalent. So \texttt{logging::trivial::severity} is
+  essentially
+  \begin{simplec}
+    expr::attr< logging::trivial::severity_level >("Severity")
+  \end{simplec}
+
+  \begin{tcolorbox}
+    \emoji{parrot} : I prefer the explicit... It's simpler for me...\\
+    \emoji{turtle} : But the author recommends defining these placeholder for
+    \textbf{user-defined} attributes as in \cref{sec:def_attr_placeholders},
+    because it's less error-prone.\\
+    \emoji{parrot} : That makes sense, but we're not defining format a lot of time
+    right?
+  \end{tcolorbox}
+
+  There are other \Cola{formatter manipulators} that provide advanced support for
+  date, time and other types. Some manipulators accept additional arguments that
+  customize their behavior. Most of these arguments are named and can be passedin
+  \texttt{Boost.Parameter} style.
+
+  \begin{tcolorbox}
+    \emoji{parrot} : What is \texttt{Boost.Parameter} ?\\
+    \emoji{turtle} : It's a magical library that allows you to specify
+    ``named-parameter'' in C++. like \texttt{f(a=123,b=true)}.\\
+    \emoji{parrot} : I am not gonna attempt that (for now)...
+  \end{tcolorbox}
+
+  For a change, here's how we manually initialize sinks:
+
+  \begin{simplec}
+    void init(){ typedef sinks::synchronous_sink< sinks::text_ostream_backend >
+      text_sink; boost::shared_ptr< text_sink > sink = boost::make_shared<
+      text_sink >();
+
+      sink->locked_backend()->add_stream(boost::make_shared< std::ofstream
+      >("sample.log"));
+
+      sink->set_formatter( expr::stream // line id will be written in hex,
+      8-digits, zero-filled << std::hex << std::setw(8) << std::setfill('0') <<
+      expr::attr< unsigned int >("LineID") << ": <" << logging::trivial::severity
+      << "> " << expr::smessage );
+
+      logging::core::get()->add_sink(sink); }
+  \end{simplec}
+
+  \subsection{\texttt{Boost.Format}-style formatters}
+  Familiar with \texttt{Boost.Format} ?
+
+  \begin{simplec}
+    void init(){ typedef sinks::synchronous_sink< sinks::text_ostream_backend >
+      text_sink; boost::shared_ptr< text_sink > sink = boost::make_shared<
+      text_sink >();
+
+      sink->locked_backend()->add_stream( boost::make_shared< std::ofstream
+      >("sample.log"));
+
+      // This makes the sink to write log records that look like this: // 1:
+      <normal> A normal severity message // 2: <error> An error severity message
+      sink->set_formatter ( expr::format("%1%: <%2%> %3%")
+      % expr::attr< unsigned int >("LineID") logging::trivial::severity
+      % expr::smessage
+      );
+
+      logging::core::get()->add_sink(sink); }
+  \end{simplec}
+
+  The \texttt{format} placeholder accepts the format string with
+  \textbf{positional specification} of all args being formatted. The same format
+  specification can be used with the \verb|add_file_log| and similar functions.
+
+  \begin{tcolorbox}
+    \emoji{turtle} : Note that \emph{only positional format is currently
+      supported}.
+  \end{tcolorbox}
+
+  \subsection{Specialized formatters}
+
+  The library provides specialized formatters for a number of types, such as
+  \begin{itemize}
+  \item data
+  \item time, and
+  \item named scope
+  \end{itemize}
+
+  These formatters provide \emph{control over formatted values}. For example, here
+  we use a format string compatible with \texttt{Boost.DateTime}.
+
+  \begin{simplec}
+    void init(){ logging::add_file_log( keywords::file_name = "sample_%N.log",
+      // This makes the sink to write log records that look like this: //
+      YYYY-MM-DD HH:MI:SS: <normal> A normal severity message // YYYY-MM-DD
+      HH:MI:SS: <error> An error severity message keywords::format = (expr::stream
+      << expr::format_date_time< boost::posix_time::ptime >("TimeStamp",
+      "%Y-%m-%d %H:%M:%S")
+      << ": <" << logging::trivial::severity << "> " << expr::smessage)); }
+  \end{simplec}
+
+  \subsection{String templates as formatters}
+  \begin{simplec}
+    void init(){ logging::add_file_log ( keywords::file_name = "sample_%N.log",
+      keywords::format = "[%TimeStamp%]: %Message%"
+      ); }
+  \end{simplec}
+
+  The template may contain a number of placeholders enclosed with percent signs
+  (\verb|%|). Each placeholder must contain an attribute value name to insert
+  instead of the placeholder. The \verb|%Message%| placeholder will be replaced
+  with the logging record message.
+
+  \begin{tcolorbox}
+    \emoji{parrot} : Can \cola{textual format templates} be accepted by sink
+    backends in
+    the \verb|set_formatter| method? \\
+    \emoji{turtle} : No. In order to parse textual template into a formatter
+    function one has to call \verb|parse_formatter()|.
+  \end{tcolorbox}
+
+  \subsection{Custom formatting functions}
+
+  You can add a custom formatter to a sink backend that supports formatting. The
+  formatter is actually a function object that supports the following signature:
+  \begin{simplec}
+    void (logging::record_view const& rec, logging::basic_formatting_ostream<
+    CharT >& strm);
+  \end{simplec}
+  Here \texttt{CharT} is the target character type. The \cola{formatter} will be
+  invoked whenever a \cola{log record view \texttt{rec}} \textbf{passes filtering}
+  and is to be stored in log.
+
+  \begin{tcolorbox}
+    \emoji{parrot} : I guess the \texttt{record\_view} is like a read-only
+    \texttt{record} ? Like \verb|string_view| and \verb|string|...\\
+    \emoji{turtle} : Yeah.
+  \end{tcolorbox}
+
+  \begin{simplec}
+    void my_formatter(logging::record_view const& rec,
+    logging::formatting_ostream& strm){ // Get the LineID attribute value and put
+      it into the stream strm << logging::extract< unsigned int >("LineID", rec)
+      << ": ";
+
+      // The same for the severity level. // The simplified syntax is possible if
+      attribute keywords are used. strm << "<" << rec[logging::trivial::severity]
+      << "> ";
+
+      // Finally, put the record message to the stream strm <<
+      rec[expr::smessage]; }
+
+    void init(){ // ... sink->set_formatter(&my_formatter);
+      logging::core::get()->add_sink(sink); }
+  \end{simplec}
+
+  \section{Filtering revisited}
+  Two sinks in action:
+  \begin{simplec}
+    BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
+
+    void init(){ // Setup the common formatter for all sinks logging::formatter
+      fmt = expr::stream << ": <" << severity << ">\t" <<
+      expr::if_(expr::has_attr(tag_attr)) [expr::stream << "[" << tag_attr << "]
+      "] << expr::smessage;
+
+      // Initialize sinks typedef sinks::synchronous_sink<
+      sinks::text_ostream_backend > text_sink;
+
+      boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >(); //
+      sink 1 sink->locked_backend()->add_stream(boost::make_shared< std::ofstream
+      >("full.log")); sink->set_formatter(fmt);
+      logging::core::get()->add_sink(sink); // add sink 1
+
+      sink = boost::make_shared< text_sink >(); // sink 2
+      sink->locked_backend()->add_stream(boost::make_shared< std::ofstream
+      >("important.log")); sink->set_formatter(fmt); sink->set_filter(severity >=
+      warning || (expr::has_attr(tag_attr) && tag_attr == "IMPORTANT_MESSAGE"));
+      // when the sink 2 is streamed to
+
+      logging::core::get()->add_sink(sink); // add sink 2
+      logging::add_common_attributes(); // Add attributes }
+  \end{simplec}
+
+  The formatter itself contains filter here. The \verb|has_attr| predicate checks
+  whether the record contains the \cola{``Tag'' attribute value} and controls
+  whether it is put into the file or not.
+
+  \begin{tcolorbox}
+    \emoji{parrot} : So in fact we can just make two sinks, each with a
+    \cola{dedicated formatter} that will only print under certain conditions. In
+    that case, we
+    don't need a filter anymore right?\\
+    \emoji{turtle} : Don't be too smart. Use filter.
+  \end{tcolorbox}
+
+  We used attribute keyword to specify the name and type of the attribute for the
+  predicate, but it is also possible to specify them in the \verb|has_attr()|.
+
+  \begin{tcolorbox}
+    \emoji{turtle} : The filter syntex resembles C++ very much when attribute
+    keywords are used. The author seems to be quite proud of it.\\
+    \emoji{parrot} : So \cola{formatter} is a function. Is \colb{filter} so?\\
+    \emoji{turtle} : Yes. Here:
+  \end{tcolorbox}
+
+  \begin{simplec}
+    bool (logging::attribute_value_set const& attrs); // returns whether the
+    message (record) will pass
+  \end{simplec}
+
+  \emoji{parrot} : There's an example using \texttt{Boost.Phoenix} (a $\lambda$
+  library) to write filters, but I am gonna leave that.
+
+  \section{Wide character logging}
+
+  There are two ways:
+  \begin{itemize}
+  \item On \textbf{UNIX}, typically fome multibyte character encoding (e.g. UTF-8)
+    is used to represent national characters. In this case \textbf{no additional
+      setup is required}.
+  \item On \textbf{Windows} the common practice is to use \cola{wide strings} to
+    represent national characters. Also, most of the system API is \cola{wide
+      character oriented}, which requires \textbf{Windows-specific sinks} to also
+    support wide strings.
+  \end{itemize}
+  On the other hand, generic sinks, like the \cola{text file sink}, are
+  byte-oriented (\emoji{turtle} : because, you write bytes to files.) This forces
+  the library to perform \cola{character code conversion} when needed by the sink.
+
+  To set up the library for this, one has to \cola{imbue the sink with a locale
+    with appropriate \texttt{codecvt} facet}.
+  \begin{tcolorbox}
+    \emoji{parrot} : I've never heard of that...\Cola{codecvt}?\\
+    \emoji{turtle} : \texttt{Boost.Locale} can help.\\
+    \emoji{parrot} : What is a \textbf{local}?\\
+    \emoji{turtle} : From what I am understanding, a local is like a \colb{region}
+    plus an \colc{encoding}, such as \texttt{en\_US.UTF-8}, or
+    \texttt{ru\_RU.UTF-8}. \\ Officially, \texttt{Boost.Locale} uses the POSIX
+    naming convention for locales, i.e. a locale is defined as:
+    \begin{center}
+      \verb|language[_COUNTRY][.encoding][@variant]|
+    \end{center}
+    variant is additional options for specializing the locale, like \texttt{euro}
+    or \texttt{calendar=hebrew}.
+
+    \emoji{turtle} : Here's an example to set the global locale.
+    \begin{simplec}
+      #include <boost/locale.hpp> using namespace boost::locale; int main(){
+        generator gen; // Create locale generator std::locale::global(gen("")); //
+        "" - the system default locale, set // it globally }
+    \end{simplec}
+
+    \emoji{turtle} : Or a locale can be \textbf{imbued} into a stream such as \texttt{std::cout}.\\
+    \emoji{parrot} : It seems like C++ has some standard locale:
+    \begin{simplec}
+      cout.imbue(std::locale("en_US.UTF-8"));
+    \end{simplec}
+    So why \texttt{Boost.Locale} ?\\
+    \emoji{turtle} : Because Boost said there're some critical problem with
+    \texttt{std::locale} such as
+    \begin{itemize}
+    \item {non-standard locale name}
+    \item {problematic global locale side effects}
+    \item {broken number formatting}....
+    \end{itemize}
+  \end{tcolorbox}
+
+  \begin{simplec}
+    // Declare attribute keywords BOOST_LOG_ATTRIBUTE_KEYWORD(severity,
+    "Severity", severity_level) BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp,
+    "TimeStamp", boost::posix_time::ptime)
+
+    void init_logging(){ boost::shared_ptr< sinks::synchronous_sink<
+      sinks::text_file_backend > > sink = logging::add_file_log( "sample.log",
+      keywords::format = expr::stream << expr::format_date_time(timestamp,
+      "%Y-%m-%d, %H:%M:%S.%f")
+      << " <" << severity.or_default(normal) << "> " << expr::message // note the
+      message not smessage anymore );
+
+      // The sink will perform character code conversion as needed, according to
+      the locale set with imbue() std::locale loc =
+      boost::locale::generator()("en_US.UTF-8"); sink->imbue(loc);
+
+      // Let's add some commonly used attributes, like timestamp and record
+      counter. logging::add_common_attributes(); }
+  \end{simplec}
+
+  First let's take a look at the formatter we pass in the \texttt{format}
+  parameter. We initialize the sink with a \emph{narrow-character formatter}
+  because the \cola{text file sink} processes bytes. It is also possible to use
+  wide strings in the formatter, but not in format strings, like the one we used
+  with \verb|format_date_time()|.
+
+  Also note that we used \texttt{message} keyword to denote the \cola{log record
+    messages}. This placeholder supports \textbf{both} narrow and wide character
+  messages. \cola{As part of the \textbf{formatting} process, the library will
+    convert wide character messages tp multibyte encoding using the \textbf{imbued
+      locale}, which we set to UTF-8.}
+
+  \begin{tcolorbox}
+    \emoji{turtle} : \cola{Attribute values} can also contain wide strings.
+  \end{tcolorbox}
+
+  \section{Core facilities}
+
+  All the information that the logging library processes is packed into a single
+  object of type \texttt{record}. All attached data, including the message text,
+  is represented as named attribute values that can be fetched and processed by
+  the \cola{filters, formatters and sinks}.
+
+  Particular \cola{attribute values} can be accessed in different ways, here are a
+  few quick examples:
+
+  \begin{itemize}
+  \item Through \texttt{visit()} and \texttt{extract()}:
+    \begin{simplec}
+      enum A { ... }; std::ostream& operator<< (std::ostream& strm, A level);
+
+      logging::record const& rec = ...; // Prints severity level through visit()
+      API logging::visit< A >("my_attr", rec, [](A a){cout << a << endl;});
+
+      // Prints severity level through extract() API logging::value_ref< A > level
+      = logging::extract< A >("my_attr", rec); cout << level << endl;
+    \end{simplec}
+  \item By searching the \cola{set of attribute values} with the
+    \texttt{attribute\_values()}
+    \begin{simplec}
+      log::attribute_value_set const& values = rec.attribute_values();
+      log::attribute_value_set::const_iterator it = values.find("my_attr"); if (it
+      != values.end()){ log::attribute_value const& value = it->second;
+
+        // A single attribute value can also be visited or extracted std::cout <<
+        value.extract< A >() << std::endl; }
+    \end{simplec}
+
+  \item By applying the \cola{subscript operator} with the \Cola{attribute
+      keyword}. \\
+    (\emoji{turtle} : This is actually a convinience wrapper around the value
+    extraction API.)
+    \begin{simplec}
+      BOOST_LOG_ATTRIBUTE_KEYWORD(my_attr, "My Attribute", A) // Use the attribute
+      keyword to communicate the name and type of the value logging::value_ref< A,
+      tag::my_attr> a = rec[my_attr]; std::cout << a << std::endl;
+    \end{simplec}
+  \end{itemize}
+  Log records cannot be copied, only moved. (\emoji{parrot} : like
+  \verb|unique_ptr|). A record can be \cola{default-constructed} in which case it
+  is in an empty state; \textbf{such records should not be passed to the library
+    for processing}. (\emoji{turtle} : But you can practice with it yourself.).
+
+  \textbf{Non-empty} log records can only be created by the \cola{logging core} as
+  a \colb{result of successful filtering}. The non-empty record contains
+  \cola{attribute values acquired from attributes.} More attribute values can be
+  added \textbf{after filtering}. The added values will not affect filtering
+  results but can still be used by \cola{formatters} and \cola{sinks}.
+\end{comment}
+
+\subsection{Record views}
+\begin{simplec}
+  #include <boost/log/core/record_view.hpp>
+\end{simplec}
+Record view is copyable and immutable. The library will automatically create a
+recor view by calling the \texttt{lock()} method. The call will also make sure
+the resulting view is not attached to the current thread if a sink is
+asynchronous. The \texttt{lock()} call is a one time operation; \textbf{the
+  record is left in the \cola{empty state} afterwards}.
+
+All APIs for interacting with \cola{attribute values} described for
+\texttt{record} are also applicable to \texttt{records\_view}s and can be used
+in custom formatters and sinks.
+
+\subsection{Logging core}
+\begin{simplec}
+  #include <boost/log/core/core.hpp>
+\end{simplec}
+The \Cola{logging core} is a central hub that provides the following facilities:
+\begin{enumerate}
+\item Maintains \textbf{global} and \textbf{thread-specific} attribute sets.
+\item Perform \cola{global filtering}
+\item Dispatches \texttt{record}s between \cola{sinks} by applying
+  \Cola{sink-specific} filters.
+\item \colz{Provides a global hook for exception handlers.}
+\item Provides entry point for log \texttt{source}s to put \texttt{record}s to
+\item Provides the \texttt{flush()} method that can be used to enforce the
+  synchronized state for all \texttt{sink}s.
+\end{enumerate}
+
+There's only one core:
+\begin{simplec}
+  boost::shared_ptr< logging::core > core = logging::core::get();
+\end{simplec}
+
+\subsubsection{Attribute sets}
+
+\begin{tcolorbox}
+  \emoji{parrot} : So how to add \cola{global or thread-specific attribute}?\\
+  \emoji{turtle} : There're 4 methods to use: \verb!(get|remove)_(global|thread)_attribute()!
+\end{tcolorbox}
+Attribute sets is like \texttt{std::map}, so the \verb|add_*| methods
+\cola{accept an attribute name string (key) and a pointer to the
+  attribute(mapped value)} and return \colb{a pair of iterator and
+  \texttt{bool}}. The \verb|remove_*| methods accept an iterator to a previously
+added attribute.
+\begin{simplec}
+  boost::shared_ptr< logging::core > core = logging::core::get();
+  // Add a global attribute
+  std::pair< logging::attribute_set::iterator, bool > res =
+  core->add_global_attribute("LineID", attrs::counter< unsigned int >());
+  // ...
+  // Remove the added attribute, use the iterator to access
+  core->remove_global_attribute(res.first);
+\end{simplec}
+
+\subsubsection{Global filtering}
+We talk about filter more later, here it will suffice to say that the filter
+accepts \cola{a set of attribute values} and returns a \texttt{bool} (passed or
+not). 
+\begin{simplec}
+  // Set a global filter so that only error messages are logged
+  enum A {v1,v2,v3};
+  core->set_filter(expr::attr< A >("My Attr") >= v1);
+  core->set_logging_enabled(false); //disable it
+  // ...
+  core->set_logging_enabled(true); // re-enable it
+\end{simplec}
+
+\subsubsection{Sink management}
+\begin{simplec}
+  core->add_sink(sink);
+  // ...
+  // Remove the sink
+  core->remove_sink(sink);
+\end{simplec}
+
+\subsubsection{Exception handler}
+Too advanced.
+
+\subsubsection{Feeding log records}
+One of the most important functions of \texttt{core} is providing an entry point
+for all \texttt{sources} to feed log records into. So there're
+\verb-(open|close)_record- methods.
+
+The first method is used to initiate the \cola{record logging process}. It
+accepts the \cola{source-specific set of attributes.} The method constructs a
+common set of attribute values of three sets of attributes:
+\begin{enumerate}
+\item global
+\item thread-specific
+\item source-specific
+\end{enumerate}
+and applies \textbf{filtering}, which checks if \cola{there's at least one sink
+  accepts a record with these attribute values}. 
+
+If so, it returns a \Cola{non-empty record object}, which can be used to fill in the \textbf{log
+  record message}. \\
+Else, \Cola{empty record object} is returned.
+
+When the \texttt{source} is ready to complete the logging procedure, it has to
+call the \texttt{push\_record()} method. (\emoji{turtle} : Don't call it on
+empty record). The record should be passed as as \texttt{rvalue} reference.
+During the call the \verb-record_view- will be constructed and passed to the
+\texttt{sink}s during filtering. This may involve \cola{formatting} and furthur
+processing, like storing it into a file or sending it over the network. After
+that the \texttt{record} is destroyed. 
+\begin{simplec}
+  logging::attribute_set const& attrs = ...;
+  // Attempt to open a log record
+  logging::record rec = core->open_record(attrs);
+  if (rec){
+    // Ok, the record is accepted. Compose the message now.
+    logging::record_ostream strm(rec);
+    strm << "Hello, World!";
+    strm.flush();
+
+    // Deliver the record to the sinks.
+    core->push_record(boost::move(rec));
+  }
+\end{simplec}
+
+\section{Logging sources}
+
+The simplest logging source is \texttt{boost::log::sources::logger}.
+\begin{tcolorbox}
+  \emoji{parrot} : I included \texttt{<boost/log/sources/basic\_logger.hpp>}, but
+  the logger is not there?\\
+  \emoji{turtle} : Include \texttt{<boost/log/sources/logger.hpp>}
+\end{tcolorbox}
+Here an example:
+\begin{simplec}
+  class network_connection{
+  src::logger lg;
+  logging::attribute_set::iterator a;
+
+public:
+  void on_connected(std::string const& remote_addr){
+    // Put the remote address into the logger to automatically attach it
+    // to every log record written through the logger
+    a = lg.add_attribute("RemoteAddress",
+                                           attrs::constant< std::string >(remote_addr)).first;
+
+    // The straightforward way of logging
+    if (logging::record rec = lg.open_record()){
+        rec.attribute_values().insert("Message",
+                                      attrs::make_attribute_value(std::string("Connection established")));
+        lg.push_record(boost::move(rec));
+      }
+  }
+  void on_disconnected(){
+    // The simpler way of logging: the above "if" condition is wrapped into a neat macro
+    BOOST_LOG(lg) << "Connection shut down";
+
+    // Remove the attribute with the remote address
+    lg.remove_attribute(a);
+  }
+  void on_data_received(std::size_t size){
+    // Put the size as an additional attribute
+    // so it can be collected and accumulated later if needed.
+    // The attribute will be attached only to this log record.
+    BOOST_LOG(lg) << logging::add_value("ReceivedSize", size) << "Some data received";
+  }
+  void on_data_sent(std::size_t size){
+    BOOST_LOG(lg) << logging::add_value("SentSize", size) << "Some data sent";
+  }
+};
+\end{simplec}
+
+\emoji{parrot} : ?? The I can't find \texttt{logging::add\_value()}...Fine...
+
+\section{Loggers with channel support}
+
+Sometimes it is important to associate log records with some application
+component, such as the
+\begin{itemize}
+\item module 
+\item or class name
+\item the relation of the \cola{logged information} to some specific domain of
+  appl functionality.
+\item or some arbitraty tag that can be used later to route these records to a
+  specific sink. This feature is fullfilled with loggers
+  \verb|[w_]channel_logger[_mt]|
+\end{itemize}
+These loggers \textbf{automatically register an attribute named \cola{``Channel''}}
+\begin{simplec}
+  #include <boost/log/sources/channel_feature.hpp>
+  #include <boost/log/sources/channel_logger.hpp>
+
+  src::channel_logger< > m_net(keywords::channel = "net");
+\end{simplec}
+
+\section{Lambda expressions}
+\begin{simplec}
+  #include <boost/log/expressions/attr_fwd.hpp>
+  #include <boost/log/expressions/attr.hpp>
+\end{simplec}
+The \texttt{attr} placeholder represents an attribute value in template
+expressions. Given the record view or a set of attribute values, the placeholder
+will attempt to extract the specified value from the argument upon invocation.
+This can be roughly described with the following pseudo-code:
+
+\begin{simplec}
+  logging::value_ref< T, TagT > val = expr::attr< T, TagT >(name)(rec);
+\end{simplec}
+
+where \texttt{val} is the \cola{reference} to the \textbf{extracted value},
+\texttt{name} and \texttt{T} are the \cola{attribute value name} and
+\cola{type}, \texttt{TagT} is an optional tag and \texttt{rec} is the log
+\texttt{record view} or \texttt{attribute value set}.
+
+\subsection{Customizing fallback policy}
+
+By default, when the \cola{requested attribute value} is not found,
+\texttt{attr} will return an empty reference.
+\begin{itemize}
+\item In case of filters, this result in \texttt{false} in any ordering
+  expressions.
+\item in case of formatters the output from the placeholder will be empty. This
+  behavior can be changed: 
+\end{itemize}
+
+\begin{enumerate}
+\item to throw
+  \begin{simplec}
+    sink->set_filter(
+      expr::attr< int >("Severity").or_throw() >= 5 &&
+      expr::attr< std::string >("Channel").or_throw() == "net"
+    );
+  \end{simplec}
+\item to use a default
+  \begin{simplec}
+    sink->set_filter(
+      expr::attr< int >("Severity").or_default(0) >= 5 &&
+      expr::attr< std::string >("Channel").or_default(std::string("general")) == "net"
+    );
+  \end{simplec}
+\end{enumerate}
+\begin{tcolorbox}
+  \emoji{turtle} : Remember you always have \texttt{has\_attr}
+\end{tcolorbox}
+The default behavior is actually \texttt{or\_none}.
+
+\subsection{Attribute tags and custom formatting operators}
+
+\begin{tcolorbox}
+  \emoji{parrot} : Although this section is a bit too advanced, there's in fact
+  a new function I found handy: \verb|add_console_log()|
+\end{tcolorbox}
+The \texttt{TagT} type above defaults to \texttt{void}. \Cola{This is an
+  attribute tag which can be used to customize the output formatters produce for
+different attributes}. This tag is forwarded to the \verb|to_log()| manipulator
+when the extracted attribute value is put to a stream:
+
+\subsection{Defining attribute keywords}
+\begin{simplec}
+  #include <boost/log/expressions/keyword_fwd.hpp>
+  #include <boost/log/expressions/keyword.hpp> 
+\end{simplec}
+Attribute keywords can be used as replacements for the \texttt{attr}
+placeholders in filters and formatters. Use:
+\begin{simplec}
+  BOOST_LOG_ATTRIBUTE_KEYWORD(keyword, "Keyword", type)
+\end{simplec}
+\begin{tcolorbox}
+  \emoji{parrot} : We have used this a lot.
+\end{tcolorbox}
+
+Here the macro declares a keyword \texttt{keyword} for an attribute named
+``Keyword'' with the value type of \texttt{type}. Additionally, the macro
+\cola{defines an attribute tag type \texttt{keyword} within the \texttt{tag}
+  namespace}.
+
+\begin{tcolorbox}
+  \emoji{turtle} : So we can use \verb|logging::to_log_manip< A, tag::my_attr > const& manip|
+  when defining the custom formatter.
+\end{tcolorbox}
+
+Attribute keywords behave the same way as the \texttt{attr} placeholders and can
+be used both in \cola{filters and formatters}. The  \verb|or_throw| and
+\verb|or_default| modifiers are also supported.
+
+\texttt{rec[\cola{<keyword>}]} is also OK:
+\begin{simplec}
+  void print_severity(logging::record_view const& rec){
+    logging::value_ref< severity_level, tag::severity > level = rec[severity];
+    std::cout << level << std::endl;
+}
+\end{simplec}
+
+\section{Predicate expressions}
+
+\subsection{Attribute presence filter}
+\begin{simplec}
+  #include <boost/log/expressions/predicates/has_attr.hpp>
+\end{simplec}
+The filter \verb|has_attr| checks if an attribute value with the \cola{specified name}
+and , optionally, \cola{type} is attached to a log record.
+
+If no type specified to the filter: return \texttt{true} if any value with the
+specified name is found.
+
+This filter is usually used in conjection with \texttt{conditional formatters},
+but it also can be used as a \cola{quick filter} based on the \cola{log record
+  structure}. 
+
+\subsection{Attribute names}
+\begin{simplec}
+  #include <boost/log/attributes/attribute_name.hpp>
+\end{simplec}
+
+\end{document}
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% End:

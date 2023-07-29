@@ -3,6 +3,7 @@ Virtual desktop:
  + win-ctr-Left/Right :: switch between virtual desktop
  + Win + CTRL + D :: Create a new desktop.
  + Win + CTRL + F4:: Close the current desktop.
+ + win + TAB :: Show desktop
 ** Windows terminal
 *** panes
     + C-S-W :: close the pane
@@ -223,6 +224,11 @@ affecting the rest of the image.
 + switch between control point and corner point :: double-click on the point
 
 + path are under the path tab of the layer panel.
+** clash for windows Q&A
+*** use clash Proxy in cmd
+#+begin_src powershell
+  Invoke-RestMethod google.com -Proxy http://localhost:7890 -OutFile m.html
+#+end_src
 ** Record Audio
 + 加Nuget Extension
 + 用Nuget 加包
@@ -260,3 +266,7 @@ Next in the shell
 #+begin_src powershell
 lame .\hi.wav .\fr.mp3
 #+end_src
+** Make bootable disk
++ rufus
+Or use dd.exe
+Remember in the BIOS setting enable lagacy-compatble mode, not just UEFI-mode.

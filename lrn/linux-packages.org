@@ -1,4 +1,12 @@
 * Packages
+** manage ppa
+gui software-update center > Other Software
+** font symbola
+#+begin_src bash
+  sudo apt -y install fonts-symbola
+  sudo apt-get -y autoremove --purge fonts-symbola
+
+#+end_src
 ** library
 *** read mannual
 #+BEGIN_SRC bash

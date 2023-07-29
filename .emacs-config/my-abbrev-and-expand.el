@@ -18,6 +18,8 @@
   '(
     ;; programing
     ("rt" "return" )
+    ("sth" "something" )
+
     ;; ("str" "string" )
     ("stru" "struct" )
     ("ifc" "interface")
@@ -31,13 +33,23 @@
     ("ethk" "🤔")
     ("ehan" "😓")
     ("efrog" "🐸")
+    ("eparrot" "🦜")
+    ("eturtle" "🐢")
+    ;; ("esloth" "🦥")
     ("enice" "👍")
+    ("ebye" "👋")
     ("edrip" "💧")
     ("eheart" "💙")
     ("esnow" "❄")
-    ("echeck" "✔️")
+    ("echeck" "✅️")
+    ("ecross" "❌️")
+    ("etrash" "🚮️")
+    ("egear" "⚙️")
+    ("eearth" "🌍️")
+    ("eglobe" "🌐️")
+    ("ebook" "📗️")
+    ("ewarn" "⚠️")
     ))
-
 
 
 (set-default 'abbrev-mode t)

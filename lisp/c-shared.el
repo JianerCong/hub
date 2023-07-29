@@ -8,7 +8,7 @@
 
 (define-skeleton c-say
   "say something "
-  > "printf(" _ ");")
+  > "printf(\"" _ "\");")
 
 
 (define-skeleton c-big-comment
@@ -23,7 +23,7 @@
   "insert a block that will be run when DEBUG is defined"
   nil
    "#ifdef DEBUG" \n
-  _
+   "#define P(...) printf(__VA_ARGS__)" \n
    "#endif")
 
 (define-skeleton c-define-PAUSE
@@ -65,14 +65,12 @@ s if not found."
 
 
 
-
-
-
 (define-skeleton c-insert-void-test-function
   "Insert a void function named test()."
   nil
   > "void test_" (setq s (skeleton-read "What function to test: ")) "()"
-  > "{" \n "report(\"" s "\");" \n _ "}")
+  > "{" \n "report(\"" s "\");" \n _ "}"
+  )
 
 
 (defun c-paste-defun-header-here ()
@@ -143,6 +141,10 @@ s if not found."
 (define-abbrev-table 'c++-mode-abbrev-table
   '(
     ("tt" "template<T>")
+    ("spt" "" (lambda () (skeleton-insert '(nil "shared_ptr<" _ ">"))))
+    ("upt" "" (lambda () (skeleton-insert '(nil "unique_ptr<" _ ">"))))
+    ("ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
+    ;; c-comment
     ))
 
 (defun define-abbrev-for-c++-and-c (pair)
@@ -172,7 +174,7 @@ abbrev table"
         ("pr" . "@param")
         ("cr" . "char")
         ("vd" . "void")
-        ("db" . "double")
+        ;; ("db" . "double")
         ;; ("def" . "define")
         ("lv" . "exit(EXIT_FAILURE);")
         ))

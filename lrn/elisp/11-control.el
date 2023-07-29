@@ -14,8 +14,10 @@
 ;; Equivalent to (if cond (progn a b c) nil)
 (when t (print "hi") (print "oh"))
 
-;; Equivalent to (if cond nil a b c)
-(unless nil (print "hi") (print "oh"))  ;"oh"
+;; Equivalent to (if <cond> nil <body>)
+;;🦜 : = (if-not ...)
+(unless nil (print "hi"))  ;"hi"
+;;          ^^^ called when false
 
 ;; cond
 (setq x -2)                             ;-2

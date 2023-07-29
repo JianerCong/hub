@@ -1,4 +1,21 @@
 # -*- org-what-lang-is-for: "latex"; -*-
+** font
+*** redefine \emph
+#+begin_src latex
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+#+end_src
+*** size
+\tiny
+\scriptsize
+\footnotesize
+\small	
+\normalsize	
+\large	
+\Large	
+\LARGE	
+\huge	
+\Huge
 ** math
 *** brackets
 Type 	LaTeX markup 	Renders as
@@ -74,6 +91,13 @@ S = \{ z \in \mathbb{C}\, |\, |z| < 1 \} \quad \textrm{and} \quad S_2=\partial{S
 \]
 \end{document}
 #+END_SRC
++ \quad :: 18mu
++ \, :: 3mu
++ \: :: 4mu
++ \; :: 5mu
++ \! :: -3mu
++ \<space> ::  <space>
++ \qquad :: 36mu
 *** line spacing
 #+BEGIN_SRC latex
         \\[-.7cm]               %remove the extra spacing
@@ -252,6 +276,80 @@ The same limit on display:
   $\frac{\partial^2 f}{\partial x^2}$
   $\frac{\partial^{k} f}{\partial x^k}$
 #+end_src
+*** mathfont
+#+begin_src latex
+  \usepackage{amsmath}
+  % \usepackage{amssymb}
+  \begin{document}
+  \begin{align*}
+    RQSZ \\
+    \mathcal{RQSZ} \\
+    \mathbb{RQSZ}
+  \end{align*}
+#+end_src
+** indent and paragraphs
+*** alignment
+#+begin_src latex
+  \begin{flushleft}
+    ...
+  \end{flushleft}
+
+  \begingroup
+  \raggedleft 
+  ...
+  \endgroup
+#+end_src
+*** indent and skip
+#+begin_src latex
+   % \setlength{\parindent}{20pt}
+  \usepackage[skip=10pt plus1pt, indent=40pt]{parskip}
+  % parskip = 10 + 1
+#+end_src
+*** indent a whole paragraph
+#+begin_src latex
+\documentclass{report}
+
+\usepackage{lipsum}       % for sample text
+\usepackage{changepage}   % for the adjustwidth environment
+
+\begin{document}
+\lipsum[1]
+
+
+\newenvironment{myIndent}[1][2cm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
+
+\begin{adjustwidth}{2cm}{}
+  %                 --- left
+  %                     -- right glue
+  \lipsum[1] % indented 2cm
+  \begin{adjustwidth}{2cm}{}
+    \lipsum[1] % indented 2 + 2cm
+  \end{adjustwidth}
+\end{adjustwidth}
+
+\begin{myIndent}
+  \lipsum[1]
+\end{myIndent}
+\end{document}
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
+% End:
+#+end_src
+** blank space
+#+begin_src latex
+  Horizontal \hspace{1cm} spaces can be inserted manually. Useful 
+  to control the fine-tuning in the layout of pictures.
+
+  Left Side \hfill Right Side
+
+  \vspace{5mm} %5mm vertical space
+  This text still at the top, 5mm below the first paragraph.
+  \vfill
+  Text at the bottom of the page.
+#+end_src
 ** list
 *** description list
 #+BEGIN_SRC latex
@@ -267,6 +365,21 @@ The same limit on display:
 \end{description}
 \end{document}
 #+END_SRC
+*** better description list
+#+begin_src latex
+\documentclass{article}
+\usepackage{enumitem}
+\setlist[description]{leftmargin=\parindent,labelindent=\parindent}
+\begin{document}
+\section{Test}
+left aligned text
+\begin{description}
+ \item[One] first item
+ \item[Two] second item
+ \item[Three] third item
+\end{description}
+\end{document}
+#+end_src
 *** change the label individually
 #+BEGIN_SRC latex
 \documentclass{article}
@@ -499,7 +612,15 @@ Or better
 \end{center}
 \end{document}
 #+end_src
-*** Specify the width of column, then let TeX evenly distributes em
+*** tabularx
+**** theory: apecification for a column
+>{Your thing}X
+e.g.
+>{\small}X
+>{\raggedright\arraybackslash}X.
+#             ^^^^^^^^^^^^^^^ add this after \raggedright, the corrects the
+# blackslash magic of \raggedright
+**** Specify the width of column, then let TeX evenly distributes em
 #+begin_src latex
 \documentclass{article}
 \usepackage{tabularx}
@@ -514,6 +635,51 @@ Or better
   item 21  & item 22  & item 23  \\
   \hline
 \end{tabularx}
+\end{document}
+#+end_src
+**** 2:1:1 column width
+#+begin_src latex
+\documentclass{article}
+\usepackage{tabularx}
+
+\newcolumntype{b}{X}
+\newcolumntype{s}{>{\hsize=.5\hsize}X}
+
+\begin{document}
+
+\begin{table}[htbp]
+  \centering
+  % \begin{tabularx}{\textwidth}{| X | X | X |}
+  \begin{tabularx}{\textwidth}{bss}
+    \hline
+    Alpha     & Beta     & Gamma     \\ \hline
+    0         & 2        & 4         \\ \hline
+    1         & 3        & 5         \\ \hline
+  \end{tabularx}
+\end{table}
+\end{document}
+#+end_src
+**** center the heading only
+#+begin_src latex
+\documentclass{article}
+\usepackage{tabularx}
+
+\newcolumntype{b}{X}
+\newcolumntype{s}{>{\hsize=.5\hsize}X}
+\newcommand{\heading}[1]{\multicolumn{1}{c}{#1}}
+
+\begin{document}
+
+\begin{table}[htbp]
+  \centering
+  % \begin{tabularx}{\textwidth}{| X | X | X |}
+  \begin{tabularx}{\textwidth}{bss}
+    \hline
+    \heading{Alpha}     & \heading{Beta}     & \heading{Gamma}     \\ \hline
+    0         & 2        & 4         \\ \hline
+    1         & 3        & 5         \\ \hline
+  \end{tabularx}
+\end{table}
 \end{document}
 #+end_src
 *** Merge cells horizontally
@@ -1008,6 +1174,33 @@ As you can see in the figure \ref{fig:mesh1}, the
 function grows near 0. Also, in the page \pageref{fig:mesh1} 
 is the same example.
 #+end_src
+**** Make the caption narrower
+#+begin_src latex
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\newlength\mylength
+
+\usepackage{lipsum}
+\begin{document}
+
+\lipsum
+
+\begin{figure}
+  \adjustimage{height=5cm, gstore width=\mylength, center}{/home/me/Pictures/cloud.jpg}
+  % alternative: \adjustbox{gstore width=\mylength,center}{\includegraphics[height=10cm]{example-image}}
+  \par% or empty line, needed to get caption below the image, not to the rigth
+  \adjustbox{minipage=\mylength,center}{\caption{My very long long long long long long long long long long long long long long long long long long long caption }}
+\end{figure}
+
+\lipsum
+
+\end{document}
+#+end_src
+*** flush the floats without adding a new page
+#+begin_src latex
+\FloatBarrier                   % \usepackage{placeins}
+#+end_src
 ** symbols
 *** trademarks, copyright
 #+begin_src latex
@@ -1020,4 +1213,34 @@ Trademark: \texttrademark or \textsuperscript{TM} Math-Linux.Com  \\
 Registered: \textregistered Math-Linux.Com \\
 \end{document}
 #+end_src
+** url
+#+begin_src latex
+  \usepackage{hyperref}
+  \hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Overleaf Example},
+    pdfpagemode=FullScreen,
+  }
 
+  \urlstyle{same}
+
+
+  \url{http://www.overleaf.com}
+#+end_src
+** comment
+
+
+#+begin_src latex
+\usepackage{comment}
+\begin{document}
+\section{Multi-line comments}}
+\begin{comment}
+This is a comment,
+a multi-line comment,
+indeed.
+\end{comment}
+\end{document}
+#+end_src

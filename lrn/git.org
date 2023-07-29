@@ -1,10 +1,51 @@
-* Modifying History
-| To-Do                                             | Command                                  | Warning                               |
-|---------------------------------------------------+------------------------------------------+---------------------------------------|
-| change the last commit (both content and message) | commit --amend                           | Do not do after push                  |
-| change the last commit (only content)             | commit --amend --no-edit                 |                                       |
-| watch the last 3 commits and format               | log --pretty=format:"%h %s" HEAD~3..HEAD |                                       |
-| watch the last 3 commits                          | log -n 3                                 |                                       |
+** push to a remote branch
+git push hub jianer:fix-deps
+** fetch from server and delete some
+git fetch --all --prune
+** undo
+git commit --amend
+** git log
+Show relative date
+#+begin_src bash
+  git log -n 3 --relative-date --all
+#+end_src
+** .gitignore
+Must be added explicitly with
+#+BEGIN_SRC bash
+git add .gitignore
+#+END_SRC
+** conflict
+    After you see
+    
+    #+begin_src bash
+      $ git merge iss53
+      # Auto-merging index.html
+      # CONFLICT (content): Merge conflict in index.html
+      # Automatic merge failed; fix conflicts and then commit the result.
+    #+end_src
+    You can open the conflicted file (in this case, index.html). And see the
+    following blocks:
+#+begin_src org
+<<<<<<< HEAD:index.html
+<div id="footer">contact : email.support@github.com</div>
+=======
+<div id="footer">
+ please contact us at support@github.com
+</div>
+>>>>>>> iss53:index.html
+#+end_src
+
+Resolve the block by deleting the <<<<, =====, and >>>>
+** unstage all / a file
+git reset
+git reset hi.c
+** Modifying History
+| To-Do                                             | Command                                  | Warning              |
+|---------------------------------------------------+------------------------------------------+----------------------|
+| change the last commit (both content and message) | commit --amend                           | Do not do after push |
+| change the last commit (only content)             | commit --amend --no-edit                 |                      |
+| watch the last 3 commits and format               | log --pretty=format:"%h %s" HEAD~3..HEAD |                      |
+| watch the last 3 commits                          | log -n 3                                 |                      |
 
 ** Combine 3 commits into one
 
@@ -12,3 +53,24 @@ First ~rebase -i HEAD~3..HEAD~. We then enter the editor.
 Next change the commands before commits
 from ~pick-pick-pick~ to ~pick-squash-squash~.
 ...
+
+** config
+*** where
++ git config --system :: [path]/etc/gitconfig
++ ~ --global :: ~/.gitconfig or ~/.config/git/config
++ ~ --local (default) :: .git/config
+*** how
+#+begin_src bash
+  git config --list --show-origin
+  git config --global user.name "John Doe"
+  git config --global user.email johndoe@example.com
+  git config --global core.editor emacs
+  git config --global core.editor "'C:/Program Files/Notepad++/notepad++.exe' -multiInst -notabbar -nosession -noPlugin"
+  git config --global init.defaultBranch main
+
+  # show one
+  git config user.name
+
+  # remove
+  git config --global unset http.proxy
+#+end_src

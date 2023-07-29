@@ -1,0 +1,466 @@
+** stl
+*** lock
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+#include <vector>
+using std::vector;
+#include <algorithm>
+
+#include <map>
+#include <string>
+#include <chrono>
+#include <thread>
+#include <mutex>
+using std::string;
+
+BOOST_AUTO_TEST_CASE(basic_lock){
+  std::map<std::string, std::string> m;
+  std::mutex lock_for_m;
+
+  auto f = [&](const string &k){
+    // simulate a long page fetch
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::string r = "aaa";
+
+    std::lock_guard<std::mutex> g(lock_for_m);
+    m[k] = r;
+  };                            // unlock here
+
+  {
+    std::jthread t1(f,"k1");
+    std::jthread t2(f,"k2");
+  } // join here
+
+  BOOST_CHECK_EQUAL(m.size(),2);
+  BOOST_CHECK_EQUAL(m["k1"],"aaa");
+  BOOST_CHECK_EQUAL(m["k2"],"aaa");
+}
+
+BOOST_AUTO_TEST_CASE(unique_lock){
+  std::map<std::string, std::string> m;
+  std::mutex lock_for_m;
+
+  auto f = [&](const string &k){
+    // simulate a long page fetch
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::string r = "aaa";
+
+    std::unique_lock g(lock_for_m); // movable lock
+    m[k] = r;
+  };                            // unlock here
+
+  {
+    std::jthread t1(f,"k1");
+    std::jthread t2(f,"k2");
+  } // join here
+
+  BOOST_CHECK_EQUAL(m.size(),2);
+  BOOST_CHECK_EQUAL(m["k1"],"aaa");
+  BOOST_CHECK_EQUAL(m["k2"],"aaa");
+}
+
+BOOST_AUTO_TEST_CASE(test_move_lock){
+  std::map<std::string, std::string> m;
+  std::mutex lock_for_m;
+
+  auto g = [&](){
+    BOOST_TEST_MESSAGE("Deadlock here if the calling function forgot to unlock.");
+    std::unique_lock l(lock_for_m); // movable lock
+    m["B"] = "b";
+  };                            // unlock here
+
+  auto f = [&](){
+    std::unique_lock l(lock_for_m); // movable lock
+    m["A"] = "a";
+    l.unlock();                 // call this before pass it
+    g();
+  };                            // unlock here
+  f();
+  BOOST_CHECK_EQUAL(m.size(),2);
+}
+
+
+#+end_src
+*** std::function
+**** basic bind
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <functional>
+#include <memory>
+
+using std::function;
+
+int f(){return 123;}
+int f1(int i){return i;}
+
+struct f2 { //callable object
+  int i = 456;
+  int operator()(void) const{return this->i;}
+};
+
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  function<int(void)> x = f;
+  function<int(void)> x1 = std::bind(f1,234);
+  function<int(void)> x2 = [](){return 345;}; // store lambda
+  function<int(void)> x3 = f2();
+
+  BOOST_CHECK_EQUAL(123,x());
+  BOOST_CHECK_EQUAL(234,x1());
+  BOOST_CHECK_EQUAL(345,x2());
+  BOOST_CHECK_EQUAL(456,x3());
+}
+
+int g(int n1, int n2){
+  return n1 + 10 * n2;
+}
+BOOST_AUTO_TEST_CASE(test_reordering){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  int n = 1;
+  auto f1 = std::bind(g,n,_1);
+  BOOST_CHECK_EQUAL(f1(2,"I am unused"),g(n,2));
+}
+
+int g2(int n1, const int & n2){
+  return n1 + 10 * n2;
+}
+
+BOOST_AUTO_TEST_CASE(test_const_ref){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  int n = 1;
+  auto f1 = std::bind(g,std::cref(n),_1); // ref is bound
+  n = 10;
+  BOOST_CHECK_EQUAL(f1(2,"I am unused"),
+                    g(n,2));
+}
+
+BOOST_AUTO_TEST_CASE(test_rebind_using_lambda){
+  int n = 1;
+  auto f1 = [&nref = n](auto a, auto /*unused*/){
+    return g2(a,nref);
+  };
+
+  BOOST_CHECK_EQUAL(f1(2,"I am unused"),
+                    g(2,n));
+}
+
+int g3(int x,int y){return x + y;}
+int g4(int x,int y){return x + y;}
+using std::bind;
+BOOST_AUTO_TEST_CASE(test_nested_bind){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  auto g5 = bind(g3,bind(g4,_1,10),_1);
+  BOOST_CHECK_EQUAL(g5(123),
+                    g3(g4(123,10),123)
+                    );
+}
+
+struct A{
+  int g(int x ,int y){
+    return x + y + this->data;
+  }
+  int data = 10;
+};
+
+BOOST_AUTO_TEST_CASE(test_bind_member_function){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  A a;
+  auto f = bind(&A::g,&a,1,_1);
+  BOOST_CHECK_EQUAL(f(2),a.g(1,2));
+}
+
+BOOST_AUTO_TEST_CASE(test_bind_member_function2){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  A a;
+  auto ptr_to_g = std::mem_fn(&A::g);
+  auto f = bind(ptr_to_g,&a,1,_1);
+  BOOST_CHECK_EQUAL(f(2),a.g(1,2));
+}
+
+// 🦜 ? 这也行
+BOOST_AUTO_TEST_CASE(test_bind_to_data){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  A a;
+  auto ptr_to_data = std::mem_fn(&A::data);
+  auto f = bind(ptr_to_data,_1);
+  BOOST_CHECK_EQUAL(f(a),a.data);
+}
+
+BOOST_AUTO_TEST_CASE(test_bind_to_data2){
+  using namespace std::placeholders;  // for _1, _2, _3...
+  auto ptr_to_data = std::mem_fn(&A::data);
+  auto f = bind(ptr_to_data,_1);
+
+  A a;
+  BOOST_CHECK_EQUAL(f(std::make_shared<A>(a)),a.data);
+  BOOST_CHECK_EQUAL(f(std::make_unique<A>(a)),a.data);
+}
+
+#+end_src
+**** bind member function, wrong way and good way
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <functional>
+  #include <memory>
+  #include <unordered_map>
+  using std::unordered_map;
+  #include <iostream>
+
+
+  using std::function;
+  using std::bind;
+
+  // using namespace std::placeholders;  // for _1, _2, _3...
+
+  struct A{
+    int x;
+    int get_x(){
+      return this->x;
+    };
+    A (char c, int xx,
+       unordered_map<char,function<int()> > &m
+       ): x(xx){
+      BOOST_TEST_MESSAGE("bind in A");
+      m[c] = bind(&A::get_x,this);
+      // BOOST_CHECK_EQUAL(m[c](),xx);
+      // m[c] = bind(std::mem_fn(&A::get_x),this);
+    };
+    ~A(){
+      BOOST_TEST_MESSAGE("❌️ A");
+    }
+  };
+
+  /*
+    LESSON: 🦜 : Use shared_ptr if the object is not simple enough to be copied
+    around, which tamper with the address.
+  ,*/
+  BOOST_AUTO_TEST_CASE(test_bind_memfunc){
+
+    unordered_map<char,function<int()> > m;
+    unordered_map<char,std::shared_ptr<A>> ma;
+    for (char c : {'a','b','c'}){
+      ma.insert({c, make_shared<A>(c,2,m)});
+    }
+
+    BOOST_CHECK_EQUAL(m.size(),3);
+    BOOST_CHECK(m.contains('a'));
+    // BOOST_CHECK_EQUAL(m.at('a')(),2);
+
+    BOOST_TEST_MESSAGE("loop starts");
+    for (char c : {'a','b','c'}){
+      BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_NE(m[c](),2); // Wrong
+    }
+    BOOST_TEST_MESSAGE("map ends here");
+  }
+
+
+  // --------------------------------------------------
+  // enable_shared_from_this
+  class Good : public std::enable_shared_from_this<Good>{
+  public:
+    std::shared_ptr<Good> getptr(){
+      return shared_from_this();
+    }
+  };
+
+  class Best : public std::enable_shared_from_this<Best>{
+  public:
+    std::shared_ptr<Best> getptr(){
+      return shared_from_this();
+    }
+    // No public constructor, only a factory function,
+    // so there's no way to have getptr return nullptr.
+    [[nodiscard]] static std::shared_ptr<Best> create(){
+      // Not using std::make_shared<Best> because the c'tor is private.
+      return std::shared_ptr<Best>(new Best());
+    }
+  private:
+    Best() = default;
+  };
+
+  struct Bad{
+    std::shared_ptr<Bad> getptr(){
+      return std::shared_ptr<Bad>(this);
+    }
+    ~Bad() { std::cout << "Bad::~Bad() called\n"; }
+  };
+
+  using std::make_shared;
+  using std::shared_ptr;
+  BOOST_AUTO_TEST_CASE(test_good){
+    // Good: the two shared_ptr's share the same object
+    std::shared_ptr<Good> good0 = std::make_shared<Good>();
+    std::shared_ptr<Good> good1 = good0->getptr();
+    BOOST_CHECK_EQUAL(good1.use_count(),2);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_misuse_good){
+    // 🐢 Bad: shared_from_this is called without having std::shared_ptr owning the caller
+    // 🦜 : Oh, so the getPtr() is only supposed to be used by shared_ptr<>
+    BOOST_CHECK_THROW(
+                      {
+                        Good not_so_good;
+                        std::shared_ptr<Good> gp1 = not_so_good.getptr();
+                      }
+                      ,std::bad_weak_ptr); // undefined behavior until C++17
+  }
+
+  BOOST_AUTO_TEST_CASE(test_best){
+    // Best: Same but can't stack-allocate it:
+    shared_ptr<Best> best0 = Best::create();
+    shared_ptr<Best> best1 = best0->getptr();
+    BOOST_CHECK_EQUAL(best1.use_count(),2);
+    // std::cout << "best1.use_count() = " << best1.use_count() << '\n';
+    // Best stackBest; // <- Will not compile because Best::Best() is private.
+  }
+
+  BOOST_AUTO_TEST_CASE(test_best2){
+    // Best: Same but can't stack-allocate it:
+    shared_ptr<Best> best0 = Best::create();
+    shared_ptr<Best> best1 = best0->shared_from_this();
+    BOOST_CHECK_EQUAL(best1.use_count(),2);
+
+    // std::cout << "best1.use_count() = " << best1.use_count() << '\n';
+    // Best stackBest; // <- Will not compile because Best::Best() is private.
+  }
+
+  // BOOST_AUTO_TEST_CASE(test_bad){
+  //   // Bad, each shared_ptr thinks it's the only owner of the object
+  //   std::shared_ptr<Bad> bad0 = std::make_shared<Bad>();
+  //   std::shared_ptr<Bad> bad1 = bad0->getptr();
+  //   // std::cout << "bad1.use_count() = " << bad1.use_count() << '\n';
+  // } // double free or corruption
+
+  // --------------------------------------------------
+  // Use shared_ptr to bind A
+
+  class B : public std::enable_shared_from_this<B>{
+  public:
+    int x;
+    int get_x(){
+      return this->x;
+    };
+
+    std::shared_ptr<B> getptr(){
+      return shared_from_this();
+    }
+    // No public constructor, only a factory function,
+    // so there's no way to have getptr return nullptr.
+    [[nodiscard]] static std::shared_ptr<B> create(char c, int xx, unordered_map<char,function<int()> > &m){
+      // Not using std::make_shared<B> because the c'tor is private.
+      return std::shared_ptr<B>(new B(c,xx,m));
+    }
+    ~B(){
+      BOOST_TEST_MESSAGE("❌️ B");
+    }
+  private:
+    B (char c, int xx,
+       unordered_map<char,function<int()> > &m
+       ): x(xx){
+      BOOST_TEST_MESSAGE("bind in B");
+      m[c] = bind(&B::get_x,this); // OK
+      // m[c] = bind(&B::get_x,getptr()); // throw std::bad_weak_ptr
+    };
+  };
+
+  BOOST_AUTO_TEST_CASE(test_bind_memfunc_native_shared_ptr){
+
+    unordered_map<char,function<int()> > m;
+    unordered_map<char,std::shared_ptr<B>> ma;
+    for (char c : {'a','b','c'}){
+      ma.insert({c, B::create(c,2,m)});
+    }
+
+    BOOST_CHECK_EQUAL(m.size(),3);
+    BOOST_CHECK(m.contains('a'));
+
+    BOOST_TEST_MESSAGE("loop starts");
+    for (char c : {'a','b','c'}){
+      BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_EQUAL(m[c](),2); // 🦜 Wrong, this is not bind?
+      // BOOST_CHECK_NE(m[c](),2); // Wrong
+    }
+    BOOST_TEST_MESSAGE("map ends here");
+  }
+#+end_src
+*** atomic
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+#include <atomic>
+#include <thread>
+#include <vector>
+
+// with and without atomic
+
+BOOST_AUTO_TEST_CASE(test_basic_atomic){
+  std::atomic_int acnt;
+  int cnt;
+  auto f = [&acnt,&cnt](){
+    for (int n = 0; n < 1e3; ++n){
+      ++acnt;
+      ++cnt;
+      // Note: for this example, relaxed memory order
+      // is sufficient, e.g. acnt.fetch_add(1, std::memory_order_relaxed);
+    }
+  };
+
+  {
+    std::vector<std::jthread> pool;
+    for (int n = 0; n < 10; ++n)
+      pool.emplace_back(f);
+  } // joins here
+  BOOST_CHECK_EQUAL(acnt,1e4);  // acnt is incremented sanely
+  BOOST_CHECK_NE(cnt,1e4);      // cnt is crazy
+}
+
+BOOST_AUTO_TEST_CASE(test_bool_atomic){
+  // ALL atomic
+  std::atomic_flag b = ATOMIC_FLAG_INIT;
+  BOOST_CHECK_EQUAL(b.test(),false);
+
+  BOOST_CHECK_EQUAL(b.test_and_set(),false); // set to true, return current
+  BOOST_CHECK_EQUAL(b.test_and_set(),true); // set to true, return current
+  BOOST_CHECK_EQUAL(b.test(),true);
+
+  b.clear();                    // set to false
+  BOOST_CHECK_EQUAL(b.test(),false);
+}
+
+#+end_src
+*** bit_cast (C++20)
+#+begin_src c++
+#include <bit>
+
+using std::bit_cast;
+BOOST_AUTO_TEST_CASE(test_basic_bit_cast){
+  constexpr double f64 = 19880124.0;
+  constexpr auto u64 = bit_cast<std::uint64_t>(f64);
+
+  BOOST_CHECK_EQUAL(bit_cast<double>(u64),f64); // round trip
+}
+
+BOOST_AUTO_TEST_CASE(test_char_bit_cast){
+  char c = uint8_t{60};
+  uint8_t b = bit_cast<uint8_t>(c);
+  BOOST_CHECK_EQUAL(b,60);
+}
+
+
+#+end_src
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

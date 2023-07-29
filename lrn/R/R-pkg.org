@@ -73,6 +73,9 @@ p + coord_cartesian(xlim =c(Sys.Date() - 30, NA), ylim = c(10, 20))
 
 
 #+end_src
+*** Q/A:
+**** WARNING: Removed 4 rows containing missing values (`geom_bar()`). 
+You manually set the xlim/ylim, and some points are out of your sight
 *** Legend
 **** position
     #+begin_src R
@@ -246,6 +249,13 @@ par(mar = rep(0, 4), mfrow = c(2, 2))
   geom_line(aes(group = Subject)) + 
   geom_smooth(method = "lm", size = 2, se = FALSE)
 #> `geom_smooth()` using formula 'y ~ x'
+#+end_src
+*** bar chart
+#+begin_src R
+  df <- data.frame(x = 1:6, y = 8:13)
+base <- ggplot(df, aes(x, y)) + 
+  geom_col(aes(fill = x)) +                    # bar chart
+  geom_vline(xintercept = 3.5, colour = "red") # for visual clarity only
 #+end_src
 ** purr
 *** list comprehension
@@ -471,6 +481,23 @@ left_join(x, y, by = "key")
   flights2 %>%
     left_join(airports, c("origin" = "faa"))
   #+end_src
+** concat df
+#+begin_src R
+  df1 <- tribble(
+    ~x, ~y,
+    1,  1,
+    2,  1
+  )
+  df2 <- tribble(
+    ~x, ~y,
+    1,  1,
+    1,  2
+  )
+  intersect(df1, df2)
+  union(df1, df2)
+  setdiff(df1, df2)
+  setdiff(df2, df1)
+#+end_src
 ** dplyr
 *** rename columns
 #+begin_src R

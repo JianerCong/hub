@@ -1,0 +1,5 @@
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

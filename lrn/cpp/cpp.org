@@ -1,5 +1,40 @@
-** string
-*** length
+** Cpp
+*** c++ 11 literal
+#+begin_src c++
+    #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <string>
+  using std::string;
+
+  struct A{const char* x;};
+
+  A operator ""_a(const char* x){return A(x);};
+  A operator ""_a(const char* x,size_t){return A(x);};
+
+
+  BOOST_AUTO_TEST_CASE(test_literal) {
+    A a = 123_a;                  // call (1)
+    A b = "abc"_a;                // call (2)
+    BOOST_CHECK_EQUAL(a.x,string("123"));
+    BOOST_CHECK_EQUAL(b.x,string("abc"));
+  }
+  
+#+end_src
+*** cast
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  int x = 2;
+  uint64_t y = static_cast<uint64_t>(x);
+  BOOST_CHECK_EQUAL(x,y);
+}
+
+#+end_src
+*** string
+**** length
 #+begin_src c++
 // string::length
 #include <iostream>
@@ -12,8 +47,141 @@ int main ()
   return 0;
 }
 #+end_src
-** Move
-*** forward
+**** substring
+#+begin_src c++
+// string::substr
+#include <iostream>
+#include <string>
+
+int main ()
+{
+  std::string str="We think in generalities, but we live in details.";
+                                           // (quoting Alfred N. Whitehead)
+
+  std::string str2 = str.substr (3,5);     // "think"
+
+  std::size_t pos = str.find("live");      // position of "live" in str
+
+  std::string str3 = str.substr (pos);     // get from "live" to the end
+
+  std::cout << str2 << ' ' << str3 << '\n';
+
+  return 0;
+}
+#+end_src
+**** char in string
+#+begin_src c++
+// CPP program to demonstrate working of strchr()
+#include <iostream>
+#include <cstring>
+using namespace std;
+// Driver code
+int main()
+{
+    char str[] = "My name is Ayush";
+    char ch = 'A', ch2 = 'z';
+    if (strchr(str, ch) != NULL)
+        cout << ch << " "
+             << "is present in string" << endl;
+    else
+        cout << ch << " "
+             << "is not present in string" << endl;
+    if (strchr(str, ch2) != NULL)
+        cout << ch2 << " "
+             << "is present in string" << endl;
+    else
+        cout << ch2 << " "
+             << "is not present in string" << endl;
+    return 0;
+}
+#+end_src
+A is present in string
+z is not present in string
+**** regex
+#+begin_src c++
+  #include <iostream>
+  #include <iterator>
+  #include <string>
+  #include <regex>
+
+  int main()
+  {
+    // --------------------------------------------------
+    // Match or not
+    std::string s = "Some people, when confronted with a problem, think "
+      "\"I know, I'll use regular expressions.\" "
+      "Now they have two problems.";
+
+    std::regex self_regex("REGULAR EXPRESSIONS",
+                          std::regex_constants::ECMAScript | std::regex_constants::icase);
+    if (std::regex_search(s, self_regex)) {
+      std::cout << "Text contains the phrase 'regular expressions'\n";
+    }
+
+    // --------------------------------------------------
+    // find_all
+    std::regex word_regex("(\\w+)");
+    auto words_begin = std::sregex_iterator(s.begin(), s.end(), word_regex);
+    auto words_end = std::sregex_iterator();
+
+    std::cout << "Found "
+              << std::distance(words_begin, words_end)
+              << " words\n";
+
+    const int N = 6;
+    std::cout << "Words longer than " << N << " characters:\n";
+    for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+      std::smatch match = *i;
+      std::string match_str = match.str();
+      if (match_str.size() > N) {
+        std::cout << "  " << match_str << '\n';
+      }
+    }
+
+    // replace regexp
+    std::regex long_word_regex("(\\w{7,})");
+    std::string new_s = std::regex_replace(s, long_word_regex, "[$&]");
+    std::cout << new_s << '\n';
+  }
+#+end_src
+**** wchar_t
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_wide_char) {
+  wchar_t w = L'A';
+  char c = 'A';
+
+  BOOST_CHECK_EQUAL(w,65);
+  BOOST_CHECK_EQUAL(sizeof(w),4);
+  BOOST_CHECK_EQUAL(sizeof(c),1);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(test_wide_char_string) {
+  wchar_t w[] = L"ABC";
+
+  BOOST_CHECK_EQUAL(sizeof(w),4*4);
+  BOOST_CHECK_EQUAL(w[0],L'A');
+  // NULL-ended
+
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+#+end_src
+*** assert
+#+begin_src c++
+  #include <cstdio>
+  #include <cassert>
+
+
+  int main(int argc, char *argv[]){
+    assert(2==1);
+
+    return 0;
+  }
+#+end_src
+*** Move
+**** forward
  Trun into rvalue if possible.
  #+BEGIN_SRC c++
  // forward example
@@ -48,7 +216,7 @@ int main ()
    return 0;
  }
  #+END_SRC
-*** move
+**** move
  #+BEGIN_SRC c++
  // move example
  #include <utility>      // std::move
@@ -93,8 +261,8 @@ int main ()
  // BB is :
 
  #+END_SRC
-** Template
-*** Cannot initiate template (ld cannot find class)
+*** Template
+**** Cannot initiate template (ld cannot find class)
 [[https://stackoverflow.com/questions/8752837/undefined-reference-to-template-class-constructor]]
 Why:
 
@@ -110,7 +278,7 @@ Solution:
   template void MyFunc<std::string>(int x);  // Explicitly compile the template class for
                                       // float
 #+end_src
-*** Explicit specialization
+**** Explicit specialization
 Calling convention:
 non-template > explicit specialization > template
 #+begin_src c++
@@ -122,12 +290,11 @@ non-template > explicit specialization > template
 
   void f(myclass2 &, myclass2 &); // non-template function
 #+end_src
-** File
-*** simple
+*** File
+**** simple
 #+BEGIN_SRC c++
 /**
  * @file file.cpp
- * @author Jianer Cong
  * @brief Simple file input and output
  */
 #include <iostream>
@@ -168,7 +335,7 @@ int main(int argc, char *argv[]){
   }
 
 #+END_SRC
-*** readline
+**** readline
 #+BEGIN_SRC c++
 /**
  * @file file2.cpp
@@ -217,7 +384,7 @@ int main(int argc, char *argv[]){
   }
 
 #+END_SRC
-*** skip comments
+**** skip comments
 #+BEGIN_SRC c++
 /**
  * @file file3.cpp
@@ -343,148 +510,7 @@ void report_bad_file(string s){
 
 
 #+END_SRC
-** Vector
-*** erase
-#+BEGIN_SRC c++
-// erasing from vector
-
-#include <iostream>
-#include <vector>
-using std::cout;
-
-#define SHOW std::cout << "myvector contains:"; \
-  for (unsigned i=0; i<myvector.size(); ++i)    \
-    std::cout << ' ' << myvector[i];            \
-  std::cout << '\n'
-
-int main ()
-{
-  std::vector<int> myvector;
-
-  // set some values (from 1 to 10)
-  for (int i=1; i<=10; i++) myvector.push_back(i);
-  SHOW;
-
-  cout << "erase the 6th element: \n";
-  myvector.erase (myvector.begin()+5);
-  SHOW;
-
-  cout << "erase the first 3 elements: \n";
-  myvector.erase (myvector.begin(),myvector.begin()+3);
-  SHOW;
-
-
-  return 0;
-}
-
-#+END_SRC
-** List
-*** basic
-#+begin_src c++
-#include <algorithm>
-#include <iostream>
-#include <list>
- 
-int main()
-{
-  // Create a list containing integers
-  std::list<int> l = { 7, 5, 16, 8 };
- 
-  // Add an integer to the front of the list
-  l.push_front(25);
-  // Add an integer to the back of the list
-  l.push_back(13);
- 
-  // Insert an integer before 16 by searching
-  auto it = std::find(l.begin(), l.end(), 16);
-  if (it != l.end()) {
-    l.insert(it, 42);
-  }
- 
-  // Print out the list
-  std::cout << "l = { ";
-  for (int n : l) {
-    std::cout << n << ", ";
-  }
-  std::cout << "};\n";
-}
-
-#+end_src
-*** random access
-#+BEGIN_SRC c++
-// list::begin
-#include <iostream>
-#include <list>
-
-int main ()
-{
-  int myints[] = {75,23,65,42,13};
-  std::list<int> mylist (myints,myints+5);
-
-  std::cout << "mylist contains:";
-  for (std::list<int>::iterator it=mylist.begin(); it != mylist.end(); ++it)
-    std::cout << ' ' << *it;
-
-  std::cout << '\n';
-
-  return 0;
-}
-#+END_SRC
-** map
-   #+begin_src c++
-/**
- * @file umap.cpp
- * @author Jianer Cong
- * @brief unordered map basic
- */
-
-#include <unordered_map>
-#include <iostream>
-
-using std::cout;
-using std::unordered_map;
-using std::endl;
-
-
-typedef unordered_map<int,const char*> umap;
-
-int main(int argc, char *argv[]){
-  umap m = {
-            { 1 , "one"},
-            {2, "two"}
-  };
-
-  cout << "Map contents are\n";
-  for (const auto& [k, v] : m){
-    cout << "Key " << k << " Value " << v << endl;
-  }
-
-  // Insert some value
-  m.insert({3,"three"});
-  m.insert({
-            {4,"four"}, {5,"five"}
-    });
-
-  m.emplace(4,"NO");
-  // Will not insert, since already exits/
-  m.emplace(6,"six");
-
-  cout << "Now the contents are:\n";
-  for (const auto& p : m){
-    cout << "\t"<< p.first << " : " << p.second << endl;
-  }
-
-  cout << "After erase one:\n";
-  m.erase(1);
-
-  for (const auto& p : m){
-    cout << "\t"<< p.first << " : " << p.second << endl;
-  }
-  return 0;
-  }
-
-   #+end_src
-** iomanip
+*** iomanip
  #+begin_src c++
 #include <iostream>
 #include <string>
@@ -548,8 +574,8 @@ int main(int argc, char *argv[]){
 }
 
  #+end_src
-** functions
-*** lambdas
+*** functions
+**** lambdas
 #+begin_src c++
 #include <iostream>
 #include <string>
@@ -569,7 +595,7 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
-*** call list of function
+**** call list of function
 #+begin_src c++
 #include <iostream>
 #include <cstdio>
@@ -604,7 +630,7 @@ int main ()
 }
 
 #+end_src
-*** variadic arguments
+**** variadic arguments
 #+begin_src c++
 #include <stdio.h>
 #include <stdarg.h>
@@ -639,7 +665,7 @@ int main(void)
 }
 
 #+end_src
-*** vprintf
+**** vprintf
 #+begin_src c++
 /* vprintf example */
 #include <stdio.h>
@@ -662,7 +688,7 @@ int main ()
 }
 
 #+end_src
-*** vsprintf
+**** vsprintf
 #+begin_src c++
 /* vsprintf example */
 #include <stdio.h>
@@ -685,9 +711,9 @@ int main ()
 }
 
 #+end_src
-** class
-*** Inheritance
-**** Call base class method
+*** class
+**** Inheritance
+***** Call base class method
 #+begin_src c++
 #include <iostream>
 #include <string>
@@ -728,7 +754,7 @@ int main(int argc, char *argv[]){
   return 0;
   }
 #+end_src
-**** inheriting an exception
+***** inheriting an exception
 #+begin_src csharp
 #include <iostream>
 #include <stdexcept>
@@ -763,13 +789,155 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
-** Exception
+**** friend
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <string>
+
+using bytes = std::basic_string<uint8_t>;
+using std::string;
+
+
+namespace n1{
+  class A{
+  public:
+    friend class B;
+  private:
+    // private constant
+    const static int y{123};
+  };
+
+  class B{
+  public:
+    int y;
+    // Access friend's private const
+    B(): y(A::y){}
+  };
+}
+
+BOOST_AUTO_TEST_CASE(access_private_const) {
+  n1::B b;
+  n1::A a;
+  BOOST_CHECK_EQUAL(b.y,123);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+
+
+namespace n2{
+  class A{
+  public: friend class B;
+  private: int y;
+  };
+
+  class B{
+    A a;
+  public:
+    B(A _a): a(_a){}
+    // get set member friend's
+    int get(){return a.y;};
+    void set(int y){a.y=y;};
+  };
+}
+BOOST_AUTO_TEST_CASE(member_friend){
+  n2::B b{n2::A()};
+  b.set(123);
+  BOOST_CHECK_EQUAL(b.get(),123);
+}
+
+namespace n3{
+  class A{
+  public: friend class B;
+  private: int y;
+  };
+
+  class B{
+  public:
+    // get set passed-in friend's
+    int get(A&a){return a.y;};
+    void set(A&a,int y){a.y=y;};
+  };
+}
+BOOST_AUTO_TEST_CASE(passed_in_friend){
+  n3::B b;
+  n3::A a;
+  b.set(a,123);
+  BOOST_CHECK_EQUAL(b.get(a),123);
+}
+
+namespace n4{
+  class A;// forward def: neccesarry for friend function
+  // now compiler knows A--------------------------------------------------
+  class B{
+  public:
+    int get(A&a);
+    // Has to be implemented later
+  };
+  // now compiler knows B::get--------------------------------------------------
+  class A{
+  public:
+    friend int B::get(A& a);
+  private: int y = 123;
+  };
+  // now compiler knows everything -----------------------------------------
+  int B::get(A&a){return a.y;};
+}
+BOOST_AUTO_TEST_CASE(friend_func){
+  n4::B b;
+  n4::A a;
+  BOOST_CHECK_EQUAL(b.get(a),123);
+}
+
+#+end_src
+**** upcast
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <memory>
+
+using std::shared_ptr;
+
+class A {public: int x{1};};
+class A1 : public A{int y{2};};
+
+int f(const A & a){return a.x + 1;}
+int f(const A1 & a){return a.x + 2;}
+
+BOOST_AUTO_TEST_CASE(test_upcast_always_succeed){
+  A1 a1;
+
+  A* a = dynamic_cast<A*>(&a1); // you have to take it out
+
+  int r = f(*a);
+  BOOST_CHECK_EQUAL(r,2);
+}
+
+BOOST_AUTO_TEST_CASE(test_upcast_always_succeed_reference){
+  A1 a1;
+  A& a = dynamic_cast<A&>(a1); // you have to take it out
+  int r = f(a);
+  BOOST_CHECK_EQUAL(r,2);
+}
+
+// 🦜 : The following won't work.
+
+// BOOST_AUTO_TEST_CASE(test_upcast_always_succeed_shared_ptr){
+//   A1 a1;
+
+//   shared_ptr<A> a{dynamic_cast<A*>(&a1)};
+
+//   int r = f(*a);
+//   BOOST_CHECK_EQUAL(r,2);
+// }
+
+#+end_src
+*** Exception
 1. domain_error
 2. invalid_argument
 3. length_error
 4. out_of_bounds
-** namespace and header
-*** hi.cpp
+*** namespace and header
+**** hi.cpp
 #+begin_src c++
 #include "hi.h"
 
@@ -790,7 +958,7 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
-*** hi.h
+**** hi.h
 #+begin_src c++
 #include <iostream>
 #include <cstdio>
@@ -806,7 +974,7 @@ namespace my_namespace{
 
 
 #+end_src
-*** global namespace
+**** global namespace
 How to refer to the global namespace
 #+begin_src c++
 bool isGood(){ return_if_it_is_good;}
@@ -816,41 +984,52 @@ int a;
 bool isGood(){return ::isGood(a);}
 }
 #+end_src
-** Time
+*** Time
 #+begin_src c++
-#include <ctime>
-#include <iostream>
-using namespace std;
+  #include <ctime>
+  #include <iostream>
+  using namespace std;
 
-int main()
-{
-	time_t curr_time;
-	tm * curr_tm;
-	char date_string[100];
-	char time_string[100];
-	
-	time(&curr_time);
-	curr_tm = localtime(&curr_time);
-	
-	strftime(date_string, 50, "Today is %B %d, %Y", curr_tm);
-	strftime(time_string, 50, "Current time is %T", curr_tm);
-	
-	cout << date_string << endl;
-	cout << time_string << endl;
-	
-	return 0;
-}
+  int main()
+  {
+    char date_string[100];
+    char time_string[100];
+
+    time_t curr_time;
+    tm* curr_tm;
+    time(&curr_time);
+    // std::time_t ms = std::time(nullptr); ms since Epoch
+    curr_tm = localtime(&curr_time);
+
+    strftime(date_string, 50, "Today is %B %d, %Y", curr_tm);
+    strftime(time_string, 50, "Current time is %T", curr_tm);
+
+    cout << date_string << endl;
+    cout << time_string << endl;
+
+    return 0;
+  }
 
 #+end_src
-** sleep
+*** this pointer
 #+begin_src c++
-  #ifdef _WIN32
-  #include <Windows.h>
-  #else
-  #include <unistd.h>
-  #endif
-  // unsigned sleep(unsigned seconds);
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
 
+class A{
+protected:
+  int a;
+public:
+  int f(){return this->a;}
+  int g(){return this->f();}
+  explicit A(int _a): a(_a){}
+};
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  A a{1};
+  BOOST_CHECK_EQUAL(a.f(),1);
+  BOOST_CHECK_EQUAL(a.g(),1);
+}
 
 #+end_src
 * End

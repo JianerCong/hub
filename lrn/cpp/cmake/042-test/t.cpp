@@ -10,4 +10,4 @@ int main(int argc, char *argv[]){
   const double x = std::stod(argv[1]);
   cout << "So twice is " << x * 2 << endl;
   return 0;
-  }
+}

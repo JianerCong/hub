@@ -1,13 +1,15 @@
-x = 1
+import bpy
+import random
 
-class C():
-    x = globals()['x']
-    y = globals().get('y', None)
-    print(f"x is {x}")
-    print(f"y is {y}")
-    def __init__(self):
-        print(f"x is {C.x}")
-        print(f"y is {C.y}")
+def randf(lo,hi):
+    return random.uniform(lo,hi)
 
-c = C()
-# x is 1
+def randi(lo,hi):
+    return random.randint(lo,hi)
+
+def gauss(mean,stdev):
+    return random.gauss(mean,stdev)
+
+bpy.app.driver_namespace['randf'] = randf
+bpy.app.driver_namespace['randi'] = randi
+bpy.app.driver_namespace['gauss'] = gauss

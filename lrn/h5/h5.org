@@ -1,6 +1,56 @@
-** Animation
-*** css animation
-**** static transform
+** CSS
+*** flex
+#+begin_src sass
+  .box
+    display: flex
+    align-items: center
+    justify-content: space-around
+
+  #webgl-output
+    min-height: 400px
+    width: 80%
+    position: relative
+
+  /* #three-output
+  /*   position: relative
+
+  #subtitle
+    position: absolute
+    color: white
+    bottom: 10%
+    right: 20%
+    /* z-index: 99999
+#+end_src
+*** sass
+**** keyframes
+#+begin_src sass
+
+    @keyframes slide-in
+      from
+        margin-left: 100%
+        width: 300%
+
+
+      70%
+        margin-left: 90%
+        width: 150%
+
+
+      to
+        margin-left: 0%
+        width: 100%
+#+end_src
+** JS
+*** Q&A
+**** 404 favicon?
+Add the following tag in the ~<head>~
+#+begin_src html
+    <link rel="icon" href="./public/favicon.ico" type="image/x-icon">
+#+end_src
+
+*** Animation
+**** css animation
+***** static transform
 #+begin_src css
   /* basic transform */
   .robot {
@@ -24,8 +74,8 @@
       cursor: pointer;
   }
 #+end_src
-**** key frame animation
-***** basic + fill mode
+***** key frame animation
+****** basic + fill mode
 #+begin_src css
   /* scale */
   @keyframes scaleIn {
@@ -55,7 +105,7 @@
       animation-fill-mode: backwards;
   }
 #+end_src
-***** move and wiggle and repeat
+****** move and wiggle and repeat
 #+begin_src css
 
 
@@ -87,7 +137,7 @@ h2 {
 
 
 #+end_src
-***** typing animation steps
+****** typing animation steps
 #+begin_src css
 /* typing animation: steps */
 h1 {
@@ -112,7 +162,7 @@ h1 {
 }
 
 #+end_src
-***** let cloud fow: multiple assignment
+****** let cloud fow: multiple assignment
 #+begin_src css
   .cloud01 {
     animation: float 25s linear infinite;
@@ -148,7 +198,7 @@ h1 {
   img.cloud {width:150px;}
   .city img {width: 100%;}
 #+end_src
-***** play-state play animation on hover
+****** play-state play animation on hover
 #+begin_src css
 .sticker {
   animation: rotate 10s linear infinite;
@@ -167,7 +217,7 @@ h1 {
 
 
 #+end_src
-***** animation delay: flip the letters
+****** animation delay: flip the letters
 #+begin_src css
 
 h2 {
@@ -220,7 +270,7 @@ span:nth-child(7) {
   animation-delay: 1.2s, 3.95s;
 }
 #+end_src
-***** flip up and down
+****** flip up and down
 #+begin_src css
 
 h2 {
@@ -287,18 +337,146 @@ span:nth-child(7) {
 }
 
 #+end_src
-*** greensock
-**** install
+**** greensock
+***** install
 Use CDN link.
 #+begin_src bash
   npm install --save @types/greensock
 #+end_src
-** frontend tooling
-*** eslint
+**** tween
+***** install and use
+download and build from github
+#+begin_src bash
+  git clone https://github.com/tweenjs/tween.js
+  cd tween.js
+  npm i .
+  npm run build
+  cp dist/tween.es.js <your-project-dir>
+#+end_src
+Use
+#+begin_src js
+import TWEEN from './public/tween.esm.js';
+#+end_src
+***** basic
+#+begin_src js
+  var position = {x: 100, y: 0}
+  // Create a tween for position first
+  var tween = new TWEEN.Tween(position)
+  // Then tell the tween we want to animate the x property over 1000 milliseconds
+  tween.to({x: 200}, 1000)
+  // And set it to start
+  tween.start()
+  animate()
+  function animate() {
+    requestAnimationFrame(animate)
+    // [...]
+    TWEEN.update()
+    // [...]
+  }
+  // the onUpdate callback
+  tween.onUpdate(function (object) {
+    console.log(object.x)
+  })
+#+end_src
+***** with three.js
+
+#+begin_src js
+  var tween = new TWEEN.Tween(cube.position).to({x: 100, y: 100, z: 100}, 10000).start()
+
+  animate()
+
+  function animate() {
+    requestAnimationFrame(animate)
+    TWEEN.update()                // no need to do onUpdate()
+    threeRenderer.render(scene, camera)
+  }
+#+end_src
+***** update
+#+begin_src js
+  const tween = new TWEEN.Tween(someObject, false).to(/*...*/).start()
+  // add to default group = false
+
+  function animate(time) {
+    tween.update(time)
+    requestAnimationFrame(animate)
+  }
+#+end_src
+***** control
+#+begin_src js
+  tween.stop();
+
+  // chain
+  tweenA.chain(tweenB)
+  tweenA.chain(tweenB, tweenC)
+
+  tween.repeat(10) // repeats 10 times after the first tween and stops
+  tween.yoyo(true).repeat(10) // repeats 10 times after the first tween and stops
+  tween.repeat(Infinity) // repeats forever
+
+  tween.delay(1000)
+  tween.start()
+
+  tween.delay(1000)
+  tween.repeatDelay(500)          // 1-do-0.5-do-0.5-do-...
+  tween.start()
+#+end_src
+***** group
+#+begin_src js
+var groupA = new TWEEN.Group()
+var groupB = new TWEEN.Group()
+
+var tweenA = new TWEEN.Tween({x: 1}, groupA).to({x: 10}, 100).start()
+
+var tweenB = new TWEEN.Tween({x: 1}, groupB).to({x: 10}, 100).start()
+
+var tweenC = new TWEEN.Tween({x: 1}).to({x: 10}, 100).start()
+
+groupA.update() // only updates tweenA
+groupB.update() // only updates tweenB
+TWEEN.update() // only updates tweenC
+
+groupA.removeAll() // only removes tweenA
+groupB.removeAll() // only removes tweenB
+TWEEN.removeAll() // only removes tweenC
+#+end_src
+***** easing functions
+#+begin_src js
+tween.easing(TWEEN.Easing.Quadratic.In)
+#+end_src
+There are a few existing easing functions provided with tween.js. They are
+grouped by the type of equation they represent:
+
+Linear, Quadratic, Cubic, Quartic, Quintic, Sinusoidal, Exponential, Circular,
+Elastic, Back and Bounce,
+
+and then by the easing type:
+
+In, Out and InOut.
+***** Callbacks
+#+begin_src js
+  var trickyObjTween = new TWEEN.Tween({
+    propertyA: trickyObj.getPropertyA(),
+    propertyB: trickyObj.getPropertyB(),
+  })
+      .to({propertyA: 100, propertyB: 200})
+      .onUpdate(function (object) {
+        object.setA(object.propertyA)
+        object.setB(object.propertyB)
+      })
+
+  var tween = new TWEEN.Tween(obj).to({x: 100}).onStart(function () {
+    sound.play()
+  })
+
+
+  // onComplete, onStop, onRepeat
+  #+end_src
+*** frontend tooling
+**** eslint
 #+begin_src bash
   npm init @eslint/config
 #+end_src
-*** eslint react hook plugin
+**** eslint react hook plugin
 #+begin_src bash
 npm install eslint-plugin-react-hooks --save-dev
 #+end_src
@@ -318,23 +496,28 @@ Config
     }
   }
 #+end_src
-*** sass
+**** sass
 #+begin_src bash
   npm install -g sass
   sass style.sass style.css --watch
 #+end_src
-** React
-*** setup
+**** vite
+#+begin_src bash
+  npm create vite@latest
+
+  #+end_src
+*** React
+**** setup
 #+begin_src bash
   npx create-react-app my-app
   cd my-app
   npm start
 #+end_src
-*** Setup with vite
+**** Setup with vite
 #+begin_src bash
   npm create vite@latest
 #+end_src
-**** add vitest
+***** add vitest
 #+begin_src bash
   npm install @types/jest vitest @vitest/ui happy-dom jsdom vito react-test-renderer --save-dev
 #+end_src
@@ -360,10 +543,760 @@ Add scripts
     "test:ui": "vitest --ui"
   },
 #+end_src
+*** three.js
+Render <- (Camera, Renderer) it renders the portion of 3D scene that is inside
+the _frustum_ of the camera as a 2D image to a canvas.
+**** install
+#+begin_src bash
+  npm add three
+  npm add lil-gui
+#+end_src
+**** hi
+#+begin_src html
+  <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="webgl-output"></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
 
+#+end_src
+#+begin_src javascript
+  import * as THREE from 'three';
+
+  function init() {
+    // create a scene, that will hold all our elements such as objects, cameras and lights.
+    const scene = new THREE.Scene();
+    // create a camera, which defines where we're looking at.
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // create a render and set the size
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(new THREE.Color(0x000000));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    // create the ground plane --------------------------------------------------
+    const planeGeometry = new THREE.PlaneGeometry(60, 20, 10, 10);
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 15;
+    plane.position.y = 0;
+    plane.position.z = 0;
+    // add the plane to the scene
+    scene.add(plane);
+
+    // create a cube --------------------------------------------------
+    const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+    const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.castShadow = true;
+    // position the cube
+    cube.position.x = -4;
+    cube.position.y = 3;
+    cube.position.z = 0;
+    // add the cube to the scene
+    scene.add(cube);
+
+    // position and point the camera to the center of the scene
+    camera.position.x = -30;
+    camera.position.y = 40;
+    camera.position.z = 30;
+    camera.lookAt(scene.position);
+
+    // add subtle ambient lighting
+    const ambienLight = new THREE.AmbientLight(0xaaaaaa);
+    scene.add(ambienLight);
+    // add the output of the renderer to the html element
+    document.getElementById("webgl-output").appendChild(renderer.domElement);
+
+
+    // render --------------------------------------------------
+    render();
+    var step = 0;                 // use var to make it global
+    function render() {
+
+      // render using requestAnimationFrame
+      requestAnimationFrame(render);
+      renderer.render(scene, camera);
+    }
+  }
+
+  init();
+#+end_src
+**** load OBJ file
+#+begin_src js
+  import * as THREE from 'three';
+
+  import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+  import {GUI} from 'lil-gui';
+  import Stats from 'three/examples/jsm/libs/stats.module';
+  import {OBJLoader} from 'three/examples/jsm/loaders/OBJLoader';
+  import {visitChildren} from './utils';
+
+  let stats, scene, camera, renderer;
+
+  function setup_defaults(){
+    stats = new Stats();
+    document.body.appendChild(stats.dom);
+    // create a scene, that will hold all our elements such as objects, cameras and lights.
+    scene = new THREE.Scene();
+    // create a camera, which defines where we're looking at.
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // create a render and set the size
+    renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(new THREE.Color(0x000000));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    // position and point the camera to the center of the scene --------------------------------------------------
+    camera.position.x = -30;
+    camera.position.y = 40;
+    camera.position.z = 30;
+    camera.lookAt(scene.position);
+
+  }
+
+  function init_plane(){
+    // create the ground plane --------------------------------------------------
+    const planeGeometry = new THREE.PlaneGeometry(60, 20, 1, 1);
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 15;
+    plane.position.y = 0;
+    plane.position.z = 0;
+    // add the plane to the scene
+    scene.add(plane);
+  }
+
+  function init_cube(){
+    // create a cube --------------------------------------------------
+    const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+    const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.castShadow = true;
+    // position the cube
+    cube.position.x = -4;
+    cube.position.y = 3;
+    cube.position.z = 0;
+    // add the cube to the scene
+    scene.add(cube);
+    return cube;
+  }
+
+  function init_light(){
+    // add subtle ambient lighting
+    const ambienLight = new THREE.AmbientLight(0x353535);
+    scene.add(ambienLight);
+    // add spotlight for the shadows
+    const spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(-10, 20, -5);
+    spotLight.castShadow = true;
+    scene.add(spotLight);
+  }
+
+
+  async function load_submarine(){
+    let mat = new THREE.MeshPhongMaterial({color: 0xaaaaaa});
+    let l = new OBJLoader();
+
+    let m = await l.loadAsync('./public/submarine.obj');
+    let s = 1;
+    m.scale.set(s,s,s);
+    // m.translate()
+    visitChildren(m, (ch) => {
+      ch.recieveShadow = true;
+      ch.castShadow = true;
+      ch.material = mat;
+    }
+                 );
+    scene.add(m);
+  }
+
+  function init() {
+    setup_defaults();
+
+
+
+
+    init_plane();
+    init_light();
+    load_submarine();
+
+
+
+
+    // add the output of the renderer to the html element
+    document.getElementById("webgl-output").appendChild(renderer.domElement);
+    // GUI --------------------------------------------------
+    const controls = {rotationSpeed : 0.01,};
+    const gui = new GUI();
+    gui.add(controls, 'rotationSpeed', 0, 0.05,0.01);
+    const o = new OrbitControls(camera,renderer.domElement);
+
+    // render --------------------------------------------------
+    render();
+    var step = 0;                 // use var to make it global
+    function render() {
+      // update the stats and the controls
+      stats.update();
+
+      // render using requestAnimationFrame
+      requestAnimationFrame(render);
+      renderer.render(scene, camera);
+    }
+  }
+
+  init();
+
+#+end_src
+utils.js
+#+begin_src js
+export const visitChildren = (object, fn) => {
+  if (object.children && object.children.length > 0) {
+    for (const child of object.children) {
+      visitChildren(child, fn)
+    }
+  } else {
+    fn(object)
+  }
+}
+
+#+end_src
+**** gui orbit template
+#+begin_src js
+import * as THREE from 'three';
+
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+import {GUI} from 'lil-gui';
+
+import Stats from 'three/examples/jsm/libs/stats.module';
+
+
+function init() {
+  const stats = new Stats();
+  document.body.appendChild(stats.dom);
+  // create a scene, that will hold all our elements such as objects, cameras and lights.
+  const scene = new THREE.Scene();
+  // create a camera, which defines where we're looking at.
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+  // create a render and set the size
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setClearColor(new THREE.Color(0x000000));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+
+  // create the ground plane --------------------------------------------------
+  const planeGeometry = new THREE.PlaneGeometry(60, 20, 1, 1);
+  const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane.receiveShadow = true;
+  // rotate and position the plane
+  plane.rotation.x = -0.5 * Math.PI;
+  plane.position.x = 15;
+  plane.position.y = 0;
+  plane.position.z = 0;
+  // add the plane to the scene
+  scene.add(plane);
+
+  // create a cube --------------------------------------------------
+  const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+  const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+  const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+  cube.castShadow = true;
+  // position the cube
+  cube.position.x = -4;
+  cube.position.y = 3;
+  cube.position.z = 0;
+  // add the cube to the scene
+  scene.add(cube);
+
+  // position and point the camera to the center of the scene --------------------------------------------------
+  camera.position.x = -30;
+  camera.position.y = 40;
+  camera.position.z = 30;
+  camera.lookAt(scene.position);
+
+  // add subtle ambient lighting
+  const ambienLight = new THREE.AmbientLight(0x353535);
+  scene.add(ambienLight);
+
+  // add spotlight for the shadows
+  const spotLight = new THREE.SpotLight(0xffffff);
+  spotLight.position.set(-10, 20, -5);
+  spotLight.castShadow = true;
+  scene.add(spotLight);
+
+  // add the output of the renderer to the html element
+  document.getElementById("webgl-output").appendChild(renderer.domElement);
+
+  // GUI --------------------------------------------------
+  const controls = {
+    rotationSpeed : 0.01,
+  };
+  const gui = new GUI();
+  gui.add(controls, 'rotationSpeed', 0, 0.05,0.01);
+
+  // orbit --------------------------------------------------
+  const o = new OrbitControls(camera,renderer.domElement);
+
+
+  // render --------------------------------------------------
+  render();
+  var step = 0;                 // use var to make it global
+  function render() {
+    // update the stats and the controls
+    stats.update();
+
+    // rotate the cube around its axes
+    cube.rotation.x += controls.rotationSpeed;
+    cube.rotation.y += controls.rotationSpeed;
+    cube.rotation.z += controls.rotationSpeed;
+
+
+    // render using requestAnimationFrame
+    requestAnimationFrame(render);
+    renderer.render(scene, camera);
+  }
+}
+
+init();
+
+#+end_src
+**** gui and stats
+there is a <div id=web-gl-output>
+#+begin_src js
+  import * as THREE from 'three';
+
+  import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+  import {GUI} from 'lil-gui';
+
+  import Stats from 'three/examples/jsm/libs/stats.module';
+
+  function init() {
+    const stats = new Stats();
+    document.body.appendChild(stats.dom);
+    // create a scene, that will hold all our elements such as objects, cameras and lights.
+    const scene = new THREE.Scene();
+    // create a camera, which defines where we're looking at.
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // create a render and set the size
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(new THREE.Color(0x000000));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    // create the ground plane --------------------------------------------------
+    const planeGeometry = new THREE.PlaneGeometry(60, 20, 1, 1);
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 15;
+    plane.position.y = 0;
+    plane.position.z = 0;
+    // add the plane to the scene
+    scene.add(plane);
+
+    // create a cube --------------------------------------------------
+    const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+    const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.castShadow = true;
+    // position the cube
+    cube.position.x = -4;
+    cube.position.y = 3;
+    cube.position.z = 0;
+    // add the cube to the scene
+    scene.add(cube);
+
+    // sphere --------------------------------------------------
+    const sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
+    const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x7777ff });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    // position the sphere
+    sphere.position.x = 20;
+    sphere.position.y = 0;
+    sphere.position.z = 2;
+    sphere.castShadow = true;
+
+    // add the sphere to the scene
+    scene.add(sphere);
+
+    // position and point the camera to the center of the scene
+    camera.position.x = -30;
+    camera.position.y = 40;
+    camera.position.z = 30;
+    camera.lookAt(scene.position);
+
+    // add subtle ambient lighting
+    const ambienLight = new THREE.AmbientLight(0x353535);
+    scene.add(ambienLight);
+
+    // add spotlight for the shadows
+    const spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(-10, 20, -5);
+    spotLight.castShadow = true;
+    scene.add(spotLight);
+
+    // add the output of the renderer to the html element
+    document.getElementById("webgl-output").appendChild(renderer.domElement);
+
+    // GUI --------------------------------------------------
+    const controls = {
+      rotationSpeed : 0.01,
+      bouncingSpeed : 0.01,
+    };
+    const gui = new GUI();
+    gui.add(controls, 'rotationSpeed', 0, 0.05,0.01);
+    gui.add(controls, 'bouncingSpeed', 0, 0.05,0.01);
+
+    // orbit --------------------------------------------------
+    const o = new OrbitControls(camera,renderer.domElement);
+
+
+
+
+    // render --------------------------------------------------
+    render();
+    var step = 0;                 // use var to make it global
+    function render() {
+      // update the stats and the controls
+      stats.update();
+
+      // rotate the cube around its axes
+      cube.rotation.x += controls.rotationSpeed;
+      cube.rotation.y += controls.rotationSpeed;
+      cube.rotation.z += controls.rotationSpeed;
+
+      // bounce the sphere up and down
+      step += controls.bouncingSpeed;
+      sphere.position.x = 20 + (10 * (Math.cos(step)));
+      sphere.position.y = 2 + (10 * Math.abs(Math.sin(step)));
+
+      // render using requestAnimationFrame
+      requestAnimationFrame(render);
+      renderer.render(scene, camera);
+    }
+  }
+
+  init();
+#+end_src
+**** sky
+https://github.com/loginov-rocks/three-sky
+#+begin_src bash
+npm install three three-sky
+#+end_src
+#+begin_src html
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - shaders - sky sun shader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - sky + sun shader
+		</div>
+
+		<!-- Import maps polyfill -->
+		<!-- Remove this when import maps will be widely supported -->
+		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { Sky } from 'three/addons/objects/Sky.js';
+
+			let camera, scene, renderer;
+
+			let sky, sun;
+
+			init();
+			render();
+
+			function initSky() {
+
+				// Add Sky
+				sky = new Sky();
+				sky.scale.setScalar( 450000 );
+				scene.add( sky );
+
+				sun = new THREE.Vector3();
+
+				/// GUI
+
+				const effectController = {
+					turbidity: 10,
+					rayleigh: 3,
+					mieCoefficient: 0.005,
+					mieDirectionalG: 0.7,
+					elevation: 2,
+					azimuth: 180,
+					exposure: renderer.toneMappingExposure
+				};
+
+				function guiChanged() {
+
+					const uniforms = sky.material.uniforms;
+					uniforms[ 'turbidity' ].value = effectController.turbidity;
+					uniforms[ 'rayleigh' ].value = effectController.rayleigh;
+					uniforms[ 'mieCoefficient' ].value = effectController.mieCoefficient;
+					uniforms[ 'mieDirectionalG' ].value = effectController.mieDirectionalG;
+
+					const phi = THREE.MathUtils.degToRad( 90 - effectController.elevation );
+					const theta = THREE.MathUtils.degToRad( effectController.azimuth );
+
+					sun.setFromSphericalCoords( 1, phi, theta );
+
+					uniforms[ 'sunPosition' ].value.copy( sun );
+
+					renderer.toneMappingExposure = effectController.exposure;
+					renderer.render( scene, camera );
+
+				}
+
+				const gui = new GUI();
+
+				gui.add( effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( guiChanged );
+				gui.add( effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged );
+				gui.add( effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( guiChanged );
+				gui.add( effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( guiChanged );
+				gui.add( effectController, 'elevation', 0, 90, 0.1 ).onChange( guiChanged );
+				gui.add( effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged );
+				gui.add( effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged );
+
+				guiChanged();
+
+			}
+
+			function init() {
+
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 100, 2000000 );
+				camera.position.set( 0, 100, 2000 );
+
+				scene = new THREE.Scene();
+
+				const helper = new THREE.GridHelper( 10000, 2, 0xffffff, 0xffffff );
+				scene.add( helper );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 0.5;
+				document.body.appendChild( renderer.domElement );
+
+				const controls = new OrbitControls( camera, renderer.domElement );
+				controls.addEventListener( 'change', render );
+				//controls.maxPolarAngle = Math.PI / 2;
+				controls.enableZoom = false;
+				controls.enablePan = false;
+
+				initSky();
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				render();
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+
+</html>
+
+#+end_src
+**** material list
++ ~THREE.MeshLambertMaterial~: A material for rough-looking surfaces
++ ~THREE.MeshPhongMaterial~: A material for shiny-looking surfaces
++ ~THREE.MeshToonMaterial~: Renders the mesh in a cartoon-like fashion
++ ~THREE.ShadowMaterial~: A material that only shows shadows cast on it; the
+  material is otherwise is transparent
++ ~THREE.MeshStandardMaterial~: A versatile material that can be used to represent
+  many different kinds of surfaces
++ ~THREE.MeshPhysicalMaterial~: Similar to THREE.MeshStandardMaterial but provides
+  additional properties for more real-world-like surfaces
+**** Q&A
++ .jpeg 加载进来透明背景色不显示？ :: In gimp, export as PNG
++ material not shown under the sea :: set ~material.depthFunc~
+*** nvm
+#+begin_src bash
+  nvm version                     # see version
+  nvm ls                          # what are installed
+  nvm current                     # see the current
+  nvm use 16
+  node -v
+  nvm use 14
+  node -v
+  nvm install 12
+  nvm uninstall 12
+  node -v
+
+  nvm install node                      #Install the latest available version
+  nvm use node                          #Use the latest version
+  nvm install --lts                     #Install the latest LTS version
+  nvm use --lts                         #Use the latest LTS version
+
+#+end_src
+*** vite
+npm create vite@latest
+*** typescript
+**** install
+#+begin_src bash
+npm install -g typescript
+
+#+end_src
+**** run the compiler
+#+begin_src bash
+  tsc *.ts --watch
+#+end_src
+**** tsconfig.json
+#+begin_src js
+{
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "removeComments": false,
+    "sourceMap": true,
+    "target": "es5",
+    "outDir": "dist"
+  },
+  "include": [
+    "scripts/**/*"
+  ]
+}
+#+end_src
+**** add recommanded tsconfig
+#+begin_src bash
+npm install --save-dev @tsconfig/recommended
+#+end_src
+extends
+#+begin_src js
+{
+  "extends": "@tsconfig/node12/tsconfig.json",
+  "compilerOptions": {
+    "preserveConstEnums": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
+#+end_src
+**** get to know a new lib
+#+begin_src js
+npm i --save-dev @types/three
+#+end_src
+*** DOM
+**** basic
+#+begin_src js
+  const sect = document.querySelector('section');
+  const para = document.createElement('p');
+  para.textContent = 'We hope you enjoyed the ride.';
+  sect.appendChild(para);
+  const text = document.createTextNode(' — the premier source for web development knowledge.');
+  const linkPara = document.querySelector('p');
+  linkPara.appendChild(text);
+  sect.appendChild(linkPara);
+  sect.removeChild(linkPara);
+  linkPara.remove();
+  linkPara.parentNode.removeChild(linkPara);
+
+  // Styles
+  para.style.color = 'white';
+  para.style.backgroundColor = 'black';
+  para.style.padding = '10px';
+  para.style.width = '250px';
+  para.style.textAlign = 'center';
+
+  para.setAttribute('class', 'highlight');
+#+end_src
+**** Event
+#+begin_src js
+  // Dispatch a custom event so the UI knows we are busy
+  document.dispatchEvent(new CustomEvent("busy", { detail: true }));
+  // Perform a network operation
+  fetch(url)
+    .then(handleNetworkResponse)
+    .catch(handleNetworkError)
+    .finally(() => {
+      // After the network request has succeeded or failed, dispatch
+      // another event to let the UI know that we are no longer busy.
+      document.dispatchEvent(new CustomEvent("busy", { detail: false }));
+    });
+  // Elsewhere, in your program you can register a handler for "busy" events
+  // and use it to show or hide the spinner to let the user know.
+  document.addEventListener("busy", (e) => {
+    if (e.detail) {
+      showSpinner();
+    } else {
+      hideSpinner();
+    }
+  });
+#+end_src
+** Canvas
+#+begin_src js
+  window.addEventListener("load", eventWindowLoaded, false);
+  function eventWindowLoaded () {
+     canvasApp();
+  }
+
+
+  let theCanvas = document.querySelector("#canvasOne");
+  // get the context
+  var context = theCanvas.getContext("2d");
+#+end_src
+#+begin_src html
+<canvas id="canvasOne" width="500" height="300">
+ Your browser does not support HTML5 Canvas.
+</canvas>
+#+end_src
 * End
 
 
 # Local Variables:
-# org-what-lang-is-for: "css"
+# org-what-lang-is-for: "js"
 # End:

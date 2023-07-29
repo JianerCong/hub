@@ -53,6 +53,61 @@ cd ../..
 rm -rf SourceCodePro
 
 #+end_src
+*** read epub
+#+begin_src bash
+  sudo apt install gnome-books
+#+end_src
+*** play video
+#+begin_src bash
+  sudo apt install vlc
+#+end_src
+*** avi to mp4
+#+begin_src bash
+  ffmpeg -i 'input.avi' out.mp4
+
+#+end_src
+** Blender Q&A
+*** sea and submarine transparency dosen't show up correctly
+sea.materialProperties.settings.blendMode='Alpha Blend'
+submarine.materialProperties.settings.blendMode='Opaque'
+*** link mesh and its animation?
+put the mesh in to a collection and links it.
+*** let obj follow path
++ make path
++ make obj
++ select obj
++ select path
++ Ctrl-P (parent) > follow path
++ animate the path.PathAnimation.EvaluationTime
+  (maybe clear the keyframes for it first, so you
+  can animate the object's movement manually, and
+  then let it follow the path.)
+*** timeline shortcuts
++ ctl-midMouseCLick-drag :: zoom
++ shf-scroll :: move Y
++ ctl-scroll :: move X
++ ctl-RMC :: add points
++ left-click :: box selects
+
++ H :: hide this
++ Shf-H :: solo this
++ Alt-H :: unhide all
+
++ select the f-curve + shf-E :: Extrapolation Mode
+*** dope sheet
++ E :: extend key frames
++ Shf-T :: slide (proportionlly extend)
++  S :: scale
+*** Action and Non-liner-editting (NLE)
++ NLE is the last place you compose animations
++ You first make some ani in dope sheet and then
+  in curve-editor. Then you make it an 'Action'
+  and push it to the NLE stack.
++ After you have pushed your action, it's not in
+  the dope sheet anymore, but it can be reused by
+  other objects
+*** Add Node hooks
+in edit mode, select the vertices and then ctl-H
 ** Packages
 *** Snap
 #+begin_src bash

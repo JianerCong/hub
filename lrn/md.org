@@ -1,0 +1,39 @@
+** code
+#+begin_src markdown
+    I created `.env` file at the root.
+    Backticks inside backticks? `` `No problem.` ``
+
+    ```
+    {
+      learning: "Markdown",
+      showing: "block code snippet"
+    }
+    ```
+
+    ```js
+    const x = "Block code snippet in JS";
+    console.log(x);
+    ```
+    #+end_src
+** ordered list
+#+begin_src markdown
+1. HTML
+2. CSS
+3. Javascript
+4. React
+7. I'm Frontend Dev now 👨🏼‍🎨
+   #+end_src
+
+** Unordered list
+#+begin_src markdown
+- Node.js
++ Express
+- Learning Backend ⌛️
+  #+end_src
+
+* End
+
+
+# Local Variables:
+# org-what-lang-is-for: "markdown"
+# End:

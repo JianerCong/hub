@@ -1,5 +1,7 @@
 ;; the hooks
+
 (autoload 'folding-mode          "folding" "Folding mode" t)
+;; (message "my hooks loaded")
 ;; load folding.el when 'folding-mode is required
   ;; (if (require 'folding nil 'noerror)
   ;;     (folding-mode-add-find-file-hook)
@@ -9,13 +11,13 @@
 (add-hook 'prog-mode-hook 'show-paren-mode)
 (add-hook 'prog-mode-hook 'column-number-mode)
 (add-hook 'prog-mode-hook 'electric-pair-mode)
+(add-hook 'prog-mode-hook 'hs-minor-mode)
 
 (add-hook 'prog-mode-hook 'hungry-delete-mode)
 (add-hook 'prog-mode-hook 'global-linum-mode)
 (add-hook 'prog-mode-hook 'folding-mode)
 (add-hook 'org-mode-hook 'auto-fill-mode)
 
-(message "my hooks loaded")
 ;; Enable rainbow paren
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 
@@ -25,7 +27,9 @@
       (add-hook 'LaTex-mode-hook #'rainbow-delimiters-mode)
       (add-hook 'LaTeX-mode-hook 'TeX-fold-mode)
       (add-hook 'LaTeX-mode-hook 'outline-minor-mode)
+      (add-hook 'LaTeX-mode-hook 'yas-minor-mode)
       (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
+
       )
   (message "Library `auctex' not found, skipping config")
 )

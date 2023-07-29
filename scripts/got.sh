@@ -5,10 +5,18 @@ declare -A addr
 h=$HOME
 
 addr["l"]="$h/Templates/lrn/"
-addr["p"]="$h/Templates/lrn/tex/prog/"
-addr["r"]="$h/Templates/lrn/h5/react/menu-app/"
-addr["n"]="$h/Templates/lrn/h5/react/react-native/"
-addr["w"]="/home/me/work/lcode/"
+# addr["t"]="$h/Templates/lrn/h5/threejs/try-sky/"
+# addr["w"]="$h/wspace/submarine/"
+addr["r"]="$h/repo/rock-chain-origin/"
+addr["n"]="$h/repo/notes/test-dia/"
+addr["w"]="$h/repo/notes/weak/"
+addr["h"]="$h/repo/hi/"
+addr["E"]="$h/repo/expr/"
+addr["R"]="$h/repo/"
+addr["p"]="$h/repo/notes/supply-chain-report/"
+addr["e"]="$h/repo/notes/test-evmone-mockedHost/"
+addr["t"]="$h/repo/try-rock-chain"
+# addr["c"]="$h/Downloads/cmake-3.26.0-rc4/Help/guide/tutorial/"
 
 {
     for s in "${!addr[@]}"; do

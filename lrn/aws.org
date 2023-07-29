@@ -315,6 +315,17 @@ services:
           --cluster-config tutorial \
           --ecs-profile tutorial-profile
 #+end_src
+** some notes about VPC-endpoints
++ Use port 443 instead of the standard Open.V.P.N port 1194, which will be
+  blocked to cause TSL handshack timesout.
++ When debugging
+  + When creating end-point, set ~Split-tunnel=True~, this makes it so that only
+    routes in the Route table are tunnelled.
+  + To add a Route:
+    + Add it in the Route table
+    + Add an Authorization rule for it to allow all user to use it.
++ To allow internet access to all for all 
++ the command to use ~openvpn --config <downloaded-config-file>~
 * End
 
 # Local Variables:

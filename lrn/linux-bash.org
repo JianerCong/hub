@@ -184,6 +184,28 @@ Use shift to get argument successively
       echo $str
   done
 #+END_SRC
+** watch for file change
+#+begin_src bash
+  sudo apt install inotify-tools
+
+  inotifywatch -v \               # verbose
+  -e access \
+     -e modify \
+     -t 60 \            # watch for 60s
+  -r ~/.beagle       # recursively this dir
+
+  # do sth
+  #!/bin/sh
+
+  # Watch a dir and do sth
+  inotifywait --monitor --recursive \
+              --timefmt '%d/%m/%y %H:%M' --format '%T %w %f' \
+              -e close_write /tmp/test |
+      while read -r date time dir file; do
+          changed_abs=${dir}${file}
+          echo "At ${time} on ${date}, file $changed_abs was changed" >&2
+      done
+#+end_src
 ** tempfile
 #+BEGIN_SRC bash
 #! /bin/bash
@@ -381,40 +403,32 @@ f1.o f2.o:
 # f2.o
 #     echo $@
 #+END_SRC
-** git
-*** .gitignore
-Must be added explicitly with
-#+BEGIN_SRC bash
-git add .gitignore
-#+END_SRC
-*** conflict
-    After you see
-    
-    #+begin_src bash
-      $ git merge iss53
-      # Auto-merging index.html
-      # CONFLICT (content): Merge conflict in index.html
-      # Automatic merge failed; fix conflicts and then commit the result.
-    #+end_src
-    You can open the conflicted file (in this case, index.html). And see the
-    following blocks:
-#+begin_src org
-<<<<<<< HEAD:index.html
-<div id="footer">contact : email.support@github.com</div>
-=======
-<div id="footer">
- please contact us at support@github.com
-</div>
->>>>>>> iss53:index.html
-#+end_src
-
-Resolve the block by deleting the <<<<, =====, and >>>>
-*** unstage all / a file
-git reset
-git reset hi.c
 ** date
 #+begin_src bash
   date +%Y-%m-%d
+#+end_src
+** openssl
+*** check sha1
+#+begin_src bash
+  openssl sha1 hi.txt
+#+end_src
+** rsync
+rsync -av from-dir to-dir
+** pipe stderr
+#+begin_src bash
+    command 2>&1 >/dev/null | grep 'something'
+    # stderr to stdout,
+  #  stdout to /dev/null (without affecting stderr)
+
+    command &| grep 'something'   # pipe both
+    command 2| grep 'something'   # pipe stderr
+#+end_src
+** comment
+🦜 : But it's not that good because it lost the syntax highlighting...
+#+begin_src bash
+<<comment
+ "Code" or "Comments"
+comment
 #+end_src
 * Tmux
 https://tmuxcheatsheet.com/
@@ -451,7 +465,7 @@ https://tmuxcheatsheet.com/
   C-b $                           # rename session
 #+end_src
 ** copy mode
-+ C-b ] :: enter
++ C-b [ :: enter
 + q :: quit
 + arrow-keys :: move
 + page-up/down :: ~
@@ -466,6 +480,27 @@ previous/next: n/p
 + vertically :: "
 + move to  :: <- ->
 + resize ::  <--> (holding ctrl)
+* misc
+** compare two directories
+#+begin_src bash
+  d1=/home/me/.local/openssl
+  d2=/usr/share/zsh/functions/Zle
+  sudo diff --brief --recursive $d2 $d1
+  diff --brief --recursive Dir1 Dir2 --exclude '*.log'
+
+  # -q: report only when files differ
+  diff -q directory-1/ directory-2/
+
+  # Use meld
+  sudo apt install meld
+
+  # to_remove=(certs  ct_log_list.cnf  ct_log_list.cnf.dist  misc  openssl.cnf  openssl.cnf.dist  private  share)
+  # for a in $to_remove; do
+  #     echo "removing $a"
+  #     sudo rm -rv $a
+  # done
+
+#+end_src
 
 * End
 # Local Variables:

@@ -1,0 +1,1909 @@
+** ethash
+*** install and hi
+**** install
+#+begin_src bash
+  cmake -S ethash-1.0.1 -B build-ethash
+  cmake --build build-ethash/
+  cmake --install build-ethash/ --prefix installed-ethash
+
+  # cmake --install build-ethash/ --prefix installed-ethash
+  # -- Install configuration: ""
+  # -- Installing: /home/me/repo/installed-ethash/lib/libkeccak.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash-global-context.a
+  # -- Installing: /home/me/repo/installed-ethash/include
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/version.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.h
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets-noconfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfigVersion.cmake
+
+  # Check the targets
+  cat /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake | grep add_library
+
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+# include("cmake/HunterGate.cmake")
+# HunterGate(
+#   URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+#   SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+# )
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# add the executable
+
+set(ethash_DIR "/home/me/repo/installed-ethash/lib/cmake/ethash/")
+find_package(ethash REQUIRED)     #do not explicitly specify the components
+
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework ethash::ethash)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+
+#+end_src
+**** test
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <ethash/keccak.hpp>
+  #include <string>
+  using std::string;
+  #include <string_view>
+  using std::string_view;
+
+
+  BOOST_AUTO_TEST_CASE(test_ethash){
+    string s = "baz(uint32,bool)";
+    ethash::hash256 h = ethash::keccak256(reinterpret_cast<uint8_t*>(s.data()),
+                                          s.size());
+
+    string_view v{reinterpret_cast<const char*>(h.bytes),4};
+    BOOST_CHECK_EQUAL(v,"\xcd\xcd\x77\xc0");
+
+    // Got from --------------------------------------------------
+    // from eth_hash.auto import keccak
+    // s='baz(uint32,bool)'
+    // b1 = bytes(s,'utf-8')
+    // b = keccak(b1)
+    // h = b.hex()
+    // h[:8] # 'cdcd77c0' the first 4 bytes used as function selector
+  }
+
+  BOOST_AUTO_TEST_CASE(test_xor){
+    uint8_t x{0xff};
+    uint8_t y{0x0f};
+
+    BOOST_CHECK_EQUAL(x^y,uint8_t{0xf0});
+  }
+#+end_src
+** jsoncpp
+*** install and hi
+**** install
+#+begin_src bash
+  cmake -S jsoncpp-1.9.5/ -B build-jsoncpp \
+        -DJSONCPP_WITH_TESTS=0 -DBUILD_SHARED_LIBS=0 \
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_OBJECT_LIBS=0
+  cmake --build build-jsoncpp
+  cmake --install build-jsoncpp --prefix installed-jsoncpp
+
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+# include("cmake/HunterGate.cmake")
+# HunterGate(
+#   URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+#   SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+# )
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# add the executable
+
+set(jsoncpp_DIR "/home/me/repo/installed-jsoncpp/lib/cmake/jsoncpp")
+# hunter_add_package(jsoncpp)
+find_package(jsoncpp CONFIG REQUIRED)
+
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework JsonCpp::JsonCpp)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** use
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <json/json.h>
+#include <json/reader.h>
+#include <json/writer.h>
+using Json::Value;
+using Json::CharReader;
+
+#include <memory>
+using std::unique_ptr;
+
+#include <string_view>
+using std::string_view;
+#include <string>
+using std::string;
+
+
+BOOST_AUTO_TEST_CASE(trivial_parse) {
+  string_view s = "{\"x\" : true}";
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+
+  Json::Value v;
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  bool x = v["x"].asBool();
+
+  BOOST_CHECK(ok);
+  BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
+  BOOST_CHECK_EQUAL(x,true);
+}
+
+BOOST_AUTO_TEST_CASE(parse_int_string_array) {
+  string_view s = "{"
+    "\"w\" : \"abc\","
+    "\"x\" : true,"
+    "\"y\" : [1,2,3],"
+    "}";
+  // CharReader* r = Json::CharReaderBuilder().newCharReader();
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+  Value v;
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  BOOST_REQUIRE(ok);
+
+  string w = v["w"].asString();
+  Value y = v["y"];
+  BOOST_REQUIRE_EQUAL(y.size(),3);
+  uint64_t i = y[1].asUInt64();
+
+  BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
+  BOOST_CHECK_EQUAL(w,"abc");
+  BOOST_CHECK_EQUAL(i,2);
+}
+
+BOOST_AUTO_TEST_CASE(parse_with_helper_func) {
+  // I feel like r->parse() is alright
+  string s = "{"
+    "\"w\" : \"abc\","
+    "}";
+  auto b = Json::CharReaderBuilder();
+  Value v; string err;
+  auto s1 = std::istringstream(s);
+  bool ok = Json::parseFromStream(b,s1,&v,&err);
+  BOOST_REQUIRE(ok);
+
+  string w = v["w"].asString();
+  BOOST_CHECK_EQUAL(w,"abc");
+}
+BOOST_AUTO_TEST_CASE(parse_obj) {
+  string_view s = "{"
+    "\"x\" : true,"
+    "\"y\" : {\"w\": 123},"
+    "}";
+  // CharReader* r = Json::CharReaderBuilder().newCharReader();
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+  Value v;
+
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  BOOST_REQUIRE(ok);
+
+  Value y = v["y"];
+  BOOST_REQUIRE_EQUAL(y.type(),Json::ValueType::objectValue);
+
+  BOOST_CHECK_EQUAL(y["w"].asUInt64(),123);
+}
+
+BOOST_AUTO_TEST_CASE(marshel_obj) {
+  // For convenience, use `writeString()` with a specialized builder.
+  Json::StreamWriterBuilder w;
+  Value v;                      // default to empty object
+  v["x"] = 1;
+  std::string d = Json::writeString(w,v);
+  BOOST_CHECK_EQUAL(d,"{\n"
+                    "\t\"x\" : 1\n"
+                    "}");
+}
+
+BOOST_AUTO_TEST_CASE(marshel_array) {
+  // For convenience, use `writeString()` with a specialized builder.
+  Json::StreamWriterBuilder w;
+  w.settings_["indentation"] = "";
+  Value v;                      // default to empty object
+  v["x"].append(1);
+  v["x"].append(2);
+  v["x"].append(3);
+  std::string d = Json::writeString(w,v);
+  BOOST_CHECK_EQUAL(d,"{\"x\":[1,2,3]}");
+}
+
+BOOST_AUTO_TEST_CASE(marshel_obj_with_options) {
+  Json::StreamWriterBuilder w;
+  w.settings_["indentation"] = "";
+  // empty indentation also omit newlines, so effectively makes it compact
+  w.settings_["emitUTF8"] = true;
+  Value v;                      // default to empty object
+  v["x"] = 1;
+  std::string d = Json::writeString(w,v);
+  // StreamWriter* w = Json::StreamWriterBuilder().newStreamWriter();
+  BOOST_CHECK_EQUAL(d,"{\"x\":1}");
+}
+
+BOOST_AUTO_TEST_CASE(iterate){
+  Json::Value v(Json::objectValue);
+  // Json::Value null_value; // null
+  // Json::Value arr_value(Json::arrayValue); // []
+  // Json::Value obj_value(Json::objectValue); // {}
+  v["x"] = 1;
+  v["y"] = "aaa";
+
+  Json::Value::Members ks = v.getMemberNames();
+  // ^^^^^^^^^^^^^^^^^^^^ Currently vector<string>
+  BOOST_CHECK_EQUAL(ks.size(),2);
+
+  BOOST_CHECK_EQUAL(ks[0],"x");
+  BOOST_CHECK_EQUAL(ks[1],"y");
+  BOOST_CHECK_EQUAL(v[ks[0]].asUInt64(),1);
+  BOOST_CHECK_EQUAL(v[ks[1]].asString(),"aaa");
+
+  BOOST_CHECK_EQUAL(v.size(),2);
+  }
+#+end_src
+** RocksDB
+*** install and run
+#+begin_src bash
+  sudo apt install libgflags-dev
+  sudo apt install libsnappy-dev
+  sudo apt install zlib1g-dev
+  sudo apt install libbz2-dev
+  sudo apt install liblz4-dev
+  sudo apt install libzstd-dev
+  sudo apt install libjemalloc-dev
+  sudo apt install liburing-dev
+
+  git clone https://github.com/facebook/rocksdb.git
+  cmake -S rocksdb/ -B build-rocksdb/ -DWITH_JEMALLOC=1 -DWITH_LIBURING=1 \
+        -DWITH_SNAPPY=1 -DWITH_LZ4=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DCMAKE_BUILD_TYPE=Release \
+
+  # cmake -S rocksdb/ -B build-rocksdb/ -DWITH_JEMALLOC=1 -DWITH_SNAPPY=1 -DWITH_LZ4=1 -DWITH_ZLIB=1 -DWITH_ZSTD=1 -DCMAKE_BUILD_TYPE=Release
+
+  cmake --build build-rocksdb
+  cmake --install build-rocksdb --prefix installed-rocksdb
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+set(CMAKE_CXX_COMPILER "g++")
+project(hi VERSION 1.1)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+set(RocksDB_DIR "/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb")
+include(/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake)
+
+find_package(RocksDB CONFIG REQUIRED)
+
+# add the executable
+add_executable(main test.cpp)
+
+target_link_libraries(main PUBLIC Boost::unit_test_framework RocksDB::rocksdb)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** cpp
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <rocksdb/db.h>
+
+
+
+BOOST_AUTO_TEST_CASE(t1) {
+  rocksdb::DB* d;
+
+  rocksdb::Options options;
+  options.IncreaseParallelism();
+  options.OptimizeLevelStyleCompaction();
+  options.create_if_missing = true;
+
+  rocksdb::Status status = rocksdb::DB::Open(options, "/tmp/testdb", &d);
+
+  BOOST_CHECK(status.ok());
+  delete d;
+}
+
+#+end_src
+*** Oh,what you did on my sys ?
+#+begin_src c++
+-- Install configuration: "Debug"
+-- Installing: /usr/include/rocksdb
+-- Installing: /usr/include/rocksdb/trace_record_result.h
+-- Installing: /usr/include/rocksdb/write_batch.h
+-- Installing: /usr/include/rocksdb/table_reader_caller.h
+-- Installing: /usr/include/rocksdb/flush_block_policy.h
+-- Installing: /usr/include/rocksdb/rate_limiter.h
+-- Installing: /usr/include/rocksdb/perf_level.h
+-- Installing: /usr/include/rocksdb/compaction_job_stats.h
+-- Installing: /usr/include/rocksdb/customizable.h
+-- Installing: /usr/include/rocksdb/stats_history.h
+-- Installing: /usr/include/rocksdb/memtablerep.h
+-- Installing: /usr/include/rocksdb/utilities
+-- Installing: /usr/include/rocksdb/utilities/lua
+-- Installing: /usr/include/rocksdb/utilities/lua/rocks_lua_util.h
+-- Installing: /usr/include/rocksdb/utilities/lua/rocks_lua_custom_library.h
+-- Installing: /usr/include/rocksdb/utilities/sim_cache.h
+-- Installing: /usr/include/rocksdb/utilities/transaction.h
+-- Installing: /usr/include/rocksdb/utilities/options_type.h
+-- Installing: /usr/include/rocksdb/utilities/stackable_db.h
+-- Installing: /usr/include/rocksdb/utilities/optimistic_transaction_db.h
+-- Installing: /usr/include/rocksdb/utilities/leveldb_options.h
+-- Installing: /usr/include/rocksdb/utilities/write_batch_with_index.h
+-- Installing: /usr/include/rocksdb/utilities/memory_util.h
+-- Installing: /usr/include/rocksdb/utilities/agg_merge.h
+-- Installing: /usr/include/rocksdb/utilities/customizable_util.h
+-- Installing: /usr/include/rocksdb/utilities/debug.h
+-- Installing: /usr/include/rocksdb/utilities/cache_dump_load.h
+-- Installing: /usr/include/rocksdb/utilities/option_change_migration.h
+-- Installing: /usr/include/rocksdb/utilities/options_util.h
+-- Installing: /usr/include/rocksdb/utilities/transaction_db.h
+-- Installing: /usr/include/rocksdb/utilities/db_ttl.h
+-- Installing: /usr/include/rocksdb/utilities/backup_engine.h
+-- Installing: /usr/include/rocksdb/utilities/checkpoint.h
+-- Installing: /usr/include/rocksdb/utilities/replayer.h
+-- Installing: /usr/include/rocksdb/utilities/transaction_db_mutex.h
+-- Installing: /usr/include/rocksdb/utilities/env_mirror.h
+-- Installing: /usr/include/rocksdb/utilities/object_registry.h
+-- Installing: /usr/include/rocksdb/utilities/ldb_cmd.h
+-- Installing: /usr/include/rocksdb/utilities/info_log_finder.h
+-- Installing: /usr/include/rocksdb/utilities/ldb_cmd_execute_result.h
+-- Installing: /usr/include/rocksdb/utilities/table_properties_collectors.h
+-- Installing: /usr/include/rocksdb/utilities/convenience.h
+-- Installing: /usr/include/rocksdb/sst_file_reader.h
+-- Installing: /usr/include/rocksdb/block_cache_trace_writer.h
+-- Installing: /usr/include/rocksdb/db_dump_tool.h
+-- Installing: /usr/include/rocksdb/statistics.h
+-- Installing: /usr/include/rocksdb/sst_file_writer.h
+-- Installing: /usr/include/rocksdb/file_system.h
+-- Installing: /usr/include/rocksdb/write_batch_base.h
+-- Installing: /usr/include/rocksdb/port_defs.h
+-- Installing: /usr/include/rocksdb/c.h
+-- Installing: /usr/include/rocksdb/iterator.h
+-- Installing: /usr/include/rocksdb/status.h
+-- Installing: /usr/include/rocksdb/trace_record.h
+-- Installing: /usr/include/rocksdb/snapshot.h
+-- Installing: /usr/include/rocksdb/table.h
+-- Installing: /usr/include/rocksdb/wide_columns.h
+-- Installing: /usr/include/rocksdb/threadpool.h
+-- Installing: /usr/include/rocksdb/comparator.h
+-- Installing: /usr/include/rocksdb/concurrent_task_limiter.h
+-- Installing: /usr/include/rocksdb/sst_dump_tool.h
+-- Installing: /usr/include/rocksdb/cache.h
+-- Installing: /usr/include/rocksdb/env_encryption.h
+-- Installing: /usr/include/rocksdb/persistent_cache.h
+-- Installing: /usr/include/rocksdb/file_checksum.h
+-- Installing: /usr/include/rocksdb/thread_status.h
+-- Installing: /usr/include/rocksdb/slice_transform.h
+-- Installing: /usr/include/rocksdb/secondary_cache.h
+-- Installing: /usr/include/rocksdb/unique_id.h
+-- Installing: /usr/include/rocksdb/iostats_context.h
+-- Installing: /usr/include/rocksdb/memory_allocator.h
+-- Installing: /usr/include/rocksdb/rocksdb_namespace.h
+-- Installing: /usr/include/rocksdb/transaction_log.h
+-- Installing: /usr/include/rocksdb/trace_reader_writer.h
+-- Installing: /usr/include/rocksdb/compaction_filter.h
+-- Installing: /usr/include/rocksdb/db.h
+-- Installing: /usr/include/rocksdb/listener.h
+-- Installing: /usr/include/rocksdb/env.h
+-- Installing: /usr/include/rocksdb/ldb_tool.h
+-- Installing: /usr/include/rocksdb/sst_partitioner.h
+-- Installing: /usr/include/rocksdb/experimental.h
+-- Installing: /usr/include/rocksdb/version.h
+-- Installing: /usr/include/rocksdb/sst_file_manager.h
+-- Installing: /usr/include/rocksdb/compression_type.h
+-- Installing: /usr/include/rocksdb/universal_compaction.h
+-- Installing: /usr/include/rocksdb/slice.h
+-- Installing: /usr/include/rocksdb/db_bench_tool.h
+-- Installing: /usr/include/rocksdb/advanced_cache.h
+-- Installing: /usr/include/rocksdb/io_status.h
+-- Installing: /usr/include/rocksdb/cache_bench_tool.h
+-- Installing: /usr/include/rocksdb/functor_wrapper.h
+-- Installing: /usr/include/rocksdb/perf_context.h
+-- Installing: /usr/include/rocksdb/db_stress_tool.h
+-- Installing: /usr/include/rocksdb/wal_filter.h
+-- Installing: /usr/include/rocksdb/data_structure.h
+-- Installing: /usr/include/rocksdb/write_buffer_manager.h
+-- Installing: /usr/include/rocksdb/cleanable.h
+-- Installing: /usr/include/rocksdb/metadata.h
+-- Installing: /usr/include/rocksdb/table_properties.h
+-- Installing: /usr/include/rocksdb/system_clock.h
+-- Installing: /usr/include/rocksdb/configurable.h
+-- Installing: /usr/include/rocksdb/convenience.h
+-- Installing: /usr/include/rocksdb/advanced_options.h
+-- Installing: /usr/include/rocksdb/options.h
+-- Installing: /usr/include/rocksdb/filter_policy.h
+-- Installing: /usr/include/rocksdb/types.h
+-- Installing: /usr/include/rocksdb/merge_operator.h
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Findlz4.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindJeMalloc.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Findgflags.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/CxxFlags.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Findzstd.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/ReadVersion.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindTBB.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindSnappy.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/modules/FindNUMA.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.a
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.so.8.3.0
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.so.8
+-- Installing: /usr/lib/x86_64-linux-gnu/librocksdb.so
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBTargets.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBTargets-debug.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBConfig.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/cmake/rocksdb/RocksDBConfigVersion.cmake
+-- Installing: /usr/lib/x86_64-linux-gnu/pkgconfig/rocksdb.pc
+
+#+end_src
+*** concept
++ 每个db对应一个文件夹，文件都在那里面。
+*** Basic
+**** Status？
+RocksDB容易出错的都会返回 ~rocksdb::Status~ 类型。
+#+begin_src c++
+rocksdb::Status s = ...;
+if (!s.ok()) cerr << s.ToString() << endl;
+#+end_src
+**** open db
+#+begin_src c++
+  #include <assert>
+  #include "rocksdb/db.h"
+
+  rocksdb::DB* db;
+  rocksdb::Options options;
+  options.create_if_missing = true;
+  // options.error_if_exists = true;
+  rocksdb::Status status =
+    rocksdb::DB::Open(options, "/tmp/testdb", &db);
+  assert(status.ok());
+  ...
+#+end_src
+**** closing db
+#+begin_src c++
+/* open the db as described above */
+/* do something with db */
+delete db;
+#+end_src
+**** CRUD: create/read/update/delete
+#+begin_src c++
+std::string value;
+rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &value);
+if (s.ok()) s = db->Put(rocksdb::WriteOptions(), key2, value);
+if (s.ok()) s = db->Delete(rocksdb::WriteOptions(), key1);
+#+end_src
+*** Deeper
+**** options
+你可以用方法来set，也可以用str-str Map来set。
+有些可以在跑的时候改
+#+begin_src c++
+rocksdb::Status s;
+s = db->SetOptions({{"write_buffer_size", "131072"}});
+assert(s.ok());
+s = db->SetDBOptions({{"max_background_flushes", "2"}});
+assert(s.ok());
+#+end_src
+这些会被储存在 OPTIONS-xxxx 文件之中。
+具体option见：https://github.com/facebook/rocksdb/wiki/Basic-Operations
+几个可能会用的有
+#+begin_src c++
+  std::unordered_map<std::string, std::string> cf_options_map = {
+      {"write_buffer_size", "1"},
+      {"max_write_buffer_number", "2"},
+      {"compression", "kSnappyCompression"},
+      {"compression_per_level",
+       "kNoCompression:"
+       "kSnappyCompression:"
+       "kZlibCompression:"
+       "kBZip2Compression:"
+       "kLZ4Compression:"
+       "kLZ4HCCompression:"
+       "kXpressCompression:"
+       "kZSTD:"
+       "kZSTDNotFinalCompression"},
+      {"bottommost_compression", "kLZ4Compression"},
+  };
+  #+end_src
+**** Closing the db
+你可以直接delete,或者用Close(). Close()可以查错，比如说看logger有没有被关掉的。
+#+begin_src c++
+  ... open the db as described above ...
+  ... do something with db ...
+  Status s = db->Close();
+  ... log status ...
+  delete db;
+  #+end_src
+**** get
+***** PinnableSlice
+当有的value会常常往返DB的时候用 ~PinnableSlice~ 可以省一些 ~memcopy~。
+#+begin_src c++
+  PinnableSlice pinnable_val;
+  rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &pinnable_val);
+  #+end_src
+The source will be released once pinnable_val is destructed or ::Reset is invoked on it.
+***** MultiGet
+#+begin_src c++
+  std::vector<Slice> keys;
+  std::vector<PinnableSlice> values;
+  std::vector<Status> statuses;
+
+  for ... {
+    keys.emplace_back(key);
+  }
+  values.resize(keys.size());
+  statuses.resize(keys.size());
+
+  db->MultiGet(ReadOptions(), cf, keys.size(), keys.data(), values.data(), statuses.data());
+#+end_src
+你可以用 ~std::array~ or any contiguous storage type.
+#+begin_src c++
+  std::vector<ColumnFamilyHandle*> column_families;
+  std::vector<Slice> keys;
+  std::vector<std::string> values;
+
+  for ... {
+    keys.emplace_back(key);
+    column_families.emplace_back(column_family);
+  }
+  values.resize(keys.size());
+
+  std::vector<Status> statuses = db->MultiGet(ReadOptions(), column_families, keys, &values);
+  #+end_src
+**** Column Family FAQ
+等下，ColumnFamily是啥？
+
++ Q: What are column families used for?
++ A: The most common reasons of using column families:
+  + Use different compaction setting, comparators, compression types, merge
+    operators, or compaction filters in different parts of data.
+  + Drop a column family to delete its data One column family to store metadata
+    and another one to store the data.
+
++ Q: What's the difference between storing data in multiple column family and in
+multiple rocksdb database?
++ A: The main differences will be backup, atomic writes and performance of writes.
+  + The advantage of using multiple databases: database is the unit of backup or
+    checkpoint. It's easier to copy a database to another host than a column
+    family.
+  + Advantages of using multiple column families:
+    + write batches are atomic across multiple column families on one database.
+      You can't achieve this using multiple RocksDB databases
+    + If you issue sync writes to WAL, too many databases may hurt the performance.
+
++ Q: If I have multiple column families and call the DB functions without a
+  column family handle, what the result will be?
++ A: It will operate only the default column family.
+
+所以column family 其实就像subtable一样。
+怎么获得？ 
+**** Batch Write 一个不过全部rollback
+#+begin_src c++
+  #include "rocksdb/write_batch.h"
+  ...
+  std::string value;
+  rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &value);
+  if (s.ok()) {
+    rocksdb::WriteBatch batch;
+    batch.Delete(key1);
+    batch.Put(key2, value);
+    s = db->Write(rocksdb::WriteOptions(), &batch);
+  }
+  #+end_src
+**** sync/async write
+默认async write。（先回归，后台慢慢写）
+
+如下打开sync
+#+begin_src c++
+  rocksdb::WriteOptions write_options;
+  write_options.sync = true;
+  db->Put(write_options, ...);
+#+end_src
+**** Iteration
+***** db[:] :: print all kv
+#+begin_src c++
+  rocksdb::Iterator* it = db->NewIterator(rocksdb::ReadOptions());
+  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+    cout << it->key().ToString() << ": " << it->value().ToString() << endl;
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  delete it;
+  #+end_src
+***** db[start:limit]
+#+begin_src c++
+  for (it->Seek(start);
+       it->Valid() && it->key().ToString() < limit;
+       it->Next()) {
+    ...
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  #+end_src
+***** db.reverse()[:]
+#+begin_src c++
+  for (it->SeekToLast(); it->Valid(); it->Prev()) {
+    ...
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  #+end_src
+***** db[limit:start-1:-1]
+#+begin_src c++
+  for (it->SeekForPrev(start);
+       it->Valid() && it->key().ToString() > limit;
+       it->Prev()) {
+    ...
+  }
+  assert(it->status().ok()); // Check for any errors found during the scan
+  #+end_src
+**** Slice ? 就是string
+The return value of the ~it->key()~ and ~it->value()~ calls above are instances of
+the ~rocksdb::Slice~ type. Slice is a simple structure that contains a length and
+a pointer to an external byte array. Returning a Slice is a cheaper alternative
+to returning a std::string since we do not need to copy potentially large keys
+and values.
+
+C-string 和 string 都可以到slice
+#+begin_src c++
+   rocksdb::Slice s1 = "hello";
+
+   std::string str("world");
+   rocksdb::Slice s2 = str;
+   #+end_src
+and back
+#+begin_src c++
+   std::string str = s1.ToString();
+   assert(str == std::string("hello"));
+   #+end_src
+***** caveat
+你要保证slice所指的东西一直在。slice就是个指针。
+不要用如下：
+#+begin_src c++
+   rocksdb::Slice slice;
+   if (...) {
+     std::string str = ...;
+     slice = str;
+   }
+   Use(slice);
+   #+end_src
+*** Trouble shoot
+**** pthread error
+pthread lock: Invalid argument │ unknown location(0): fatal error: in
+"col_family/list_column": signal: SIGABRT (application abort requested)
+
+A: Do not ~delete db~ more than once.
+*** Test
+#+begin_src cmake
+    cmake_minimum_required(VERSION 3.21)
+  # set(CMAKE_CXX_COMPILER "g++")
+  project(hi VERSION 1.1)
+
+  find_package(Boost REQUIRED COMPONENTS unit_test_framework log)
+
+  # It seems a bug that we need to include this Finduring
+  include(/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb/modules/Finduring.cmake)
+  set(RocksDB_DIR "/home/me/repo/installed-rocksdb/lib/x86_64-linux-gnu/cmake/rocksdb")
+  find_package(RocksDB CONFIG REQUIRED)
+
+  # add the executable
+  add_executable(main test.cpp)
+
+  target_link_libraries(main PUBLIC Boost::unit_test_framework
+  Boost::log RocksDB::rocksdb)
+  # add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+  add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <rocksdb/db.h>
+
+#include <utility>              // std::as_const
+
+#include <rocksdb/utilities/backup_engine.h>
+#include <vector>
+using std::vector;
+
+#include <boost/log/trivial.hpp>
+
+
+#include <string>
+using std::string;
+#include <filesystem>
+namespace fs = std::filesystem;
+#include <boost/format.hpp>
+using boost::format;
+
+
+using rocksdb::ReadOptions;
+using rocksdb::WriteBatch;
+using rocksdb::WriteOptions;
+
+BOOST_AUTO_TEST_CASE(test_opendb) {
+  rocksdb::DB* db;
+  // Boilerplates (Copied from rocksdb/example/simple_example.cc)
+  // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+  rocksdb::Options options;
+  options.IncreaseParallelism();
+  options.OptimizeLevelStyleCompaction();
+  options.create_if_missing = true;
+
+  fs::path d = fs::temp_directory_path() / "testdb";
+  // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
+  rocksdb::Status status = rocksdb::DB::Open(options, d , &db);
+  BOOST_REQUIRE(status.ok());
+  BOOST_CHECK(fs::exists(d));
+  // Close and then destroy the db (delete the folder)
+  delete db;
+  // Closing the db persists the folder
+  BOOST_CHECK(fs::exists(d));
+}
+
+rocksdb::Options getInitOptions(){
+  rocksdb::Options options;
+  options.IncreaseParallelism();
+  options.OptimizeLevelStyleCompaction();
+  options.create_if_missing = true;
+  return options;
+}
+
+namespace filesystem = std::filesystem;
+struct D{
+  D(){
+    // Boilerplates (Copied from rocksdb/example/simple_example.cc)
+    // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+    rocksdb::Options options = getInitOptions();
+    dbDir = fs::temp_directory_path() / "testdb";
+    if (filesystem::exists(dbDir)) BOOST_REQUIRE(filesystem::remove_all(dbDir));
+
+    BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
+
+    // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
+    rocksdb::Status status = rocksdb::DB::Open(options, dbDir , &db);
+    BOOST_REQUIRE(status.ok());
+}
+  ~D(){
+    BOOST_TEST_MESSAGE("Tearing down Db and remove");
+    delete db;
+    BOOST_REQUIRE(fs::remove_all(dbDir));
+    BOOST_REQUIRE(!fs::exists(dbDir));
+  }
+  rocksdb::DB* db;
+  fs::path dbDir;
+};
+
+// This labals which testcase/suite to run.
+#define MY_TEST_THIS *boost::unit_test::label("aaa")
+
+BOOST_AUTO_TEST_SUITE(core_operation);
+BOOST_FIXTURE_TEST_CASE(put_get,D){
+  // Put key-value
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
+  BOOST_REQUIRE(s.ok());
+  string value;
+
+  // get value
+  s = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"abc");
+}
+
+BOOST_FIXTURE_TEST_CASE(del,D){
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
+  BOOST_REQUIRE(s.ok());
+
+  // get value, should be there
+  string value;
+  s = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  // BOOST_REQUIRE(!s.IsNotFound());
+  BOOST_CHECK_EQUAL(value,"abc");
+
+  // delete the value
+  s = db->Delete(WriteOptions(), "k1");
+  BOOST_REQUIRE(s.ok());
+  s = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(!s.ok());       // not found=not ok
+  BOOST_REQUIRE(s.IsNotFound());
+  // Now it's not found
+}
+
+BOOST_FIXTURE_TEST_CASE(iterator,D){
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+
+  string v1{"v1"};
+  BOOST_REQUIRE(db->KeyMayExist(ReadOptions(),
+                                "k1",&v1,/*timestamp=*/ (bool*) nullptr));
+  // Use Bloom filter to check a : if definitely not exists return false
+
+  s = db->Put(WriteOptions(), "k2", "v2");
+  BOOST_REQUIRE(s.ok());
+
+  rocksdb::Iterator* i = db->NewIterator(ReadOptions());
+  i->SeekToFirst();
+  BOOST_REQUIRE(i->Valid());
+
+  int cnt{0};
+  string ks[] = {"k1","k2"};
+  string vs[] = {"v1","v2"};
+  for (i->SeekToFirst();i->Valid();i->Next()){
+    // Check db = [(k1,v1),(k2,v2)]
+    BOOST_CHECK_EQUAL(ks[cnt],i->key().ToString());
+    BOOST_CHECK_EQUAL(vs[cnt],i->value().ToString());
+    cnt++;
+    if (!i->status().ok()){
+      // BOOST_LOG_TRIVIAL(error) << ;
+      BOOST_ERROR(format("iterator error") % i->status().ToString());
+    }
+    BOOST_LOG_TRIVIAL(info) << format("k=%s v=%s") % i->key().ToStringView()
+      % i->value().ToStringView();
+    //  ^^^^^^^^^^ rocksdb::Slice (also has ToString())
+  }
+  // size of db
+  BOOST_CHECK_EQUAL(cnt,2);
+}
+
+BOOST_FIXTURE_TEST_CASE(batch,D){
+
+  // Write a kv
+  rocksdb::Status s = db->Put(WriteOptions(), "k1", "aaa");
+  BOOST_REQUIRE(s.ok());
+
+  // write a batch
+  string value;
+  {
+    rocksdb::WriteBatch batch;
+    batch.Delete("key1");
+    batch.Put("key2", "bbb");
+    s = db->Write(WriteOptions(), &batch);
+  }
+
+  // check the batch
+  s = db->Get(ReadOptions(), "key1", &value);
+  BOOST_CHECK(s.IsNotFound());
+  s = db->Get(ReadOptions(), "key2", &value);
+  BOOST_CHECK_EQUAL(value,"bbb");
+}
+BOOST_AUTO_TEST_SUITE_END();
+
+BOOST_AUTO_TEST_CASE(manually_backup){
+  rocksdb::Options options = getInitOptions();
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1", d2 = s / "d2";
+
+  // Create db
+  rocksdb::DB* db;
+  rocksdb::Status status = rocksdb::DB::Open(options, d1 , &db);
+  BOOST_REQUIRE(status.ok());
+  BOOST_CHECK(fs::exists(d1));  // now only d1 exists
+
+  // store a kv in d1
+  status = db->Put(WriteOptions(), "k1", "abc");
+  // BOOST_REQUIRE(status.ok());
+
+  // close the db
+  delete db;
+
+  // copy d1 to d2
+  const auto copyOptions =
+    fs::copy_options::update_existing
+    // Replace the existing file only if it is older than the file being
+    // copied
+    | fs::copy_options::recursive;
+  // Recursively copy subdirectories and their content
+  std::error_code err;
+  // copy dir recursively
+  fs::copy(d1, d2, copyOptions, err);
+  BOOST_REQUIRE(!bool(err));
+  BOOST_CHECK(fs::exists(d2));
+
+  // open the db in d2
+  string value;
+  status = rocksdb::DB::Open(options, d2 , &db);
+  BOOST_REQUIRE(status.ok());
+
+  // check the value stored from d1
+  status = db->Get(ReadOptions(), "k1", &value);
+  BOOST_REQUIRE(status.ok());
+  BOOST_CHECK_EQUAL(value,"abc");
+  delete db;
+
+  // clean up
+  BOOST_CHECK(fs::remove_all(s));
+  }
+
+
+BOOST_AUTO_TEST_SUITE(backup);
+
+BOOST_AUTO_TEST_CASE(backup_engine_1_open){
+  // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
+
+  // mkdir
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1", d2 = s / "d1_backup";
+
+  // make db in d1
+  rocksdb::DB* db;
+  rocksdb::Options o = getInitOptions();
+  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv1
+  st = db->Put(WriteOptions(), "key1", "value1");
+  BOOST_REQUIRE(st.ok());
+  // create backup db=[(k1,v1)]
+
+  // create backup
+  rocksdb::BackupEngine* backup_engine;
+  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d2),
+                         &backup_engine);
+  BOOST_REQUIRE(st.ok());
+  // put kv2
+  // create backup2 db=[(k1,v1),(k2,v2)]
+  // put kv3
+  // close db;
+
+  // restore db to backup1 = [(k1,v1)]
+  // restore db to backup2 = [(k1,v1),(k2,v2)]
+
+  // clean up
+
+  delete db;
+  delete backup_engine;
+  BOOST_CHECK(fs::remove_all(s));
+}
+
+BOOST_AUTO_TEST_CASE(backup_engine_2_create_backup){
+
+  // mkdir
+  // --------------------------------------------------
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1", d2 = s / "d1_backup";
+
+  // make db in d1
+  // --------------------------------------------------
+  rocksdb::DB* db;
+  rocksdb::Options o = getInitOptions();
+  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+  // BOOST_CHECK(st.ok());
+
+  // put kv1
+  // --------------------------------------------------
+  st = db->Put(WriteOptions(), "key1", "value1");
+  // BOOST_CHECK(st.ok());
+  // create backup db=[(k1,v1)]
+
+  // create backup
+  // --------------------------------------------------
+  rocksdb::BackupEngine* backup_engine;
+  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d2),
+                         &backup_engine);
+  // BOOST_REQUIRE(st.ok());
+
+  st = backup_engine->CreateNewBackup(db);
+  BOOST_REQUIRE(st.ok());
+
+  // Check the backup is there
+  // --------------------------------------------------
+  std::vector<rocksdb::BackupInfo> backup_info;
+  backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+  BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+  st = backup_engine->VerifyBackup(1);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv2
+  // create backup2 db=[(k1,v1),(k2,v2)]
+  // put kv3
+  // close db;
+
+  // restore db to backup1 = [(k1,v1)]
+  // restore db to backup2 = [(k1,v1),(k2,v2)]
+
+  // clean up
+
+  delete db;
+  delete backup_engine;
+  BOOST_CHECK(fs::remove_all(s));
+  BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+}
+
+
+BOOST_AUTO_TEST_CASE(backup_engine_3_restore_backup){
+  // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
+
+  // mkdir
+  // --------------------------------------------------
+  fs::path s = fs::temp_directory_path() / "sandbox";
+  // remove sandbox if exists
+  if (fs::exists(s)) fs::remove_all(s);
+  BOOST_REQUIRE(fs::create_directories(s));
+  fs::path d1 = s / "d1",
+    d1_backup = s / "d1_backup",
+    d1_restored = s / "d1_restored";
+
+  // make db in d1
+  // --------------------------------------------------
+  rocksdb::DB* db;
+  rocksdb::Options o = getInitOptions();
+  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+  // BOOST_CHECK(st.ok());
+
+  // put kv1
+  // --------------------------------------------------
+  st = db->Put(WriteOptions(), "key1", "value1");
+  // BOOST_CHECK(st.ok());
+  // create backup db=[(k1,v1)]
+
+  // create backup
+  // --------------------------------------------------
+  rocksdb::BackupEngine* backup_engine;
+  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d1_backup),
+                         &backup_engine);
+  // BOOST_REQUIRE(st.ok());
+
+  st = backup_engine->CreateNewBackup(db);
+  BOOST_REQUIRE(st.ok());
+
+  // Check the backup is there
+  // --------------------------------------------------
+  std::vector<rocksdb::BackupInfo> backup_info;
+  backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+  // BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+  st = backup_engine->VerifyBackup(1);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv2
+  // --------------------------------------------------
+  st = db->Put(WriteOptions(), "key2", "value2");
+  BOOST_CHECK(st.ok());
+
+  // create backup2 db=[(k1,v1),(k2,v2)]
+  // --------------------------------------------------
+  st = backup_engine->CreateNewBackup(db);
+  BOOST_REQUIRE(st.ok());
+
+  // check the backup
+  // --------------------------------------------------
+  backup_engine->GetBackupInfo(&backup_info);
+  BOOST_CHECK_EQUAL(backup_info.size(),2);   // 2 backups
+
+  st = backup_engine->VerifyBackup(2);
+  BOOST_REQUIRE(st.ok());
+
+  // put kv3
+  st = db->Put(WriteOptions(), "key3", "value3");
+  BOOST_CHECK(st.ok());
+
+  // close db first;
+  delete db;
+
+  // restore db to backup1 = [(k1,v1)]
+  // --------------------------------------------------
+  rocksdb::BackupEngineReadOnly* backup_engine_ro;
+  st = rocksdb::BackupEngineReadOnly::Open(
+                                 rocksdb::Env::Default(),
+                                 rocksdb::BackupEngineOptions(d1_backup),
+                                 &backup_engine_ro);
+  BOOST_REQUIRE(st.ok());
+
+  st = backup_engine_ro->RestoreDBFromBackup(1,
+                                             /*db_dir*/d1_restored,
+                                             /*wal_dir*/d1_restored);
+  BOOST_REQUIRE(st.ok());
+
+  // open db again to backup1 and check db=[(k1,v1)] (i.e. k2 is not there)
+  // --------------------------------------------------
+
+  st = rocksdb::DB::Open(o,d1_restored,&db);
+  BOOST_REQUIRE(st.ok());
+
+  std::string value;
+  st = db->Get(ReadOptions(), "key1", &value);
+  BOOST_REQUIRE(!st.IsNotFound());
+
+  st = db->Get(ReadOptions(), "key2", &value);
+  BOOST_REQUIRE(st.IsNotFound());
+
+  // restore db to backup2 = [(k1,v1),(k2,v2)] and check db[(k1,v1),(k2,v2)]
+  // --------------------------------------------------
+
+  // close db first;
+  // Remember to close the db before restoring the backup.
+  delete db;
+
+  st = backup_engine_ro->RestoreDBFromBackup(2,
+                                             /*db_dir*/d1_restored,
+                                             /*wal_dir*/d1_restored);
+  BOOST_REQUIRE(st.ok());
+
+  // open db again to backup2 and check db=[(k1,v1),(k2,v2)] (i.e. k3 is not there)
+  // --------------------------------------------------
+  st = rocksdb::DB::Open(o,d1_restored,&db);
+  BOOST_REQUIRE(st.ok());
+
+  st = db->Get(ReadOptions(), "key1", &value);
+  BOOST_REQUIRE(!st.IsNotFound()); // k1 exists
+
+  st = db->Get(ReadOptions(), "key2", &value);
+  BOOST_REQUIRE(!st.IsNotFound()); // k2 exists
+
+  st = db->Get(ReadOptions(), "key3", &value);
+  BOOST_REQUIRE(st.IsNotFound()); // k2 dosen't
+
+
+  // clean up
+  delete db;
+  delete backup_engine;
+  delete backup_engine_ro;
+  BOOST_CHECK(fs::remove_all(s));
+  BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+}
+BOOST_AUTO_TEST_SUITE_END();
+
+BOOST_AUTO_TEST_SUITE(col_family, MY_TEST_THIS);
+BOOST_FIXTURE_TEST_CASE(make_cf,D){
+  rocksdb::ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(
+                                             rocksdb::ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /* close the db
+   🦜: Does it destroy all the data contained in the ColFam ?
+
+   🐢: No, DestroyColumnFamilyHandle() has to be called before deleting the DB;
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+   */
+
+}
+
+
+BOOST_FIXTURE_TEST_CASE(open_existing_cf_new,D){
+  /*
+    🐢 : The sensible way to open an existing db with cfs is to call
+    ListColumnFamilies() first.
+    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+    db.
+   */
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  delete db;
+
+  /* reopen the db with two column families
+
+     🦜: Do we need to remember beforehand what colum families(CF) are in an
+     existing db?
+
+     🐢: Not necessarily, we can(and should) call ListColumnFamilies beforehand,
+     and then construct the ColumnFamilyDescriptor from that.
+  */
+
+  vector<string> cfNames;
+  rocksdb::Options o = getInitOptions();
+  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfNames);
+  BOOST_CHECK(s.ok());
+
+  // convert the string to ColumnFamilyDescriptor
+  vector<ColumnFamilyDescriptor> cfs;
+
+  // std::ranges::transform(cfNames,std::back_inserter(cfs),
+  //                        [](string s) -> ColumnFamilyDescriptor {
+  //                          return ColumnFamilyDescriptor(s,ColumnFamilyOptions()); }
+  //                        );
+  // 🦜: I found it easier to just use loop than <algorithm>
+  for (auto & s : cfNames)
+    cfs.push_back(ColumnFamilyDescriptor(s,ColumnFamilyOptions()));
+
+
+
+  BOOST_CHECK_EQUAL(cfs.size(),2);
+  vector<ColumnFamilyHandle*> handles;
+  s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
+               cfs, &handles, &db);
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(open_existing_cf_old,D){
+  /*
+    🐢 : Although the official example in rocksdb/examples/example.cc use the
+    following method to open existing db with cfs. The better way should be to
+    query the cf first before opening the db.
+
+    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+    db.
+   */
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  delete db;
+
+  vector<ColumnFamilyDescriptor> cfs{
+    // have to open default column family
+    ColumnFamilyDescriptor(rocksdb::kDefaultColumnFamilyName,
+                           ColumnFamilyOptions()),
+    // open the new one, too
+    ColumnFamilyDescriptor("cf1", ColumnFamilyOptions())
+  };
+  vector<ColumnFamilyHandle*> handles;
+  s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
+               cfs, &handles, &db);
+  BOOST_CHECK(s.ok());
+}
+
+
+BOOST_FIXTURE_TEST_CASE(read_write_from_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_REQUIRE(s.ok());
+
+  // Read write
+  s = db->Put(WriteOptions(),cf, "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+  std::string value;
+  s = db->Get(ReadOptions(), cf, "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"v1");
+
+  // (k1,v1) doesn't exist in the defaultColFam
+  s = db->Get(ReadOptions(), db->DefaultColumnFamily()
+              , "k1", &value);
+  BOOST_CHECK(s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(delete_from_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+
+  BOOST_REQUIRE(s.ok());
+
+  // Write to both cf
+  s = db->Put(WriteOptions(),cf, "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+  s = db->Put(WriteOptions(),dcf, "k1", "v1");
+  BOOST_REQUIRE(s.ok());
+
+  // check in both db
+  std::string value;
+  s = db->Get(ReadOptions(), cf, "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"v1");
+  s = db->Get(ReadOptions(), dcf, "k1", &value);
+  BOOST_REQUIRE(s.ok());
+  BOOST_CHECK_EQUAL(value,"v1");
+
+  // delete in cf1
+  s = db->Delete(WriteOptions(),cf, "k1");
+  BOOST_REQUIRE(s.ok());
+
+  // (k1,v1) doesn't exist in the cf, but exists in dcf
+  s = db->Get(ReadOptions(), dcf, "k1", &value);
+  BOOST_CHECK(!s.IsNotFound());
+  s = db->Get(ReadOptions(), cf, "k1", &value);
+  BOOST_CHECK(s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(batch_for_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+  string value;
+
+  BOOST_REQUIRE(s.ok());
+
+  // write to df
+  s = db->Put(WriteOptions(),dcf, "k0", "v0");
+  BOOST_REQUIRE(s.ok());
+  // k0 has been added in dcf
+  s = db->Get(ReadOptions(), dcf,"k0" , &value);
+  BOOST_REQUIRE(!s.IsNotFound());
+
+  // Write to both cf
+  rocksdb::WriteBatch b;
+  b.Put(cf, "k1", "v1");
+  b.Put(cf, "k2", "v2");
+  b.Put(dcf, "k1", "v1");
+  b.Delete(dcf,"k0");
+  s = db->Write(WriteOptions(), &b);
+  BOOST_REQUIRE(s.ok());
+
+  // check values in both db
+  auto checkKv = [&] (ColumnFamilyHandle* h, string k, string v){
+    s = db->Get(ReadOptions(), h, k, &value);
+    BOOST_REQUIRE(s.ok());
+    BOOST_CHECK_EQUAL(value,v);
+  };
+  checkKv(cf,"k1","v1");
+  checkKv(cf,"k2","v2");
+  checkKv(dcf,"k1","v1");
+
+  // k0 has been deleted in dcf
+  s = db->Get(ReadOptions(), dcf,"k0" , &value);
+  BOOST_REQUIRE(s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+
+BOOST_FIXTURE_TEST_CASE(drop_cf,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+  string value;
+
+  BOOST_REQUIRE(s.ok());
+
+  // write to df
+  s = db->Put(WriteOptions(),cf, "k0", "v0");
+  BOOST_REQUIRE(s.ok());
+  // k0 has been added in cf
+  s = db->Get(ReadOptions(), cf,"k0" , &value);
+  BOOST_REQUIRE(!s.IsNotFound());
+
+  s = db->DropColumnFamily(cf);
+  /*
+    🦜: Are the data gone when we DropColumnFamily()?
+
+    🐢: Not necessarily. The data is not gone if you have hold a column family
+    handle to it. The data is gone when no one refers to it anymore (GC).
+   */
+  s = db->Get(ReadOptions(), cf,"k0" , &value);
+  BOOST_REQUIRE(!s.IsNotFound());
+
+  // clean up -----------------------------
+  s = db->DestroyColumnFamilyHandle(cf);
+  // must be called before closing db
+  BOOST_CHECK(s.ok());
+}
+
+BOOST_FIXTURE_TEST_CASE(list_column,D){
+  using rocksdb::ColumnFamilyDescriptor;
+  using rocksdb::ColumnFamilyHandle;
+  using rocksdb::ColumnFamilyOptions;
+  ColumnFamilyHandle* cf;
+  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                             "cf1", &cf);
+  BOOST_CHECK(s.ok());
+  /*
+    Now the db has two col family:
+    - rocksdb::kDefaultColumnFamilyName (the default one)
+    - "cf1" (the one we just created)
+  */
+  s = db->DestroyColumnFamilyHandle(cf);
+  BOOST_CHECK(s.ok());
+  /* reopen the db with two column families
+
+     🦜: Do we need to remember beforehand what colum families(CF) are in an
+     existing db?
+
+     🐢: Yes. cfs should be the vector of ALL cfs, containing name + options.
+  */
+
+  // delete db;
+  vector<string> cfs;
+  rocksdb::Options o = getInitOptions();
+  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfs);
+  BOOST_CHECK(s.ok());
+  BOOST_REQUIRE_EQUAL(cfs.size(),2);
+  BOOST_CHECK_EQUAL(cfs[0],rocksdb::kDefaultColumnFamilyName);
+  BOOST_CHECK_EQUAL(cfs[1],"cf1");
+//   for (auto s : cfs){
+//     BOOST_TEST_MESSAGE(format("Got cf: " "%1%") % s);
+// }
+
+  }
+
+BOOST_AUTO_TEST_SUITE_END();
+
+
+#+end_src
+** EVMONE
+*** Q/A
+**** Why there're opt code PUSH32, PUSH3,...
+Lower push will still push a 32-long value but with 0-zero padding.
+
+*** install
+#+begin_src bash
+  # cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DEVMC_TESTING=1 # TESTING builds everything
+  # c
+  tar zxf evmone-0.9.1-linux-x86_64.tar.gz --directory=evmone-0.9.1/
+
+  git clone --recursive https://github.com/ethereum/evmone
+  cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DBUILD_SHARED_LIBS=0 # TESTING builds everything
+  cmake --build build-evmone
+
+  rm installed-evmone/ -rf
+  cmake --install build-evmone --prefix installed-evmone
+  # ./build-evmone/bin/evmc-unittests --gtest_list_tests
+  # ./build-evmone/bin/evmc-unittests
+  # ./build-evmone/bin/evmc-unittests --gtest_filter=example_vm.*
+
+#+end_src
+*** helloworld with headers
+**** cpp
+#+begin_src c++
+#include <evmc/evmc.hpp>
+#include <cstdio>
+
+#define DEBUG
+#ifdef DEBUG
+#define P(...) printf(__VA_ARGS__)
+#endif
+
+int main(int argc, char *argv[]){
+  // using namespace evmc;
+  // uint8_t i = 0xff;
+  // P("got value %x\n",i);
+
+  evmc::bytes32 v1;
+  for (int i = 0;i<32;i++){P("%x,",v1.bytes[i]);}
+  P("Before ^\n");
+
+  for (int i = 0;i<32;i++){v1.bytes[i] = 0xff;}
+
+  for (int i = 0;i<32;i++){P("%x,",v1.bytes[i]);}
+  P("After ^\n");
+  return 0;
+}
+
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+project(hi VERSION 1.1)
+
+add_executable(main test.cpp)
+# target_include_directories(main PUBLIC /home/me/repo/evmone/evmc/include/)
+target_include_directories(main PUBLIC ../evmone/evmc/include/)
+add_custom_target(run ALL main 1 COMMENT "Runing App 🐸")
+
+include(CMakePrintHelpers)
+cmake_print_properties(TARGETS main PROPERTIES INCLUDE_DIRECTORIES)
+
+#+end_src
+*** StorageValue
+#+begin_src c++
+#include <evmc/evmc.hpp>
+#include <evmc/mocked_host.hpp>
+#include <cstdio>
+
+#define DEBUG
+#ifdef DEBUG
+#define P(...) printf(__VA_ARGS__)
+#endif
+
+int main(int argc, char *argv[]){
+  using namespace evmc;
+  bytes32 v1, v2;
+  for (int i = 0;i<32;i++){v1.bytes[i] = 0xff;}
+
+  StorageValue s{v1,v2,EVMC_ACCESS_COLD};
+  P("Curent : ");
+  for (int i = 0;i<32;i++) P("%x ",s.current.bytes[i]); puts("");
+  P("Original : ");
+  for (int i = 0;i<32;i++) P("%x ",s.original.bytes[i]); puts("");
+  return 0;
+}
+// Curent : ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+// Original : 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+
+
+#+end_src
+*** opcode
++ 比较重要的就是 f3 : RETURN
+***** 例子
+#+begin_src c++
+  7f #push32 val
+  d0d1d2d3d4d5d6d7d8d9dadbdcdddedf
+  e0e1e2e3e4e5e6e7e8e9eaebecedeeef
+
+  60 #push1 0
+  00
+
+  52 #memstore(0,val)
+
+  60 #push1 20
+  20
+
+  60 #push1 0
+  00
+
+
+  f3 #return Memory[00:00+20] ⇒ Mem里的0到32bytes = val
+#+end_src
+*** full hello with evmone
+**** cpp
+#+begin_src cpp
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <evmc/evmc.hpp>        // for evmc::VM
+#include <evmone/evmone.h>      // for evmc_create_evmone
+
+BOOST_AUTO_TEST_CASE(t1) {
+  evmc::VM vm{evmc_create_evmone()};
+  BOOST_CHECK_EQUAL(vm.name(),"evmone");
+  BOOST_CHECK_NE(vm.name(),"evmtwo");
+}
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+# initially
+# > mkdir cmake
+# > wget https://raw.githubusercontent.com/cpp-pm/gate/master/cmake/HunterGate.cmake -O cmake/HunterGate.cmake
+include("cmake/HunterGate.cmake")
+HunterGate(
+  URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+  SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+)
+
+project(hi VERSION 1.1)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
+set(evmc_DIR "/home/me/repo/installed-evmone/lib/cmake/evmc/")
+find_package(evmc REQUIRED)     #do not explicitly specify the components
+                                #because the authors are lazy,they didin't set
+                                #<pkg>_<compnent>_FOUND=1 for found components
+
+## Now we have evmc::evmc , evmc_cpp
+set(evmone_DIR "/home/me/repo/installed-evmone/lib/cmake/evmone/")
+find_package(evmone REQUIRED)     #do not explicitly specify the components
+## Now we have evmone::evmone
+
+
+hunter_add_package(intx)
+find_package(intx REQUIRED)     #do not explicitly specify the components
+hunter_add_package(ethash)
+find_package(ethash REQUIRED)     #do not explicitly specify the components
+
+add_executable(main test.cpp)
+target_link_libraries(main
+  evmc::evmc_cpp
+  evmone::evmone
+  Boost::unit_test_framework
+  intx::intx
+  ethash::keccak
+)
+#  因为有INTERFACE_LINK_LIBRARIES "evmc::evmc;intx::intx;\$<LINK_ONLY:ethash::keccak>",
+# 所以EVMONE要求intx,evmc,ethash::keccak
+
+
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+
+# cmake -S. -B build -DHUNTER_STATUS_DEBUG=ON -DCMAKE_BUILD_TYPE=Release
+# cmake --build build --config Release
+
+#+end_src
+** Hunter
+#+begin_src bash
+  mkdir cmake
+  wget https://raw.githubusercontent.com/cpp-pm/gate/master/cmake/HunterGate.cmake -O cmake/HunterGate.cmake
+  
+#+end_src
+*** cmake
+#+begin_src cmake
+    cmake_minimum_required(VERSION 3.2)
+
+  include("cmake/HunterGate.cmake")
+  HunterGate(
+      URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+      SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+  )
+
+  project(Foo)
+
+  hunter_add_package(Boost COMPONENTS regex system filesystem)
+  find_package(Boost CONFIG REQUIRED regex system filesystem)
+
+  add_executable(foo foo.cpp)
+  target_link_libraries(foo PUBLIC Boost::regex Boost::system Boost::filesystem)
+#+end_src
+*** build
+#+begin_src bash
+cmake -S. -B_builds -DHUNTER_STATUS_DEBUG=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build _builds --config Release
+#+end_src
+** TBB
+*** install
+#+begin_src bash
+  git clone https://github.com/oneapi-src/oneTBB.git
+  cmake -S oneTBB-2021.9.0 -B build-oneTBB -DCMAKE_INSTALL_PREFIX=installed-oneTBB -DTBB_TEST=OFF
+  cmake --build build-oneTBB
+  # Install
+  cmake --install build-oneTBB
+  #-- Installing: /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBTargets.cmake
+  # -- Installing: /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBConfig.cmake
+
+  # what targets are installed?
+  cat /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBTargets.cmake | grep add_library
+#+end_src
+*** hello world
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+set(TBB_DIR "/home/me/repo/installed-oneTBB/lib/cmake/TBB/")
+
+find_package(TBB CONFIG REQUIRED)
+
+# add the executable
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework TBB::tbb)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** c++
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+
+using tbb::parallel_for;
+using tbb::blocked_range;
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  int o{0};
+  auto f = [&](blocked_range<int> &r){
+    for (int i = r.begin();i<r.end();++i)
+      o+=i;
+  };
+  parallel_for(blocked_range<int>(1,4),f);
+
+  BOOST_CHECK_EQUAL(o,1+2+3);
+}
+
+BOOST_AUTO_TEST_CASE(test_with_short_hand) {
+  int o{0};
+  parallel_for(size_t(0),size_t(4),size_t(1),[&](size_t i) {o+=i;});
+  // for (i=0;i<3;i+=1;) o+=i
+  BOOST_CHECK_EQUAL(o,1+2+3);
+}
+
+#+end_src
+*** concurrent_map
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <functional>
+#include <tbb/parallel_for.h>
+#include <tbb/concurrent_hash_map.h>
+
+using tbb::concurrent_hash_map;
+using tbb::parallel_for;
+struct C {
+  static size_t hash(const int& i){
+    std::hash<int> h;
+    return h(i);
+  }
+  static bool equal(const int& x,const int& y){
+    return x==y;
+  }
+};
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  // accessor locks the key
+  using M = concurrent_hash_map<int,int,C>;
+  using S = size_t;
+  M m;
+
+  parallel_for(S(0),S(4),S(1),[&](S i){
+    M::accessor a;              // a "write"lock for key a
+    m.insert(a,(int) i);
+    a->second = i*10;           // k=i,v=i*10
+  });
+
+  M::const_accessor a;              // read-only pointer
+  bool found = m.find(a,2);         // read kv
+  BOOST_CHECK(found);
+  BOOST_CHECK_EQUAL(a->second,20);
+  BOOST_CHECK_EQUAL(a->first,2);
+}
+
+
+#+end_src
+
+** intx
+*** bash [dirty way: copy the header]
+#+begin_src bash
+sudo mkdir  /usr/local/include/intx
+sudo cp intx.hpp /usr/local/include/intx/ -v
+#+end_src
+*** install [polite way: follow the instrution]
+#+begin_src bash
+  mv ~/Downloads/intx-0.10.0.tar.gz .
+  tar zxf intx-0.10.0.tar.gz
+  cmake -S intx-0.10.0 -B build-intx -DINTX_TESTING=0
+  cmake --build build-intx
+  cmake --install build-intx --prefix installed-intx
+#+end_src
+*** tests
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <intx/intx.hpp>        // the whole package is header-only
+#include <algorithm>
+
+
+BOOST_AUTO_TEST_CASE(array_to_native_int){
+  uint8_t a[3] = {0,0,1};
+  // std::fill_n(a.bytes,20,0x0);
+  uint64_t x = intx::be::load<uint64_t,3>(a);
+  BOOST_CHECK_EQUAL(x,1);
+}
+
+BOOST_AUTO_TEST_CASE(struct_to_int){
+  struct A {uint8_t bytes[8];};
+  A a;
+  std::fill_n(a.bytes,8,0x0);
+  a.bytes[7] = 0x12;
+
+  // a should have a .bytes field
+  uint64_t x = intx::be::load<uint64_t,A>(a);
+  // 8-byte int
+  BOOST_CHECK_EQUAL(x,0x12);
+}
+
+
+BOOST_AUTO_TEST_CASE(array_to_int){
+  uint8_t a[32];
+
+  std::fill_n(a   ,30,0x0);
+  std::fill_n(a+30,2,0xff);
+
+  intx::uint256 x = intx::be::load<intx::uint256,32>(a);
+  // 8-byte int
+  BOOST_CHECK_EQUAL(int(x),0xffff);
+}
+
+#include <string_view>
+BOOST_AUTO_TEST_CASE(int_to_array){    // int to array
+  using namespace intx;
+
+  constexpr auto size = sizeof(uint64_t);
+  uint8_t data[size]{};
+  std::string_view view{reinterpret_cast<const char*>(data), std::size(data)};
+
+  be::store(data, uint64_t{0x0102030405060708});
+  BOOST_CHECK_EQUAL(view,"\x01\x02\x03\x04\x05\x06\x07\x08");
+}
+
+BOOST_AUTO_TEST_CASE(int_to_small_array){
+  intx::uint256 x{0xabcd};
+  uint8_t a[2];
+  std::string_view v{reinterpret_cast<const char*>(a), std::size(a)};
+  intx::be::trunc<2,256>(a,x);
+
+  BOOST_CHECK_EQUAL(v,"\xab\xcd"); // hex escape
+  BOOST_CHECK_EQUAL(a[0],0xab);
+  BOOST_CHECK_EQUAL(a[1],0xcd);
+}
+
+BOOST_AUTO_TEST_CASE(int_to_small_struct){
+  struct A {uint8_t bytes[2];};
+  intx::uint256 x{0xabcd};
+
+  A a = intx::be::trunc<A,256>(x);
+  std::string_view v{reinterpret_cast<const char*>(a.bytes), std::size(a.bytes)};
+
+  BOOST_CHECK_EQUAL(v,"\xab\xcd"); // hex escape
+  BOOST_CHECK_EQUAL(a.bytes[0],0xab);
+  BOOST_CHECK_EQUAL(a.bytes[1],0xcd);
+}
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:
