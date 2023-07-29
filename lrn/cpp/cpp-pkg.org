@@ -705,8 +705,7 @@ pthread lock: Invalid argument │ unknown location(0): fatal error: in
 A: Do not ~delete db~ more than once.
 *** Test
 #+begin_src cmake
-    cmake_minimum_required(VERSION 3.21)
-  # set(CMAKE_CXX_COMPILER "g++")
+cmake_minimum_required(VERSION 3.21)
   project(hi VERSION 1.1)
 
   find_package(Boost REQUIRED COMPONENTS unit_test_framework log)

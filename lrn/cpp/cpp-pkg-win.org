@@ -1,0 +1,21 @@
+** vcpkg
+#+begin_src powershell
+  cd ~/sources
+  git clone https://github.com/Microsoft/vcpkg.git
+  .\vcpkg\bootstrap-vcpkg.bat
+  .\vcpkg\vcpkg.exe search rocksdb
+  .\vcpkg\vcpkg.exe install rocksdb[lz4]
+
+
+#+end_src
+
+#+begin_src cmake
+    # this is heuristically generated, and may not be correct
+    find_package(RocksDB CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE RocksDB::rocksdb-shared)
+#+end_src
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:
