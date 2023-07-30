@@ -3,9 +3,12 @@
   cd ~/sources
   git clone https://github.com/Microsoft/vcpkg.git
   .\vcpkg\bootstrap-vcpkg.bat
-  .\vcpkg\vcpkg.exe search rocksdb
-  .\vcpkg\vcpkg.exe install rocksdb[lz4]
+  # .\vcpkg\vcpkg.exe search rocksdb
+  # .\vcpkg\vcpkg.exe install rocksdb[lz4]
 
+  # 🦜 : Make sure that you enter the a DevShell with  -Arch amd64 -HostArch amd64
+  .\vcpkg\vcpkg.exe search rocksdb --triplet=x64-windows-static
+  .\vcpkg\vcpkg.exe install rocksdb --triplet=x64-windows-static
 
 #+end_src
 
@@ -15,6 +18,19 @@
     target_link_libraries(main PRIVATE RocksDB::rocksdb-shared)
 #+end_src
 
+#+begin_src powershell
+  ..\vcpkg\vcpkg.exe integrate install
+
+  # cmake `
+  #   # -G "Visual Studio 17" ` # 🦜 Thi is default, so
+  #   -T v143 `
+  #   -S try-rdb -B build-try-rdb "-DCMAKE_TOOLCHAIN_FILE=C:/Users/congj/source/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+  cmake `
+    -A Win32 `
+    -T v143 `
+    -S try-rdb -B build-try-rdb "-DCMAKE_TOOLCHAIN_FILE=C:\Users\congj\source\vcpkg\scripts\buildsystems\vcpkg.cmake"
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"
