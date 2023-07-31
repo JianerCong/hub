@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(set_basic_erase_iter){
     // fs::path p4 = u8"~/狗.txt"; // UTF-8 string
     path f = p.filename();
 
-    BOOST_CHECK_EQUAL(string(p),"/tmp/hi.txt");
+    BOOST_CHECK_EQUAL(string(p),"/mp/hi.txt");
     BOOST_CHECK_EQUAL(string(path("/tmp/hi.txt").filename()),"hi.txt");
     BOOST_CHECK_EQUAL(string(path("/tmp/hi").filename()),"hi");
     BOOST_CHECK_EQUAL(string(path("/tmp/").filename()),"");

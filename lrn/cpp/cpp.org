@@ -293,47 +293,53 @@ non-template > explicit specialization > template
 *** File
 **** simple
 #+BEGIN_SRC c++
-/**
- * @file file.cpp
- * @brief Simple file input and output
- */
-#include <iostream>
-#include <fstream>
-#include <string>
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  #include <boost/log/trivial.hpp>
 
-using std::string;
-using std::cout;
-using std::cin;
-using std::ofstream;
-using std::ifstream;
+  // colors
+  #define S_RED     "\x1b[31m"
+  #define S_GREEN   "\x1b[32m"
+  #define S_YELLOW  "\x1b[33m"
+  #define S_BLUE    "\x1b[34m"
+  #define S_MAGENTA "\x1b[35m"
+  #define S_CYAN    "\x1b[36m"
+  #define S_NOR "\x1b[0m"
+  using boost::format;
 
-int main(int argc, char *argv[]){
-  string filename;
+  #include <filesystem>
+  #include <string>
+  #include <string_view>
+  using std::string_view;
+  using std::string;
+  using std::filesystem::path;
+  using std::filesystem::current_path;
+  namespace filesystem = std::filesystem;
 
-  cout << "Enter the name of new file: ";
-  cin >> filename;
+  #include <fstream>
 
-  filename = filename + ".txt";
-  // The output stream
-  ofstream fout(filename.c_str());
+  BOOST_AUTO_TEST_CASE(test_write_and_read_basic){
+    path p = current_path() / "hi.txt";
+    if (filesystem::exists(p))
+      filesystem::remove_all(p);
 
-  fout << "Your secret number is : ";
-  cout << "Enter your secret number :";
-  float x;
-  cin >> x;
-  fout << x;
-  fout.close();
+    // write --------------------------------------------------
+    std::ofstream o(p);
+    BOOST_CHECK(o.is_open());
+    o << "abc\n";
+    o.close();
 
-  // Create input
-  ifstream fin(filename.c_str());
-  cout << "The content of " << filename << " is :\n";
-  char ch;
-  while(fin.get(ch))
-    cout << ch;
-  cout << "\nDone";
-  fin.close();
+    // read --------------------------------------------------
+    std::ifstream i(p);
+    BOOST_CHECK(i.is_open());
+    string s;
+    char c;
+    while (i.get(c))
+      s+=c;
+    i.close();
+    BOOST_CHECK_EQUAL(s,"abc\n");
   }
-
 #+END_SRC
 **** readline
 #+BEGIN_SRC c++

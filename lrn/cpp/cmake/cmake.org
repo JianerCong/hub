@@ -668,6 +668,27 @@ Building a correctly linked executable heavily depends on a valid configuration
 
 We'll learn about another nuisance of linking – the One Definition Rule (ODR).
 
+**** for loop to copy dir
+#+begin_src cmake
+
+  file(GLOB l ${CMAKE_CURRENT_SOURCE_DIR}/d1/*.txt)
+  message("got l: ${l}")
+  set(d ${CMAKE_CURRENT_BINARY_DIR}/d1)
+  file(MAKE_DIRECTORY ${d})
+  foreach(X IN LISTS l)
+    file(RELATIVE_PATH x ${CMAKE_CURRENT_SOURCE_DIR}/d1 ${X})
+    # file(COPY ${X} DESTINATION ${d})
+    # ^^ 🦜 : This will only copy once.
+    message(STATUS "🐸 Copying ${X} to ${d}/${x}")
+    # 🦜 : Use this to force a copy for every configuration.
+    configure_file(${X} ${d}/${x})
+  endforeach()
+  # got l: /home/me/repo/hi2/d1/t1.txt;/home/me/repo/hi2/d1/t2.txt
+  # -- 🐸 Copying /home/me/repo/hi2/d1/t1.txt to /home/me/repo/build-hi2/d1/t1.txt
+  # -- 🐸 Copying /home/me/repo/hi2/d1/t2.txt to /home/me/repo/build-hi2/d1/t2.txt
+
+#+end_src
+
 *** if()
 #+begin_src cmake
 if(<condition>)
