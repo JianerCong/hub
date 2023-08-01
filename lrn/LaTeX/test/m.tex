@@ -1,7 +1,7 @@
-\documentclass[dvipsnames]{article}
-% \documentclass[dvipsnames]{ctexart}
-
-\title{number theory}
+\documentclass[dvipsnames]{ctexart}
+\title{中期检查答题}
+\usepackage{tabularx}
+\usepackage{booktabs}
 \usepackage{geometry}\geometry{
   a4paper,
   total={170mm,257mm},
@@ -80,7 +80,7 @@ BoldItalicFont=*CodePLItalic
 
 \tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
 \date{\today}
-\author{作者}
+\author{丛坚而 技术部 C++算法工程师}
 
 \newtcblisting{simplec}{
   listing engine=minted,
@@ -167,239 +167,116 @@ row sep=1cm,column sep=2cm]
 \usepackage{changepage}   % for the adjustwidth environment
 \newenvironment{myIndent}[1][7mm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
 
-\newcounter{myDefCounter}
-\newcounter{myTheoCounter}
-
-\tcbuselibrary{theorems}
-\newtcbtheorem[use counter=myDefCounter,number within=section]{myDef}{Definition}%
-{
-  % colback=green!5,colframe=green!35!black,
-  fonttitle=\bfseries}{def}
-
-\newcommand{\myThmBeforeProof}{
-  \texttt{Proof: }\par
-  \begin{myIndent}
-}
-
-\newcommand{\myThmAfterProof}{
-\end{myIndent}
-\qed
-}
-
-\tcbuselibrary{skins}
-\tcbsubskin{myThmSkin}{enhanced}{
-  parbox=false,
-  % colback=green!5,
-  colframe=\mycola,
-  fonttitle=\bfseries,
-  breakable,
-  before lower={\myThmBeforeProof{}},
-  after lower={\myThmAfterProof{}}
-}
-
-\newtcbtheorem[
-use counter=myTheoCounter,number within=section
-]{myTheo}{Theorem}%
-{
-  skin=myThmSkin
-}{thm}
-
-
-\newtcbtheorem[use counter=myTheoCounter,number within=section]{myCor}{Corollary}%
-{
-  % colback=green!5,
-  skin=myThmSkin
-}{cor}
-
-\newtcbtheorem[use counter=myTheoCounter,number within=section]{myLem}{Lemma}%
-{% colback=green!5,
-  skin=myThmSkin
-}{lem}
-
-\newcommand{\refCorollary}[1]{Corollary~\ref{cor:#1}}
-\newcommand{\refLemma}[1]{Lemma~\ref{lem:#1}}
-
-\usepackage{cleveref}
-\crefname{myDefCounter}{definition}{definitions}
-                                   % ^^^ plural
-\Crefname{myDefCounter}{Definition}{Definitions}
-         % ^^^^^^ type = counter name
-
-\crefname{myTheoCounter}{theorem}{theorems}
-\Crefname{myTheoCounter}{Theorem}{Theorems}
-
-\usepackage{amsthm}             %for {proof}
-
-
 % --------------------------------------------------
+
+\usepackage{enumitem}
+\setlist[description]{leftmargin=\parindent,labelindent=\parindent}
+
 \begin{document}
-\maketitle
 
-\section{The series of primes}
+\maketitle{}
 
-\subsection{Divisibility of intergers}
+\section*{共同题目}
 
-The numbers
-% dots for commas
-\[ \dotsc,-3,-2,-1,0,1,2, \dotsc\]
-are the \Cola{intergers}, denoted by $\mathbb{Z}$. The number
-\[ 0,1,2,3,\dotsc\] are the \Cola{non-negative integers} or \Cola{natural
-  numbers}, denoted by $\mathbb{N}$, and the numbers \[1,2,3,\dotsc\] are the
-\Cola{positive integers}, denoted by $\mathbb{N^{\times}}$. We also denote
-\Cola{non-zero intergers} by $\mathbb{Z^{\times}}$
+\subsection*{1. 请阐述浙大，趣链，聚义岩，新华夏之间的关系}
 
-Let $a,\in \mathbb{Z}, b \in \mathbb{Z^{\times}}$, $a$ is saied to be
-\Cola{devisible} by $b$ if there exists $c \in \mathbb{Z}$ such that
-\[ a = bc.\] If $a,c, > 0$, so does $c$. If $a$ is divisable by $b$, we say $b$
-is a \Cola{divisor} of $a$ and write \[ b \mid a.\] Thus
-\[ 1 \mid n, \quad n \mid n, \quad \forall n \in \mathbb{Z}.\] If $b$ doesn't
-divide $a$, we write $b \nmid a$.
+\begin{itemize}
+\item 趣链(杭州趣链科技有限公司)属于浙大AIF产研中心孵化企业。趣链核心团队均毕业于
+  浙江大学，同时也是浙大AIF互联网金融技术研究中心的学术团队成员。
+\item 聚义岩（北京聚义岩科技有限公司）是趣链的全资生态子公司
+\item 新华夏(北京新华夏信息技术有限公司)是聚义岩的全资子公司
+\end{itemize}
 
-It's plain that
-\begin{align*}
-  b \mid a \;,\; c \mid b &\Rightarrow   c \mid a\\
-  b \mid a  &\Rightarrow   bc \mid ac\\
-  c \mid a \;,\; c \mid b &\Rightarrow   c \mid ma + nb \quad \forall a,b,m,n
-                            \in \mathbb{Z} \quad c \in \mathbb{Z^{\times}}
-\end{align*}
+\subsection*{2. 请阐述公司当前战略}
+公司进入生存模式。
+优胜劣汰，认人为贤。
+效绩考核，未达标者予以调岗，降薪或解聘。
 
-\subsection{Prime numbers}
 
-\begin{myDef}{Prime number}{prime-number}
-  A number $p \in \mathbb{N}$ is said to be \Cola{prime}, if
+\subsection*{3. 请简要阐述公司当下重大事项}
+以当前手中十四五项目交付为重中之重。最重要的是4501，要求交付C++版本自主研发联盟链。
+
+\subsection*{4. 清列出全部军委，战区，军种名称}
+\begin{itemize}
+\item 中华人民共和国中央军事委员会
   \begin{itemize}
-  \item $p > 1$
-  \item $p$ has no positive divisors except 1 and $p$
+  \item 三大委员会
+    \begin{enumerate}
+    \item \cola{中央军委}纪律检查委员会
+    \item \cola{中央军委}政法委员会
+    \item \cola{中央军委}科学技术委员会
+    \end{enumerate}
+  \item 七大部
+    \begin{enumerate}
+    \item \cola{中央军委}办公室
+    \item \cola{中央军委}联合参谋部
+    \item \cola{中央军委}政治工作部
+    \item \cola{中央军委}后勤保障部
+    \item \cola{中央军委}装备发展部
+    \item \cola{中央军委}训练管理部
+    \item \cola{中央军委}国防动员部
+    \end{enumerate}
+  \item 五大办公厅 （署/局）
+    \begin{enumerate}
+    \item \cola{中央军委}战略规划办公室
+    \item \cola{中央军委}改革和编制办公室
+    \item \cola{中央军委}国际军事合作办公室
+    \item \cola{中央军委}审计部
+    \item \cola{中央军委}机关事务管理总局
+    \end{enumerate}
   \end{itemize}
-\end{myDef}
+\item 五大战区: 东，西，南，北，中
+\item 六大军种: 陆军，海军，空军，火箭军，战略支援部队，联勤保障部队。
+\end{itemize}
 
-% The \cref{def:prime-number}.
-A number greater than 1 and not prime is called \Cola{composite}.
-Our first theorem is
-\begin{myTheo}{Product of primes}{product-of-primes}
-  Every positive integer $n$ > 1, is a product of primes.
-  \tcblower
-    \cola{If} $n$ \cola{is prime}:
-    \begin{myIndent}
-      There's nothing to prove.
-    \end{myIndent}
-    \cola{Else:}
-    \begin{myIndent}
-      $n$ has \colc{divisors} between 1 and $n$.\\
-      \emoji{pinching-hand} $m := \cola{\min{}} \{\colc{\text{these divisor of }n}\}$
-      \begin{myIndent}
-        \cola{If} $m$ \cola{is not prime}:
-            \begin{align*}
-              \exists l \in (1,m) \subset \mathbb{N}, l \mid m &\Rightarrow l \mid n \\
-              & \Rightarrow m \text{ is not the smallest as defined \emoji{cross-mark}}
-            \end{align*}
-        So, $m$ \cola{is prime}, say $m = p_1$, then we can draw a prime out of n:
-        \[
-          n = p_1n_1, \quad n_1 \in [p_1,n)
-        \]
-        \cola{If} $n_1$ is a prime:
-        \begin{myIndent}
-          Done.
-        \end{myIndent}
-        \cola{Else}:
-        \begin{myIndent}
-          We use the same process again to draw out another prime divisor of $n_1$
-          \begin{align*}
-            \text{\emoji{pinching-hand} } p_2 \in (1,n_1), p_2 \mid n_1 & \Rightarrow n_1 = p_2n_2 \\
-            & \Rightarrow n = p_1p_2n_2
-          \end{align*}
-          Sooner, or later we must meet a prime $n_i$, because \cola{we can't
-            keep factoring out numbers greater than one from a finite number.}
-        \end{myIndent}
-      \end{myIndent}
-    \end{myIndent}
-  \end{myTheo}
+\subsection*{请阐述BM十不准}
+\begin{enumerate}
+\item 不准涉密人员随意向任何组织和个人泄露秘密；
+\item 不准非涉密人员以任何理由、途径非法知悉秘密；
+\item 不准用手机或普通电话谈论国家秘密；
+\item 不准将涉密计算机接入互联网；
+\item 不准将涉密 U 盘、移动硬盘、光盘接入与互联网连接的计算机；
+\item 不准在与互联网连接的计算机上处理涉密文件；
+\item 不准使用具有无线上网功能的计算机处理涉密文件；
+\item 不准使用未加保密装置的传真机传递涉密文件资料与信息；
+\item 不准擅自复制、摘抄、销毁和私自留存涉密文件资料；
+\item 不准将涉密文件资料、涉密计算机带出办公室或家中处理涉密文件。
+\end{enumerate}
 
-  These prime factors are not necessarily distinct.
+\section*{专业科目}
+\subsection*{阐述下公链和联盟链的区别}
+\begin{center}
+  \begin{tabularx}{0.8\textwidth} { 
+       >{\raggedright\arraybackslash}X 
+       >{\centering\arraybackslash}X 
+       >{\raggedleft\arraybackslash}X  }
+     \toprule
+     \textbf{类型} & \textbf{共链} & \textbf{联盟链} \\
+     \midrule
+     网络  & 公网  & 一般为内部网络  \\
+     \hline
+     谁能进入集群成为节点？  & 谁都能  & 在固定CA获得证书的节点才能  \\
+     \hline
+     共识类型 & 弱共识（Weak Consensus, Eventual Consensus）比如 PoW,Pos & 状态
+     同步共识 (State Duplication Consensus) 比如 Raft,PBFT\\
+     \hline
+     谁来打包? & 矿工 （miner） & 主节点 （primary）\\
+     \hline
+     世界状态在每一瞬间都是是确凿的(100\%)？ & 不是 & 是\\
+     \hline
+     每个区块只有一个子区块吗? &不是&是\\
+     \bottomrule
+\end{tabularx}
+\end{center}
 
-  If we arrange them in increasing order, we obtain
-  \[
-    n = p_1^{a_1}p_2^{a_2}\dotsc{}p_n^{a_n}, \quad a_i \in \mathbb{N^{\times}},
-    p_1 < p_2 < \dotsm{} < p_n
-  \]
-  In this case, we say that $n$ is in \Cola{standard form}.
-  
-\subsection{The fundamental theorem of arithmetic}
-\label{sec:fund-theo-arth}
+\subsection*{阐述下联盟链常用的共识算法}
 
-We defer the proof for now but present a lemma:
-\begin{myLem}{Euclid's first theorem}{p-cut-ab} 
-  Let $p$ be prime, $a,b \in \mathbb{N^{\times}}$, then $
-  p \mid ab \Rightarrow p \mid a \text{ or } p \mid b$
-\end{myLem}
-
-We take \refLemma{p-cut-ab} for granted for the moment and use that to prove
-\cref{thm:fund-theo-arth}
-
-\begin{myTheo}{Fundamental theorem of arithmetic}{fund-theo-arth}
-  The standard form of $n$ is unique, $\forall n \in \mathbb{N}^{\times}$.
-  \tcblower{}
-  From \refLemma{p-cut-ab}, we have:
-  \[ p\mid n_1n_2\dotsm{}n_k \Rightarrow p \mid n_i \text{ for some }i\] In
-  particular, if $n_i$ are primes, then $p$ is one of $n_i$. In other words,
-  \cola{if a prime divides a product of primes, it must be one of them}.
-
-  Now suppose \cola{if} $n$ has two standard forms:
-  \begin{myIndent}
-    \newcommand{\myP}[3]{\ensuremath{{#1}_{#3}^{{#2}_{#3}}}}
-    We have
-    \[
-      n =
-      \colc{
-        \myP{p}{a}{1}
-        \myP{p}{a}{2}
-        \dotsm
-        \myP{p}{a}{k}
-      }
-      =
-      \colb{
-        \myP{q}{b}{1}
-        \myP{q}{b}{2}
-        \dotsm
-        \myP{q}{b}{j}
-      }
-    \]
-    So
-    $\forall i, \colc{p_i} \mid \colb{ \myP{q}{b}{1} \myP{q}{b}{2} \dotsm
-      \myP{q}{b}{j} } $. This means \cola{every \colc{$p$} is a \colb{$q$}}.
-    Symmetrically \cola{every \colb{$q$} is a \colc{$p$}}. Hence $k=j$ and,
-    since both sides are arranged in increasing order, $p_i = q_i$ for all $i$.
-
-    So now only the exponents may be different.
-
-    \cola{If} $a_i > b_i$ for some $i$:
-    \begin{myIndent}
-      Dividing both side by $\myP{p}{b}{i}$ gives:
-      \[
-        \colc{
-          \myP{p}{a}{1}
-          \dotsm{}
-          p_i^{a_i - b_i}
-          \dotsm{}
-          \myP{p}{a}{k}
-        }
-        = 
-        \colb{
-          \myP{p}{b}{1}
-          \dotsm{}
-          \myP{p}{b}{i-1}
-          \myP{p}{b}{i+1}
-          \dotsm{}
-          \myP{p}{a}{k}
-        }
-      \]
-      The left hand side is divisable by $p_i$ while the right hand side is not.
-      \emoji{cross-mark} a contradiction.
-    \end{myIndent}
-    Symmetrically $a_i$ can't be less than $b_i$.
-  \end{myIndent}
-  As as result, $n$ can't have two different normal forms.
-\end{myTheo}
+\begin{description}
+\item[Raft] 每个节点有一个内置随机秒表（Timer）。秒表超时会触发\cola{选举}。第一
+  个发送\cola{选举}到大多数节点的节点成为主节点。主节点确认后发
+  送\cola{心跳}以及\cola{执行}到其他节点。特点是Partition Tolerance
+\item[PBFT] 
+\end{description}
 
 \end{document}
 
