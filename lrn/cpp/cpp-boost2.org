@@ -981,6 +981,37 @@ BOOST_AUTO_TEST_CASE(test_substr){
 }
 
 #+end_src
+*** cast
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <boost/lexical_cast.hpp>
+  #include <boost/format.hpp>
+  #include <boost/log/trivial.hpp>
+  using boost::format;
+
+  #include <string>
+  using std::string;
+
+
+  using boost::lexical_cast;
+  BOOST_AUTO_TEST_CASE(test_str_to_int){
+    string s = lexical_cast<string>(123);
+    int i = lexical_cast<int>("123");
+    BOOST_CHECK_EQUAL(s,"123");
+    BOOST_CHECK_EQUAL(i,123);
+    BOOST_CHECK_THROW({
+        int i = lexical_cast<int>("abc");
+      },boost::bad_lexical_cast);
+
+    uint16_t j = lexical_cast<uint16_t>("-1");
+    BOOST_CHECK_EQUAL(j,65535);   // ⚠️ careful, lexical_cast doesn't check sign
+                                  // for you.
+    // BOOST_CHECK_THROW({
+    //   },boost::bad_lexical_cast);
+  }
+#+end_src
 
 * End
 # Local Variables:

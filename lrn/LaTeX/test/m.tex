@@ -80,7 +80,7 @@ BoldItalicFont=*CodePLItalic
 
 \tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
 \date{\today}
-\author{丛坚而 技术部 C++算法工程师}
+\author{丛坚而 技术部 算法工程师}
 
 \newtcblisting{simplec}{
   listing engine=minted,
@@ -181,20 +181,16 @@ row sep=1cm,column sep=2cm]
 \subsection*{1. 请阐述浙大，趣链，聚义岩，新华夏之间的关系}
 
 \begin{itemize}
-\item 趣链(杭州趣链科技有限公司)属于浙大AIF产研中心孵化企业。趣链核心团队均毕业于
-  浙江大学，同时也是浙大AIF互联网金融技术研究中心的学术团队成员。
+\item 趣链(杭州趣链科技有限公司)属于浙大AIF产研中心孵化企业。
 \item 聚义岩（北京聚义岩科技有限公司）是趣链的全资生态子公司
 \item 新华夏(北京新华夏信息技术有限公司)是聚义岩的全资子公司
 \end{itemize}
 
 \subsection*{2. 请阐述公司当前战略}
-公司进入生存模式。
-优胜劣汰，认人为贤。
-效绩考核，未达标者予以调岗，降薪或解聘。
-
+145项目交付，区块链产品研发
 
 \subsection*{3. 请简要阐述公司当下重大事项}
-以当前手中十四五项目交付为重中之重。最重要的是4501，要求交付C++版本自主研发联盟链。
+145项目交付
 
 \subsection*{4. 清列出全部军委，战区，军种名称}
 \begin{itemize}
@@ -272,10 +268,14 @@ row sep=1cm,column sep=2cm]
 \subsection*{阐述下联盟链常用的共识算法}
 
 \begin{description}
-\item[Raft] 每个节点有一个内置随机秒表（Timer）。秒表超时会触发\cola{选举}。第一
-  个发送\cola{选举}到大多数节点的节点成为主节点。主节点确认后发
-  送\cola{心跳}以及\cola{执行}到其他节点。特点是Partition Tolerance
-\item[PBFT] 
+\item[Raft] 特点是分区容忍（Partition Tolerance），半数以下节点挂了也没事。沟通效率为$O(n)$(主节点广播一次就行)。
+  % 每个节点有一个内置随机秒表（Timer）。秒表超时会触发\cola{选举}。第一
+  % 个发送\cola{选举}到大多数节点的节点成为主节点。主节点确认后发
+  % 送\cola{心跳}以及\cola{执行}到其他节点。
+\item[PBFT] 特点是可以容忍$\frac{1}{3}N$个“随机行为节点”（拜占庭节点）。沟通效率为$O(n^2)$（每个节点广播至少两次）。
+\item[RBFT] 特点是把交易验证交给主节点(这个把区块链嵌到了共识里)，使无效交易不会被广播。同样可以防
+  止$\frac{1}{3}N$一下的“随机行为节点”。沟通效率为$O(n^2)$（同PBFT）。
+\item[NBFT] 特点是给主节点根据网络带宽决定实际共识流程。沟通效率最快为$O(n)$ (网络很不好时变为Raft)。
 \end{description}
 
 \end{document}
