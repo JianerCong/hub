@@ -1038,6 +1038,14 @@ BOOST_AUTO_TEST_CASE(test_1) {
 }
 
 #+end_src
+*** WIN or *Nix?
+#+begin_src c++
+#if defined(OS_WIN)
+std::string kDBPath = "C:\\Windows\\TEMP\\rocksdb_compact_files_example";
+#else
+std::string kDBPath = "/tmp/rocksdb_compact_files_example";
+#endif
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"
