@@ -459,6 +459,59 @@ BOOST_AUTO_TEST_CASE(test_char_bit_cast){
 
 
 #+end_src
+*** variant
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/log/trivial.hpp>
+
+#include <string>
+using std::string;
+#include <boost/format.hpp>
+using boost::format;
+
+#include <variant>
+
+using std::variant;
+
+BOOST_AUTO_TEST_CASE(test_basic_variant){
+  variant<int,float> v,w;
+  v = 123;                      // hold int now
+
+  int i = std::get<int>(v);
+  BOOST_REQUIRE(std::holds_alternative<int>(v));
+  BOOST_REQUIRE(not std::holds_alternative<float>(v));
+
+  BOOST_CHECK_EQUAL(123,i);
+  BOOST_CHECK_THROW({
+      std::get<float>(v);
+    },std::bad_variant_access);
+}
+
+#+end_src
+*** string_view
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/log/trivial.hpp>
+
+#include <string>
+using std::string;
+#include <string_view>
+using std::string_view;
+
+#include <boost/format.hpp>
+using boost::format;
+
+BOOST_AUTO_TEST_CASE(test_view){
+  string s = "abc";
+  string_view s0(s.begin()+1,s.end()); // C++20
+  BOOST_CHECK_EQUAL(s0,"bc");
+  s[1] = 'B';
+  BOOST_CHECK_EQUAL(s0,"Bc");
+  }
+
+  #+end_src
 
 * End
 # Local Variables:

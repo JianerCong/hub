@@ -113,11 +113,13 @@
         ("v" . "<vector>")
         ("m" . "<unordered_map>")
         ("f" . "<fstream>")
-        ("c" . "<cstdlib>")
-        ("ct" . "<ctime>")
-        ("ci" . "<cstdio>")
-        ("ex" . "<stdexcept>")
+        ;; ("c" . "<cstdlib>")
+        ;; ("ct" . "<ctime>")
+        ;; ("ci" . "<cstdio>")
+        ;; ("ex" . "<stdexcept>")
         ("a" . "<algorithm>")
+        ("t" . "<thread>")
+        ("ch" . "<chrono>")
         ("f" . "<functional>")
         ("F" . "<boost/format.hpp>")
         ("L" . "<boost/log/trivial.hpp>>")
@@ -144,6 +146,7 @@
 (define-abbrev c++-mode-abbrev-table "lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
 (define-abbrev c++-mode-abbrev-table "beq" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_EQUAL(" _ ");"))))
+(define-abbrev c++-mode-abbrev-table "bne" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_NE(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "beqr" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE_EQUAL(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "bck" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "bct" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_THROW(" _ ",std::exception);"))))
@@ -153,6 +156,11 @@
 (define-abbrev c++-mode-abbrev-table "btc" "" 'cpp-boost-add-test-case)
 (define-abbrev c++-mode-abbrev-table "bts" "" 'cpp-boost-add-test-suite)
 (define-abbrev c++-mode-abbrev-table "bfc" "" 'cpp-boost-add-fixture-test-case)
+
+
+(define-abbrev c++-mode-abbrev-table "cmag" "\" S_MAGENTA \"")
+(define-abbrev c++-mode-abbrev-table "ccyn" "\" S_CYAN \"")
+(define-abbrev c++-mode-abbrev-table "cnor" "\" S_NOR \"")
 
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
 (define-abbrev c++-mode-abbrev-table "js" "json::")
@@ -165,6 +173,9 @@
 (define-abbrev c++-mode-abbrev-table "se" "" (lambda () (skeleton-insert '(nil "std::end(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "fmt" "" (lambda () (skeleton-insert '(nil "(format(\"" _ "\")).str()"))))
 (define-abbrev c++-mode-abbrev-table "ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
+
+(define-abbrev c++-mode-abbrev-table "vct" "" (lambda () (skeleton-insert '(nil "vector<" _ ">"))))
+(define-abbrev c++-mode-abbrev-table "opl" "" (lambda () (skeleton-insert '(nil "optional<" _ ">"))))
 
 ;; get handler for Rpc
 (define-abbrev c++-mode-abbrev-table "hget" "" (lambda () (skeleton-insert '(nil "tuple<bool,string> "

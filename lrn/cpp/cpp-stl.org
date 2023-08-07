@@ -243,6 +243,37 @@ BOOST_AUTO_TEST_CASE(set_basic_erase_iter){
 }
 
 #+end_src
+**** unordered_set
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/log/trivial.hpp>
+
+#include <string>
+using std::string;
+#include <boost/format.hpp>
+using boost::format;
+#include <unordered_set>
+
+using std::unordered_set;
+// std::ostream& operator<< (std::ostream& os, std::unordered_set<int> const& s) {
+//   for (os << "[" << s.size() << "] { "; int i : s)
+//     os << i << ' ';
+//   return os << "}\n";
+// }
+
+BOOST_AUTO_TEST_CASE(test_unordered_set_basic){
+  unordered_set<int> nums = {1,2,3};
+  auto [iter,ok] = nums.insert(1);
+  BOOST_REQUIRE(not ok);
+  BOOST_CHECK_EQUAL(nums.size(),3);
+
+  std::tie(iter,ok) = nums.insert(4);
+  BOOST_CHECK_EQUAL(nums.size(),4);
+  BOOST_REQUIRE(ok);
+}
+
+#+end_src
 *** filesystem C++17
 #+begin_src c++
   #define BOOST_TEST_MAIN

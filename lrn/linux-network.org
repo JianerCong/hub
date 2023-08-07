@@ -323,6 +323,10 @@ Service Set ID = Network Name
   # Post data
   curl -d "name=curl" https://example.com
   curl --data "name=curl" https://example.com
+
+  # upload a local file as payload
+  $ curl -vX POST http://server/api/v1/places.json -d @testplace.json \
+    --header "Content-Type: application/json"
 #+end_src
  curl --trace-ascii hi.txt https://www.example.com > /dev/null
 

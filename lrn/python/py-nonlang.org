@@ -180,6 +180,9 @@ ordering with prefixes, like ~10-myimports.py~.
       %cd c:/Users/congj/work
       !dir
     #+end_src
+** emacs
+*** flycheck error ?
+sudo apt install pylint
 
 * End
 

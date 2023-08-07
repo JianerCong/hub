@@ -42,6 +42,8 @@
     ("eheart" "💙")
     ("esnow" "❄")
     ("echeck" "✅️")
+    ("eseedling" "🌱")
+
     ("ecross" "❌️")
     ("etrash" "🚮️")
     ("egear" "⚙️")

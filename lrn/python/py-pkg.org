@@ -23,6 +23,13 @@
   ptw
 
 #+end_src
+**** run a subset of tests
++ single test method :: pytest path/test_module.py::TestClass::test_method
++ All tests in a class :: pytest path/test_module.py::TestClass
++ Single test function :: pytest path/test_module.py::test_function
++ All tests in a module :: pytest path/test_module.py
++ All tests in a directory :: pytest path
++ Tests matching a name pattern :: pytest -k pattern
 
 *** sympy
 **** install on ubuntu
@@ -563,6 +570,7 @@ r.word(regex=".*a")
 # you can combine multiple filtering options
 r.word(starts_with="ru", word_max_length=10, include_parts_of_speech=["verbs"])
 #+end_src
+
 ** eth-hash
 #+begin_src bash
   pyenv

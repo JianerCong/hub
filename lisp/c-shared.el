@@ -176,7 +176,8 @@ abbrev table"
         ("vd" . "void")
         ;; ("db" . "double")
         ;; ("def" . "define")
-        ("lv" . "exit(EXIT_FAILURE);")
+        ;; ("lv" . "exit(EXIT_FAILURE);")
+        ("lv" . "std::exit(EXIT_FAILURE);")
         ))
 
 (mapcar 'define-abbrev-for-c++-and-c c-c++-common-abbrev)
