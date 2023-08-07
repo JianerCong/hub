@@ -1,46 +1,71 @@
-** path
+** pathlib
 #+begin_src python
-from pathlib import Path
+  # ptw test_one.py -- -vv
+  from pathlib import Path
+  import pytest
 
-def test_basic():
-    p = Path.home()
-    p1 = Path.cwd()
-    assert p.exists()
-    assert p1.exists()
-    assert p.is_dir()
-    assert not p.is_file()
-    assert p.is_absolute()
+  def test_basic():
+      p = Path.home()
+      p1 = Path.cwd()
+
+      assert str(p) == '/home/me'
+      assert str(p.absolute()) == '/home/me'
+
+      assert p.exists()
+      assert p1.exists()
+      assert p.is_dir()
+      assert not p.is_file()
+      assert p.is_absolute()
+
+  def test_mkdir():
+      p = Path.cwd() / 'd1'
+      assert not p.exists()
+      assert not p.is_file()
+      assert not p.is_dir()
+
+      p.mkdir()
+
+      assert p.exists()
+      assert p.is_dir()
+
+      p.rmdir()                   # must be empty
+      assert not p.exists()
+
+      # 🦜 : If dir is not empty, we can't remove it. We need to resort to shutil
+
+  import shutil
+  def test_rmdir():
+      p = Path.cwd() / 'd1'
+      p1 = p / 'd1-1'
+      assert not p.exists()
+      assert not p1.exists()
+
+      p.mkdir()
+      p1.mkdir()
+      assert p.exists()
+      assert p1.exists()
+
+      with pytest.raises(OSError):
+          p.rmdir()
+
+      print(f'Removing dir: {str(p.absolute())}')
+      shutil.rmtree(str(p.absolute()))
 
 
-def test_mkdir():
-    p = Path.cwd() / 'd1'
-    assert not p.exists()
-    assert not p.is_file()
-    assert not p.is_dir()
-
-    p.mkdir()
-
-    assert p.exists()
-    assert p.is_dir()
-
-    p.rmdir()                   # must be empty
-    assert not p.exists()
-
-def test_write_txt():
-    p = Path.cwd() / 'hi.txt'
-    assert not p.exists()
-    assert not p.is_file()
-    assert not p.is_dir()
+  def test_write_txt():
+      p = Path.cwd() / 'hi.txt'
+      assert not p.exists()
+      assert not p.is_file()
+      assert not p.is_dir()
 
 
-    assert 3 == p.write_text('abc')
-    assert p.exists()
-    assert p.is_file()
-    assert p.read_text() == 'abc'
+      assert 3 == p.write_text('abc')
+      assert p.exists()
+      assert p.is_file()
+      assert p.read_text() == 'abc'
 
-    p.unlink()                   # remove the file
-    assert not p.exists()
-
+      p.unlink()                   # remove the file
+      assert not p.exists()
     #+end_src
 
 * End

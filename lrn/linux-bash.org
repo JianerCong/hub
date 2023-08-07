@@ -34,9 +34,9 @@ Use shift to get argument successively
 #+BEGIN_SRC bash
     a=1
 
-    if [ a = 2 ]; then
+    if [ $a = 2 ]; then
         echo "a is 2"
-    elif [  a = 3 ]; then
+    elif [  $a = 3 ]; then
         echo "a is 3"
     else
         echo "I don't known this number"
