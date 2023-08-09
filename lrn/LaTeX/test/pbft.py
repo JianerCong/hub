@@ -91,12 +91,18 @@ class PbftConsensus:
     def __init__(self,
                  n : IEndpointBasedNetworkable,
                  e : IExecutable,
+                 s : ISignable,
                  all_endpoints : list[str]):
         self.net = n
         self.exe = e
+        self.sig = s
+
         self.all_endpoints = all_endpoints
         self.epoch: list[str]  = [all_endpoints[0]]
         self.view_change_state = False
+
+        self.epoch_votes: dict[int,dict[str,int]]
+        # the vote for each epoch
 
         self.command_history: list[str] = []  # executed
 
@@ -115,13 +121,6 @@ class PbftConsensus:
         # command to primary, and the primary just need to accept once.
         self.recieved_commands: set[str] = {}  # recieved by primary
 
-        if self.my_id() == 0:
-            self.start_listening_as_primary()
-        else:
-            self.start_listening_as_sub()
-
-    def start_listening_as_sub(self):
-        pass
 
     def start_listening_as_primary(self):
         self.net.listen('/whatsYourState',
@@ -130,13 +129,20 @@ class PbftConsensus:
                         self.handle_execute_for_primary)
 
     def primary(self) -> str:
+        "The current primary"
         return self.epoch[-1]
 
     def handle_get_state(self, endpoint: str, data: str) -> str:
-        """Get the state of the current node, when asked by others."""
+        """Get the state of the current node, when asked by others. This is
+        (almost always) during view-change.
+
+        🦜 : This should be signed right?
+
+        🐢 : Yeah
+        """
         return self.get_state()
 
-    def get_state(self):
+    def get_state(self) -> str:
         """Get the (hash of) state, which should only be changed by the cmd
         executed so far.
 
@@ -144,57 +150,81 @@ class PbftConsensus:
 
         🐢 : Let's just use:
         """
-        ':'.join(self.command_history)
+        return self.sig.sign(':'.join(self.command_history))
 
     def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
-        cmd = data
-        if (endpoint == self.primary()):
-            return handle_execute_from_primary(data)
-            # self.exe.execute(cmd)
-            # return f"""
-            # Dear boss {self.primary},
-            #      Mission [{data}] is accomplished.
-            #          Sincerely
-            #          {self.net.listened_endpoint()}
-            # """
-        else:
-            # forward
-            r = self.net.send(self.primary,
-                                 '/pleaseExecuteThis',data)
-            if r == None:
-                self.trigger_view_change()
-            return r
+        """🐢 : All things starts with handle_execute_for_sub/primary(), which
+        is like the gateway of the node. So if we disable this, then"""
+        if self.view_change_state:
+            return f"""
+            Dear {endpoint}
+                  We are currently selecting new primary for epoch {len(self.epoch) + 1}.
+                  Please try again later.
+            """
 
-    def add_to_to_be_confirmed_commands(self, data:str) ->int:
+        if endpoint == self.primary():
+            self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
+            return 'OK'
+
+        # forward
+        r = self.net.send(self.primary,'/pleaseExecuteThis',data)
+        if r == None:
+            self.say('⚠️ What ? primary is down? I will change.')
+            self.trigger_view_change()
+        return r
+
+    def add_to_to_be_confirmed_commands(self, endpoint:str, data:str) ->int:
+        """Remember that endpoint `received` data. If """
         if data not in self.to_be_confirmed_commands:
-            self.to_be_confirmed_commands[data] = 1
+            self.say(f'Adding {S.MAG + data + S.NOR} from {S.MAG + endpoint + S.NOR}')
+            self.to_be_confirmed_commands[data] = {endpoint}
+
         else:
-            n = self.to_be_confirmed_commands[data]
-            if (n + 1 > 1):
-                
+            s: set[str] = self.to_be_confirmed_commands[data]
+            s.add(endpoint)
+            if (len(s)) > self.num_of_correct_nodes():
+                self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} nodes, executing it.')
 
-    def handle_execute_from_primary(data: str):
-        # put in the queue
-        # self.
 
-        if self.comfirm_with_others(data):
+    def num_of_correct_nodes(self) -> int:
+        """Return the value of 2f + 1, where N should be 3f + 1. The greater
+        the value, the more correct nodes the cluster needs."""
+        N = len(self.all_endpoints)
+        f = (N - 1) // 3        # number of random nodes
+        return N - f            # number of correct nodes
+
+    # 🦜 : Different N for different f is:
+    # f = 0 ⇒ N = 3f + 1 = 1
+    # f = 1 ⇒ N = 3f + 1 = 4 (four nodes can tolerate 1)
+    # f = 2 ⇒ N = 3f + 1 = 7 (7 nodes can tolerate 2)
 
 
     def trigger_view_change(self):
+        """When a node triggers the view-change, it borad cast something like
+        'I lied down with this state: {...} for view {0}'
+
+        And others will listens to it.
+        """
         self.say('ViewChange triggered')
         self.view_change_state = True
-        if self.check_I_am_the_next():
-            self.say('I am the next, please start guys')
+        for sub in self.all_endpoints:
+            self.net.send(sub,'/ILiedDown',f"""
+            Dear {sub},
+                I lied down for view
+                {len(self.epoch)}
+                My state is
+                {self.get_state}
+                       Yours {self.net.listened_endpoint()}
+            """)
 
-        # Else: do nothing, wait for the correct one to
+    def handle_lied_down(self, endpoint: str, data: str) -> str:
+        """Response to a `lied-down` msg.
 
-    def check_I_am_the_next(self) -> bool:
-        """Here we check the states with the cluster.
-
-        This is 
-
+        
         """
-        return False
+
+
+
 
     def handle_execute_for_primary(self, endpoint: str, data: str) -> str:
         if self.view_change_state:
