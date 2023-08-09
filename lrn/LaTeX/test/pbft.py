@@ -1,6 +1,8 @@
 import threading
+from typing import Union, Optional
 from threading import Thread, Timer, Lock
 import random
+import json
 # from random import randrange
 from time import sleep
 
@@ -98,13 +100,33 @@ class PbftConsensus:
         self.sig = s
 
         self.all_endpoints = all_endpoints
-        self.epoch: list[str]  = [all_endpoints[0]]
+        self.epoch: int = 0
         self.view_change_state = False
+        self.lock_for_patience = Lock()
+        self.laid_down_history: dict[int,dict[str,list[str]]] = {}
+        # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
 
-        self.epoch_votes: dict[int,dict[str,int]]
-        # the vote for each epoch
+        # 🦜 : the list l1 which contains N* = self.all_endpoints[epoch] forms
+        # the new-view-certificate for N*.
 
-        self.command_history: list[str] = []  # executed
+        """🦜 : In fact its just the set of following struct:
+
+            {
+                'msg' : f'Dear {sub}, I laid downed',
+                'epoch' : len(self.epoch),
+                'state' : self.get_state(),
+                'from' : self.net.listened_endpoint()
+            }
+
+        sorted first by epoch:int, then by state:string
+
+        🐢 : But I feel like this tree-like structure is easier to manage and
+        access. No ?
+
+        🦜 : True
+
+        """
+
 
         # 🦜 : This list of commands to be confirmed. This is kinda like a
         # counter. When a command has reached more than 2f + 1 count (confirmed
@@ -120,6 +142,16 @@ class PbftConsensus:
         # The commands received by primary, subs will forward many copied of
         # command to primary, and the primary just need to accept once.
         self.recieved_commands: set[str] = {}  # recieved by primary
+        self.command_history: list[str] = []  # executed
+
+        self.net.listen('/pleaseGiveMeUrCmds',self.handle_give_cmds)
+
+        if self.primary() == self.net.listened_endpoint():
+            self.start_listening_as_primary()
+        else:
+            self.start_listening_as_sub()
+
+        self.start_faulty_timer()
 
 
     def start_listening_as_primary(self):
@@ -128,9 +160,13 @@ class PbftConsensus:
         self.net.listen('/pleaseExecuteThis',
                         self.handle_execute_for_primary)
 
+    def start_listening_as_sub(self):
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_sub)
+
     def primary(self) -> str:
         "The current primary"
-        return self.epoch[-1]
+        return self.all_endpoints[self.epoch % self.epoch]
 
     def handle_get_state(self, endpoint: str, data: str) -> str:
         """Get the state of the current node, when asked by others. This is
@@ -140,17 +176,27 @@ class PbftConsensus:
 
         🐢 : Yeah
         """
-        return self.get_state()
+        return self.get_signed_state()
 
-    def get_state(self) -> str:
-        """Get the (hash of) state, which should only be changed by the cmd
-        executed so far.
+    @staticmethod
+    def cmds_to_state(cmds: list[str]) -> str:
+        """Make a `state string` according to `self.command_history`, Get the
+        (hash of) state, which should only be changed by the cmd executed so
+        far.
 
-        🦜 : Technically we should hash the commands history so far, but for now...
+        🦜 : Technically we should hash the commands history so far, but for
+        now...
 
         🐢 : Let's just use:
         """
-        return self.sig.sign(':'.join(self.command_history))
+        return ':'.join(cmds)
+
+    def get_state(self) -> str:
+        return PbftConsensus.cmds_to_state(self.command_history)
+
+    def get_signed_state(self) -> str:
+        """Get the signed state"""
+        return self.sig.sign(self.get_state())
 
     def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
         """🐢 : All things starts with handle_execute_for_sub/primary(), which
@@ -186,6 +232,12 @@ class PbftConsensus:
                 self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} nodes, executing it.')
 
 
+    def get_f(self) -> int:
+        """Get the number of random nodes the system can tolerate"""
+        N = len(self.all_endpoints)
+        f = (N - 1) // 3        # number of random nodes
+        return f
+
     def num_of_correct_nodes(self) -> int:
         """Return the value of 2f + 1, where N should be 3f + 1. The greater
         the value, the more correct nodes the cluster needs."""
@@ -193,32 +245,66 @@ class PbftConsensus:
         f = (N - 1) // 3        # number of random nodes
         return N - f            # number of correct nodes
 
+    def start_faulty_timer(self):
+        """Life always has up-and-downs, but time moves toward Qian.
+
+        🦜: The faulty timer is just a clock that keeps calling
+        trigger_view_change(). It will not be reset by anybody except a
+        new-primary with a new-view-certificate.
+
+        """
+        self.comfort()
+
+        p = -1
+        with self.lock_for_patience:
+            p = self.patience
+
+        while p > 0:
+            sleep(2)
+            with self.lock_for_patience:
+                self.patience -= 1
+                p = self.patience
+            self.say(f' patience >> {self.patience}, 🐢PR: {S.BLUE} {self.primary} {S.NOR}')
+
+    def comfort(self):          # reset timer
+        with self.lock_for_patience:
+            self.patience = 10
+            self.say(f'❄ patience set to = {self.patience}')
+
     # 🦜 : Different N for different f is:
     # f = 0 ⇒ N = 3f + 1 = 1
     # f = 1 ⇒ N = 3f + 1 = 4 (four nodes can tolerate 1)
     # f = 2 ⇒ N = 3f + 1 = 7 (7 nodes can tolerate 2)
 
+    def laid_down_early(self):
+        """When a node failed to forward msg to primary, it lies down early for
+        this view"""
+        self.view_change_state = True
 
     def trigger_view_change(self):
         """When a node triggers the view-change, it borad cast something like
-        'I lied down with this state: {...} for view {0}'
+        'I laid down with this state: {...} for view {0}'
 
         And others will listens to it.
         """
+        self.epoch += 1
         self.say('ViewChange triggered')
         self.view_change_state = True
         for sub in self.all_endpoints:
-            self.net.send(sub,'/ILiedDown',f"""
-            Dear {sub},
-                I lied down for view
-                {len(self.epoch)}
-                My state is
-                {self.get_state}
-                       Yours {self.net.listened_endpoint()}
-            """)
+            self.net.send(sub,'/ILaidDown',
+                          self.sig.sign(
+                              json.dumps(
+                                  {
+                                      'msg' : f'Dear {sub}, I laid downed',
+                                      'epoch' : len(self.epoch),
+                                      'state' : self.get_state(),
+                                      'from' : self.net.listened_endpoint()
+                                  }
+                              )
+                          ))
 
-    def handle_lied_down(self, endpoint: str, data: str) -> str:
-        """Response to a `lied-down` msg.
+    def handle_laid_down(self, endpoint: str, data: str) -> str:
+        """Response to a `laid-down` msg.
 
         🐢 : The goal is to see wether the `next primary` is OK. We need to
         receive 2f msgs (plus this node itself, then it should have 2f + 1 state) to check
@@ -233,6 +319,59 @@ class PbftConsensus:
         🦜 : Yeah, and if it doesn't reply. We do a new view-change.
         """
 
+        try:
+            if not self.sig.verify(data):
+                self.say(f'❌️ Pk-verification failed, ignoring msg: {data}')
+                return "No"
+
+            o: dict[str, Union[str,int]] = json.loads(self.sig.get_data(data))
+            if o['epoch'] < self.epoch:
+                self.say(f'🚮️ Ignoring lower epoch laid-down msg: {o}')
+                return 'No'
+
+            # 🦜 : In fact, I only cares about it if it's about me.
+            next_primary = self.all_endpoints[o['epoch'] % len(self.all_endpoints)]
+            if next_primary != self.net.listened_endpoint():
+                self.say(f'🚮️ This view-change is non of my bussinesses: {o}')
+                return 'No'
+
+            state: str = o['state']
+            to_be_added_list : list[str] = self.laid_down_history.get(o['epoch'],
+                                                                      dict({})).get(o['state'],
+                                                                                    dict({}))
+            # 🦜 : This is the list that data (signed msg) will be added in.
+            if data in to_be_added_list:
+                self.say(f'🚮️ Ignoring duplicated msg from {o["from"]}')
+                return 'No'
+
+            to_be_added_list.append(data)
+
+            if len(to_be_added_list) > self.num_of_correct_nodes:
+                self.try_to_be_primary(state,to_be_added_list)
+
+            # 🦜 : It is my bussinesses and the epoch is right for me. I am just
+            # ganna get majority of same-state, and if I am not one of them...
+            #
+            # I will sync to one of them.
+            #
+            #🐢 : What if the node "doesn't let you synk to its state?"
+            #
+            #🦜 : Then I will keep trying all these 2f + 1 nodes
+        except Exception as e:
+            self.say(f'Error parsing msg: {data}')
+            return 'No'
+
+    def try_to_be_primary(self,state: str, my_list: list[str]):
+        self.say(f'This\'s my time, my state is: \n'+
+                 '{ S.CYAN + self.get_state() + S.NOR} \n'+
+                 'And the majority has'
+                 )
+
+
+    def handle_give_cmds(self, endpoint: str, data: str) -> str:
+        return json.dumps({
+            'cmds' : self.command_history
+        })
 
 
 
