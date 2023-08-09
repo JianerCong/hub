@@ -43,9 +43,12 @@ other `hey, what's your state.`
 class ISignable:
     def sign(self, msg: str) -> str:
         pass
+
     def verify(self, msg: str) -> bool:
         pass
-    # extract part of the msg
+
+    # 🐢 :extract part of the msg, the msg should have been verified already,
+    # otherwise the result is undefined.
     def get_data(self, msg: str) -> str:
         pass
     def get_from(self, msg: str) -> str:
@@ -290,18 +293,21 @@ class PbftConsensus:
         self.epoch += 1
         self.say('ViewChange triggered')
         self.view_change_state = True
-        for sub in self.all_endpoints:
-            self.net.send(sub,'/ILaidDown',
-                          self.sig.sign(
-                              json.dumps(
-                                  {
-                                      'msg' : f'Dear {sub}, I laid downed',
-                                      'epoch' : len(self.epoch),
-                                      'state' : self.get_state(),
-                                      'from' : self.net.listened_endpoint()
-                                  }
-                              )
-                          ))
+
+        next_primary = self.all_endpoints[self.epoch % len(self.all_endpoints)]
+
+        # Send to next_primary the state of me
+        self.net.send(next_primary,'/ILaidDown',
+                      self.sig.sign(
+                          json.dumps(
+                              {
+                                  'msg' : f'Dear {next_primary}, I laid down for U',
+                                  'epoch' : self.epoch,
+                                  'state' : self.get_state(),
+                                  'from' : self.net.listened_endpoint()
+                              }
+                          )
+                      ))
 
     def handle_laid_down(self, endpoint: str, data: str) -> str:
         """Response to a `laid-down` msg.
@@ -346,8 +352,8 @@ class PbftConsensus:
 
             to_be_added_list.append(data)
 
-            if len(to_be_added_list) > self.num_of_correct_nodes:
-                self.try_to_be_primary(state,to_be_added_list)
+            if len(to_be_added_list) > 2 * self.get_f():
+                self.try_to_be_primary(o['epoch'],state,to_be_added_list)
 
             # 🦜 : It is my bussinesses and the epoch is right for me. I am just
             # ganna get majority of same-state, and if I am not one of them...
@@ -361,11 +367,18 @@ class PbftConsensus:
             self.say(f'Error parsing msg: {data}')
             return 'No'
 
-    def try_to_be_primary(self,state: str, my_list: list[str]):
-        self.say(f'This\'s my time, my state is: \n'+
+    def try_to_be_primary(self,e: int,state: str, my_list: list[str]):
+        self.say(f'This\'s my time for epoch :{e}, my state is: \n'+
                  '{ S.CYAN + self.get_state() + S.NOR} \n'+
-                 'And the majority has'
+                 'And the majority has state: \n' +
+                 '{ S.CYAN + state + S.NOR} \n'
                  )
+
+        if self.get_state() != state:
+            raise Exception('I am different from other correct nodes. The '+
+                            'cluster might contained too many random nodes.')
+
+        # board-cast the list
 
 
     def handle_give_cmds(self, endpoint: str, data: str) -> str:
