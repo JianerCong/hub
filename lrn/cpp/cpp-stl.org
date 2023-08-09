@@ -275,6 +275,7 @@ BOOST_AUTO_TEST_CASE(test_unordered_set_basic){
 
 #+end_src
 *** filesystem C++17
+**** tests
 #+begin_src c++
   #define BOOST_TEST_MAIN
   #include <boost/test/unit_test.hpp>
@@ -454,6 +455,25 @@ BOOST_AUTO_TEST_CASE(test_unordered_set_basic){
     // BOOST_CHECK_EQUAL(string(filesystem::absolute(p / "..")),"/home/me/repo");
     BOOST_CHECK(string(p).starts_with("/home/me/repo"));
   }
+#+end_src
+**** notes on WIndo
+🦜 implicit conversion from/to std::string is only available on POSIX.
+
+Usually, you need ~.c_str()~ or ~.native()~
+#+begin_src c++
+    std::filesystem::path p(u8"要らない.txt");
+    std::ofstream(p) << "File contents"; // Prior to LWG2676 uses operator string_type()
+                                         // on MSVC, where string_type is wstring, only
+                                         // works due to non-standard extension.
+                                         // Post-LWG2676 uses new fstream constructors
+ 
+    // native string representation can be used with OS APIs
+    if (std::FILE* f =
+#ifdef _MSC_VER
+                _wfopen(p.c_str(), L"r")
+#else
+                std::fopen(p.c_str(), "r")
+#endif
 #+end_src
 *** count
 #+begin_src c++

@@ -448,779 +448,780 @@ cmake_minimum_required(VERSION 3.21)
 
 #+end_src
 #+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <rocksdb/db.h>
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <rocksdb/db.h>
 
-#include <utility>              // std::as_const
+  #include <utility>              // std::as_const
 
-#include <rocksdb/utilities/backup_engine.h>
-#include <vector>
-using std::vector;
+  #include <rocksdb/utilities/backup_engine.h>
+  #include <vector>
+  using std::vector;
 
-#include <boost/log/trivial.hpp>
-
-
-#include <string>
-using std::string;
-#include <filesystem>
-namespace fs = std::filesystem;
-#include <boost/format.hpp>
-using boost::format;
+  #include <boost/log/trivial.hpp>
 
 
-using rocksdb::ReadOptions;
-using rocksdb::WriteBatch;
-using rocksdb::WriteOptions;
+  #include <string>
+  using std::string;
+  #include <filesystem>
+  namespace fs = std::filesystem;
+  #include <boost/format.hpp>
+  using boost::format;
 
-BOOST_AUTO_TEST_CASE(test_opendb) {
-  rocksdb::DB* db;
-  // Boilerplates (Copied from rocksdb/example/simple_example.cc)
-  // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
-  rocksdb::Options options;
-  options.IncreaseParallelism();
-  options.OptimizeLevelStyleCompaction();
-  options.create_if_missing = true;
 
-  fs::path d = fs::temp_directory_path() / "testdb";
-  // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
-  rocksdb::Status status = rocksdb::DB::Open(options, d , &db);
-  BOOST_REQUIRE(status.ok());
-  BOOST_CHECK(fs::exists(d));
-  // Close and then destroy the db (delete the folder)
-  delete db;
-  // Closing the db persists the folder
-  BOOST_CHECK(fs::exists(d));
-}
+  using rocksdb::ReadOptions;
+  using rocksdb::WriteBatch;
+  using rocksdb::WriteOptions;
 
-rocksdb::Options getInitOptions(){
-  rocksdb::Options options;
-  options.IncreaseParallelism();
-  options.OptimizeLevelStyleCompaction();
-  options.create_if_missing = true;
-  return options;
-}
-
-namespace filesystem = std::filesystem;
-struct D{
-  D(){
+  BOOST_AUTO_TEST_CASE(test_opendb) {
+    rocksdb::DB* db;
     // Boilerplates (Copied from rocksdb/example/simple_example.cc)
     // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
-    rocksdb::Options options = getInitOptions();
-    dbDir = fs::temp_directory_path() / "testdb";
-    if (filesystem::exists(dbDir)) BOOST_REQUIRE(filesystem::remove_all(dbDir));
+    rocksdb::Options options;
+    options.IncreaseParallelism();
+    options.OptimizeLevelStyleCompaction();
+    options.create_if_missing = true;
 
-    BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
-
+    fs::path d = fs::temp_directory_path() / "testdb";
     // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
-    rocksdb::Status status = rocksdb::DB::Open(options, dbDir , &db);
+    rocksdb::Status status = rocksdb::DB::Open(options, d.native() , &db);
+    // 🦜 : Implicit conversion from filesystem::path to std::string is only available 
     BOOST_REQUIRE(status.ok());
-}
-  ~D(){
-    BOOST_TEST_MESSAGE("Tearing down Db and remove");
+    BOOST_CHECK(fs::exists(d));
+    // Close and then destroy the db (delete the folder)
     delete db;
-    BOOST_REQUIRE(fs::remove_all(dbDir));
-    BOOST_REQUIRE(!fs::exists(dbDir));
+    // Closing the db persists the folder
+    BOOST_CHECK(fs::exists(d));
   }
-  rocksdb::DB* db;
-  fs::path dbDir;
-};
 
-// This labals which testcase/suite to run.
-#define MY_TEST_THIS *boost::unit_test::label("aaa")
+  rocksdb::Options getInitOptions(){
+    rocksdb::Options options;
+    options.IncreaseParallelism();
+    options.OptimizeLevelStyleCompaction();
+    options.create_if_missing = true;
+    return options;
+  }
 
-BOOST_AUTO_TEST_SUITE(core_operation);
-BOOST_FIXTURE_TEST_CASE(put_get,D){
-  // Put key-value
-  rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
-  BOOST_REQUIRE(s.ok());
-  string value;
+  namespace filesystem = std::filesystem;
+  struct D{
+    D(){
+      // Boilerplates (Copied from rocksdb/example/simple_example.cc)
+      // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+      rocksdb::Options options = getInitOptions();
+      dbDir = fs::temp_directory_path() / "testdb";
+      if (filesystem::exists(dbDir)) BOOST_REQUIRE(filesystem::remove_all(dbDir));
 
-  // get value
-  s = db->Get(ReadOptions(), "k1", &value);
-  BOOST_REQUIRE(s.ok());
-  BOOST_CHECK_EQUAL(value,"abc");
-}
+      BOOST_TEST_MESSAGE(format("Setting up Db at %s") % string(dbDir) );
 
-BOOST_FIXTURE_TEST_CASE(del,D){
-  rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
-  BOOST_REQUIRE(s.ok());
-
-  // get value, should be there
-  string value;
-  s = db->Get(ReadOptions(), "k1", &value);
-  BOOST_REQUIRE(s.ok());
-  // BOOST_REQUIRE(!s.IsNotFound());
-  BOOST_CHECK_EQUAL(value,"abc");
-
-  // delete the value
-  s = db->Delete(WriteOptions(), "k1");
-  BOOST_REQUIRE(s.ok());
-  s = db->Get(ReadOptions(), "k1", &value);
-  BOOST_REQUIRE(!s.ok());       // not found=not ok
-  BOOST_REQUIRE(s.IsNotFound());
-  // Now it's not found
-}
-
-BOOST_FIXTURE_TEST_CASE(iterator,D){
-  rocksdb::Status s = db->Put(WriteOptions(), "k1", "v1");
-  BOOST_REQUIRE(s.ok());
-
-  string v1{"v1"};
-  BOOST_REQUIRE(db->KeyMayExist(ReadOptions(),
-                                "k1",&v1,/*timestamp=*/ (bool*) nullptr));
-  // Use Bloom filter to check a : if definitely not exists return false
-
-  s = db->Put(WriteOptions(), "k2", "v2");
-  BOOST_REQUIRE(s.ok());
-
-  rocksdb::Iterator* i = db->NewIterator(ReadOptions());
-  i->SeekToFirst();
-  BOOST_REQUIRE(i->Valid());
-
-  int cnt{0};
-  string ks[] = {"k1","k2"};
-  string vs[] = {"v1","v2"};
-  for (i->SeekToFirst();i->Valid();i->Next()){
-    // Check db = [(k1,v1),(k2,v2)]
-    BOOST_CHECK_EQUAL(ks[cnt],i->key().ToString());
-    BOOST_CHECK_EQUAL(vs[cnt],i->value().ToString());
-    cnt++;
-    if (!i->status().ok()){
-      // BOOST_LOG_TRIVIAL(error) << ;
-      BOOST_ERROR(format("iterator error") % i->status().ToString());
+      // rocksdb::Status status = rocksdb::DB::Open(options,"/tmp/testdb", &db);
+      rocksdb::Status status = rocksdb::DB::Open(options, dbDir , &db);
+      BOOST_REQUIRE(status.ok());
+  }
+    ~D(){
+      BOOST_TEST_MESSAGE("Tearing down Db and remove");
+      delete db;
+      BOOST_REQUIRE(fs::remove_all(dbDir));
+      BOOST_REQUIRE(!fs::exists(dbDir));
     }
-    BOOST_LOG_TRIVIAL(info) << format("k=%s v=%s") % i->key().ToStringView()
-      % i->value().ToStringView();
-    //  ^^^^^^^^^^ rocksdb::Slice (also has ToString())
-  }
-  // size of db
-  BOOST_CHECK_EQUAL(cnt,2);
-}
-
-BOOST_FIXTURE_TEST_CASE(batch,D){
-
-  // Write a kv
-  rocksdb::Status s = db->Put(WriteOptions(), "k1", "aaa");
-  BOOST_REQUIRE(s.ok());
-
-  // write a batch
-  string value;
-  {
-    rocksdb::WriteBatch batch;
-    batch.Delete("key1");
-    batch.Put("key2", "bbb");
-    s = db->Write(WriteOptions(), &batch);
-  }
-
-  // check the batch
-  s = db->Get(ReadOptions(), "key1", &value);
-  BOOST_CHECK(s.IsNotFound());
-  s = db->Get(ReadOptions(), "key2", &value);
-  BOOST_CHECK_EQUAL(value,"bbb");
-}
-BOOST_AUTO_TEST_SUITE_END();
-
-BOOST_AUTO_TEST_CASE(manually_backup){
-  rocksdb::Options options = getInitOptions();
-  fs::path s = fs::temp_directory_path() / "sandbox";
-  // remove sandbox if exists
-  if (fs::exists(s)) fs::remove_all(s);
-
-  BOOST_REQUIRE(fs::create_directories(s));
-  fs::path d1 = s / "d1", d2 = s / "d2";
-
-  // Create db
-  rocksdb::DB* db;
-  rocksdb::Status status = rocksdb::DB::Open(options, d1 , &db);
-  BOOST_REQUIRE(status.ok());
-  BOOST_CHECK(fs::exists(d1));  // now only d1 exists
-
-  // store a kv in d1
-  status = db->Put(WriteOptions(), "k1", "abc");
-  // BOOST_REQUIRE(status.ok());
-
-  // close the db
-  delete db;
-
-  // copy d1 to d2
-  const auto copyOptions =
-    fs::copy_options::update_existing
-    // Replace the existing file only if it is older than the file being
-    // copied
-    | fs::copy_options::recursive;
-  // Recursively copy subdirectories and their content
-  std::error_code err;
-  // copy dir recursively
-  fs::copy(d1, d2, copyOptions, err);
-  BOOST_REQUIRE(!bool(err));
-  BOOST_CHECK(fs::exists(d2));
-
-  // open the db in d2
-  string value;
-  status = rocksdb::DB::Open(options, d2 , &db);
-  BOOST_REQUIRE(status.ok());
-
-  // check the value stored from d1
-  status = db->Get(ReadOptions(), "k1", &value);
-  BOOST_REQUIRE(status.ok());
-  BOOST_CHECK_EQUAL(value,"abc");
-  delete db;
-
-  // clean up
-  BOOST_CHECK(fs::remove_all(s));
-  }
-
-
-BOOST_AUTO_TEST_SUITE(backup);
-
-BOOST_AUTO_TEST_CASE(backup_engine_1_open){
-  // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
-
-  // mkdir
-  fs::path s = fs::temp_directory_path() / "sandbox";
-  // remove sandbox if exists
-  if (fs::exists(s)) fs::remove_all(s);
-  BOOST_REQUIRE(fs::create_directories(s));
-  fs::path d1 = s / "d1", d2 = s / "d1_backup";
-
-  // make db in d1
-  rocksdb::DB* db;
-  rocksdb::Options o = getInitOptions();
-  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
-  BOOST_REQUIRE(st.ok());
-
-  // put kv1
-  st = db->Put(WriteOptions(), "key1", "value1");
-  BOOST_REQUIRE(st.ok());
-  // create backup db=[(k1,v1)]
-
-  // create backup
-  rocksdb::BackupEngine* backup_engine;
-  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
-                                   rocksdb::BackupEngineOptions(d2),
-                         &backup_engine);
-  BOOST_REQUIRE(st.ok());
-  // put kv2
-  // create backup2 db=[(k1,v1),(k2,v2)]
-  // put kv3
-  // close db;
-
-  // restore db to backup1 = [(k1,v1)]
-  // restore db to backup2 = [(k1,v1),(k2,v2)]
-
-  // clean up
-
-  delete db;
-  delete backup_engine;
-  BOOST_CHECK(fs::remove_all(s));
-}
-
-BOOST_AUTO_TEST_CASE(backup_engine_2_create_backup){
-
-  // mkdir
-  // --------------------------------------------------
-  fs::path s = fs::temp_directory_path() / "sandbox";
-  // remove sandbox if exists
-  if (fs::exists(s)) fs::remove_all(s);
-  BOOST_REQUIRE(fs::create_directories(s));
-  fs::path d1 = s / "d1", d2 = s / "d1_backup";
-
-  // make db in d1
-  // --------------------------------------------------
-  rocksdb::DB* db;
-  rocksdb::Options o = getInitOptions();
-  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
-  // BOOST_CHECK(st.ok());
-
-  // put kv1
-  // --------------------------------------------------
-  st = db->Put(WriteOptions(), "key1", "value1");
-  // BOOST_CHECK(st.ok());
-  // create backup db=[(k1,v1)]
-
-  // create backup
-  // --------------------------------------------------
-  rocksdb::BackupEngine* backup_engine;
-  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
-                                   rocksdb::BackupEngineOptions(d2),
-                         &backup_engine);
-  // BOOST_REQUIRE(st.ok());
-
-  st = backup_engine->CreateNewBackup(db);
-  BOOST_REQUIRE(st.ok());
-
-  // Check the backup is there
-  // --------------------------------------------------
-  std::vector<rocksdb::BackupInfo> backup_info;
-  backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
-  BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
-
-  st = backup_engine->VerifyBackup(1);
-  BOOST_REQUIRE(st.ok());
-
-  // put kv2
-  // create backup2 db=[(k1,v1),(k2,v2)]
-  // put kv3
-  // close db;
-
-  // restore db to backup1 = [(k1,v1)]
-  // restore db to backup2 = [(k1,v1),(k2,v2)]
-
-  // clean up
-
-  delete db;
-  delete backup_engine;
-  BOOST_CHECK(fs::remove_all(s));
-  BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
-}
-
-
-BOOST_AUTO_TEST_CASE(backup_engine_3_restore_backup){
-  // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
-
-  // mkdir
-  // --------------------------------------------------
-  fs::path s = fs::temp_directory_path() / "sandbox";
-  // remove sandbox if exists
-  if (fs::exists(s)) fs::remove_all(s);
-  BOOST_REQUIRE(fs::create_directories(s));
-  fs::path d1 = s / "d1",
-    d1_backup = s / "d1_backup",
-    d1_restored = s / "d1_restored";
-
-  // make db in d1
-  // --------------------------------------------------
-  rocksdb::DB* db;
-  rocksdb::Options o = getInitOptions();
-  rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
-  // BOOST_CHECK(st.ok());
-
-  // put kv1
-  // --------------------------------------------------
-  st = db->Put(WriteOptions(), "key1", "value1");
-  // BOOST_CHECK(st.ok());
-  // create backup db=[(k1,v1)]
-
-  // create backup
-  // --------------------------------------------------
-  rocksdb::BackupEngine* backup_engine;
-  st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
-                                   rocksdb::BackupEngineOptions(d1_backup),
-                         &backup_engine);
-  // BOOST_REQUIRE(st.ok());
-
-  st = backup_engine->CreateNewBackup(db);
-  BOOST_REQUIRE(st.ok());
-
-  // Check the backup is there
-  // --------------------------------------------------
-  std::vector<rocksdb::BackupInfo> backup_info;
-  backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
-  // BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
-
-  st = backup_engine->VerifyBackup(1);
-  BOOST_REQUIRE(st.ok());
-
-  // put kv2
-  // --------------------------------------------------
-  st = db->Put(WriteOptions(), "key2", "value2");
-  BOOST_CHECK(st.ok());
-
-  // create backup2 db=[(k1,v1),(k2,v2)]
-  // --------------------------------------------------
-  st = backup_engine->CreateNewBackup(db);
-  BOOST_REQUIRE(st.ok());
-
-  // check the backup
-  // --------------------------------------------------
-  backup_engine->GetBackupInfo(&backup_info);
-  BOOST_CHECK_EQUAL(backup_info.size(),2);   // 2 backups
-
-  st = backup_engine->VerifyBackup(2);
-  BOOST_REQUIRE(st.ok());
-
-  // put kv3
-  st = db->Put(WriteOptions(), "key3", "value3");
-  BOOST_CHECK(st.ok());
-
-  // close db first;
-  delete db;
-
-  // restore db to backup1 = [(k1,v1)]
-  // --------------------------------------------------
-  rocksdb::BackupEngineReadOnly* backup_engine_ro;
-  st = rocksdb::BackupEngineReadOnly::Open(
-                                 rocksdb::Env::Default(),
-                                 rocksdb::BackupEngineOptions(d1_backup),
-                                 &backup_engine_ro);
-  BOOST_REQUIRE(st.ok());
-
-  st = backup_engine_ro->RestoreDBFromBackup(1,
-                                             /*db_dir*/d1_restored,
-                                             /*wal_dir*/d1_restored);
-  BOOST_REQUIRE(st.ok());
-
-  // open db again to backup1 and check db=[(k1,v1)] (i.e. k2 is not there)
-  // --------------------------------------------------
-
-  st = rocksdb::DB::Open(o,d1_restored,&db);
-  BOOST_REQUIRE(st.ok());
-
-  std::string value;
-  st = db->Get(ReadOptions(), "key1", &value);
-  BOOST_REQUIRE(!st.IsNotFound());
-
-  st = db->Get(ReadOptions(), "key2", &value);
-  BOOST_REQUIRE(st.IsNotFound());
-
-  // restore db to backup2 = [(k1,v1),(k2,v2)] and check db[(k1,v1),(k2,v2)]
-  // --------------------------------------------------
-
-  // close db first;
-  // Remember to close the db before restoring the backup.
-  delete db;
-
-  st = backup_engine_ro->RestoreDBFromBackup(2,
-                                             /*db_dir*/d1_restored,
-                                             /*wal_dir*/d1_restored);
-  BOOST_REQUIRE(st.ok());
-
-  // open db again to backup2 and check db=[(k1,v1),(k2,v2)] (i.e. k3 is not there)
-  // --------------------------------------------------
-  st = rocksdb::DB::Open(o,d1_restored,&db);
-  BOOST_REQUIRE(st.ok());
-
-  st = db->Get(ReadOptions(), "key1", &value);
-  BOOST_REQUIRE(!st.IsNotFound()); // k1 exists
-
-  st = db->Get(ReadOptions(), "key2", &value);
-  BOOST_REQUIRE(!st.IsNotFound()); // k2 exists
-
-  st = db->Get(ReadOptions(), "key3", &value);
-  BOOST_REQUIRE(st.IsNotFound()); // k2 dosen't
-
-
-  // clean up
-  delete db;
-  delete backup_engine;
-  delete backup_engine_ro;
-  BOOST_CHECK(fs::remove_all(s));
-  BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
-}
-BOOST_AUTO_TEST_SUITE_END();
-
-BOOST_AUTO_TEST_SUITE(col_family, MY_TEST_THIS);
-BOOST_FIXTURE_TEST_CASE(make_cf,D){
-  rocksdb::ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(
-                                             rocksdb::ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  BOOST_CHECK(s.ok());
-  /* close the db
-   🦜: Does it destroy all the data contained in the ColFam ?
-
-   🐢: No, DestroyColumnFamilyHandle() has to be called before deleting the DB;
-  */
-  s = db->DestroyColumnFamilyHandle(cf);
-  BOOST_CHECK(s.ok());
-  /*
-    Now the db has two col family:
-    - rocksdb::kDefaultColumnFamilyName (the default one)
-    - "cf1" (the one we just created)
-   */
-
-}
-
-
-BOOST_FIXTURE_TEST_CASE(open_existing_cf_new,D){
-  /*
-    🐢 : The sensible way to open an existing db with cfs is to call
-    ListColumnFamilies() first.
-    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
-    db.
-   */
-  using rocksdb::ColumnFamilyDescriptor;
-  using rocksdb::ColumnFamilyHandle;
-  using rocksdb::ColumnFamilyOptions;
-  ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  BOOST_CHECK(s.ok());
-  /*
-    Now the db has two col family:
-    - rocksdb::kDefaultColumnFamilyName (the default one)
-    - "cf1" (the one we just created)
-  */
-  s = db->DestroyColumnFamilyHandle(cf);
-  BOOST_CHECK(s.ok());
-  delete db;
-
-  /* reopen the db with two column families
-
-     🦜: Do we need to remember beforehand what colum families(CF) are in an
-     existing db?
-
-     🐢: Not necessarily, we can(and should) call ListColumnFamilies beforehand,
-     and then construct the ColumnFamilyDescriptor from that.
-  */
-
-  vector<string> cfNames;
-  rocksdb::Options o = getInitOptions();
-  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfNames);
-  BOOST_CHECK(s.ok());
-
-  // convert the string to ColumnFamilyDescriptor
-  vector<ColumnFamilyDescriptor> cfs;
-
-  // std::ranges::transform(cfNames,std::back_inserter(cfs),
-  //                        [](string s) -> ColumnFamilyDescriptor {
-  //                          return ColumnFamilyDescriptor(s,ColumnFamilyOptions()); }
-  //                        );
-  // 🦜: I found it easier to just use loop than <algorithm>
-  for (auto & s : cfNames)
-    cfs.push_back(ColumnFamilyDescriptor(s,ColumnFamilyOptions()));
-
-
-
-  BOOST_CHECK_EQUAL(cfs.size(),2);
-  vector<ColumnFamilyHandle*> handles;
-  s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
-               cfs, &handles, &db);
-  BOOST_CHECK(s.ok());
-}
-
-BOOST_FIXTURE_TEST_CASE(open_existing_cf_old,D){
-  /*
-    🐢 : Although the official example in rocksdb/examples/example.cc use the
-    following method to open existing db with cfs. The better way should be to
-    query the cf first before opening the db.
-
-    🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
-    db.
-   */
-  using rocksdb::ColumnFamilyDescriptor;
-  using rocksdb::ColumnFamilyHandle;
-  using rocksdb::ColumnFamilyOptions;
-  ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  BOOST_CHECK(s.ok());
-  /*
-    Now the db has two col family:
-    - rocksdb::kDefaultColumnFamilyName (the default one)
-    - "cf1" (the one we just created)
-  */
-  s = db->DestroyColumnFamilyHandle(cf);
-  BOOST_CHECK(s.ok());
-  delete db;
-
-  vector<ColumnFamilyDescriptor> cfs{
-    // have to open default column family
-    ColumnFamilyDescriptor(rocksdb::kDefaultColumnFamilyName,
-                           ColumnFamilyOptions()),
-    // open the new one, too
-    ColumnFamilyDescriptor("cf1", ColumnFamilyOptions())
+    rocksdb::DB* db;
+    fs::path dbDir;
   };
-  vector<ColumnFamilyHandle*> handles;
-  s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
-               cfs, &handles, &db);
-  BOOST_CHECK(s.ok());
-}
 
+  // This labals which testcase/suite to run.
+  #define MY_TEST_THIS *boost::unit_test::label("aaa")
 
-BOOST_FIXTURE_TEST_CASE(read_write_from_cf,D){
-  using rocksdb::ColumnFamilyDescriptor;
-  using rocksdb::ColumnFamilyHandle;
-  using rocksdb::ColumnFamilyOptions;
-  ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  BOOST_REQUIRE(s.ok());
-
-  // Read write
-  s = db->Put(WriteOptions(),cf, "k1", "v1");
-  BOOST_REQUIRE(s.ok());
-  std::string value;
-  s = db->Get(ReadOptions(), cf, "k1", &value);
-  BOOST_REQUIRE(s.ok());
-  BOOST_CHECK_EQUAL(value,"v1");
-
-  // (k1,v1) doesn't exist in the defaultColFam
-  s = db->Get(ReadOptions(), db->DefaultColumnFamily()
-              , "k1", &value);
-  BOOST_CHECK(s.IsNotFound());
-
-  // clean up -----------------------------
-  s = db->DestroyColumnFamilyHandle(cf);
-  // must be called before closing db
-  BOOST_CHECK(s.ok());
-}
-
-BOOST_FIXTURE_TEST_CASE(delete_from_cf,D){
-  using rocksdb::ColumnFamilyDescriptor;
-  using rocksdb::ColumnFamilyHandle;
-  using rocksdb::ColumnFamilyOptions;
-  ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
-
-  BOOST_REQUIRE(s.ok());
-
-  // Write to both cf
-  s = db->Put(WriteOptions(),cf, "k1", "v1");
-  BOOST_REQUIRE(s.ok());
-  s = db->Put(WriteOptions(),dcf, "k1", "v1");
-  BOOST_REQUIRE(s.ok());
-
-  // check in both db
-  std::string value;
-  s = db->Get(ReadOptions(), cf, "k1", &value);
-  BOOST_REQUIRE(s.ok());
-  BOOST_CHECK_EQUAL(value,"v1");
-  s = db->Get(ReadOptions(), dcf, "k1", &value);
-  BOOST_REQUIRE(s.ok());
-  BOOST_CHECK_EQUAL(value,"v1");
-
-  // delete in cf1
-  s = db->Delete(WriteOptions(),cf, "k1");
-  BOOST_REQUIRE(s.ok());
-
-  // (k1,v1) doesn't exist in the cf, but exists in dcf
-  s = db->Get(ReadOptions(), dcf, "k1", &value);
-  BOOST_CHECK(!s.IsNotFound());
-  s = db->Get(ReadOptions(), cf, "k1", &value);
-  BOOST_CHECK(s.IsNotFound());
-
-  // clean up -----------------------------
-  s = db->DestroyColumnFamilyHandle(cf);
-  // must be called before closing db
-  BOOST_CHECK(s.ok());
-}
-
-BOOST_FIXTURE_TEST_CASE(batch_for_cf,D){
-  using rocksdb::ColumnFamilyDescriptor;
-  using rocksdb::ColumnFamilyHandle;
-  using rocksdb::ColumnFamilyOptions;
-  ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
-  string value;
-
-  BOOST_REQUIRE(s.ok());
-
-  // write to df
-  s = db->Put(WriteOptions(),dcf, "k0", "v0");
-  BOOST_REQUIRE(s.ok());
-  // k0 has been added in dcf
-  s = db->Get(ReadOptions(), dcf,"k0" , &value);
-  BOOST_REQUIRE(!s.IsNotFound());
-
-  // Write to both cf
-  rocksdb::WriteBatch b;
-  b.Put(cf, "k1", "v1");
-  b.Put(cf, "k2", "v2");
-  b.Put(dcf, "k1", "v1");
-  b.Delete(dcf,"k0");
-  s = db->Write(WriteOptions(), &b);
-  BOOST_REQUIRE(s.ok());
-
-  // check values in both db
-  auto checkKv = [&] (ColumnFamilyHandle* h, string k, string v){
-    s = db->Get(ReadOptions(), h, k, &value);
+  BOOST_AUTO_TEST_SUITE(core_operation);
+  BOOST_FIXTURE_TEST_CASE(put_get,D){
+    // Put key-value
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
     BOOST_REQUIRE(s.ok());
-    BOOST_CHECK_EQUAL(value,v);
-  };
-  checkKv(cf,"k1","v1");
-  checkKv(cf,"k2","v2");
-  checkKv(dcf,"k1","v1");
+    string value;
 
-  // k0 has been deleted in dcf
-  s = db->Get(ReadOptions(), dcf,"k0" , &value);
-  BOOST_REQUIRE(s.IsNotFound());
+    // get value
+    s = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(s.ok());
+    BOOST_CHECK_EQUAL(value,"abc");
+  }
 
-  // clean up -----------------------------
-  s = db->DestroyColumnFamilyHandle(cf);
-  // must be called before closing db
-  BOOST_CHECK(s.ok());
-}
+  BOOST_FIXTURE_TEST_CASE(del,D){
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "abc");
+    BOOST_REQUIRE(s.ok());
+
+    // get value, should be there
+    string value;
+    s = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(s.ok());
+    // BOOST_REQUIRE(!s.IsNotFound());
+    BOOST_CHECK_EQUAL(value,"abc");
+
+    // delete the value
+    s = db->Delete(WriteOptions(), "k1");
+    BOOST_REQUIRE(s.ok());
+    s = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(!s.ok());       // not found=not ok
+    BOOST_REQUIRE(s.IsNotFound());
+    // Now it's not found
+  }
+
+  BOOST_FIXTURE_TEST_CASE(iterator,D){
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "v1");
+    BOOST_REQUIRE(s.ok());
+
+    string v1{"v1"};
+    BOOST_REQUIRE(db->KeyMayExist(ReadOptions(),
+                                  "k1",&v1,/*timestamp=*/ (bool*) nullptr));
+    // Use Bloom filter to check a : if definitely not exists return false
+
+    s = db->Put(WriteOptions(), "k2", "v2");
+    BOOST_REQUIRE(s.ok());
+
+    rocksdb::Iterator* i = db->NewIterator(ReadOptions());
+    i->SeekToFirst();
+    BOOST_REQUIRE(i->Valid());
+
+    int cnt{0};
+    string ks[] = {"k1","k2"};
+    string vs[] = {"v1","v2"};
+    for (i->SeekToFirst();i->Valid();i->Next()){
+      // Check db = [(k1,v1),(k2,v2)]
+      BOOST_CHECK_EQUAL(ks[cnt],i->key().ToString());
+      BOOST_CHECK_EQUAL(vs[cnt],i->value().ToString());
+      cnt++;
+      if (!i->status().ok()){
+        // BOOST_LOG_TRIVIAL(error) << ;
+        BOOST_ERROR(format("iterator error") % i->status().ToString());
+      }
+      BOOST_LOG_TRIVIAL(info) << format("k=%s v=%s") % i->key().ToStringView()
+        % i->value().ToStringView();
+      //  ^^^^^^^^^^ rocksdb::Slice (also has ToString())
+    }
+    // size of db
+    BOOST_CHECK_EQUAL(cnt,2);
+  }
+
+  BOOST_FIXTURE_TEST_CASE(batch,D){
+
+    // Write a kv
+    rocksdb::Status s = db->Put(WriteOptions(), "k1", "aaa");
+    BOOST_REQUIRE(s.ok());
+
+    // write a batch
+    string value;
+    {
+      rocksdb::WriteBatch batch;
+      batch.Delete("key1");
+      batch.Put("key2", "bbb");
+      s = db->Write(WriteOptions(), &batch);
+    }
+
+    // check the batch
+    s = db->Get(ReadOptions(), "key1", &value);
+    BOOST_CHECK(s.IsNotFound());
+    s = db->Get(ReadOptions(), "key2", &value);
+    BOOST_CHECK_EQUAL(value,"bbb");
+  }
+  BOOST_AUTO_TEST_SUITE_END();
+
+  BOOST_AUTO_TEST_CASE(manually_backup){
+    rocksdb::Options options = getInitOptions();
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1", d2 = s / "d2";
+
+    // Create db
+    rocksdb::DB* db;
+    rocksdb::Status status = rocksdb::DB::Open(options, d1 , &db);
+    BOOST_REQUIRE(status.ok());
+    BOOST_CHECK(fs::exists(d1));  // now only d1 exists
+
+    // store a kv in d1
+    status = db->Put(WriteOptions(), "k1", "abc");
+    // BOOST_REQUIRE(status.ok());
+
+    // close the db
+    delete db;
+
+    // copy d1 to d2
+    const auto copyOptions =
+      fs::copy_options::update_existing
+      // Replace the existing file only if it is older than the file being
+      // copied
+      | fs::copy_options::recursive;
+    // Recursively copy subdirectories and their content
+    std::error_code err;
+    // copy dir recursively
+    fs::copy(d1, d2, copyOptions, err);
+    BOOST_REQUIRE(!bool(err));
+    BOOST_CHECK(fs::exists(d2));
+
+    // open the db in d2
+    string value;
+    status = rocksdb::DB::Open(options, d2 , &db);
+    BOOST_REQUIRE(status.ok());
+
+    // check the value stored from d1
+    status = db->Get(ReadOptions(), "k1", &value);
+    BOOST_REQUIRE(status.ok());
+    BOOST_CHECK_EQUAL(value,"abc");
+    delete db;
+
+    // clean up
+    BOOST_CHECK(fs::remove_all(s));
+    }
 
 
-BOOST_FIXTURE_TEST_CASE(drop_cf,D){
-  using rocksdb::ColumnFamilyDescriptor;
-  using rocksdb::ColumnFamilyHandle;
-  using rocksdb::ColumnFamilyOptions;
-  ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
-  string value;
+  BOOST_AUTO_TEST_SUITE(backup);
 
-  BOOST_REQUIRE(s.ok());
+  BOOST_AUTO_TEST_CASE(backup_engine_1_open){
+    // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
 
-  // write to df
-  s = db->Put(WriteOptions(),cf, "k0", "v0");
-  BOOST_REQUIRE(s.ok());
-  // k0 has been added in cf
-  s = db->Get(ReadOptions(), cf,"k0" , &value);
-  BOOST_REQUIRE(!s.IsNotFound());
+    // mkdir
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1", d2 = s / "d1_backup";
 
-  s = db->DropColumnFamily(cf);
-  /*
-    🦜: Are the data gone when we DropColumnFamily()?
+    // make db in d1
+    rocksdb::DB* db;
+    rocksdb::Options o = getInitOptions();
+    rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+    BOOST_REQUIRE(st.ok());
 
-    🐢: Not necessarily. The data is not gone if you have hold a column family
-    handle to it. The data is gone when no one refers to it anymore (GC).
-   */
-  s = db->Get(ReadOptions(), cf,"k0" , &value);
-  BOOST_REQUIRE(!s.IsNotFound());
+    // put kv1
+    st = db->Put(WriteOptions(), "key1", "value1");
+    BOOST_REQUIRE(st.ok());
+    // create backup db=[(k1,v1)]
 
-  // clean up -----------------------------
-  s = db->DestroyColumnFamilyHandle(cf);
-  // must be called before closing db
-  BOOST_CHECK(s.ok());
-}
+    // create backup
+    rocksdb::BackupEngine* backup_engine;
+    st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                     rocksdb::BackupEngineOptions(d2),
+                           &backup_engine);
+    BOOST_REQUIRE(st.ok());
+    // put kv2
+    // create backup2 db=[(k1,v1),(k2,v2)]
+    // put kv3
+    // close db;
 
-BOOST_FIXTURE_TEST_CASE(list_column,D){
-  using rocksdb::ColumnFamilyDescriptor;
-  using rocksdb::ColumnFamilyHandle;
-  using rocksdb::ColumnFamilyOptions;
-  ColumnFamilyHandle* cf;
-  rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
-                                             "cf1", &cf);
-  BOOST_CHECK(s.ok());
-  /*
-    Now the db has two col family:
-    - rocksdb::kDefaultColumnFamilyName (the default one)
-    - "cf1" (the one we just created)
-  */
-  s = db->DestroyColumnFamilyHandle(cf);
-  BOOST_CHECK(s.ok());
-  /* reopen the db with two column families
+    // restore db to backup1 = [(k1,v1)]
+    // restore db to backup2 = [(k1,v1),(k2,v2)]
 
-     🦜: Do we need to remember beforehand what colum families(CF) are in an
-     existing db?
+    // clean up
 
-     🐢: Yes. cfs should be the vector of ALL cfs, containing name + options.
-  */
+    delete db;
+    delete backup_engine;
+    BOOST_CHECK(fs::remove_all(s));
+  }
 
-  // delete db;
-  vector<string> cfs;
-  rocksdb::Options o = getInitOptions();
-  s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfs);
-  BOOST_CHECK(s.ok());
-  BOOST_REQUIRE_EQUAL(cfs.size(),2);
-  BOOST_CHECK_EQUAL(cfs[0],rocksdb::kDefaultColumnFamilyName);
-  BOOST_CHECK_EQUAL(cfs[1],"cf1");
-//   for (auto s : cfs){
-//     BOOST_TEST_MESSAGE(format("Got cf: " "%1%") % s);
-// }
+  BOOST_AUTO_TEST_CASE(backup_engine_2_create_backup){
+
+    // mkdir
+    // --------------------------------------------------
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1", d2 = s / "d1_backup";
+
+    // make db in d1
+    // --------------------------------------------------
+    rocksdb::DB* db;
+    rocksdb::Options o = getInitOptions();
+    rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+    // BOOST_CHECK(st.ok());
+
+    // put kv1
+    // --------------------------------------------------
+    st = db->Put(WriteOptions(), "key1", "value1");
+    // BOOST_CHECK(st.ok());
+    // create backup db=[(k1,v1)]
+
+    // create backup
+    // --------------------------------------------------
+    rocksdb::BackupEngine* backup_engine;
+    st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                     rocksdb::BackupEngineOptions(d2),
+                           &backup_engine);
+    // BOOST_REQUIRE(st.ok());
+
+    st = backup_engine->CreateNewBackup(db);
+    BOOST_REQUIRE(st.ok());
+
+    // Check the backup is there
+    // --------------------------------------------------
+    std::vector<rocksdb::BackupInfo> backup_info;
+    backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+    BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+    st = backup_engine->VerifyBackup(1);
+    BOOST_REQUIRE(st.ok());
+
+    // put kv2
+    // create backup2 db=[(k1,v1),(k2,v2)]
+    // put kv3
+    // close db;
+
+    // restore db to backup1 = [(k1,v1)]
+    // restore db to backup2 = [(k1,v1),(k2,v2)]
+
+    // clean up
+
+    delete db;
+    delete backup_engine;
+    BOOST_CHECK(fs::remove_all(s));
+    BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+  }
+
+
+  BOOST_AUTO_TEST_CASE(backup_engine_3_restore_backup){
+    // modified from rocksdb/examples/rocksdb_backup_restore_example.cc
+
+    // mkdir
+    // --------------------------------------------------
+    fs::path s = fs::temp_directory_path() / "sandbox";
+    // remove sandbox if exists
+    if (fs::exists(s)) fs::remove_all(s);
+    BOOST_REQUIRE(fs::create_directories(s));
+    fs::path d1 = s / "d1",
+      d1_backup = s / "d1_backup",
+      d1_restored = s / "d1_restored";
+
+    // make db in d1
+    // --------------------------------------------------
+    rocksdb::DB* db;
+    rocksdb::Options o = getInitOptions();
+    rocksdb::Status st = rocksdb::DB::Open(o, d1 , &db);
+    // BOOST_CHECK(st.ok());
+
+    // put kv1
+    // --------------------------------------------------
+    st = db->Put(WriteOptions(), "key1", "value1");
+    // BOOST_CHECK(st.ok());
+    // create backup db=[(k1,v1)]
+
+    // create backup
+    // --------------------------------------------------
+    rocksdb::BackupEngine* backup_engine;
+    st = rocksdb::BackupEngine::Open(rocksdb::Env::Default(),
+                                     rocksdb::BackupEngineOptions(d1_backup),
+                           &backup_engine);
+    // BOOST_REQUIRE(st.ok());
+
+    st = backup_engine->CreateNewBackup(db);
+    BOOST_REQUIRE(st.ok());
+
+    // Check the backup is there
+    // --------------------------------------------------
+    std::vector<rocksdb::BackupInfo> backup_info;
+    backup_engine->GetBackupInfo(&backup_info);// no rocksdb::Status return for this
+    // BOOST_CHECK_EQUAL(backup_info.size(),1);   // 1 backup
+
+    st = backup_engine->VerifyBackup(1);
+    BOOST_REQUIRE(st.ok());
+
+    // put kv2
+    // --------------------------------------------------
+    st = db->Put(WriteOptions(), "key2", "value2");
+    BOOST_CHECK(st.ok());
+
+    // create backup2 db=[(k1,v1),(k2,v2)]
+    // --------------------------------------------------
+    st = backup_engine->CreateNewBackup(db);
+    BOOST_REQUIRE(st.ok());
+
+    // check the backup
+    // --------------------------------------------------
+    backup_engine->GetBackupInfo(&backup_info);
+    BOOST_CHECK_EQUAL(backup_info.size(),2);   // 2 backups
+
+    st = backup_engine->VerifyBackup(2);
+    BOOST_REQUIRE(st.ok());
+
+    // put kv3
+    st = db->Put(WriteOptions(), "key3", "value3");
+    BOOST_CHECK(st.ok());
+
+    // close db first;
+    delete db;
+
+    // restore db to backup1 = [(k1,v1)]
+    // --------------------------------------------------
+    rocksdb::BackupEngineReadOnly* backup_engine_ro;
+    st = rocksdb::BackupEngineReadOnly::Open(
+                                   rocksdb::Env::Default(),
+                                   rocksdb::BackupEngineOptions(d1_backup),
+                                   &backup_engine_ro);
+    BOOST_REQUIRE(st.ok());
+
+    st = backup_engine_ro->RestoreDBFromBackup(1,
+                                               /*db_dir*/d1_restored,
+                                               /*wal_dir*/d1_restored);
+    BOOST_REQUIRE(st.ok());
+
+    // open db again to backup1 and check db=[(k1,v1)] (i.e. k2 is not there)
+    // --------------------------------------------------
+
+    st = rocksdb::DB::Open(o,d1_restored,&db);
+    BOOST_REQUIRE(st.ok());
+
+    std::string value;
+    st = db->Get(ReadOptions(), "key1", &value);
+    BOOST_REQUIRE(!st.IsNotFound());
+
+    st = db->Get(ReadOptions(), "key2", &value);
+    BOOST_REQUIRE(st.IsNotFound());
+
+    // restore db to backup2 = [(k1,v1),(k2,v2)] and check db[(k1,v1),(k2,v2)]
+    // --------------------------------------------------
+
+    // close db first;
+    // Remember to close the db before restoring the backup.
+    delete db;
+
+    st = backup_engine_ro->RestoreDBFromBackup(2,
+                                               /*db_dir*/d1_restored,
+                                               /*wal_dir*/d1_restored);
+    BOOST_REQUIRE(st.ok());
+
+    // open db again to backup2 and check db=[(k1,v1),(k2,v2)] (i.e. k3 is not there)
+    // --------------------------------------------------
+    st = rocksdb::DB::Open(o,d1_restored,&db);
+    BOOST_REQUIRE(st.ok());
+
+    st = db->Get(ReadOptions(), "key1", &value);
+    BOOST_REQUIRE(!st.IsNotFound()); // k1 exists
+
+    st = db->Get(ReadOptions(), "key2", &value);
+    BOOST_REQUIRE(!st.IsNotFound()); // k2 exists
+
+    st = db->Get(ReadOptions(), "key3", &value);
+    BOOST_REQUIRE(st.IsNotFound()); // k2 dosen't
+
+
+    // clean up
+    delete db;
+    delete backup_engine;
+    delete backup_engine_ro;
+    BOOST_CHECK(fs::remove_all(s));
+    BOOST_TEST_MESSAGE(format("removing folder %s" ) % string(s));
+  }
+  BOOST_AUTO_TEST_SUITE_END();
+
+  BOOST_AUTO_TEST_SUITE(col_family, MY_TEST_THIS);
+  BOOST_FIXTURE_TEST_CASE(make_cf,D){
+    rocksdb::ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(
+                                               rocksdb::ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    BOOST_CHECK(s.ok());
+    /* close the db
+     🦜: Does it destroy all the data contained in the ColFam ?
+
+     🐢: No, DestroyColumnFamilyHandle() has to be called before deleting the DB;
+    ,*/
+    s = db->DestroyColumnFamilyHandle(cf);
+    BOOST_CHECK(s.ok());
+    /*
+      Now the db has two col family:
+      - rocksdb::kDefaultColumnFamilyName (the default one)
+      - "cf1" (the one we just created)
+     ,*/
 
   }
 
-BOOST_AUTO_TEST_SUITE_END();
+
+  BOOST_FIXTURE_TEST_CASE(open_existing_cf_new,D){
+    /*
+      🐢 : The sensible way to open an existing db with cfs is to call
+      ListColumnFamilies() first.
+      🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+      db.
+     ,*/
+    using rocksdb::ColumnFamilyDescriptor;
+    using rocksdb::ColumnFamilyHandle;
+    using rocksdb::ColumnFamilyOptions;
+    ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    BOOST_CHECK(s.ok());
+    /*
+      Now the db has two col family:
+      - rocksdb::kDefaultColumnFamilyName (the default one)
+      - "cf1" (the one we just created)
+    ,*/
+    s = db->DestroyColumnFamilyHandle(cf);
+    BOOST_CHECK(s.ok());
+    delete db;
+
+    /* reopen the db with two column families
+
+       🦜: Do we need to remember beforehand what colum families(CF) are in an
+       existing db?
+
+       🐢: Not necessarily, we can(and should) call ListColumnFamilies beforehand,
+       and then construct the ColumnFamilyDescriptor from that.
+    ,*/
+
+    vector<string> cfNames;
+    rocksdb::Options o = getInitOptions();
+    s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfNames);
+    BOOST_CHECK(s.ok());
+
+    // convert the string to ColumnFamilyDescriptor
+    vector<ColumnFamilyDescriptor> cfs;
+
+    // std::ranges::transform(cfNames,std::back_inserter(cfs),
+    //                        [](string s) -> ColumnFamilyDescriptor {
+    //                          return ColumnFamilyDescriptor(s,ColumnFamilyOptions()); }
+    //                        );
+    // 🦜: I found it easier to just use loop than <algorithm>
+    for (auto & s : cfNames)
+      cfs.push_back(ColumnFamilyDescriptor(s,ColumnFamilyOptions()));
+
+
+
+    BOOST_CHECK_EQUAL(cfs.size(),2);
+    vector<ColumnFamilyHandle*> handles;
+    s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
+                 cfs, &handles, &db);
+    BOOST_CHECK(s.ok());
+  }
+
+  BOOST_FIXTURE_TEST_CASE(open_existing_cf_old,D){
+    /*
+      🐢 : Although the official example in rocksdb/examples/example.cc use the
+      following method to open existing db with cfs. The better way should be to
+      query the cf first before opening the db.
+
+      🦜 : Yes! As a client, I don't necessarily know what cfs are in an existing
+      db.
+     ,*/
+    using rocksdb::ColumnFamilyDescriptor;
+    using rocksdb::ColumnFamilyHandle;
+    using rocksdb::ColumnFamilyOptions;
+    ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    BOOST_CHECK(s.ok());
+    /*
+      Now the db has two col family:
+      - rocksdb::kDefaultColumnFamilyName (the default one)
+      - "cf1" (the one we just created)
+    ,*/
+    s = db->DestroyColumnFamilyHandle(cf);
+    BOOST_CHECK(s.ok());
+    delete db;
+
+    vector<ColumnFamilyDescriptor> cfs{
+      // have to open default column family
+      ColumnFamilyDescriptor(rocksdb::kDefaultColumnFamilyName,
+                             ColumnFamilyOptions()),
+      // open the new one, too
+      ColumnFamilyDescriptor("cf1", ColumnFamilyOptions())
+    };
+    vector<ColumnFamilyHandle*> handles;
+    s = rocksdb::DB::Open(rocksdb::DBOptions(),dbDir,
+                 cfs, &handles, &db);
+    BOOST_CHECK(s.ok());
+  }
+
+
+  BOOST_FIXTURE_TEST_CASE(read_write_from_cf,D){
+    using rocksdb::ColumnFamilyDescriptor;
+    using rocksdb::ColumnFamilyHandle;
+    using rocksdb::ColumnFamilyOptions;
+    ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    BOOST_REQUIRE(s.ok());
+
+    // Read write
+    s = db->Put(WriteOptions(),cf, "k1", "v1");
+    BOOST_REQUIRE(s.ok());
+    std::string value;
+    s = db->Get(ReadOptions(), cf, "k1", &value);
+    BOOST_REQUIRE(s.ok());
+    BOOST_CHECK_EQUAL(value,"v1");
+
+    // (k1,v1) doesn't exist in the defaultColFam
+    s = db->Get(ReadOptions(), db->DefaultColumnFamily()
+                , "k1", &value);
+    BOOST_CHECK(s.IsNotFound());
+
+    // clean up -----------------------------
+    s = db->DestroyColumnFamilyHandle(cf);
+    // must be called before closing db
+    BOOST_CHECK(s.ok());
+  }
+
+  BOOST_FIXTURE_TEST_CASE(delete_from_cf,D){
+    using rocksdb::ColumnFamilyDescriptor;
+    using rocksdb::ColumnFamilyHandle;
+    using rocksdb::ColumnFamilyOptions;
+    ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+
+    BOOST_REQUIRE(s.ok());
+
+    // Write to both cf
+    s = db->Put(WriteOptions(),cf, "k1", "v1");
+    BOOST_REQUIRE(s.ok());
+    s = db->Put(WriteOptions(),dcf, "k1", "v1");
+    BOOST_REQUIRE(s.ok());
+
+    // check in both db
+    std::string value;
+    s = db->Get(ReadOptions(), cf, "k1", &value);
+    BOOST_REQUIRE(s.ok());
+    BOOST_CHECK_EQUAL(value,"v1");
+    s = db->Get(ReadOptions(), dcf, "k1", &value);
+    BOOST_REQUIRE(s.ok());
+    BOOST_CHECK_EQUAL(value,"v1");
+
+    // delete in cf1
+    s = db->Delete(WriteOptions(),cf, "k1");
+    BOOST_REQUIRE(s.ok());
+
+    // (k1,v1) doesn't exist in the cf, but exists in dcf
+    s = db->Get(ReadOptions(), dcf, "k1", &value);
+    BOOST_CHECK(!s.IsNotFound());
+    s = db->Get(ReadOptions(), cf, "k1", &value);
+    BOOST_CHECK(s.IsNotFound());
+
+    // clean up -----------------------------
+    s = db->DestroyColumnFamilyHandle(cf);
+    // must be called before closing db
+    BOOST_CHECK(s.ok());
+  }
+
+  BOOST_FIXTURE_TEST_CASE(batch_for_cf,D){
+    using rocksdb::ColumnFamilyDescriptor;
+    using rocksdb::ColumnFamilyHandle;
+    using rocksdb::ColumnFamilyOptions;
+    ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+    string value;
+
+    BOOST_REQUIRE(s.ok());
+
+    // write to df
+    s = db->Put(WriteOptions(),dcf, "k0", "v0");
+    BOOST_REQUIRE(s.ok());
+    // k0 has been added in dcf
+    s = db->Get(ReadOptions(), dcf,"k0" , &value);
+    BOOST_REQUIRE(!s.IsNotFound());
+
+    // Write to both cf
+    rocksdb::WriteBatch b;
+    b.Put(cf, "k1", "v1");
+    b.Put(cf, "k2", "v2");
+    b.Put(dcf, "k1", "v1");
+    b.Delete(dcf,"k0");
+    s = db->Write(WriteOptions(), &b);
+    BOOST_REQUIRE(s.ok());
+
+    // check values in both db
+    auto checkKv = [&] (ColumnFamilyHandle* h, string k, string v){
+      s = db->Get(ReadOptions(), h, k, &value);
+      BOOST_REQUIRE(s.ok());
+      BOOST_CHECK_EQUAL(value,v);
+    };
+    checkKv(cf,"k1","v1");
+    checkKv(cf,"k2","v2");
+    checkKv(dcf,"k1","v1");
+
+    // k0 has been deleted in dcf
+    s = db->Get(ReadOptions(), dcf,"k0" , &value);
+    BOOST_REQUIRE(s.IsNotFound());
+
+    // clean up -----------------------------
+    s = db->DestroyColumnFamilyHandle(cf);
+    // must be called before closing db
+    BOOST_CHECK(s.ok());
+  }
+
+
+  BOOST_FIXTURE_TEST_CASE(drop_cf,D){
+    using rocksdb::ColumnFamilyDescriptor;
+    using rocksdb::ColumnFamilyHandle;
+    using rocksdb::ColumnFamilyOptions;
+    ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    ColumnFamilyHandle* dcf = db->DefaultColumnFamily();
+    string value;
+
+    BOOST_REQUIRE(s.ok());
+
+    // write to df
+    s = db->Put(WriteOptions(),cf, "k0", "v0");
+    BOOST_REQUIRE(s.ok());
+    // k0 has been added in cf
+    s = db->Get(ReadOptions(), cf,"k0" , &value);
+    BOOST_REQUIRE(!s.IsNotFound());
+
+    s = db->DropColumnFamily(cf);
+    /*
+      🦜: Are the data gone when we DropColumnFamily()?
+
+      🐢: Not necessarily. The data is not gone if you have hold a column family
+      handle to it. The data is gone when no one refers to it anymore (GC).
+     ,*/
+    s = db->Get(ReadOptions(), cf,"k0" , &value);
+    BOOST_REQUIRE(!s.IsNotFound());
+
+    // clean up -----------------------------
+    s = db->DestroyColumnFamilyHandle(cf);
+    // must be called before closing db
+    BOOST_CHECK(s.ok());
+  }
+
+  BOOST_FIXTURE_TEST_CASE(list_column,D){
+    using rocksdb::ColumnFamilyDescriptor;
+    using rocksdb::ColumnFamilyHandle;
+    using rocksdb::ColumnFamilyOptions;
+    ColumnFamilyHandle* cf;
+    rocksdb::Status s = db->CreateColumnFamily(ColumnFamilyOptions(),
+                                               "cf1", &cf);
+    BOOST_CHECK(s.ok());
+    /*
+      Now the db has two col family:
+      - rocksdb::kDefaultColumnFamilyName (the default one)
+      - "cf1" (the one we just created)
+    ,*/
+    s = db->DestroyColumnFamilyHandle(cf);
+    BOOST_CHECK(s.ok());
+    /* reopen the db with two column families
+
+       🦜: Do we need to remember beforehand what colum families(CF) are in an
+       existing db?
+
+       🐢: Yes. cfs should be the vector of ALL cfs, containing name + options.
+    ,*/
+
+    // delete db;
+    vector<string> cfs;
+    rocksdb::Options o = getInitOptions();
+    s = rocksdb::DB::ListColumnFamilies(o,string(dbDir),&cfs);
+    BOOST_CHECK(s.ok());
+    BOOST_REQUIRE_EQUAL(cfs.size(),2);
+    BOOST_CHECK_EQUAL(cfs[0],rocksdb::kDefaultColumnFamilyName);
+    BOOST_CHECK_EQUAL(cfs[1],"cf1");
+  //   for (auto s : cfs){
+  //     BOOST_TEST_MESSAGE(format("Got cf: " "%1%") % s);
+  // }
+
+    }
+
+  BOOST_AUTO_TEST_SUITE_END();
 
 
 #+end_src

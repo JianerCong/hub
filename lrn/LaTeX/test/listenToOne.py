@@ -107,6 +107,7 @@ class ListenToOneConsensus:
                  {self.net.listened_endpoint()}, The primary.
         """
 
+
     # --------------------------------------------------
     def ask_primary_for_entry(self):
         r = self.net.send(self.primary,
