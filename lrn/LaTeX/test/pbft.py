@@ -220,7 +220,17 @@ class PbftConsensus:
     def handle_lied_down(self, endpoint: str, data: str) -> str:
         """Response to a `lied-down` msg.
 
-        
+        🐢 : The goal is to see wether the `next primary` is OK. We need to
+        receive 2f msgs (plus this node itself, then it should have 2f + 1 state) to check
+        that.
+
+        In particular, the state of `next primary` must be known.
+
+        🦜 : What if we already got 2f msgs, but didn't got the one from `next primary`?
+
+        🐢 : Let's ask it explicitly?
+
+        🦜 : Yeah, and if it doesn't reply. We do a new view-change.
         """
 
 
