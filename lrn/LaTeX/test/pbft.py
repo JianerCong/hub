@@ -27,7 +27,7 @@ from collections.abc import Callable
 
 """🐢 :pbft needs something more than a normal static consensus in that, it
 needs digital signature. In particular, sometimes, it needs to store a
-partucular msg sent by other nodes. For example, N1 needs to show N2 that
+particular msg sent by other nodes. For example, N1 needs to show N2 that
 'Look, N3 said <...>'. In this case, N1 needs to store the msg containing:
 
 <pk of N3><signature of N3 for `data`><`data`>
@@ -144,10 +144,9 @@ class PbftConsensus:
 
         # The commands received by primary, subs will forward many copied of
         # command to primary, and the primary just need to accept once.
-        self.recieved_commands: set[str] = {}  # recieved by primary
+        self.recieved_commands: set[str] = set({})  # recieved by primary
         self.command_history: list[str] = []  # executed
 
-        self.net.listen('/pleaseGiveMeUrCmds',self.handle_give_cmds)
 
         if self.primary() == self.net.listened_endpoint():
             self.start_listening_as_primary()
@@ -157,13 +156,99 @@ class PbftConsensus:
         self.start_faulty_timer()
 
 
+    def clear_and_listen_common_things(self):
+        self.view_change_state = False
+        self.net.clear()
+        self.net.listen('/pleaseGiveMeUrCmds',self.handle_give_cmds)
+        self.net.listen('/ILaidDown',self.handle_handle_laid_down)
+        self.net.listen('/IamThePrimary',self.handle_new_primary)
+
+    def handle_new_primary(self, endpoint: str, data: str) -> str:
+        """endpoint said it's the primary, if the data contains the required
+        things, then we follow it"""
+
+        try:
+            o = json.loads(data)
+        except json.JSONDecodeError:
+            self.say(f'Error parsing new-view-cert {o}')
+            return False
+
+        # 🦜 : Should be parsed to something like:
+
+        if self.epoch >= o['epoch']:
+            self.say(f'Ignoring older msg in epoch={o["epoch"]}')
+            return False
+
+        # {
+        #     'msg' : f'Hi {sub}, I am the primary now.',
+        #     'epoch' : e,
+        #     'new-view-certificate' : my_list}
+        if self.check_cert(o['view-change-certificate'],o['epoch']):
+            self.epoch = o['epoch']
+            self.start_listening_as_sub()
+            return 'ok'
+
+        self.say(f'Invalid certificate: {S.RED + o + S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
+        return 'no'
+
+    def check_cert(self,l: list[str], e: int) -> bool:
+        """Check wether the view-change certificate is valid.
+
+        🦜 : The view-change certificate is valid if
+
+           1. All msgs in it are properly signed.
+
+           2. The state-hash and epoch of them are all the same. In particular,
+           the epoch of them should all be equal to `e`. And the state(-hash)
+           should all be equal to our hash
+
+           3. And they must have been sent from different nodes.
+
+           4. And that's it...?
+
+
+        🐢 : Yeah, and it is also possible that we are different from the
+           world, in that case... We stop
+
+        """
+
+        valid_host : set[str] = set({})
+        try:
+            for (s in l):
+                assert self.sig.verify(s):
+
+                cert = json.loads( self.sig.data(s))
+                valid_host.add(self.sig.get_from(s))
+
+                assert cert['state'] == self.get_state()
+                assert cert['epoch'] == e
+
+            if len(valid_host) < self.get_f() + 1:
+                self.say(f'Requires {self.get_f() + 1} nodes, but got {len(valid_host)}')
+                return False
+
+        except json.JSONDecodeError as e:
+            self.say(f'Error loading Json for view-change-msg')
+            return False
+
+        except AssertionError as a:
+            self.say(f'AssertionError: {a}')
+            return False
+
+        self.say(f'Received ok view-change-msg from:\n{S.CYAN} {valid_host} {S.NOR}')
+        return True
+
     def start_listening_as_primary(self):
+        self.clear_and_listen_common_things()
         self.net.listen('/whatsYourState',
                         self.handle_get_state)
         self.net.listen('/pleaseExecuteThis',
                         self.handle_execute_for_primary)
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_primary)
 
     def start_listening_as_sub(self):
+        self.clear_and_listen_common_things()
         self.net.listen('/pleaseExecuteThis',
                         self.handle_execute_for_sub)
 
@@ -363,7 +448,7 @@ class PbftConsensus:
             #🐢 : What if the node "doesn't let you synk to its state?"
             #
             #🦜 : Then I will keep trying all these 2f + 1 nodes
-        except Exception as e:
+        except json.JSONDecodeError as e:
             self.say(f'Error parsing msg: {data}')
             return 'No'
 
@@ -374,11 +459,34 @@ class PbftConsensus:
                  '{ S.CYAN + state + S.NOR} \n'
                  )
 
+        # It's my view
+        assert self.all_endpoints[e % len(self.all_endpoints)] != self.net.listened_endpoint
+
         if self.get_state() != state:
             raise Exception('I am different from other correct nodes. The '+
                             'cluster might contained too many random nodes.')
 
-        # board-cast the list
+        # board-cast the list,ignoring the result
+        failed_count: int = 0
+        for sub in self.all_endpoints:
+            if sub != self.net.listened_endpoint():
+                r = self.net.send(sub,'IamThePrimary',
+                              json.dumps({
+                                  'msg' : f'Hi {sub}, I am the primary now.',
+                                  'epoch' : e,
+                                  'new-view-certificate' : my_list}))
+                if r != 'ok':
+                    failed_count += 1
+
+        self.say(f'boardcast finished, got {S.MAG + failed_count + S.NOR} failed')
+
+        if failed_count > self.get_f():
+            raise Exception('Too many nodes refuse to let me be the primary. (Probably too many random nodes)')
+
+        # be the primary
+        self.epoch = e          # which should point to me.
+        self.start_listening_as_primary()
+
 
 
     def handle_give_cmds(self, endpoint: str, data: str) -> str:
@@ -428,7 +536,7 @@ class PbftConsensus:
         if self.view_change_state:
             return False # during view-change, no primary
 
-        return self.epoch[-1] == self.net.listened_endpoint()
+        return self.primary() == self.net.listened_endpoint()
 
     def my_id(self) -> int:
         """Throw if not found"""
