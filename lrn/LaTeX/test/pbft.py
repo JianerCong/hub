@@ -549,6 +549,9 @@ class PbftConsensus:
         print_mt(f'{S.CYAN}\t[{self.my_id()}]{S.NOR}: '
                   + s)
 
+    def handle_add_new_nodes(self, endpoint: str, data: str) -> str:
+
+
 #--------------------------------------------------
 """
 🦜 :Below we try to use the PBFT
@@ -701,6 +704,18 @@ class MockedSigner(ISignable):
 
 🐢 : Indeed. That's the easier way to allow us to add more than one nodes per
         epoch.
+
+🦜 : Fine, I changed my mind. Let's just allow one node to be added per epoch.
+        Wait....No, let's relex it, boardcast the 'self.listened_endpoints'.
+
+🐢 : Okay
+
+🦜 : Wait, there's another way. We can just store the msg in
+        `self.node_to_be_added` and then in '\IamThePrimary', we just pass the
+        `self.node_to_be_added`, which should also contain the signature of new
+        node.
+
+🐢 : Good.
 
 """
 
