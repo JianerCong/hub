@@ -157,7 +157,8 @@ class PbftConsensus:
         else:
             self.start_listening_as_sub()
 
-        self.start_faulty_timer()
+        Thread(target=self.start_faulty_timer).start()  # here the ctor ends
+
 
 
     def clear_and_listen_common_things(self):
@@ -166,6 +167,9 @@ class PbftConsensus:
         self.net.listen('/pleaseGiveMeUrCmds',self.handle_give_cmds)
         self.net.listen('/ILaidDown',self.handle_handle_laid_down)
         self.net.listen('/IamThePrimary',self.handle_new_primary)
+
+        self.net.listen('/pleaseAddMe',self.handle_add_new_nodes)
+        self.net.listen('/addNewNodesNoBoardcast',self.handle_add_new_nodes_no_boardcast)
 
     def handle_new_primary(self, endpoint: str, data: str) -> str:
         """endpoint said it's the primary, if the data contains the required
@@ -190,7 +194,7 @@ class PbftConsensus:
         if self.check_cert(o['view-change-certificate'],o['epoch']):
             self.epoch = o['epoch']
             self.say(f'🐸 view changed to {self.epoch}')
-            self.start_faulty_timer()  # reset the timer
+            self.comfort()             # #reset the timer
             self.start_listening_as_sub()
             return 'ok'
 
@@ -458,6 +462,20 @@ class PbftConsensus:
             self.say(f'Error parsing msg: {data}')
             return 'No'
 
+    def get_newcommers(self, sigs: list[str]) -> list[str]:
+        """Verify and get the newcommers collected"""
+        o : list[str] = []
+        for sig in sigs:
+            if not self.sig.verify(sig):
+                continue
+            n = self.sig.get_from(sig)
+            if n not in o:
+                self.say(f'Adding node {n}')
+                o.append(n)
+
+        self.say(f'Got newcomers {o}')
+        return o
+
     def try_to_be_primary(self,e: int,state: str, my_list: list[str]):
         self.say(f'This\'s my time for epoch :{e}, my state is: \n'+
                  '{ S.CYAN + self.get_state() + S.NOR} \n'+
@@ -472,15 +490,28 @@ class PbftConsensus:
             raise Exception('I am different from other correct nodes. The '+
                             'cluster might contained too many random nodes.')
 
-        # board-cast the list,ignoring the result
+        """
+
+        🐢 : Add those new nodes, and notify them that they are in. The things
+        that needs to be sent to the newcomers are different from those sent to
+        other subs. In particular, it needs to send 'cmds' to those newcomers
+        too, in addition to what's sent to everybody.
+
+        """
+
         failed_count: int = 0
+
+        m = {'msg' : f'Hi I am the primary now.',
+             'epoch' : e,
+             'new-view-certificate' : my_list,
+             'sig_of_nodes_to_be_added' : list(self.sig_of_nodes_to_be_added)
+             }
+
+
+        # board-cast the list,ignoring the result to existing subs
         for sub in self.all_endpoints:
             if sub != self.net.listened_endpoint():
-                r = self.net.send(sub,'IamThePrimary',
-                              json.dumps({
-                                  'msg' : f'Hi {sub}, I am the primary now.',
-                                  'epoch' : e,
-                                  'new-view-certificate' : my_list}))
+                r = self.net.send(sub,'IamThePrimary',json.dumps(m))
                 if r != 'ok':
                     failed_count += 1
 
@@ -488,6 +519,22 @@ class PbftConsensus:
 
         if failed_count > self.get_f():
             raise Exception('Too many nodes refuse to let me be the primary. (Probably too many random nodes)')
+
+        """
+        🐢 : Notify the newcomers
+        """
+        # get and add in the newcomers
+        newcomers : list[str] = self.get_newcommers(list(self.sig_of_nodes_to_be_added))
+        self.sig_of_nodes_to_be_added.clear()
+        self.all_endpoints += newcomers
+
+        m['cmds'] = self.command_history
+
+        # Send them the msg, in particular: the cmds.
+        for  newcomer in newcomers:
+            self.net.send(newcomer,'IamThePrimaryForNewcomer',json.dumps(m))
+
+        # 🦜 : In fact, the above can all be called asynchronously.
 
         # be the primary
         self.epoch = e          # which should point to me.
@@ -608,7 +655,10 @@ class PbftConsensus:
 
 
         # Check wether the view-change is valid:
-        
+        if not self.check_cert(d['view-change-certificate'],d['epoch']):
+            self.say(f'Invalid certificate: {S.RED + o + S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
+            return 'no'
+
 
         # 🦜 : We assume that required fields are in d
 
@@ -622,18 +672,19 @@ class PbftConsensus:
 
         self.start_listening_as_sub()
 
-        return 'OK'
+        self.epoch = o['epoch']
+        self.say(f'🐸 view changed to {self.epoch}')
+        self.start_listening_as_sub()
+
+        Thread(target=self.start_faulty_timer).start()  # here where the new node are added
+
+        return 'ok'
 
 
     def add_newcomers(self, sigs: list[str]):
         """Add the signers in all_endpoints """
-        for sig in sigs:
-            if not self.sig.verify(sig):
-                continue
-            n = self.sig.get_from(sig)
-            if n not in self.all_endpoints:
-                self.say(f'Adding node {n}')
-                self.all_endpoints.append(n)
+        self.all_endpoints += self.get_newcommers(sigs)
+        self.say(f'all_endpoints updated to {self.all_endpoints}')
 
 
 
