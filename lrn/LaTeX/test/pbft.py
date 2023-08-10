@@ -626,42 +626,120 @@ class MockedSigner(ISignable):
         return l[0]
 
 
-from wonderwords import RandomWord
-class NodeFactory:
-    nodes: dict[str,ListenToOneConsensus] = dict()
-    r = RandomWord()
-    primary_name = ''
-    def make_node(self):
-        i = len(self.nodes)
-        # s = self.r.word(word_max_length=4)
+"""🐢 : Different to ListenToOneConsensus, nodes in *bft must be started simultaneously.
 
-        s = f'N{i}'
-        e = MockedExecutable(s)
-        n = MockedEndpointNetworkNode(s)
+🦜 : Why ?
 
-        if i == 0:
-            self.nodes[s] = ListenToOneConsensus(n=n,e=e)
-            self.primary_name = s
-            return
-        self.nodes[s] = ListenToOneConsensus(n=n,e=e,nodeToConnect=self.primary_name)
+🐢 : Because their faulty timmer needs to be synced (they must be started at a
+           certain time).
 
-fac = NodeFactory()
-for i in range(3): fac.make_node()
+🦜 : So how do we add new nodes?
 
-nClient = MockedEndpointNetworkNode('ClientAAA')
-while True:
-    # reply = input('Enter cmd: <id> <cmd>')
-    reply = input('Enter: ')
-    if reply == 'stop': break
-    if reply == 'append':
-        print_mt(f'{S.HEADER} Appending node {S.NOR}')
-        fac.make_node()
-        continue
-    l = reply.split(' ')
-    if l[0] == 'kick':
-        print_mt(f'{S.HEADER} Kicking node {l[1]} {S.NOR}')
-        fac.nodes[l[1]].net.clear()
-        continue
+🐢 : I think we've got two methods:
 
-    print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
-    nClient.send(l[0],'/pleaseExecuteThis',l[1])
+    1. Define a special type of command, called 'pleaseAddMe:<from>'. And when
+           the nodes are about to execute it, instead of calling the underlying
+           exe, it will parse that command and add that to the
+           `self.all_endpoints`.
+
+    2. Add a new listening target: '/pleaseAddMe' for all nodes. And whenever a
+           new node wants to join the group. It will just call a node, and that
+           node should borad-casting that '/pleaseAddMe' to uptate the
+           'self.all_endpoints'.
+
+🦜 : But then, can random nodes can just keep sending '/pleaseAddMe' to add the
+    arbitrary new nodes?
+
+🐢 : No. The msg send in '/pleaseAddMe' should be signed by the newly added
+    node, and the 'from' of that msg will be added to 'self.all_endpoints',
+    which cannot be forged.
+
+🦜 : Make sense. What about the new node? What does it need to do? After
+    sending '/pleaseAddMe', it can't just start its faulty timmer right?
+
+🐢 : Yeah, I think a sensible way is just that, it stays still and waits for
+    the next 'IamThePrimary' , which should starts its timmer.
+
+🦜 : But what if the 'next primary' turns out to be that new node?...
+
+🐢 : ......Ok....
+
+🐢 : How about when '/pleaseAddMe' is called, the existing nodes will add that
+    new node to a 'self.node_to_be_added'. And when a new '/IamThePrimary' is
+    triggered, the new node in 'self.node_to_be_added' will be popped into
+    'self.all_endpoints'.
+
+🦜 : That makes sense. It's also dangerous here because the that new nodes
+    should be awakened by '/IamThePrimary' too.
+
+🐢 : I thinks that's the primary's job. Also I think the primary should awaken
+    the newly added nodes with some special commands such as
+    `/IamThePrimaryForNewcommer`, in this command, the `executed_commands`
+    should also be passed.
+
+🦜 : So how do we implement it?
+
+🐢 : First, the node needs to know whether it is a newcomer. I thinks a simple
+    way to do that is just to check whether .listened_endpoint() is in
+    all_endpoints().
+
+🦜 : Smart. What's next?
+
+🐢 : Next, the newcommer will 'start_listening_as_newcommer()'. In details,
+
+        1. It sends a '/pleaseAddMe' to f+1 existing nodes, this will make sure
+        that at least one correct node receives this. (🦜 : An alternative way
+        could be that it just sends to one node and pray for the fact that the
+        node it contact to is correct. 🐢 : That's ..Ok for now)
+
+        2. It listens for '/IamThePrimaryForNewcommer' which should contains
+        the commands so far, and start_listening_as_sub().
+
+🦜 : I think inside the msg of '/IamThePrimaryForNewcommer' and
+        '/IamThePrimary', the new primary can also boardcast its
+        'self.listened_endpoints'.
+
+🐢 : Indeed. That's the easier way to allow us to add more than one nodes per
+        epoch.
+
+"""
+
+# from wonderwords import RandomWord
+# class NodeFactory:
+#     nodes: dict[str,ListenToOneConsensus] = dict()
+#     r = RandomWord()
+#     primary_name = ''
+#     def make_node(self):
+#         i = len(self.nodes)
+#         # s = self.r.word(word_max_length=4)
+
+#         s = f'N{i}'
+#         e = MockedExecutable(s)
+#         n = MockedEndpointNetworkNode(s)
+
+#         if i == 0:
+#             self.nodes[s] = ListenToOneConsensus(n=n,e=e)
+#             self.primary_name = s
+#             return
+#         self.nodes[s] = ListenToOneConsensus(n=n,e=e,nodeToConnect=self.primary_name)
+
+# fac = NodeFactory()
+# for i in range(3): fac.make_node()
+
+# nClient = MockedEndpointNetworkNode('ClientAAA')
+# while True:
+#     # reply = input('Enter cmd: <id> <cmd>')
+#     reply = input('Enter: ')
+#     if reply == 'stop': break
+#     if reply == 'append':
+#         print_mt(f'{S.HEADER} Appending node {S.NOR}')
+#         fac.make_node()
+#         continue
+#     l = reply.split(' ')
+#     if l[0] == 'kick':
+#         print_mt(f'{S.HEADER} Kicking node {l[1]} {S.NOR}')
+#         fac.nodes[l[1]].net.clear()
+#         continue
+
+#     print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
+#     nClient.send(l[0],'/pleaseExecuteThis',l[1])
