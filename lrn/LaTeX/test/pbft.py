@@ -69,7 +69,6 @@ class IExecutable:
 🦜 : Yeah, and all_ids() should be kept by the cnsss. Emmm.
 
 """
-# 
 class IEndpointBasedNetworkable:
     def listen(self,
                target: str,     # The target, e.g. "/"
@@ -107,6 +106,8 @@ class PbftConsensus:
         self.view_change_state = False
         self.lock_for_patience = Lock()
         self.laid_down_history: dict[int,dict[str,list[str]]] = {}
+        self.sig_of_nodes_to_be_added: set[str] = set({})
+
         # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
 
         # 🦜 : the list l1 which contains N* = self.all_endpoints[epoch] forms
@@ -146,6 +147,9 @@ class PbftConsensus:
         # command to primary, and the primary just need to accept once.
         self.recieved_commands: set[str] = set({})  # recieved by primary
         self.command_history: list[str] = []  # executed
+
+        if self.net.listened_endpoint() not in self.all_endpoints:
+            self.start_listening_as_newcomer()
 
 
         if self.primary() == self.net.listened_endpoint():
@@ -256,7 +260,7 @@ class PbftConsensus:
 
     def primary(self) -> str:
         "The current primary"
-        return self.all_endpoints[self.epoch % self.epoch]
+        return self.all_endpoints[self.epoch % len(self.all_endpoints)]
 
     def handle_get_state(self, endpoint: str, data: str) -> str:
         """Get the state of the current node, when asked by others. This is
@@ -550,6 +554,89 @@ class PbftConsensus:
                   + s)
 
     def handle_add_new_nodes(self, endpoint: str, data: str) -> str:
+        """Add a new node, this just remembers the add-new msg, which should
+        have been signed by putting it into the self.sig_of_nodes_to_be_added.
+        """
+
+        self.sig_of_nodes_to_be_added.add(data)
+        for node in self.all_endpoints:
+            if node != self.net.listened_endpoint():
+                self.net.send(node,'/addNewNodesNoBoardcast',data)
+
+        #    ^^ a set
+        """ 🐢 : Using a set is ok, in fact only the next-primary needs to
+        remember it, and it will boardcast it when becoming the new primary. At
+        that time, it turns the set into a list.
+
+        🦜 : Do we need to check the result ?
+
+        🐢 : Technically, we do. And the majority should answer 'OK'
+
+        """
+
+        return 'OK'
+
+    def handle_add_new_nodes_no_boardcast(self, endpoint: str, data: str) -> str:
+        self.sig_of_nodes_to_be_added.add(data)
+        return 'OK'
+
+    def start_listening_as_newcomer(self):
+        self.net.send(self.all_endpoints[0], '/pleaseAddMe',self.sig.sign('Hi,please let me in.'))
+        self.net.listen('/IamThePrimaryForNewcomer',handler=self.handle_new_primary_for_newcomer)
+
+    def handle_new_primary_for_newcomer(self, endpoint: str, data: str) -> str:
+        """The data for handle_new_primary_for_newcomer should be same as the
+        one received by handle_new_primary(), but with the additional field :
+        'cmds', which contains the cmds that the new node should execute.
+
+        So it should be parsed into something like
+
+        d = {
+            'epoch' : 2,
+            'sig_of_nodes_to_be_added' : ['sig1','sig2'],
+            'cmds' : ['c1','c2'],
+            'new_view_certificate' : ['sig1','sig2'],
+            'msg' : 'Hi, I am the primary now'
+        }
+        """
+
+        try:
+            d = json.loads(data)
+        except json.JSONDecodeError:
+            self.say(f'Failed to parse data:\n{ S.CYAN + data + S.NOR}, ignoring it')
+            return 'No'
+
+
+        # Check wether the view-change is valid:
+        
+
+        # 🦜 : We assume that required fields are in d
+
+        self.add_newcomers(d['sig_of_nodes_to_be_added'])
+        if self.net.listened_endpoint not in self.all_endpoints:
+            raise Exception('What ? I am not added by the new view?')
+
+
+        for cmd in d['cmds']:
+            self.exe.execute(cmd)
+
+        self.start_listening_as_sub()
+
+        return 'OK'
+
+
+    def add_newcomers(self, sigs: list[str]):
+        """Add the signers in all_endpoints """
+        for sig in sigs:
+            if not self.sig.verify(sig):
+                continue
+            n = self.sig.get_from(sig)
+            if n not in self.all_endpoints:
+                self.say(f'Adding node {n}')
+                self.all_endpoints.append(n)
+
+
+
 
 
 #--------------------------------------------------
@@ -668,8 +755,8 @@ class MockedSigner(ISignable):
 🐢 : ......Ok....
 
 🐢 : How about when '/pleaseAddMe' is called, the existing nodes will add that
-    new node to a 'self.node_to_be_added'. And when a new '/IamThePrimary' is
-    triggered, the new node in 'self.node_to_be_added' will be popped into
+    new node to a 'self.sig_of_nodes_to_be_added'. And when a new '/IamThePrimary' is
+    triggered, the new node in 'self.sig_of_nodes_to_be_added' will be popped into
     'self.all_endpoints'.
 
 🦜 : That makes sense. It's also dangerous here because the that new nodes
@@ -677,7 +764,7 @@ class MockedSigner(ISignable):
 
 🐢 : I thinks that's the primary's job. Also I think the primary should awaken
     the newly added nodes with some special commands such as
-    `/IamThePrimaryForNewcommer`, in this command, the `executed_commands`
+    `/IamThePrimaryForNewcomer`, in this command, the `executed_commands`
     should also be passed.
 
 🦜 : So how do we implement it?
@@ -688,17 +775,17 @@ class MockedSigner(ISignable):
 
 🦜 : Smart. What's next?
 
-🐢 : Next, the newcommer will 'start_listening_as_newcommer()'. In details,
+🐢 : Next, the newcomer will 'start_listening_as_newcomer()'. In details,
 
         1. It sends a '/pleaseAddMe' to f+1 existing nodes, this will make sure
         that at least one correct node receives this. (🦜 : An alternative way
         could be that it just sends to one node and pray for the fact that the
         node it contact to is correct. 🐢 : That's ..Ok for now)
 
-        2. It listens for '/IamThePrimaryForNewcommer' which should contains
+        2. It listens for '/IamThePrimaryForNewcomer' which should contains
         the commands so far, and start_listening_as_sub().
 
-🦜 : I think inside the msg of '/IamThePrimaryForNewcommer' and
+🦜 : I think inside the msg of '/IamThePrimaryForNewcomer' and
         '/IamThePrimary', the new primary can also boardcast its
         'self.listened_endpoints'.
 
@@ -711,11 +798,11 @@ class MockedSigner(ISignable):
 🐢 : Okay
 
 🦜 : Wait, there's another way. We can just store the msg in
-        `self.node_to_be_added` and then in '\IamThePrimary', we just pass the
-        `self.node_to_be_added`, which should also contain the signature of new
+        `self.sig_of_nodes_to_be_added` and then in '\IamThePrimary', we just pass the
+        `self.sig_of_nodes_to_be_added`, which should also contain the signature of new
         node.
 
-🐢 : Good.
+🐢 : Smart. Take advantage of digital signature.
 
 """
 
