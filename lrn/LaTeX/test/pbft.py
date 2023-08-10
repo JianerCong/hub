@@ -185,6 +185,8 @@ class PbftConsensus:
         #     'new-view-certificate' : my_list}
         if self.check_cert(o['view-change-certificate'],o['epoch']):
             self.epoch = o['epoch']
+            self.say(f'🐸 view changed to {self.epoch}')
+            self.start_faulty_timer()  # reset the timer
             self.start_listening_as_sub()
             return 'ok'
 
@@ -214,8 +216,8 @@ class PbftConsensus:
 
         valid_host : set[str] = set({})
         try:
-            for (s in l):
-                assert self.sig.verify(s):
+            for s in l:
+                assert self.sig.verify(s)
 
                 cert = json.loads( self.sig.data(s))
                 valid_host.add(self.sig.get_from(s))
@@ -227,8 +229,8 @@ class PbftConsensus:
                 self.say(f'Requires {self.get_f() + 1} nodes, but got {len(valid_host)}')
                 return False
 
-        except json.JSONDecodeError as e:
-            self.say(f'Error loading Json for view-change-msg')
+        except json.JSONDecodeError as err:
+            self.say(f'Error loading Json for view-change-msg: {err}')
             return False
 
         except AssertionError as a:
@@ -352,7 +354,7 @@ class PbftConsensus:
             with self.lock_for_patience:
                 self.patience -= 1
                 p = self.patience
-            self.say(f' patience >> {self.patience}, 🐢PR: {S.BLUE} {self.primary} {S.NOR}')
+            self.say(f' patience >> {p}, 🐢PR: {S.BLUE} {self.primary()} {S.NOR}')
 
     def comfort(self):          # reset timer
         with self.lock_for_patience:
@@ -546,3 +548,120 @@ class PbftConsensus:
         """Say something """
         print_mt(f'{S.CYAN}\t[{self.my_id()}]{S.NOR}: '
                   + s)
+
+#--------------------------------------------------
+"""
+🦜 :Below we try to use the PBFT
+"""
+
+class MockedExecutable(IExecutable):
+    def __init__(self, i: str):
+        self.id = i
+    def execute(self,command: str):
+        print_mt(f'🦜 {S.RED} [{self.id}] Exec: {command} {S.NOR}')
+
+
+network_hub : dict[str, Callable[[int,str],Optional[str]]] = dict()
+lock_for_netwok_hub = Lock()
+class MockedEndpointNetworkNode(IEndpointBasedNetworkable):
+    def __init__(self,e: str):
+        self.endpoint = e
+    def listened_endpoint(self) -> str:
+        return self.endpoint
+    def listen(self,
+               target: str,
+               handler: Callable[[int,str],Optional[str]]
+               ):
+        k = f'{self.endpoint}-{target}'
+        print_mt(f'Adding handler: {k}')
+        network_hub[k] = handler
+
+    def clear(self):                # clears up all the listeners
+        """🦜 : In fact there's no role-change in ListenToOneConsensus,
+        therefore no ones is gonna call this."""
+        with lock_for_netwok_hub:
+            for k in list(network_hub.keys()):
+                if k.startswith(f'{self.endpoint}-'):
+                    print_mt(f'Removing handler: {k}')
+                    network_hub.pop(k)
+
+    def send(self,e: str, target: str, data: str) -> Optional[str]:
+        k = f'{e}-{target}'
+        print_mt(f'{S.CYAN} Calling handler: {k} {S.NOR} with data:\n {S.CYAN} {data} {S.NOR}')
+        if k in network_hub:
+            r = network_hub[k](self.endpoint,data)
+        else:
+            print_mt(f'Handler {k} not found')
+            r = None
+        print_mt(f'Got result:{S.GREEN} {r} {S.NOR}')
+        return r
+
+"""
+🐢 : The above two classes are copied from ListenToOneConsensus. But in
+           addition to that, we need a signer which will do digital signtature.
+"""
+
+class MockedSigner(ISignable):
+    """A mocked signer. This one won't work if `id` or `msg` to be signed
+           contains the char `:`"""
+    def __init__(self,i:str):
+        self.id = i
+
+    def sign(self, msg: str) -> str:
+        return self.id + ':' + msg
+
+    def verify(self, msg: str) -> bool:
+        return True
+
+    # 🐢 :extract part of the msg, the msg should have been verified already,
+    # otherwise the result is undefined.
+    def get_data(self, msg: str) -> str:
+        l = msg.split(':')
+        print_mt(f'⚙️ Extract data in {S.CYAN}{l}{S.NOR}')
+        return l[1]
+
+    def get_from(self, msg: str) -> str:
+        l = msg.split(':')
+        print_mt(f'⚙️ Extract from in {S.CYAN}{l}{S.NOR}')
+        return l[0]
+
+
+from wonderwords import RandomWord
+class NodeFactory:
+    nodes: dict[str,ListenToOneConsensus] = dict()
+    r = RandomWord()
+    primary_name = ''
+    def make_node(self):
+        i = len(self.nodes)
+        # s = self.r.word(word_max_length=4)
+
+        s = f'N{i}'
+        e = MockedExecutable(s)
+        n = MockedEndpointNetworkNode(s)
+
+        if i == 0:
+            self.nodes[s] = ListenToOneConsensus(n=n,e=e)
+            self.primary_name = s
+            return
+        self.nodes[s] = ListenToOneConsensus(n=n,e=e,nodeToConnect=self.primary_name)
+
+fac = NodeFactory()
+for i in range(3): fac.make_node()
+
+nClient = MockedEndpointNetworkNode('ClientAAA')
+while True:
+    # reply = input('Enter cmd: <id> <cmd>')
+    reply = input('Enter: ')
+    if reply == 'stop': break
+    if reply == 'append':
+        print_mt(f'{S.HEADER} Appending node {S.NOR}')
+        fac.make_node()
+        continue
+    l = reply.split(' ')
+    if l[0] == 'kick':
+        print_mt(f'{S.HEADER} Kicking node {l[1]} {S.NOR}')
+        fac.nodes[l[1]].net.clear()
+        continue
+
+    print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
+    nClient.send(l[0],'/pleaseExecuteThis',l[1])
