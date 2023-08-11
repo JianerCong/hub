@@ -1,0 +1,323 @@
+\documentclass[dvipsnames]{article}
+% \documentclass[dvipsnames]{ctexart}
+
+\title{The WebAssembly System Interface (WASI)}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+\usepackage{graphicx}
+
+\usepackage{svg}
+
+\usepackage[skip=5pt plus1pt, indent=0pt]{parskip}
+% Color
+\newcommand{\mycola}{MidnightBlue}
+\newcommand{\mycolb}{Mahogany}
+\newcommand{\mycolc}{OliveGreen}
+
+\newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
+\newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
+\newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
+\renewcommand{\emph}[1]{\texbf{#1}}
+\usepackage{amssymb}            %\mathbb
+
+\usepackage{fontspec}
+
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+% --------------------------------------------------
+% Windows
+% \setmonofont{Cascadia}[
+% Path=C:/Windows/Fonts/,
+% Extension = .ttf,
+% UprightFont=*Mono,              %find CascadiaMono.ttf
+% BoldFont=*Code,               %find CascadiaCodePL.ttf ...
+% ItalicFont=*Code,
+% BoldItalicFont=*Code
+% ]
+
+
+\usepackage{minted}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usepackage{tikz}
+\usetikzlibrary{shapes} % ellipse node shape
+\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\usetikzlibrary{arrows.meta}    %-o arrow head
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+\usetikzlibrary{snakes}
+
+\usepackage{amsmath}
+% ??? still xelatex?
+% \usepackage{xeCJK}
+\usepackage{emoji}
+% \setemojifont{NotoColorEmoji.ttf}[Path=C:/Users/congj/repo/myFonts/]
+% \setemojifont{TwitterColorEmoji-SVGinOT.ttf}[Path=C:/Users/congj/repo/myFonts/]
+\usepackage{cleveref}
+
+\date{\today}
+\author{作者}
+
+\newtcblisting{simplec}{
+  listing engine=minted,
+  minted language=c++,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter, 
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20
+}
+\tcbuselibrary{breakable}
+\newtcblisting{simplepy}{
+  listing engine=minted,
+  minted language=python,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter,
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20,
+  breakable
+}
+\newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
+
+\tikzstyle{myMatrix}=[matrix of nodes,below right,
+nodes={above,text centered},                  %apply to all nodes
+row sep=1cm,column sep=2cm]
+\tikzstyle{every node}=[inner sep=0pt]
+
+\newcommand\uptoleft[3][-o]{\draw[very thick,#1](#2.south) |- (#3.west);}
+\newcommand\uptodown[3][-o]{\draw[very thick,#1](#2.south) to [out=270,in=90] (#3.north);}
+\newcommand\downtoup[3][-latex]{\draw[very thick,#1](#2.north) to [out=90,in=270] (#3.south);}
+
+\newcommand\lefttoright[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=180] (#3.west);}
+\newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
+
+
+\newtcolorbox{leftDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.east) --
+      +(0,2mm) --
+      +(3mm,0) --
+      +(0,-2mm)
+      ;
+    \end{scope}
+  }}
+
+
+\newtcolorbox{rightDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.west) --
+      +(0,2mm) --
+      +(-3mm,0) --
+      +(0,-2mm);
+    \end{scope}
+  }}
+
+\newcommand{\mycolaa}{\mycola!20}
+
+
+\usepackage{changepage}   % for the adjustwidth environment
+\newenvironment{myIndent}[1][7mm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
+
+% --------------------------------------------------
+\begin{document}
+\maketitle{}
+
+\section{Intro}
+WASI is a modular system interface for WebAssembly. It's focused on security and portability.
+
+\subsection{Why}
+Developers are starting to push WebAssembly beyond the browser, because it
+provides a fast, scalable, secure way to run the same code across all machines.
+
+But we don't yet have a solid foundation to build upon. Code outside of a
+browser needs a way to talk to the system -- \cola{a system interface}. And the
+WebAssembly platform doesn't have that yet. (\emoji{parrot} Oh, like the
+standard library \texttt{os} in python).
+
+\subsection{What}
+
+WebAssembly is an assembly language for a conceptual machine, not a physical
+one. This is why it can be run across a variety of different machine
+architectures.
+
+So, WebAssembly needs a system interface for a \Cola{conceptual operating
+  system}, not any \cola{single} operating system.
+
+\section{What's a system interface}
+
+\emoji{turtle} : Many people talk about languages like C giving you direct access to system
+resources. But that's \cola{not true}.
+
+These languages don't have direct access to do things like open or create files
+on most systemns. (\emoji{parrot} Why not?)
+
+\emoji{turtle} : Because these system resources such as
+
+\begin{itemize}
+\item files
+\item memory
+\item network connections
+\end{itemize}
+
+are too important for stability and security.
+
+So we need a way to control which programs and users can access which resources.
+People figured this out pretty early on, and came up with a way to provide this
+control: \Cola{protection ring security}.
+
+With protection ring security, the operating system basically puts a protective
+barrier around the system's resources (\cref{fig:protection-ring}). This is the \cola{kernel}. Only kernel
+can do things like creating new file.
+
+The user's programs run outside of this kernel in something called \Cola{user
+  mode}. (\emoji{parrot} : Oh, I heard that before.) If a program wants to do
+anything like opening a file, it has to ask the kernel.
+This is where the concept of the \Cola{system call} comes in.(\cref{fig:syscall}) 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\linewidth]{/home/me/Pictures/protection-ring-sec-1-500x298.png}
+  \caption{Protection ring. Source: \texttt{https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/}}
+  \label{fig:protection-ring}
+\end{figure}
+
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\linewidth]{/home/me/Pictures/syscall-1.png}
+  \caption{System call. Source: \texttt{https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/}}
+  \label{fig:syscall}
+\end{figure}
+
+For example. \texttt{printf} being compiled for Windows could use the Windows
+API to interact with the machine. If it's being compiled for Mac or Linux, it
+will use POSIX instead.
+
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\linewidth]{/home/me/Pictures/implementations-1.png}
+  \caption{Different implementations on different systems. Source:
+    \texttt{https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/}}
+  \label{fig:syscall}
+\end{figure}
+
+\section{What should this system interface look like}
+
+We do have a proposal to start with:
+
+\begin{itemize}
+\item Create a modular set of standard interfaces
+\item Start with a standardizing the most fundamental module, \texttt{wasi-core}
+  (\cref{fig:wasi-1})
+\end{itemize}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\linewidth]{/home/me/Pictures/wasi-1.png}
+  \caption{The WASI modules. Source:
+    \texttt{https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/}}
+  \label{fig:wasi-1}
+\end{figure}
+
+\subsection{wasi-core}
+
+\texttt{wasi-core} will contain the basics that all programs need. It will cover
+much of the same ground as POSIX, including things such as
+\begin{itemize}
+\item files
+\item network connections
+\item clocks
+\item random numbers
+\end{itemize}
+
+Languages like Rust will use \texttt{wasi-core} directly in their standard
+libraries. For example, Rust's \texttt{open} is implemented by calling
+\verb|__wasi_path_open| when it's compiled to WebAssembly. (\emoji{parrot} : Oh,
+so WebAssembly compiled from Rust is already using \texttt{WASI}?.
+\emoji{turtle}: Yeah.)
+
+For C++, we've created a \texttt{wasi-sysroot} that implements \texttt{libc} in
+terms of \texttt{wasi-core} functions(\cref{fig:libc}).(\emoji{parrot} : What's that?
+\emoji{turtle} : It's a special \texttt{libc.h} to use when compiling C++ to
+WebAssembly. \emoji{parrot} : What's the compiler ? \emoji{turtle}: For now, the
+only compiler that can do is Clang>=10)
+
+We expect compilers like Clang to be ready to interface with the WASI API, and
+\colb{complete toolchains} like the \colb{Rust compiler and Emscripten} to use WASI as part of their system implementations.
+
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\linewidth]{/home/me/Pictures/open-imps-1.png}
+  \caption{The Compiler Options. Source:
+    \texttt{https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/}}
+  \label{fig:libc}
+\end{figure}
+
+\subsection{How does user's code call these WASI functions?}
+
+The \cola{runtime} that is running the code passes the \texttt{wasi-core} functions as \Cola{imports} (\cref{fig:imports})
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\linewidth]{/home/me/Pictures/imports-1.png}
+  \caption{How \texttt{wasi} functions are called. Source:
+  \texttt{https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/}}
+  \label{fig:imports}
+\end{figure}
+
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.7\linewidth]{/home/me/Pictures/wasi-1.png}
+%   \caption{The WASI modules. Source:
+%     \texttt{https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/}}
+%   \label{fig:wasi-1}
+% \end{figure}
+
+\end{document}
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
+% End:

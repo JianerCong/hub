@@ -173,7 +173,10 @@ class PbftConsensus:
 
     def handle_new_primary(self, endpoint: str, data: str) -> str:
         """endpoint said it's the primary, if the data contains the required
-        things, then we follow it"""
+        things, then we follow it.
+
+        Here we should also handle adding-new nodes.
+        """
 
         try:
             o = json.loads(data)

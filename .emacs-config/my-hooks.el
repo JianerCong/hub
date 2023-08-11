@@ -1,6 +1,7 @@
 ;; the hooks
 
 (autoload 'folding-mode          "folding" "Folding mode" t)
+(autoload 'wat-mode          "wat-mode" "Wasm Text mode" t)
 ;; (message "my hooks loaded")
 ;; load folding.el when 'folding-mode is required
   ;; (if (require 'folding nil 'noerror)
@@ -43,6 +44,10 @@
             )
           )
 
+;; 🦜 : I feel like it's just better to use [SPC]-z-c for folding
+
+
+
 (setq auto-mode-alist
       (append
        ;; File name (within directory) starts with a dot.
@@ -56,6 +61,7 @@
 
          ("\\.wxml\\'" . web-mode)
          ("\\.wxss\\'" . css-mode)
+         ("\\.wat\\'" . wat-mode)
          )
        auto-mode-alist))
 (message "my-hook loaded")

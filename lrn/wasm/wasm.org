@@ -1,0 +1,36 @@
+** Get te WebAssembly Binary Toolkit
+#+begin_src bash
+  wget https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-ubuntu.tar.gz
+  tar zxf wabt-1.0.33-ubuntu.tar.gz
+  ls wabt-1.0.33/bin
+  mv wabt-1.0.33 ~/.local/
+  # after adding that to path
+
+  wasm2wat --version
+#+end_src
+*** compile it
+#+begin_src bash
+  # t2b
+  wat2wasm t.wat -o t.wasm
+  # b2t
+  wasm2wat t.wasm -o t-again.wat
+
+  # view the output
+  wat2wasm t.wat -v
+#+end_src
+*** the smallest wat
+#+begin_src wat
+(module)
+#+end_src
+
+#+begin_src wat
+0000000: 0061 736d                                 ; WASM_BINARY_MAGIC
+0000004: 0100 0000                                 ; WASM_BINARY_VERSION
+#+end_src
+🐢 : The encoding of a *module* starts with a _preamble containing_
+*** 
+
+
+# Local Variables:
+# org-what-lang-is-for: "wat"
+# End:

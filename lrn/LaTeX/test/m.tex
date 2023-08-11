@@ -1,7 +1,7 @@
-\documentclass[dvipsnames]{ctexart}
-\title{中期检查答题}
-\usepackage{tabularx}
-\usepackage{booktabs}
+\documentclass[dvipsnames]{article}
+% \documentclass[dvipsnames]{ctexart}
+
+\title{WebAssembly Binary}
 \usepackage{geometry}\geometry{
   a4paper,
   total={170mm,257mm},
@@ -9,6 +9,7 @@
   top=20mm,
 }
 
+\usepackage{graphicx}
 
 \usepackage{svg}
 
@@ -69,18 +70,10 @@ BoldItalicFont=*CodePLItalic
 \usepackage{emoji}
 % \setemojifont{NotoColorEmoji.ttf}[Path=C:/Users/congj/repo/myFonts/]
 % \setemojifont{TwitterColorEmoji-SVGinOT.ttf}[Path=C:/Users/congj/repo/myFonts/]
+\usepackage{cleveref}
 
-
-\newtcolorbox[auto counter]{myBox}[2][]{
-  fonttitle=\bfseries,title={共识~\thetcbcounter: #2},#1
-}
-\newtcolorbox[]{noteBox}[1][]{
-  tile,left=1mm,nobeforeafter,fontupper=\small,#1
-}
-
-\tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
 \date{\today}
-\author{丛坚而 技术部 算法工程师}
+\author{作者}
 
 \newtcblisting{simplec}{
   listing engine=minted,
@@ -167,120 +160,123 @@ row sep=1cm,column sep=2cm]
 \usepackage{changepage}   % for the adjustwidth environment
 \newenvironment{myIndent}[1][7mm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
 
+\usepackage{tabularx}
+
+\newcolumntype{b}{X}
+\newcolumntype{s}{>{\hsize=.2\hsize}X}
+
 % --------------------------------------------------
-
-\usepackage{enumitem}
-\setlist[description]{leftmargin=\parindent,labelindent=\parindent}
-
 \begin{document}
-
 \maketitle{}
 
-\section*{共同题目}
+\section{Modules}
 
-\subsection*{1. 请阐述浙大，趣链，聚义岩，新华夏之间的关系}
+The encoding of a \cola{mocule} starts with a preamble containing a 4-byte
+\Cola{magic number} (the string \verb|\0asm|) and a \Cola{version field}. The
+current version of the WebAssembly binary format is 1.
 
-\begin{itemize}
-\item 趣链(杭州趣链科技有限公司)属于浙大AIF产研中心孵化企业。
-\item 聚义岩（北京聚义岩科技有限公司）是趣链的全资生态子公司
-\item 新华夏(北京新华夏信息技术有限公司)是聚义岩的全资子公司
-\end{itemize}
+\begin{align*}
+  \mathtt{magic} &= \mathtt{0x00 0x61 0x73 0x6D} \\
+  \mathtt{version} &= \mathtt{0x01 0x00 0x00 0x00} \\
+  \mathtt{module} &= \mathtt{magic} + \mathtt{version} + \mathtt{<other-things>}
+\end{align*}
 
-\subsection*{2. 请阐述公司当前战略}
-145项目交付，区块链产品研发
+\section{Sections}
 
-\subsection*{3. 请简要阐述公司当下重大事项}
-145项目交付
+The binary encoding of modules is organized into \cola{sections}. Most sections
+correspond to one component of a \cola{module} record, except that
+\cola{function definitions} are split into two sections:
 
-\subsection*{4. 清列出全部军委，战区，军种名称}
-\begin{itemize}
-\item 中华人民共和国中央军事委员会
-  \begin{itemize}
-  \item 三大委员会
-    \begin{enumerate}
-    \item \cola{中央军委}纪律检查委员会
-    \item \cola{中央军委}政法委员会
-    \item \cola{中央军委}科学技术委员会
-    \end{enumerate}
-  \item 七大部
-    \begin{enumerate}
-    \item \cola{中央军委}办公室
-    \item \cola{中央军委}联合参谋部
-    \item \cola{中央军委}政治工作部
-    \item \cola{中央军委}后勤保障部
-    \item \cola{中央军委}装备发展部
-    \item \cola{中央军委}训练管理部
-    \item \cola{中央军委}国防动员部
-    \end{enumerate}
-  \item 五大办公厅 （署/局）
-    \begin{enumerate}
-    \item \cola{中央军委}战略规划办公室
-    \item \cola{中央军委}改革和编制办公室
-    \item \cola{中央军委}国际军事合作办公室
-    \item \cola{中央军委}审计部
-    \item \cola{中央军委}机关事务管理总局
-    \end{enumerate}
-  \end{itemize}
-\item 五大战区: 东，西，南，北，中
-\item 六大军种: 陆军，海军，空军，火箭军，战略支援部队，联勤保障部队。
-\end{itemize}
-
-\subsection*{请阐述BM十不准}
 \begin{enumerate}
-\item 不准涉密人员随意向任何组织和个人泄露秘密；
-\item 不准非涉密人员以任何理由、途径非法知悉秘密；
-\item 不准用手机或普通电话谈论国家秘密；
-\item 不准将涉密计算机接入互联网；
-\item 不准将涉密 U 盘、移动硬盘、光盘接入与互联网连接的计算机；
-\item 不准在与互联网连接的计算机上处理涉密文件；
-\item 不准使用具有无线上网功能的计算机处理涉密文件；
-\item 不准使用未加保密装置的传真机传递涉密文件资料与信息；
-\item 不准擅自复制、摘抄、销毁和私自留存涉密文件资料；
-\item 不准将涉密文件资料、涉密计算机带出办公室或家中处理涉密文件。
+\item type declarations in the \cola{function section}
+\item bodies in the \cola{code section}. (\emoji{parrot} : It's like the the
+  header files and implementation file.)
+\end{enumerate}
+\emoji{turtle} : This seperation enables \cola{parallel} and \cola{streaming}
+compilation of the functions in a module.
+
+Each section consists of
+\begin{enumerate}
+\item a one-byte \cola{section id}
+\item the \colb{\texttt{u32}} size of the contents, in bytes.
+\item the actual \colc{contents}, whose structure is dependent on the \cola{section id}
 \end{enumerate}
 
-\section*{专业科目}
-\subsection*{阐述下公链和联盟链的区别}
-\begin{center}
-  \begin{tabularx}{0.8\textwidth} { 
-       >{\raggedright\arraybackslash}X 
-       >{\centering\arraybackslash}X 
-       >{\raggedleft\arraybackslash}X  }
-     \toprule
-     \textbf{类型} & \textbf{共链} & \textbf{联盟链} \\
-     \midrule
-     网络  & 公网  & 一般为内部网络  \\
-     \hline
-     谁能进入集群成为节点？  & 谁都能  & 在固定CA获得证书的节点才能  \\
-     \hline
-     共识类型 & 弱共识（Weak Consensus, Eventual Consensus）比如 PoW,Pos & 状态
-     同步共识 (State Duplication Consensus) 比如 Raft,PBFT\\
-     \hline
-     谁来打包? & 矿工 （miner） & 主节点 （primary）\\
-     \hline
-     世界状态在每一瞬间都是是确凿的(100\%)？ & 不是 & 是\\
-     \hline
-     每个区块只有一个子区块吗? &不是&是\\
-     \bottomrule
-\end{tabularx}
-\end{center}
+\cola{Every section is optional;} an omitted section is equivalent to the
+section being present with empty contents. In other words, a section is either a
+triple:
+\[
+  N\cola{: \mathtt{bytes}} + \text{content-size} \cola{: \mathtt{u32}} + \text{content}
+  \cola{: B}
+\]
 
-\subsection*{阐述下联盟链常用的共识算法}
+Or an empty content. $B$ above is the ``grammar'' (structure) of the content.
 
-\begin{description}
-\item[Raft] 特点是分区容忍（Partition Tolerance），半数以下节点挂了也没事。沟通效率为$O(n)$(主节点广播一次就行)。
-  % 每个节点有一个内置随机秒表（Timer）。秒表超时会触发\cola{选举}。第一
-  % 个发送\cola{选举}到大多数节点的节点成为主节点。主节点确认后发
-  % 送\cola{心跳}以及\cola{执行}到其他节点。
-\item[PBFT] 特点是可以容忍$\frac{1}{3}N$个“随机行为节点”（拜占庭节点）。沟通效率为$O(n^2)$（每个节点广播至少两次）。
-\item[RBFT] 特点是把交易验证交给主节点(这个把区块链嵌到了共识里)，使无效交易不会被广播。同样可以防
-  止$\frac{1}{3}N$一下的“随机行为节点”。沟通效率为$O(n^2)$（同PBFT）。
-\item[NBFT] 特点是给主节点根据网络带宽决定实际共识流程。沟通效率最快为$O(n)$ (网络很不好时变为Raft)。
-\end{description}
+\emoji{parrot} : So we first read $N$ to get a \colb{section parser}. And then
+use that to parse a content right?
+
+\emoji{turtle} : Yeah. And other than for unknown \cola{custom sections}, the
+\cola{size} is not required for decoding, but can be used to skip sections when
+navigating through a binary. The module is \Cola{malformed} if the size does not
+match the length of the binary contents $B$.
+
+\emoji{parrot} : What? You mean (for known section) the size can be determined
+from the type $N$?
+
+\newcommand{\heading}[1]{\multicolumn{1}{c}{#1}}
+\begin{table}[htbp]
+  \centering
+  % \begin{tabularx}{\textwidth}{| X | X | X |}
+  \begin{tabularx}{\textwidth}{sb}
+    \hline
+    \heading{Id}     & \heading{Section}     \\ \hline
+    0& custom section\\
+
+    1& type section\\
+
+    2& import section\\
+
+    3& function section\\
+
+    4& table section\\
+
+    5& memory section\\
+
+    6& global section\\
+
+    7& export section\\
+
+    8& start section\\
+
+    9& element section\\
+
+    10& code section\\
+
+    11& data section\\
+
+    12& data count section\\
+  \end{tabularx}
+\end{table}
+
+\subsection{Custom Section}
+
+\Cola{Custom seconds} have id 0. They are intended to be used for debugging
+information or third-party extensions, and are \Cola{ignored} by the WebAssembly
+semantics. Their contents consist of a \cola{name} further identifying the
+custom section, followed by an uninterpreted sequence of bytes for custom use.
+
+\emoji{parrot} So the ``content'' is \cola{name + \texttt{byte*}}
+\emoji{turtle} Yeah
+\[ \text{content} = \mathtt{name} + \cola{\mathtt{bytes*}}\]
+
+\subsection{Type Section}
+
+The \cola{type section} has the id 1. It decodes into a vector of \cola{function
+  types} that represent the \cola{types} component of a module.
+
+\[ \text{content} = \cola{\mathtt{vector<functionType>}}\]
 
 \end{document}
-
-
 % Local Variables:
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"

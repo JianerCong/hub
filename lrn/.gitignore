@@ -230,3 +230,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# wasm
+*.wasm
