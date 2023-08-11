@@ -171,6 +171,29 @@ row sep=1cm,column sep=2cm]
 
 \section{Modules}
 
+A WebAssembly binary takes the form of a \cola{module} that contains \colb{definitions} for
+\begin{itemize}
+\item functions
+\item tables
+\item linear memories
+\item as well as mutable or immutable global variables.
+\end{itemize}
+
+\colb{Definitions} can also be \Cola{imported}, specifying a module/name pair
+and a suitable type. Each \colb{definition} can optionally be \Cola{exported}
+under one or more names.
+
+In addition to definitions, modules can
+
+\begin{itemize}
+\item define initialization data for their memories or tables that takes the
+  form of segments copied to given offsets.
+\item define a start function that is automatically executed.
+\end{itemize}
+
+\section{Encoding of module}
+
+
 The encoding of a \cola{mocule} starts with a preamble containing a 4-byte
 \Cola{magic number} (the string \verb|\0asm|) and a \Cola{version field}. The
 current version of the WebAssembly binary format is 1.
@@ -394,16 +417,17 @@ But what is a \texttt{tableType} ?
 Just like \texttt{int, float} are types in C. WebAssembly has its own types
 which includes:
 
+\newcommand{\textmytype}[1]{\texttt{\cola{#1}}}
 \begin{description}
-\item[Number Types \texttt{numtype}] \texttt{ = i32,i64,f32,f64}
-\item[Vector Types \texttt{vectype}] vector of numeric values = \texttt{v128}. \texttt{v128}
+\item[Number Types \textmytype{numtype}] \textmytype{ = i32,i64,f32,f64}
+\item[Vector Types \textmytype{vectype}] vector of numeric values = \textmytype{v128}. \textmytype{v128}
   means a 128-bit vector of packed integer or floating-point data. The packed
   data can be interpreted arbitrarily, signed or unsigned integers, or even a
   128 bit type. The interpretation is determined by individual operations.
   \cola{vector types}, like \cola{numeric types} are \colb{transparent}, meaning
   that their bit patterns can be observed. Values of vector type can be stored
   in \cola{memories}
-\item[Reference Types \texttt{reftype}] \texttt{ = funcref, externref}, classify
+\item[Reference Types \textmytype{reftype}] \textmytype{ = funcref, externref}, classify
   first-class references to objects in the runtime \cola{store}. Reference types
   are \colb{opaque}, meaning that neither
   \begin{itemize}
@@ -411,15 +435,38 @@ which includes:
   \item their bit pattern
   \end{itemize}
   can be observed. Values of reference type can be stored in \cola{tables}.
-\item[Value Types \texttt{valtype}] \texttt{= numtype, vectype, reftype}
-  classify the individual values that WebAssembly code can compute with and the values that a variable accepts
-\item[Result Types \texttt{resulttype}] \texttt{= vec<valtype>}classify the
+
+  \textmytype{funcref} can reference \cola{any} function. \textmytype{externref}
+  reference objects owned by the \Cola{embedder}.
+
+  \emoji{parrot} : What's embedder?
+
+  \emoji{turtle} : That's usually the host environment that defines
+  \begin{itemize}
+  \item how loading of modules are initiated
+  \item how imports are provided (including host-side definitions), and 
+  \item how exports can be accessed.
+  \end{itemize}
+\item[Value Types \textmytype{valtype}] \textmytype{= numtype, vectype, reftype}
+  classify the individual values that WebAssembly code can compute with and the
+  values that a variable accepts.
+\item[Result Types \textmytype{resulttype}] \textmytype{= vec<valtype>}classify the
   result of executing instructions or functions, which is a sequence of values,
   written with brackets.
-
-
+\item[Function Types \textmytype{functype}] \textmytype{= resulttype
+    $\rightarrow$ resulttype}
+\item[Limits \textmytype{limits}] \textmytype{ = \{min : u32, max=None : u32\}} 
+\item[Memory Types \textmytype{memtype}] Memory types classify linear \cola{memories} and their size
+  range. \textmytype{= limits}
+\item[Table Types \textmytype{tabletype}] \textmytype{ = \{limits, reftype \}} 
+\item[Global Types \textmytype{globaltype}] \textmytype{ = \{const | var,
+    valtype\}} 
+\item[External Types] \textmytype{externtype = functype | tabletype | memtype | globaltype}
 \end{description}
 
+\emoji{parrot} That's heavy.
+
+\emoji{turtle} Should have said that in a separate section
 
 \subsection{Memory Section}
 
@@ -452,14 +499,77 @@ Moreover, each global is initialized with an \cola{\text{init}} value given by a
 \emoji{parrot} : So a global is kinda like
 
 \begin{simplec}
-  int x = 10;
+  int x = 10 + 1;
 \end{simplec}
 
-At the top of a file.
+At the top of a file, and \texttt{10 + 1 } in this case is the \texttt{init}
 
 \emoji{turtle} : Yeah. It just that there's no name for each global. Instead.
 Globals are referenced through \cola{global indices}, \cola{starting with the
   smallest index not referencing a global \textbf{import}}.
+
+\subsection{Export Section}
+
+
+The \cola{export section} has the id 7. It decodes into a vector of
+\cola{exports} that represent the \texttt{exports} component of a \cola{module}.
+
+\emoji{parrot} This is similar to \cola{imports} right?
+
+\emoji{turtle} Yeah, but it doesn't need to specify the \cola{module} name,
+because, ..., well, this's this module.
+
+\begin{align*}
+  \text{content} &= \cola{\mathtt{vector<export>}}\\
+\end{align*}
+
+And each \texttt{export} contains
+\begin{enumerate}
+\item \texttt{name: \cola{name}}
+\item \texttt{d: \cola{export\_description}}
+\end{enumerate}
+
+\emoji{turtle} \verb|export_description| is same as \verb|import_description|.
+
+\subsection{Start Section}
+
+The \cola{start section} has the id 8. It decodes into
+into an optional start function that represents the 
+component of a module.
+\begin{align*}
+  \text{content} &= \cola{\mathtt{funcidx}}\\
+\end{align*}
+
+\emoji{parrot} : So if this is, say...,0, then the first function will be run as
+init right?
+
+\emoji{turtle} : Yes.
+
+\subsection{Element Section}
+
+The \cola{element section} has the id 9. It decodes into a vector of
+\cola{element segments}.
+
+\emoji{parrot} What's element segments?
+
+\emoji{turtle} It is used initialize a subrange of a table from a static vector
+of elements. It has many different ways to do that, but for now, let's move on.
+
+\subsection{Code Section}
+
+The \cola{code section} has the id 10. It decodes into a vector of \cola{code}
+entries that are pairs 
+
+\newcommand{\mathmytype}[1]{\mathtt{\cola{#1}}}
+\begin{align*}
+  \text{content} &=
+                   \cola{\mathmytype{code}}\\
+  \mathmytype{code} &= \{\mathmytype{size-of-func: u32, code: func}\}\\
+  \mathmytype{func} &= \{\mathmytype{v:vec(locals), e:expr}\\
+  \mathmytype{lacals} &= \{\mathmytype{n: u32, t:valtype}\}
+  \\
+\end{align*}
+
 \end{document}
 % Local Variables:
 % TeX-engine: luatex
