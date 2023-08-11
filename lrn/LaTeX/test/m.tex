@@ -270,15 +270,200 @@ custom section, followed by an uninterpreted sequence of bytes for custom use.
 \[ \text{content} = \mathtt{name} + \cola{\mathtt{bytes*}}\]
 
 \subsection{Type Section}
+\label[subsection]{sec:type}
 
 The \cola{type section} has the id 1. It decodes into a vector of \cola{function
   types} that represent the \cola{types} component of a module.
 
 \[ \text{content} = \cola{\mathtt{vector<functionType>}}\]
 
+\emoji{parrot} : So is \cola{functionType} the header of function?
+
+\emoji{turtle} : No, it's just the type. It's something like:
+
+\begin{simplec}
+  using F1 = function<int(void)>;
+  using F2 = function<int(int)>;
+
+  F1 f1 = [](){return 1};
+  F1 f2 = [](){return 2};
+\end{simplec}
+
+All function types used in a module must be defined in this component. They are
+referenced by \cola{type indices}.
+
+\subsection{Import Section}
+
+The \Cola{import section} has the id 2. It decodes into a vector of
+\cola{\texttt{imports}} that represent the \Cola{imports component} of a module.
+
+\begin{align*}
+  \text{content} &= \cola{\mathtt{vector<import>}}\\
+\end{align*}
+
+And each \texttt{import} contains
+\begin{enumerate}
+\item \texttt{module: \cola{name}}
+\item \texttt{name: \cola{name}}
+\item \texttt{d: \cola{import\_description}}
+\end{enumerate}
+
+\emoji{parrot} : So I guess the important things are in \texttt{d}, right?
+
+\emoji{turtle} Yeah, a \verb|import_description| (officially
+\texttt{importdesc}) is one of following byte sequence.
+
+\begin{enumerate}
+\item \texttt{0x00 + \cola{<typeidx>}} $\Rightarrow{}$ a function
+\item \texttt{0x01 + \cola{<tabletype>}} $\Rightarrow{}$ a table
+\item \texttt{0x02 + \cola{<memtype>}} $\Rightarrow{}$ a mem
+\item \texttt{0x03 + \cola{<globaltype>}} $\Rightarrow{}$ a global
+\end{enumerate}
+
+\emoji{parrot} What are these ?
+
+\emoji{turtle} : Memory is a resizable ArrayBuffer that contains the linear
+array of bytes read and written by WebAssembly's low-level memory access
+instructions.
+
+\emoji{parrot} : Oh, I remember that JS can pass an ArrayBuffer to the
+underlying WebAssembly function to do something like transforming a PNG.
+
+\emoji{turtle} : Yeah. Table is a resizable typed array of references (e.g. to
+functions) that could not otherwise be stored as raw bytes in Memory (for safety
+and portability reasons).
+
+\subsection{Function Section}
+
+The \cola{function section} has the id 3. It decodes into a vector of \cola{type
+indices} that represent the \cola{type} fields of the \cola{functions} in the
+\cola{funcs} component of a \cola{module}.
+
+\emoji{parrot} : So in WebAssembly, \texttt{typeidx} kinda represents a function
+right?
+
+\emoji{turtle} : That's should specify the \cola{type} of a function (i.e. input
+and output).
+
+\emoji{parrot} : So what makes a function?
+
+\emoji{turtle} : Three component:
+
+\begin{enumerate}
+\item \Cola{The type} declares its signature by reference to a \cola{type}
+  defined in the module. (\cref{sec:type}). The parameters of the function are
+  \cola{referenced through 0-based \textbf{local indices} in the function's
+    body}; they are mutable.
+\item \Cola{The locals} declares a \cola{vector of mutable variables and their
+    types}. These variables are referenced through \cola{local indices} in the
+  function's body. \cola{The index of the first local is the smallest index not
+    referencing a parameter}.
+\item \Cola{The body} is an \cola{instruction} sequence that upon termination
+  must \cola{produce a stack} matching the function type's \cola{result type}
+\end{enumerate}
+
+Functions are referenced through \cola{function indices}, starting with the
+smallest index not referencing a function \cola{import}.
+
+The \cola{locals} and \cola{body} fields of the respective functions are encoded
+separately in the \cola{code section}
+
+\[ \text{content} = \cola{\mathtt{vector<typeidx>}}\]
+
+\subsection{Table Section}
+
+The \cola{table section} has the id 4. It decodes into a vector of \cola{tables}.
+
+\[ \text{content} = \cola{\mathtt{vector<table>}}\]
+
+In WebAssembly, a table is a vector of opaque values of a particular
+\cola{reference type}. The \cola{min} size in the \cola{limits} of the table
+type specifies the \cola{initial size} of that table, while its \cola{max}, if
+present, restricts the size to which it can grow later.
+
+So here:
+\[
+  \cola{\mathtt{table}} = 
+  \cola{\mathtt{tableType}}
+\]
+
+\emoji{parrot} : So here we just declares a list of \texttt{tableTypes} right?
+But what is a \texttt{tableType} ?
+
+\emoji{turtle} : \texttt{tableType} is just one of the types in WebAssembly.
+Just like \texttt{int, float} are types in C. WebAssembly has its own types
+which includes:
+
+\begin{description}
+\item[Number Types \texttt{numtype}] \texttt{ = i32,i64,f32,f64}
+\item[Vector Types \texttt{vectype}] vector of numeric values = \texttt{v128}. \texttt{v128}
+  means a 128-bit vector of packed integer or floating-point data. The packed
+  data can be interpreted arbitrarily, signed or unsigned integers, or even a
+  128 bit type. The interpretation is determined by individual operations.
+  \cola{vector types}, like \cola{numeric types} are \colb{transparent}, meaning
+  that their bit patterns can be observed. Values of vector type can be stored
+  in \cola{memories}
+\item[Reference Types \texttt{reftype}] \texttt{ = funcref, externref}, classify
+  first-class references to objects in the runtime \cola{store}. Reference types
+  are \colb{opaque}, meaning that neither
+  \begin{itemize}
+  \item their size nor 
+  \item their bit pattern
+  \end{itemize}
+  can be observed. Values of reference type can be stored in \cola{tables}.
+\item[Value Types \texttt{valtype}] \texttt{= numtype, vectype, reftype}
+  classify the individual values that WebAssembly code can compute with and the values that a variable accepts
+\item[Result Types \texttt{resulttype}] \texttt{= vec<valtype>}classify the
+  result of executing instructions or functions, which is a sequence of values,
+  written with brackets.
+
+
+\end{description}
+
+
+\subsection{Memory Section}
+
+
+The \cola{memory section} has the id 5. It decodes into a vector of \cola{memorys}.
+\[ \text{content} = \cola{\mathtt{vector<memory>}}\]
+
+\subsection{Global Section}
+
+
+The \cola{table section} has the id 6. It decodes into a vector of
+\cola{globals} that represent the \cola{globals} component of a \cola{module}.
+
+\[ \text{content} = \cola{\mathtt{vector<global>}}\]
+
+\emoji{parrot} : What's a \text{global}?
+
+\emoji{turtle} : Global is short for \cola{global variable}. Each global stores
+a single value of the given \cola{global type}. Its \cola{type} also specifies
+whether it's
+
+\begin{enumerate}
+\item immutable, or
+\item mutable
+\end{enumerate}
+
+Moreover, each global is initialized with an \cola{\text{init}} value given by a
+\cola{constant} initializer \cola{expression}.
+
+\emoji{parrot} : So a global is kinda like
+
+\begin{simplec}
+  int x = 10;
+\end{simplec}
+
+At the top of a file.
+
+\emoji{turtle} : Yeah. It just that there's no name for each global. Instead.
+Globals are referenced through \cola{global indices}, \cola{starting with the
+  smallest index not referencing a global \textbf{import}}.
 \end{document}
 % Local Variables:
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"
-% TeX-master: "m.tex"
+% TeX-parse-self: t
+% TeX-auto-save: t
 % End:
