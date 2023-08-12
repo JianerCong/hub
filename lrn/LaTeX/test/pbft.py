@@ -88,6 +88,12 @@ class IEndpointBasedNetworkable:
     def clear(self):                # clears up all the listeners
         pass
 
+    """ 🦜 : *bft needs a type of asynchronous call. It's kinda like an
+    'irresponsible call' which just send the request and doesn't care whether
+    it's delivered. So the implementation is kinda like: """
+    def isend(self, endpoint: str, target: str, data: str):
+        Thread(target=self.send,args=(endpoint, target, data)).start()
+
 class PbftConsensus:
     """The PBFT Consensus. Can also be named <other>PFT depending on how
     IExecutable is implemented."""
@@ -104,7 +110,7 @@ class PbftConsensus:
         self.all_endpoints = all_endpoints
         self.epoch: int = 0
         self.view_change_state = False
-        self.lock_for_patience = Lock()
+
         self.laid_down_history: dict[int,dict[str,list[str]]] = {}
         self.sig_of_nodes_to_be_added: set[str] = set({})
 
@@ -143,6 +149,16 @@ class PbftConsensus:
         # still execute what primary sent to most nodes. (🦜: This eventually makes each nodes "selfless").
         self.to_be_confirmed_commands: dict[str,set[str]] = {}  # recieved from primary
 
+        self.lock_for = {
+            'to_be_confirmed_commands' : Lock(),
+            'sig_of_nodes_to_be_added' : Lock(),
+            'laid_down_history' : Lock(),
+            'patience' : Lock(),
+            'all_endpoints' : Lock(),
+            'recieved_commands' : Lock(),
+            'command_history' : Lock(),
+        }
+
         # The commands received by primary, subs will forward many copied of
         # command to primary, and the primary just need to accept once.
         self.recieved_commands: set[str] = set({})  # recieved by primary
@@ -164,12 +180,11 @@ class PbftConsensus:
     def clear_and_listen_common_things(self):
         self.view_change_state = False
         self.net.clear()
-        self.net.listen('/pleaseGiveMeUrCmds',self.handle_give_cmds)
-        self.net.listen('/ILaidDown',self.handle_handle_laid_down)
+        self.net.listen('/ILaidDown',self.handle_laid_down)
         self.net.listen('/IamThePrimary',self.handle_new_primary)
 
-        self.net.listen('/pleaseAddMe',self.handle_add_new_nodes)
-        self.net.listen('/addNewNodesNoBoardcast',self.handle_add_new_nodes_no_boardcast)
+        self.net.listen('/pleaseAddMe',self.handle_add_new_node)
+        self.net.listen('/pleaseAddMeNoBoardcast',self.handle_add_new_node_no_boardcast)
 
     def handle_new_primary(self, endpoint: str, data: str) -> str:
         """endpoint said it's the primary, if the data contains the required
@@ -236,8 +251,8 @@ class PbftConsensus:
                 assert cert['state'] == self.get_state()
                 assert cert['epoch'] == e
 
-            if len(valid_host) < self.get_f() + 1:
-                self.say(f'Requires {self.get_f() + 1} nodes, but got {len(valid_host)}')
+            if len(valid_host) < self.f() + 1:
+                self.say(f'Requires {self.f() + 1} nodes, but got {len(valid_host)}')
                 return False
 
         except json.JSONDecodeError as err:
@@ -253,31 +268,16 @@ class PbftConsensus:
 
     def start_listening_as_primary(self):
         self.clear_and_listen_common_things()
-        self.net.listen('/whatsYourState',
-                        self.handle_get_state)
-        self.net.listen('/pleaseExecuteThis',
-                        self.handle_execute_for_primary)
-        self.net.listen('/pleaseExecuteThis',
-                        self.handle_execute_for_primary)
+        self.net.listen('/pleaseExecuteThis', self.handle_execute_for_primary)
 
     def start_listening_as_sub(self):
         self.clear_and_listen_common_things()
-        self.net.listen('/pleaseExecuteThis',
-                        self.handle_execute_for_sub)
+        self.net.listen('/pleaseExecuteThis', self.handle_execute_for_sub)
+        self.net.listen('/pleaseConfirmThis', self.handle_confirm_for_sub)
 
     def primary(self) -> str:
         "The current primary"
         return self.all_endpoints[self.epoch % len(self.all_endpoints)]
-
-    def handle_get_state(self, endpoint: str, data: str) -> str:
-        """Get the state of the current node, when asked by others. This is
-        (almost always) during view-change.
-
-        🦜 : This should be signed right?
-
-        🐢 : Yeah
-        """
-        return self.get_signed_state()
 
     @staticmethod
     def cmds_to_state(cmds: list[str]) -> str:
@@ -305,7 +305,7 @@ class PbftConsensus:
         if self.view_change_state:
             return f"""
             Dear {endpoint}
-                  We are currently selecting new primary for epoch {len(self.epoch) + 1}.
+                  We are currently selecting new primary for epoch {self.epoch + 1}.
                   Please try again later.
             """
 
@@ -313,27 +313,47 @@ class PbftConsensus:
             self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
             return 'OK'
 
-        # forward
-        r = self.net.send(self.primary,'/pleaseExecuteThis',data)
-        if r == None:
-            self.say('⚠️ What ? primary is down? I will change.')
-            self.trigger_view_change()
-        return r
+        # forward, it's from the client
+        self.net.send(self.primary(),'/pleaseExecuteThis',data)
+
+        return 'OK'
 
     def add_to_to_be_confirmed_commands(self, endpoint:str, data:str) ->int:
         """Remember that endpoint `received` data. If """
-        if data not in self.to_be_confirmed_commands:
-            self.say(f'Adding {S.MAG + data + S.NOR} from {S.MAG + endpoint + S.NOR}')
-            self.to_be_confirmed_commands[data] = {endpoint}
+        with self.lock_for['to_be_confirmed_commands']:
+            if data not in self.to_be_confirmed_commands:
+                self.say(f'Adding {S.MAG + data + S.NOR} from {S.MAG + endpoint + S.NOR}')
+                self.to_be_confirmed_commands[data] = set({endpoint})
 
-        else:
-            s: set[str] = self.to_be_confirmed_commands[data]
-            s.add(endpoint)
-            if (len(s)) > self.num_of_correct_nodes():
-                self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} nodes, executing it.')
+            else:
 
+                # take one
+                s: set[str] = self.to_be_confirmed_commands[data]
+                s.add(endpoint)
 
-    def get_f(self) -> int:
+                if (len(s)) > self.num_of_correct_nodes():
+                    self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} nodes, executing it.')
+
+                # return one
+                self.to_be_confirmed_commands[data] = s
+
+        """🦜 : Boardcast to other subs"""
+        for sub in self.all_endpoints:
+            if sub not in [self.net.listened_endpoint(), self.primary()]:
+                self.net.send(sub,'/pleaseConfirmThis',data)
+
+    def handle_confirm_for_sub(self, endpoint: str, data: str) -> str:
+        if self.view_change_state:
+            return f"""
+            Dear {endpoint}
+                  We are currently selecting new primary for epoch {self.epoch + 1}.
+                  Please try again later.
+            """
+
+        self.add_to_to_be_confirmed_commands(endpoint,data)
+        return 'OK'
+
+    def f(self) -> int:
         """Get the number of random nodes the system can tolerate"""
         N = len(self.all_endpoints)
         f = (N - 1) // 3        # number of random nodes
@@ -342,9 +362,7 @@ class PbftConsensus:
     def num_of_correct_nodes(self) -> int:
         """Return the value of 2f + 1, where N should be 3f + 1. The greater
         the value, the more correct nodes the cluster needs."""
-        N = len(self.all_endpoints)
-        f = (N - 1) // 3        # number of random nodes
-        return N - f            # number of correct nodes
+        return self.N() - self.f()            # number of correct nodes
 
     def start_faulty_timer(self):
         """Life always has up-and-downs, but time moves toward Qian.
@@ -357,18 +375,18 @@ class PbftConsensus:
         self.comfort()
 
         p = -1
-        with self.lock_for_patience:
+        with self.lock_for['patience']:
             p = self.patience
 
         while p > 0:
             sleep(2)
-            with self.lock_for_patience:
+            with self.lock_for['patience']:
                 self.patience -= 1
                 p = self.patience
             self.say(f' patience >> {p}, 🐢PR: {S.BLUE} {self.primary()} {S.NOR}')
 
     def comfort(self):          # reset timer
-        with self.lock_for_patience:
+        with self.lock_for['patience']:
             self.patience = 10
             self.say(f'❄ patience set to = {self.patience}')
 
@@ -376,11 +394,6 @@ class PbftConsensus:
     # f = 0 ⇒ N = 3f + 1 = 1
     # f = 1 ⇒ N = 3f + 1 = 4 (four nodes can tolerate 1)
     # f = 2 ⇒ N = 3f + 1 = 7 (7 nodes can tolerate 2)
-
-    def laid_down_early(self):
-        """When a node failed to forward msg to primary, it lies down early for
-        this view"""
-        self.view_change_state = True
 
     def trigger_view_change(self):
         """When a node triggers the view-change, it borad cast something like
@@ -392,7 +405,7 @@ class PbftConsensus:
         self.say('ViewChange triggered')
         self.view_change_state = True
 
-        next_primary = self.all_endpoints[self.epoch % len(self.all_endpoints)]
+        next_primary = self.primary()
 
         # Send to next_primary the state of me
         self.net.send(next_primary,'/ILaidDown',
@@ -450,7 +463,7 @@ class PbftConsensus:
 
             to_be_added_list.append(data)
 
-            if len(to_be_added_list) > 2 * self.get_f():
+            if len(to_be_added_list) > 2 * self.f():
                 self.try_to_be_primary(o['epoch'],state,to_be_added_list)
 
             # 🦜 : It is my bussinesses and the epoch is right for me. I am just
@@ -479,6 +492,9 @@ class PbftConsensus:
         self.say(f'Got newcomers {o}')
         return o
 
+    def N(self) -> int:
+        return len(self.all_endpoints)
+
     def try_to_be_primary(self,e: int,state: str, my_list: list[str]):
         self.say(f'This\'s my time for epoch :{e}, my state is: \n'+
                  '{ S.CYAN + self.get_state() + S.NOR} \n'+
@@ -487,7 +503,7 @@ class PbftConsensus:
                  )
 
         # It's my view
-        assert self.all_endpoints[e % len(self.all_endpoints)] != self.net.listened_endpoint
+        assert self.all_endpoints[e % self.N()] == self.net.listened_endpoint()
 
         if self.get_state() != state:
             raise Exception('I am different from other correct nodes. The '+
@@ -502,7 +518,6 @@ class PbftConsensus:
 
         """
 
-        failed_count: int = 0
 
         m = {'msg' : f'Hi I am the primary now.',
              'epoch' : e,
@@ -512,16 +527,20 @@ class PbftConsensus:
 
 
         # board-cast the list,ignoring the result to existing subs
+
+        # failed_count: int = 0
         for sub in self.all_endpoints:
             if sub != self.net.listened_endpoint():
-                r = self.net.send(sub,'IamThePrimary',json.dumps(m))
-                if r != 'ok':
-                    failed_count += 1
+                # r = self.net.send(sub,'IamThePrimary',json.dumps(m))
+                self.net.send(sub,'IamThePrimary',json.dumps(m))
+                # if r != 'ok':
+                #     failed_count += 1
 
-        self.say(f'boardcast finished, got {S.MAG + failed_count + S.NOR} failed')
+        # 🦜 : Nope, here we do not check the return values
 
-        if failed_count > self.get_f():
-            raise Exception('Too many nodes refuse to let me be the primary. (Probably too many random nodes)')
+        # self.say(f'boardcast finished, got {S.MAG + failed_count + S.NOR} failed')
+        # if failed_count > self.f():
+        #     raise Exception('Too many nodes refuse to let me be the primary. (Probably too many random nodes)')
 
         """
         🐢 : Notify the newcomers
@@ -543,12 +562,6 @@ class PbftConsensus:
         self.epoch = e          # which should point to me.
         self.start_listening_as_primary()
 
-
-
-    def handle_give_cmds(self, endpoint: str, data: str) -> str:
-        return json.dumps({
-            'cmds' : self.command_history
-        })
 
 
 
@@ -603,7 +616,7 @@ class PbftConsensus:
         print_mt(f'{S.CYAN}\t[{self.my_id()}]{S.NOR}: '
                   + s)
 
-    def handle_add_new_nodes(self, endpoint: str, data: str) -> str:
+    def handle_add_new_node(self, endpoint: str, data: str) -> str:
         """Add a new node, this just remembers the add-new msg, which should
         have been signed by putting it into the self.sig_of_nodes_to_be_added.
         """
@@ -611,7 +624,7 @@ class PbftConsensus:
         self.sig_of_nodes_to_be_added.add(data)
         for node in self.all_endpoints:
             if node != self.net.listened_endpoint():
-                self.net.send(node,'/addNewNodesNoBoardcast',data)
+                self.net.send(node,'/pleaseAddMeNoBoardcast',data)
 
         #    ^^ a set
         """ 🐢 : Using a set is ok, in fact only the next-primary needs to
@@ -626,7 +639,7 @@ class PbftConsensus:
 
         return 'OK'
 
-    def handle_add_new_nodes_no_boardcast(self, endpoint: str, data: str) -> str:
+    def handle_add_new_node_no_boardcast(self, endpoint: str, data: str) -> str:
         self.sig_of_nodes_to_be_added.add(data)
         return 'OK'
 
