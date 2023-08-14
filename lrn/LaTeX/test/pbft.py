@@ -170,14 +170,14 @@ class PbftConsensus:
 
         if self.net.listened_endpoint() not in self.all_endpoints:
             self.start_listening_as_newcomer()
-
-
-        if self.primary() == self.net.listened_endpoint():
-            self.start_listening_as_primary()
+            # 🦜 : Will only start the timer once added.
         else:
-            self.start_listening_as_sub()
+            if self.primary() == self.net.listened_endpoint():
+                self.start_listening_as_primary()
+            else:
+                self.start_listening_as_sub()
 
-        Thread(target=self.start_faulty_timer).start()  # here the ctor ends
+            Thread(target=self.start_faulty_timer).start()  # here the ctor ends
 
 
 
@@ -204,21 +204,72 @@ class PbftConsensus:
             return 'No'
 
         # 🦜 : Should be parsed to something like:
-
-        if self.epoch >= o['epoch']:
-            self.say(f'Ignoring older msg in epoch={o["epoch"]}')
-            return 'No'
-
         # {
         #     'msg' : f'Hi {sub}, I am the primary now.',
         #     'epoch' : e,
         #     'new-view-certificate' : my_list}
+
+        """
+
+        🦜 : Every time new nodes are added in the cluster, the epoch will be
+        recalculated by the new-primary such that it's still its term. So, when
+        there are new nodes coming in, we don't (can't) check the epoch.
+
+        🐢 : But we can still check wether the new nodes are valid right?
+
+        🦜 : Let me think. Yeah, we can check wether we don't already have
+        those new comers.
+
+        🐢 : Yeah, we only check the epoch if there's no newcomers
+
+        """
+        newcomers = self.get_newcommers(o['sig_of_nodes_to_be_added'])
+
+
+        with self.lock_for['all_endpoints']:
+            for newcomer in newcomers:
+                if newcomer in self.all_endpoints:
+                    self.say('This primary has old newcomer, ignoring it.')
+                    return 'No'
+
+        if len(newcomers) == 0:
+            if self.epoch >= o['epoch']:
+                self.say(f'Ignoring older msg in epoch={o["epoch"]}')
+                return 'No'
+
         if self.check_cert(o['view-change-certificate'],o['epoch']):
+            """
+
+            🦜 : Now we are ready to start a new view. We do the following:
+
+            1. update the epoch
+            2. reset the timer
+            3. clear the laid_down_history
+            4. clear the sig_of_nodes_to_be_added
+            5. add the newcomers as per primary.
+            6. start as sub
+
+            """
+            # 1.
             self.epoch = o['epoch']
             self.say(f'🐸 view changed to {self.epoch}')
+
+            # 2.
             self.comfort()             # #reset the timer
+
+            # 3.
             with self.lock_for['laid_down_history']:
                 self.laid_down_history.clear()
+
+            # 4.
+            with self.lock_for['sig_of_nodes_to_be_added']:
+                self.sig_of_nodes_to_be_added.clear()
+
+            # 5.
+            with self.lock_for['all_endpoints']:
+                self.all_endpoints += newcomers
+
+            # 6
             self.start_listening_as_sub()
             return 'Ok'
 
@@ -601,41 +652,44 @@ class PbftConsensus:
 
         """
 
-        m = None
-
+        sig_for_newcomers = None
+        # pop the new commers
         with self.lock_for['sig_of_nodes_to_be_added']:
+            sig_for_newcomers = list(self.sig_of_nodes_to_be_added)  # set to list
+            self.sig_of_nodes_to_be_added.clear()
+        newcomers : list[str] = self.get_newcommers(sig_for_newcomers)
+
+        """
+        🐢 : If there's no newcomer, then the life is much easier:
+        We just need to boardcast the new-view-certificate.
+        """
+        if len(newcomers) = 0:
             m = {'msg' : f'Hi I am the primary now.',
                  'epoch' : e,
                  'new-view-certificate' : my_list,
-                 'sig_of_nodes_to_be_added' : list(self.sig_of_nodes_to_be_added)
-                 }
+                 'sig_of_nodes_to_be_added' : sig_for_newcomers}
+            # board-cast the list,ignoring the result to existing subs
+            # failed_count: int = 0
+            self.boardcast_to_others('/IamThePrimary',json.dumps(m))
+        else:
+            """🐢 : But if there're newcomers, then we have to do the
+            following:
 
+            1. Recalculate the epoch such that this node is the new primary.
 
-        # board-cast the list,ignoring the result to existing subs
+            2. Boardcast to existing nodes the `self.sig_of_nodes_to_be_added`.
+            The other nodes should be able to derive the `newcomers` from it.
 
-        # failed_count: int = 0
-        with self.lock_for['all_endpoints']:
-            for sub in self.all_endpoints:
-                if sub != self.net.listened_endpoint():
-                    # r = self.net.send(sub,'IamThePrimary',json.dumps(m))
-                    self.net.send(sub,'IamThePrimary',json.dumps(m))
-                    # if r != 'ok':
-                    #     failed_count += 1
+            3. 
+
+            """
+
 
         # 🦜 : Nope, here we do not check the return values
-
-        # self.say(f'boardcast finished, got {S.MAG + failed_count + S.NOR} failed')
-        # if failed_count > self.f():
-        #     raise Exception('Too many nodes refuse to let me be the primary. (Probably too many random nodes)')
 
         """
         🐢 : Notify the newcomers
         """
-        newcomers = None
-        # pop out the newcomers
-        with self.lock_for['sig_of_nodes_to_be_added']:
-            newcomers : list[str] = self.get_newcommers(list(self.sig_of_nodes_to_be_added))
-            self.sig_of_nodes_to_be_added.clear()
 
         with self.lock_for['all_endpoints']:
             self.all_endpoints += newcomers
@@ -646,7 +700,7 @@ class PbftConsensus:
 
         # Send them the msg, in particular: the cmds.
         for  newcomer in newcomers:
-            self.net.send(newcomer,'IamThePrimaryForNewcomer',json.dumps(m))
+            self.net.send(newcomer,'/IamThePrimaryForNewcomer',json.dumps(m))
 
         # 🦜 : In fact, the above can all be called asynchronously.
 
@@ -671,7 +725,7 @@ class PbftConsensus:
         self.command_history.append(cmd)
         self.exe.execute(cmd)
         # 🦜 : Can primary just execute it?
-        # 
+        #
         # 🐢 : Yeah, it can. Then it just assume that the group has 2f + 1
         # correct nodes, and that should be fine. It doesn't bother checking
 
@@ -699,25 +753,27 @@ class PbftConsensus:
 
         return self.primary() == self.net.listened_endpoint()
 
-    def my_id(self) -> int:
-        """Throw if not found"""
-        return self.all_endpoints.index(self.net.listened_endpoint())
-
     def say(self,s: str):
         """Say something """
-        print_mt(f'{S.CYAN}\t[{self.my_id()}]{S.NOR}: '
-                  + s)
+
+        my_id = 'NewCommer'
+
+        with self.lock_for['all_endpoints']:
+            if self.net.listened_endpoint() in self.all_endpoints:
+                my_id = self.all_endpoints.index(self.net.listened_endpoint)
+
+        print_mt(f'{S.CYAN}\t[{my_id}]{S.NOR}: ' + s)
 
     def handle_add_new_node(self, endpoint: str, data: str) -> str:
         """Add a new node, this just remembers the add-new msg, which should
         have been signed by putting it into the self.sig_of_nodes_to_be_added.
         """
 
-        self.sig_of_nodes_to_be_added.add(data)
-        for node in self.all_endpoints:
-            if node != self.net.listened_endpoint():
-                self.net.send(node,'/pleaseAddMeNoBoardcast',data)
+        with self.lock_for['sig_of_nodes_to_be_added']:
+            self.sig_of_nodes_to_be_added.add(data)
 
+
+        self.boardcast_to_others('/pleaseAddMeNoBoardcast',data)
         #    ^^ a set
         """ 🐢 : Using a set is ok, in fact only the next-primary needs to
         remember it, and it will boardcast it when becoming the new primary. At
@@ -730,6 +786,13 @@ class PbftConsensus:
         """
 
         return 'OK'
+
+    def boardcast_to_others(self, target : str, data: str):
+        with self.lock_for['all_endpoints']:
+            for node in self.all_endpoints:
+                # board-cast-to-others
+                if node != self.net.listened_endpoint():
+                    self.net.send(node,target,data)
 
     def handle_add_new_node_no_boardcast(self, endpoint: str, data: str) -> str:
         self.sig_of_nodes_to_be_added.add(data)
@@ -777,8 +840,6 @@ class PbftConsensus:
 
         for cmd in d['cmds']:
             self.exe.execute(cmd)
-
-        self.start_listening_as_sub()
 
         self.epoch = o['epoch']
         self.say(f'🐸 view changed to {self.epoch}')
