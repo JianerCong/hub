@@ -73,7 +73,20 @@ class IExecutable:
 🦜 : Yeah, and all_ids() should be kept by the cnsss. Emmm.
 
 """
-class IEndpointBasedNetworkable:
+
+class IAsyncEndpointBasedNetworkable:
+    """🦜 : *bft needs a type of asynchronous call. It's kinda like an
+    'irresponsible call' which just send the request and doesn't care whether
+    it's delivered.
+
+    This changes two things:
+
+       1. handler should be void(str,str). (🦜 : Okay, for now I am gonna stay
+       Optional[str] for debugging purpose.)
+
+       2. send should not return (and start a new thread)
+
+    """
     def listen(self,
                target: str,     # The target, e.g. "/"
                handler: Callable[[str,str],Optional[str]]
@@ -85,25 +98,20 @@ class IEndpointBasedNetworkable:
         pass
     def listened_endpoint(self) -> str:
         pass
-    def send(self,endpoint: str, target: str, data: str) -> Optional[str]:
+    def send(self,endpoint: str, target: str, data: str):
         # endpoint: the target, e.g. "localhost:8080"
         # target: e.g. "/hi"
         pass
     def clear(self):                # clears up all the listeners
         pass
 
-    """ 🦜 : *bft needs a type of asynchronous call. It's kinda like an
-    'irresponsible call' which just send the request and doesn't care whether
-    it's delivered. So the implementation is kinda like: """
-    def isend(self, endpoint: str, target: str, data: str):
-        Thread(target=self.send,args=(endpoint, target, data)).start()
 
 class PbftConsensus:
     """The PBFT Consensus. Can also be named <other>PFT depending on how
     IExecutable is implemented."""
 
     def __init__(self,
-                 n : IEndpointBasedNetworkable,
+                 n : IAsyncEndpointBasedNetworkable,
                  e : IExecutable,
                  s : ISignable,
                  all_endpoints : list[str]):
@@ -210,32 +218,19 @@ class PbftConsensus:
         #     'new-view-certificate' : my_list}
 
         """
-
         🦜 : Every time new nodes are added in the cluster, the epoch will be
-        recalculated by the new-primary such that it's still its term. So, when
-        there are new nodes coming in, we don't (can't) check the epoch.
-
-        🐢 : But we can still check wether the new nodes are valid right?
-
-        🦜 : Let me think. Yeah, we can check wether we don't already have
-        those new comers.
-
-        🐢 : Yeah, we only check the epoch if there's no newcomers
-
+        recalculated .
         """
         newcomers = self.get_newcommers(o['sig_of_nodes_to_be_added'])
-
-
         with self.lock_for['all_endpoints']:
             for newcomer in newcomers:
                 if newcomer in self.all_endpoints:
                     self.say('This primary has old newcomer, ignoring it.')
                     return 'No'
 
-        if len(newcomers) == 0:
-            if self.epoch >= o['epoch']:
-                self.say(f'Ignoring older msg in epoch={o["epoch"]}')
-                return 'No'
+        if self.epoch >= o['epoch']:
+            self.say(f'Ignoring older msg in epoch={o["epoch"]}')
+            return 'No'
 
         if self.check_cert(o['view-change-certificate'],o['epoch']):
             """
@@ -251,7 +246,8 @@ class PbftConsensus:
 
             """
             # 1.
-            self.epoch = o['epoch']
+            e = o['epoch']
+            self.epoch = self.epoch_considering_newcomers(e, len(newcomers))
             self.say(f'🐸 view changed to {self.epoch}')
 
             # 2.
@@ -659,53 +655,84 @@ class PbftConsensus:
             self.sig_of_nodes_to_be_added.clear()
         newcomers : list[str] = self.get_newcommers(sig_for_newcomers)
 
-        """
-        🐢 : If there's no newcomer, then the life is much easier:
-        We just need to boardcast the new-view-certificate.
-        """
+
         if len(newcomers) = 0:
+            """
+            🐢 : If there's no newcomer, then the life is much easier:
+            We just need to boardcast the new-view-certificate.
+            """
             m = {'msg' : f'Hi I am the primary now.',
                  'epoch' : e,
                  'new-view-certificate' : my_list,
-                 'sig_of_nodes_to_be_added' : sig_for_newcomers}
+                 'sig_of_nodes_to_be_added' : []}
             # board-cast the list,ignoring the result to existing subs
             # failed_count: int = 0
+            self.epoch = e
             self.boardcast_to_others('/IamThePrimary',json.dumps(m))
         else:
             """🐢 : But if there're newcomers, then we have to do the
             following:
 
-            1. Recalculate the epoch such that this node is the new primary.
+            1. Recalculate the 'to-be-updated' epoch such that this node is the
+            new primary. In details, the new epoch should be
+
+                self.epoch =  e + (e\\N) * len(newcomers)            (1)
+
+            However, the current epoch (before calculation) should still be
+            saved and passed over the network because the msgs in
+            `new-viwe-certificate` will be verified against this epoch (🐢 : No
+            worries, the subs will calculate the `to-be-updated epoch`
+            themselves.)
 
             2. Boardcast to existing nodes the `self.sig_of_nodes_to_be_added`.
             The other nodes should be able to derive the `newcomers` from it.
+            Inside this msg, the `sig_of_nodes_to_be_added` should contains the
+            new nodes to be added, and the `epoch` should be the *old one* we just
+            used. (🦜 : This epoch should be same as the one that appears in
+            the new-view-certificate.)
 
-            3. 
+            When sub nodes received this,
+            it will first see that the
+            `sig_of_nodes_to_be_added` (and the newcomers derived from it) is
+            not empty. Next, it will verify the `new_view_certificate`
+            according to the epoch passed.
+
+            But then, it will set its epoch according to eqn (1).
+
+            Just like the primary. (🦜 : So when passing things aroung over the
+            network, they all talk about the 'low' epoch, but in fact they will
+            update their epoch to equiation (1), 🐢 : Yes)
+
+            3. Notify the newcomers. This is basically the same process as for
+            the subs. It's just that 'cmds' will also be sent inside the msg.
 
             """
+            # 1.
+            self.epoch = self.epoch_considering_newcomers(e, len(newcomers))
 
+            # 2.
+            m = {'msg' : f'Hi I am the primary now.',
+                 'epoch' : e,
+                 'new-view-certificate' : my_list,
+                 'sig_of_nodes_to_be_added' : sig_for_newcomers}
+            self.boardcast_to_others('/IamThePrimary',json.dumps(m))
 
-        # 🦜 : Nope, here we do not check the return values
+            # 3.
+            with self.lock_for['all_endpoints']:
+                self.all_endpoints += newcomers
 
-        """
-        🐢 : Notify the newcomers
-        """
+            with self.lock_for['command_history']:
+                "Append cmds in the new-view cert"
+                m['cmds'] = self.command_history
 
-        with self.lock_for['all_endpoints']:
-            self.all_endpoints += newcomers
+            # Send them the msg, in particular: the cmds.
+            for  newcomer in newcomers:
+                self.net.send(newcomer,'/IamThePrimaryForNewcomer',json.dumps(m))
 
-        with self.lock_for['command_history']:
-            "Append cmds in the new-view cert"
-            m['cmds'] = self.command_history
-
-        # Send them the msg, in particular: the cmds.
-        for  newcomer in newcomers:
-            self.net.send(newcomer,'/IamThePrimaryForNewcomer',json.dumps(m))
-
-        # 🦜 : In fact, the above can all be called asynchronously.
+            # 🦜 : In fact, the above can all be called asynchronously.
 
         # be the primary
-        self.epoch = e          # which should point to me.
+        self.say(f'\t\tEpoch set to {self.epoch}')
         self.start_listening_as_primary()
 
 
@@ -833,28 +860,32 @@ class PbftConsensus:
 
         # 🦜 : We assume that required fields are in d
 
-        self.add_newcomers(d['sig_of_nodes_to_be_added'])
+        newcomers : list[str] = self.get_newcommers(d['sig_of_nodes_to_be_added'])
+        with self.lock_for['all_endpoints']:
+            self.all_endpoints += newcomers
+
         if self.net.listened_endpoint not in self.all_endpoints:
             raise Exception('What ? I am not added by the new view?')
-
 
         for cmd in d['cmds']:
             self.exe.execute(cmd)
 
-        self.epoch = o['epoch']
+        e = o['epoch']
+        self.epoch = self.epoch_considering_newcomers(e, len(newcomers))
         self.say(f'🐸 view changed to {self.epoch}')
-        self.start_listening_as_sub()
 
         Thread(target=self.start_faulty_timer).start()  # here where the new node are added
+        self.start_listening_as_sub()
 
         return 'ok'
 
+    def epoch_considering_newcomers(self, e, num_newcomers) -> int:
+        """The equivalent epoch number when there're newcomers.
 
-    def add_newcomers(self, sigs: list[str]):
-        """Add the signers in all_endpoints """
-        self.all_endpoints += self.get_newcommers(sigs)
-        self.say(f'all_endpoints updated to {self.all_endpoints}')
+        🦜 : Note that when there's no newcomers, then it's just e.
 
+        """
+        return e + (e \\ self.N()) * num_newcomers
 
 
 
@@ -873,7 +904,7 @@ class MockedExecutable(IExecutable):
 
 network_hub : dict[str, Callable[[int,str],Optional[str]]] = dict()
 lock_for_netwok_hub = Lock()
-class MockedEndpointNetworkNode(IEndpointBasedNetworkable):
+class MockedAsynEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
     def __init__(self,e: str):
         self.endpoint = e
     def listened_endpoint(self) -> str:
@@ -895,16 +926,17 @@ class MockedEndpointNetworkNode(IEndpointBasedNetworkable):
                     print_mt(f'Removing handler: {k}')
                     network_hub.pop(k)
 
-    def send(self,e: str, target: str, data: str) -> Optional[str]:
+    def send(self,e: str, target: str, data: str):
         k = f'{e}-{target}'
         print_mt(f'{S.CYAN} Calling handler: {k} {S.NOR} with data:\n {S.CYAN} {data} {S.NOR}')
         if k in network_hub:
-            r = network_hub[k](self.endpoint,data)
+            network_hub[k](self.endpoint,data)
         else:
             print_mt(f'Handler {k} not found')
             r = None
         print_mt(f'Got result:{S.GREEN} {r} {S.NOR}')
-        return r
+        # 🦜 : r will not be returned.
+        # return r
 
 """
 🐢 : The above two classes are copied from ListenToOneConsensus. But in
