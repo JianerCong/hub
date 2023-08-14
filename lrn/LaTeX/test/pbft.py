@@ -115,6 +115,9 @@ class PbftConsensus:
                  e : IExecutable,
                  s : ISignable,
                  all_endpoints : list[str]):
+
+        self.closed = False     # flag checked by timer
+
         self.net = n
         self.exe = e
         self.sig = s
@@ -457,22 +460,27 @@ class PbftConsensus:
         new-primary with a new-view-certificate.
 
         """
-        self.comfort()
-
-        p = -1
-        with self.lock_for['patience']:
-            p = self.patience
-
-        while p > 0:
-            sleep(2)
+        while not self.closed:
+            self.comfort()
+            p = -1
             with self.lock_for['patience']:
-                self.patience -= 1
                 p = self.patience
-            self.say(f' patience >> {p}, 🐢PR: {S.BLUE} {self.primary()} {S.NOR}')
+            while p > 0:
+                sleep(2)
+                with self.lock_for['patience']:
+                    self.patience -= 1
+                    p = self.patience
+                self.say(f' patience >> {p}, 🐢PR: {S.BLUE} {self.primary()} {S.NOR}')
+
+            # here the patience is run off
+            self.trigger_view_change()
+            # 🦜 : We trigger the view-change and reset the patience.
+
+        self.say('Timer closed')
 
     def comfort(self):          # reset timer
         with self.lock_for['patience']:
-            self.patience = 10
+            self.patience = 5
             self.say(f'❄ patience set to = {self.patience}')
 
     # 🦜 : Different N for different f is:
@@ -502,7 +510,7 @@ class PbftConsensus:
 
         # Send to next_primary the state of me
         if next_primary == self.net.listened_endpoint():
-            self.say(f'Send laiddown for myself')
+            self.say(S.MAG + 'Send laiddown for myself' + S.NOR)
             self.remember_this_laiddown_and_be_primary_maybe(o,data)
         else:
             self.net.send(next_primary,'/ILaidDown',data)
@@ -562,12 +570,12 @@ class PbftConsensus:
         with self.lock_for['laid_down_history']:
             # 🦜 : 1. Does this epoch already has something ? If not, create a new dict{}
             if epoch not in self.laid_down_history:
-                self.say(f'\tAdding new record in laid_down_history for epoch {o["epoch"]}')
+                self.say(f'\tAdding new record in laid_down_history for epoch {S.CYAN}{o["epoch"]}{S.NOR}')
                 self.laid_down_history[epoch] = dict({})
 
             # 🦜 : 2. Does this epoch already got state like this ? If not, create a new list[]
             if state not in self.laid_down_history[epoch]:
-                self.say(f'\t\tAdding new record in laid_down_history for {S.CYAN} epoch={o["epoch"]},state={o["state"]} {S.NOR}')
+                self.say(f'\t\tAdding new record in laid_down_history for {S.CYAN} epoch={o["epoch"]} {S.NOR},state=>>{S.CYAN}{o["state"]}{S.NOR}<<')
                 self.laid_down_history[epoch][state] : list[str] = []
 
             # 🦜 Now take the list:
@@ -588,14 +596,10 @@ class PbftConsensus:
         """
         x = self.N() - self.f()
         if len(to_be_added_list) >= x:
-            self.say(f'\t\tCollected enough {S.CYAN}{len(to_be_added_list)}{S.NOR} >= {x} laid-down message{
-                 plural_maybe(len(to_be_added_list))
-            }')
+            self.say(f'\t\tCollected enough {S.CYAN}{len(to_be_added_list)} >= {x} {S.NOR} laid-down message{plural_maybe(len(to_be_added_list))}')
             self.try_to_be_primary(epoch,state,to_be_added_list)
         else:
-            self.say(f'\t\tCollected {S.CYAN}{len(to_be_added_list)}{S.NOR} < {x} laid-down message{
-                 plural_maybe(len(to_be_added_list))
-            }, not yet my time')
+            self.say(f'\t\tCollected {S.CYAN}{len(to_be_added_list)} < {x} {S.NOR}laid-down message{plural_maybe(len(to_be_added_list))}, not yet my time')
             # return it
             self.laid_down_history[epoch][state] = to_be_added_list
 
@@ -625,9 +629,9 @@ class PbftConsensus:
 
     def try_to_be_primary(self,e: int,state: str, my_list: list[str]):
         self.say(f'This\'s my time for epoch :{e}, my state is: \n'+
-                 '{ S.CYAN + self.get_state() + S.NOR} \n'+
+                 f'>>{ S.CYAN + self.get_state() + S.NOR}<<\n'+
                  'And the majority has state: \n' +
-                 '{ S.CYAN + state + S.NOR} \n'
+                 f'>>{ S.CYAN + state + S.NOR}<<\n'
                  )
 
         # It's my view
@@ -656,7 +660,7 @@ class PbftConsensus:
         newcomers : list[str] = self.get_newcommers(sig_for_newcomers)
 
 
-        if len(newcomers) = 0:
+        if len(newcomers) == 0:
             """
             🐢 : If there's no newcomer, then the life is much easier:
             We just need to boardcast the new-view-certificate.
@@ -787,7 +791,7 @@ class PbftConsensus:
 
         with self.lock_for['all_endpoints']:
             if self.net.listened_endpoint() in self.all_endpoints:
-                my_id = self.all_endpoints.index(self.net.listened_endpoint)
+                my_id = self.all_endpoints.index(self.net.listened_endpoint())
 
         print_mt(f'{S.CYAN}\t[{my_id}]{S.NOR}: ' + s)
 
@@ -885,7 +889,7 @@ class PbftConsensus:
         🦜 : Note that when there's no newcomers, then it's just e.
 
         """
-        return e + (e \\ self.N()) * num_newcomers
+        return e + (e // self.N()) * num_newcomers
 
 
 
@@ -902,7 +906,7 @@ class MockedExecutable(IExecutable):
         print_mt(f'🦜 {S.RED} [{self.id}] Exec: {command} {S.NOR}')
 
 
-network_hub : dict[str, Callable[[int,str],Optional[str]]] = dict()
+network_hub : dict[str, Callable[[str,str],Optional[str]]] = dict()
 lock_for_netwok_hub = Lock()
 class MockedAsyncEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
     def __init__(self,e: str):
@@ -911,7 +915,7 @@ class MockedAsyncEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
         return self.endpoint
     def listen(self,
                target: str,
-               handler: Callable[[int,str],Optional[str]]
+               handler: Callable[[str,str],Optional[str]]
                ):
         k = f'{self.endpoint}-{target}'
         print_mt(f'Adding handler: {k}')
@@ -934,8 +938,8 @@ class MockedAsyncEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
             if k in network_hub:
                 print_mt(f'Handler {k} found')
                 Thread(target=network_hub[k],args=(self.endpoint,data)).start()
-        else:
-            print_mt(f'Handler {k} not found')
+            else:
+                print_mt(f'Handler {k} not found')
 
 """
 🐢 : The above two classes are copied from ListenToOneConsensus. But in
@@ -1086,16 +1090,19 @@ s = 'N0'
 e = MockedExecutable(s)
 sg = MockedSigner(s)
 n = MockedAsyncEndpointNetworkNode(s)
-
-nd = PbftConsensus(n=n,e=e,s=sg)
+all_endpoints = [s]
+nd = PbftConsensus(n=n,e=e,s=sg,all_endpoints=all_endpoints)
 
 
 # Start the cluster
 while True:
     # reply = input('Enter cmd: <id> <cmd>')
     reply = input('Enter: ')
-    if reply == 'stop': break
+    if reply == 'stop':
+        break
     l = reply.split(' ')
 
     print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
     nClient.send(l[0],'/pleaseExecuteThis',l[1])
+
+print('Program stopped.')
