@@ -11,6 +11,10 @@ def print_mt(*args,**kwargs):
     with lock_for_print:
         print(*args,**kwargs)
 
+def plural_maybe(n : int, s: str = 's', s0: str = ''):
+    """The plural suffix"""
+    return s if n > 1 else s0
+
 class S:
     HEADER = '\033[95m'
     BLUE = '\033[94m'
@@ -197,13 +201,13 @@ class PbftConsensus:
             o = json.loads(data)
         except json.JSONDecodeError:
             self.say(f'Error parsing new-view-cert {o}')
-            return False
+            return 'No'
 
         # 🦜 : Should be parsed to something like:
 
         if self.epoch >= o['epoch']:
             self.say(f'Ignoring older msg in epoch={o["epoch"]}')
-            return False
+            return 'No'
 
         # {
         #     'msg' : f'Hi {sub}, I am the primary now.',
@@ -213,11 +217,13 @@ class PbftConsensus:
             self.epoch = o['epoch']
             self.say(f'🐸 view changed to {self.epoch}')
             self.comfort()             # #reset the timer
+            with self.lock_for['laid_down_history']:
+                self.laid_down_history.clear()
             self.start_listening_as_sub()
-            return 'ok'
+            return 'Ok'
 
         self.say(f'Invalid certificate: {S.RED + o + S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
-        return 'no'
+        return 'No'
 
     def check_cert(self,l: list[str], e: int) -> bool:
         """Check wether the view-change certificate is valid.
@@ -311,6 +317,12 @@ class PbftConsensus:
 
         if endpoint == self.primary():
             self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
+            """🦜 : Boardcast to other subs"""
+            with self.lock_for['all_endpoints']:
+                self.say('\t\tBoardcasting cmd confirm')
+                for sub in self.all_endpoints:
+                    if sub not in [self.net.listened_endpoint(), self.primary()]:
+                        self.net.send(sub,'/pleaseConfirmThis',data)
             return 'OK'
 
         # forward, it's from the client
@@ -337,10 +349,6 @@ class PbftConsensus:
                 # return one
                 self.to_be_confirmed_commands[data] = s
 
-        """🦜 : Boardcast to other subs"""
-        for sub in self.all_endpoints:
-            if sub not in [self.net.listened_endpoint(), self.primary()]:
-                self.net.send(sub,'/pleaseConfirmThis',data)
 
     def handle_confirm_for_sub(self, endpoint: str, data: str) -> str:
         if self.view_change_state:
@@ -355,8 +363,9 @@ class PbftConsensus:
 
     def f(self) -> int:
         """Get the number of random nodes the system can tolerate"""
-        N = len(self.all_endpoints)
-        f = (N - 1) // 3        # number of random nodes
+        with self.lock_for['all_endpoints']:
+            N = len(self.all_endpoints)
+            f = (N - 1) // 3        # number of random nodes
         return f
 
     def num_of_correct_nodes(self) -> int:
@@ -447,15 +456,31 @@ class PbftConsensus:
                 return 'No'
 
             # 🦜 : In fact, I only cares about it if it's about me.
-            next_primary = self.all_endpoints[o['epoch'] % len(self.all_endpoints)]
+            next_primary = None
+            with self.lock_for['all_endpoints']:
+                next_primary = self.all_endpoints[o['epoch'] % len(self.all_endpoints)]
             if next_primary != self.net.listened_endpoint():
                 self.say(f'🚮️ This view-change is non of my bussinesses: {o}')
                 return 'No'
 
             state: str = o['state']
-            to_be_added_list : list[str] = self.laid_down_history.get(o['epoch'],
-                                                                      dict({})).get(o['state'],
-                                                                                    dict({}))
+            epoch = o['epoch']
+            to_be_added_list : list[str] = None
+
+            with self.lock_for['laid_down_history']:
+                # 🦜 : 1. Does this epoch already has something ? If not, create a new dict{}
+                if epoch not in self.laid_down_history:
+                    self.say(f'\tAdding new record in laid_down_history for epoch {o["epoch"]}')
+                    self.laid_down_history[epoch] = dict({})
+
+                # 🦜 : 2. Does this epoch already got state like this ? If not, create a new list[]
+                if state not in self.laid_down_history[epoch]:
+                    self.say(f'\t\tAdding new record in laid_down_history for {S.CYAN} epoch={o["epoch"]},state={o["state"]} {S.NOR}')
+                    self.laid_down_history[epoch][state] : list[str] = []
+
+                # 🦜 Now take the list:
+                to_be_added_list = self.laid_down_history[epoch][state]
+
             # 🦜 : This is the list that data (signed msg) will be added in.
             if data in to_be_added_list:
                 self.say(f'🚮️ Ignoring duplicated msg from {o["from"]}')
@@ -463,8 +488,16 @@ class PbftConsensus:
 
             to_be_added_list.append(data)
 
-            if len(to_be_added_list) > 2 * self.f():
-                self.try_to_be_primary(o['epoch'],state,to_be_added_list)
+            """
+            🦜 : How many laiddown msg does one need to collect in order to be the new primary?
+
+            """
+            x = self.N() - 1 - self.f()
+            if len(to_be_added_list) >= x:
+                self.say(f'\t\tCollected enough {S.CYAN}{len(to_be_added_list)}{S.NOR} >= {x} laid-down message{
+                     plural_maybe(len(to_be_added_list))
+                }')
+                self.try_to_be_primary(epoch,state,to_be_added_list)
 
             # 🦜 : It is my bussinesses and the epoch is right for me. I am just
             # ganna get majority of same-state, and if I am not one of them...
@@ -493,7 +526,8 @@ class PbftConsensus:
         return o
 
     def N(self) -> int:
-        return len(self.all_endpoints)
+        with self.lock_for['all_endpoints']:
+            return len(self.all_endpoints)
 
     def try_to_be_primary(self,e: int,state: str, my_list: list[str]):
         self.say(f'This\'s my time for epoch :{e}, my state is: \n'+
@@ -503,7 +537,9 @@ class PbftConsensus:
                  )
 
         # It's my view
-        assert self.all_endpoints[e % self.N()] == self.net.listened_endpoint()
+        with self.lock_for['all_endpoints']:
+            #🐢 : If U call self.N() here, dead lock happens.
+            assert self.all_endpoints[e % len(self.all_endpoints)] == self.net.listened_endpoint()
 
         if self.get_state() != state:
             raise Exception('I am different from other correct nodes. The '+
@@ -518,23 +554,26 @@ class PbftConsensus:
 
         """
 
+        m = None
 
-        m = {'msg' : f'Hi I am the primary now.',
-             'epoch' : e,
-             'new-view-certificate' : my_list,
-             'sig_of_nodes_to_be_added' : list(self.sig_of_nodes_to_be_added)
-             }
+        with self.lock_for['sig_of_nodes_to_be_added']:
+            m = {'msg' : f'Hi I am the primary now.',
+                 'epoch' : e,
+                 'new-view-certificate' : my_list,
+                 'sig_of_nodes_to_be_added' : list(self.sig_of_nodes_to_be_added)
+                 }
 
 
         # board-cast the list,ignoring the result to existing subs
 
         # failed_count: int = 0
-        for sub in self.all_endpoints:
-            if sub != self.net.listened_endpoint():
-                # r = self.net.send(sub,'IamThePrimary',json.dumps(m))
-                self.net.send(sub,'IamThePrimary',json.dumps(m))
-                # if r != 'ok':
-                #     failed_count += 1
+        with self.lock_for['all_endpoints']:
+            for sub in self.all_endpoints:
+                if sub != self.net.listened_endpoint():
+                    # r = self.net.send(sub,'IamThePrimary',json.dumps(m))
+                    self.net.send(sub,'IamThePrimary',json.dumps(m))
+                    # if r != 'ok':
+                    #     failed_count += 1
 
         # 🦜 : Nope, here we do not check the return values
 
@@ -545,12 +584,17 @@ class PbftConsensus:
         """
         🐢 : Notify the newcomers
         """
-        # get and add in the newcomers
-        newcomers : list[str] = self.get_newcommers(list(self.sig_of_nodes_to_be_added))
-        self.sig_of_nodes_to_be_added.clear()
-        self.all_endpoints += newcomers
+        newcomers = None
+        # pop out the newcomers
+        with self.lock_for['sig_of_nodes_to_be_added']:
+            newcomers : list[str] = self.get_newcommers(list(self.sig_of_nodes_to_be_added))
+            self.sig_of_nodes_to_be_added.clear()
 
-        m['cmds'] = self.command_history
+        with self.lock_for['all_endpoints']:
+            self.all_endpoints += newcomers
+
+        with self.lock_for['command_history']:
+            m['cmds'] = self.command_history
 
         # Send them the msg, in particular: the cmds.
         for  newcomer in newcomers:
