@@ -257,8 +257,16 @@ class PbftConsensus:
                 assert cert['state'] == self.get_state()
                 assert cert['epoch'] == e
 
-            if len(valid_host) < self.f() + 1:
-                self.say(f'Requires {self.f() + 1} nodes, but got {len(valid_host)}')
+            """
+
+            🦜 : How many laiddown do we need ?
+
+            🐢 : Every correct node sends this, so there should be N - f 
+
+            """
+            x = self.N() - self.f()
+            if len(valid_host) < x:
+                self.say(f'Requires {S.CYAN} {x} {S.NOR} laiddown message{plural_maybe(x)}, but got {len(valid_host)}')
                 return False
 
         except json.JSONDecodeError as err:
@@ -299,7 +307,8 @@ class PbftConsensus:
         return ':'.join(cmds)
 
     def get_state(self) -> str:
-        return PbftConsensus.cmds_to_state(self.command_history)
+        with self.lock_for['command_history']:
+            return PbftConsensus.cmds_to_state(self.command_history)
 
     def get_signed_state(self) -> str:
         """Get the signed state"""
@@ -318,11 +327,18 @@ class PbftConsensus:
         if endpoint == self.primary():
             self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
             """🦜 : Boardcast to other subs"""
+
+            # 🦜 : take out the endpoints, because self.primary() will also
+            # lock 'all_endpoints'
+            all_endpoints = None
             with self.lock_for['all_endpoints']:
-                self.say('\t\tBoardcasting cmd confirm')
-                for sub in self.all_endpoints:
-                    if sub not in [self.net.listened_endpoint(), self.primary()]:
-                        self.net.send(sub,'/pleaseConfirmThis',data)
+                all_endpoints = self.all_endpoints
+
+            self.say('\t\tBoardcasting cmd confirm')
+            for sub in all_endpoints:
+                if sub not in [self.net.listened_endpoint(), self.primary()]:
+                    self.net.send(sub,'/pleaseConfirmThis',data)
+
             return 'OK'
 
         # forward, it's from the client
@@ -331,23 +347,37 @@ class PbftConsensus:
         return 'OK'
 
     def add_to_to_be_confirmed_commands(self, endpoint:str, data:str) ->int:
-        """Remember that endpoint `received` data. If """
+        """Remember that endpoint `received` data.
+
+        🦜 : Is this the only method that touch `self.to_be_confirmed_commands` ?
+
+        🐢 : Looks so.
+        """
         with self.lock_for['to_be_confirmed_commands']:
             if data not in self.to_be_confirmed_commands:
                 self.say(f'Adding {S.MAG + data + S.NOR} from {S.MAG + endpoint + S.NOR}')
                 self.to_be_confirmed_commands[data] = set({endpoint})
-
             else:
-
                 # take one
                 s: set[str] = self.to_be_confirmed_commands[data]
                 s.add(endpoint)
 
-                if (len(s)) > self.num_of_correct_nodes():
-                    self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} nodes, executing it.')
+                """
 
-                # return one
-                self.to_be_confirmed_commands[data] = s
+                🦜 : How many we should collect?
+
+                🐢 : I think it should be N - 1 - f, 1 corresponds to the
+                primary. For example, when N = 2, there should be one confirm
+                (the one N1 put it after recieved the command). When N = 3,
+                there should be two, (needs an extra one from N2).
+
+                """
+                if (len(s)) > self.N() - 1 - self.f():
+                    self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, executing it.')
+                    self.exe.execute(data)
+                else:
+                    # return one
+                    self.to_be_confirmed_commands[data] = s
 
 
     def handle_confirm_for_sub(self, endpoint: str, data: str) -> str:
@@ -361,17 +391,16 @@ class PbftConsensus:
         self.add_to_to_be_confirmed_commands(endpoint,data)
         return 'OK'
 
+    def N(self) -> int:
+        with self.lock_for['all_endpoints']:
+            return len(self.all_endpoints)
     def f(self) -> int:
         """Get the number of random nodes the system can tolerate"""
+        f = None
         with self.lock_for['all_endpoints']:
             N = len(self.all_endpoints)
             f = (N - 1) // 3        # number of random nodes
         return f
-
-    def num_of_correct_nodes(self) -> int:
-        """Return the value of 2f + 1, where N should be 3f + 1. The greater
-        the value, the more correct nodes the cluster needs."""
-        return self.N() - self.f()            # number of correct nodes
 
     def start_faulty_timer(self):
         """Life always has up-and-downs, but time moves toward Qian.
@@ -546,9 +575,6 @@ class PbftConsensus:
         self.say(f'Got newcomers {o}')
         return o
 
-    def N(self) -> int:
-        with self.lock_for['all_endpoints']:
-            return len(self.all_endpoints)
 
     def try_to_be_primary(self,e: int,state: str, my_list: list[str]):
         self.say(f'This\'s my time for epoch :{e}, my state is: \n'+
@@ -615,6 +641,7 @@ class PbftConsensus:
             self.all_endpoints += newcomers
 
         with self.lock_for['command_history']:
+            "Append cmds in the new-view cert"
             m['cmds'] = self.command_history
 
         # Send them the msg, in particular: the cmds.
@@ -648,8 +675,10 @@ class PbftConsensus:
         # 🐢 : Yeah, it can. Then it just assume that the group has 2f + 1
         # correct nodes, and that should be fine. It doesn't bother checking
 
-        for sub in self.all_endpoints[1:]:
-            self.net.send(sub,'/pleaseExecuteThis',cmd)
+        with self.lock_for['all_endpoints']:
+            for sub in self.all_endpoints:
+                if sub != self.net.listened_endpoint():
+                    self.net.send(sub,'/pleaseExecuteThis',cmd)
 
         return f"""
         Dear {endpoint}
