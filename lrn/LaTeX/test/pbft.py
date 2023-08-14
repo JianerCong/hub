@@ -904,7 +904,7 @@ class MockedExecutable(IExecutable):
 
 network_hub : dict[str, Callable[[int,str],Optional[str]]] = dict()
 lock_for_netwok_hub = Lock()
-class MockedAsynEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
+class MockedAsyncEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
     def __init__(self,e: str):
         self.endpoint = e
     def listened_endpoint(self) -> str:
@@ -915,7 +915,8 @@ class MockedAsynEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
                ):
         k = f'{self.endpoint}-{target}'
         print_mt(f'Adding handler: {k}')
-        network_hub[k] = handler
+        with lock_for_netwok_hub:
+            network_hub[k] = handler
 
     def clear(self):                # clears up all the listeners
         """🦜 : In fact there's no role-change in ListenToOneConsensus,
@@ -929,14 +930,12 @@ class MockedAsynEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
     def send(self,e: str, target: str, data: str):
         k = f'{e}-{target}'
         print_mt(f'{S.CYAN} Calling handler: {k} {S.NOR} with data:\n {S.CYAN} {data} {S.NOR}')
-        if k in network_hub:
-            network_hub[k](self.endpoint,data)
+        with lock_for_netwok_hub:
+            if k in network_hub:
+                print_mt(f'Handler {k} found')
+                Thread(target=network_hub[k],args=(self.endpoint,data)).start()
         else:
             print_mt(f'Handler {k} not found')
-            r = None
-        print_mt(f'Got result:{S.GREEN} {r} {S.NOR}')
-        # 🦜 : r will not be returned.
-        # return r
 
 """
 🐢 : The above two classes are copied from ListenToOneConsensus. But in
@@ -1069,7 +1068,7 @@ class MockedSigner(ISignable):
 
 #         s = f'N{i}'
 #         e = MockedExecutable(s)
-#         n = MockedEndpointNetworkNode(s)
+#         n = MockedAsyncEndpointNetworkNode(s)
 
 #         if i == 0:
 #             self.nodes[s] = ListenToOneConsensus(n=n,e=e)
@@ -1080,20 +1079,23 @@ class MockedSigner(ISignable):
 # fac = NodeFactory()
 # for i in range(3): fac.make_node()
 
-# nClient = MockedEndpointNetworkNode('ClientAAA')
-# while True:
-#     # reply = input('Enter cmd: <id> <cmd>')
-#     reply = input('Enter: ')
-#     if reply == 'stop': break
-#     if reply == 'append':
-#         print_mt(f'{S.HEADER} Appending node {S.NOR}')
-#         fac.make_node()
-#         continue
-#     l = reply.split(' ')
-#     if l[0] == 'kick':
-#         print_mt(f'{S.HEADER} Kicking node {l[1]} {S.NOR}')
-#         fac.nodes[l[1]].net.clear()
-#         continue
+nClient = MockedAsyncEndpointNetworkNode('ClientAAA')
 
-#     print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
-#     nClient.send(l[0],'/pleaseExecuteThis',l[1])
+# make one node-cluster
+s = 'N0'
+e = MockedExecutable(s)
+sg = MockedSigner(s)
+n = MockedAsyncEndpointNetworkNode(s)
+
+nd = PbftConsensus(n=n,e=e,s=sg)
+
+
+# Start the cluster
+while True:
+    # reply = input('Enter cmd: <id> <cmd>')
+    reply = input('Enter: ')
+    if reply == 'stop': break
+    l = reply.split(' ')
+
+    print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
+    nClient.send(l[0],'/pleaseExecuteThis',l[1])
