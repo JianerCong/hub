@@ -382,6 +382,12 @@ against '<a> b <c>', it will match the entire string, and not just '<a>'. Adding
 ? after the quantifier makes it perform the match in non-greedy or minimal
 fashion; as few characters as possible will be matched. Using the RE <.*?> will
 match only '<a>'.
+
+*** split
+#+begin_src python
+  'a:b:c'.split(sep=':',maxsplit=1)  # ⇒ ['a', 'b:c']
+#+end_src
+
 ** collections
 *** dic
 #+begin_src python

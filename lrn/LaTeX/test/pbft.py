@@ -131,14 +131,14 @@ class PbftConsensus:
 
         # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
 
-        # 🦜 : the list l1 which contains N* = self.all_endpoints[epoch] forms
+        # 🦜 : the list l1 which cntains N* = self.all_endpoints[epoch] forms
         # the new-view-certificate for N*.
 
         """🦜 : In fact its just the set of following struct:
 
             {
                 'msg' : f'Dear {sub}, I laid downed',
-                'epoch' : len(self.epoch),
+                'epoch' : self.epoch,
                 'state' : self.get_state(),
                 'from' : self.net.listened_endpoint()
             }
@@ -231,11 +231,11 @@ class PbftConsensus:
                     self.say('This primary has old newcomer, ignoring it.')
                     return 'No'
 
-        if self.epoch >= o['epoch']:
+        if self.epoch > o['epoch']:
             self.say(f'Ignoring older msg in epoch={o["epoch"]}')
             return 'No'
 
-        if self.check_cert(o['view-change-certificate'],o['epoch']):
+        if self.check_cert(o['new-view-certificate'],o['epoch']):
             """
 
             🦜 : Now we are ready to start a new view. We do the following:
@@ -301,7 +301,7 @@ class PbftConsensus:
             for s in l:
                 assert self.sig.verify(s)
 
-                cert = json.loads( self.sig.data(s))
+                cert = json.loads( self.sig.get_data(s))
                 valid_host.add(self.sig.get_from(s))
 
                 assert cert['state'] == self.get_state()
@@ -375,7 +375,6 @@ class PbftConsensus:
             """
 
         if endpoint == self.primary():
-            self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
             """🦜 : Boardcast to other subs"""
 
             # 🦜 : take out the endpoints, because self.primary() will also
@@ -388,6 +387,9 @@ class PbftConsensus:
             for sub in all_endpoints:
                 if sub not in [self.net.listened_endpoint(), self.primary()]:
                     self.net.send(sub,'/pleaseConfirmThis',data)
+
+            self.say('\t\tAdding cmd to myself')
+            self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
 
             return 'OK'
 
@@ -407,27 +409,33 @@ class PbftConsensus:
             if data not in self.to_be_confirmed_commands:
                 self.say(f'Adding {S.MAG + data + S.NOR} from {S.MAG + endpoint + S.NOR}')
                 self.to_be_confirmed_commands[data] = set({endpoint})
+
+            # take one
+            s: set[str] = self.to_be_confirmed_commands[data]
+            s.add(endpoint)
+
+            """
+
+            🦜 : How many we should collect?
+
+            🐢 : I think it should be N - 1 - f, 1 corresponds to the
+            primary. For example, when N = 2, there should be one confirm
+            (the one N1 put it after recieved the command). When N = 3,
+            there should be two, (needs an extra one from N2).
+
+            """
+            x = self.N() - 1 - self.f()
+            if (len(s)) >= x:
+                self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, {S.MAG} executing it and clear 🚮️{S.NOR}.')
+                self.exe.execute(data)
+
+                with self.lock_for['command_history']:
+                    self.command_history.append(data)
+                self.to_be_confirmed_commands[data].clear()
             else:
-                # take one
-                s: set[str] = self.to_be_confirmed_commands[data]
-                s.add(endpoint)
-
-                """
-
-                🦜 : How many we should collect?
-
-                🐢 : I think it should be N - 1 - f, 1 corresponds to the
-                primary. For example, when N = 2, there should be one confirm
-                (the one N1 put it after recieved the command). When N = 3,
-                there should be two, (needs an extra one from N2).
-
-                """
-                if (len(s)) > self.N() - 1 - self.f():
-                    self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, executing it.')
-                    self.exe.execute(data)
-                else:
-                    # return one
-                    self.to_be_confirmed_commands[data] = s
+                self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, {S.MAG} not yet the time. {S.NOR}')
+                # return one
+                self.to_be_confirmed_commands[data] = s
 
 
     def handle_confirm_for_sub(self, endpoint: str, data: str) -> str:
@@ -467,6 +475,9 @@ class PbftConsensus:
                 p = self.patience
             while p > 0:
                 sleep(2)
+                if self.closed:
+                    self.say('\t👋 Timer closed')
+                    return
                 with self.lock_for['patience']:
                     self.patience -= 1
                     p = self.patience
@@ -476,11 +487,11 @@ class PbftConsensus:
             self.trigger_view_change()
             # 🦜 : We trigger the view-change and reset the patience.
 
-        self.say('Timer closed')
+        self.say('\t👋 Timer closed')
 
     def comfort(self):          # reset timer
         with self.lock_for['patience']:
-            self.patience = 5
+            self.patience = 8
             self.say(f'❄ patience set to = {self.patience}')
 
     # 🦜 : Different N for different f is:
@@ -599,7 +610,9 @@ class PbftConsensus:
             self.say(f'\t\tCollected enough {S.CYAN}{len(to_be_added_list)} >= {x} {S.NOR} laid-down message{plural_maybe(len(to_be_added_list))}')
             self.try_to_be_primary(epoch,state,to_be_added_list)
         else:
-            self.say(f'\t\tCollected {S.CYAN}{len(to_be_added_list)} < {x} {S.NOR}laid-down message{plural_maybe(len(to_be_added_list))}, not yet my time')
+            self.say(f'\t\tCollected {S.CYAN}{len(to_be_added_list)} < {x} {S.NOR}laid-down message{plural_maybe(len(to_be_added_list))}' +
+                     S.MAG + ' not yet my time' + S.NOR
+                     )
             # return it
             self.laid_down_history[epoch][state] = to_be_added_list
 
@@ -736,7 +749,7 @@ class PbftConsensus:
             # 🦜 : In fact, the above can all be called asynchronously.
 
         # be the primary
-        self.say(f'\t\tEpoch set to {self.epoch}')
+        self.say(f'\t\tEpoch set to {S.MAG} {self.epoch} {S.NOR}')
         self.start_listening_as_primary()
 
 
@@ -744,7 +757,7 @@ class PbftConsensus:
         if self.view_change_state:
             return f"""
             Dear {endpoint}
-                  We are currently selecting new primary for epoch {len(self.epoch) + 1}.
+                  We are currently selecting new primary for epoch {self.epoch + 1}.
                   Please try again later.
             """
 
@@ -857,8 +870,8 @@ class PbftConsensus:
 
 
         # Check wether the view-change is valid:
-        if not self.check_cert(d['view-change-certificate'],d['epoch']):
-            self.say(f'Invalid certificate: {S.RED + o + S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
+        if not self.check_cert(d['new-view-certificate'],d['epoch']):
+            self.say(f'Invalid certificate: {S.RED} {o} {S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
             return 'no'
 
 
@@ -961,12 +974,12 @@ class MockedSigner(ISignable):
     # 🐢 :extract part of the msg, the msg should have been verified already,
     # otherwise the result is undefined.
     def get_data(self, msg: str) -> str:
-        l = msg.split(':')
+        l = msg.split(':', maxsplit=1)
         print_mt(f'⚙️ Extract data in {S.CYAN}{l}{S.NOR}')
         return l[1]
 
     def get_from(self, msg: str) -> str:
-        l = msg.split(':')
+        l = msg.split(':', maxsplit=1)
         print_mt(f'⚙️ Extract from in {S.CYAN}{l}{S.NOR}')
         return l[0]
 
@@ -1083,26 +1096,66 @@ class MockedSigner(ISignable):
 # fac = NodeFactory()
 # for i in range(3): fac.make_node()
 
-nClient = MockedAsyncEndpointNetworkNode('ClientAAA')
+def single_node_cluster():
+    nClient = MockedAsyncEndpointNetworkNode('ClientAAA')
 
-# make one node-cluster
-s = 'N0'
-e = MockedExecutable(s)
-sg = MockedSigner(s)
-n = MockedAsyncEndpointNetworkNode(s)
-all_endpoints = [s]
-nd = PbftConsensus(n=n,e=e,s=sg,all_endpoints=all_endpoints)
+    # make one node-cluster
+    s = 'N0'
+    e = MockedExecutable(s)
+    sg = MockedSigner(s)
+    n = MockedAsyncEndpointNetworkNode(s)
+    all_endpoints = [s]
+    nd = PbftConsensus(n=n,e=e,s=sg,all_endpoints=all_endpoints)
 
 
-# Start the cluster
-while True:
-    # reply = input('Enter cmd: <id> <cmd>')
-    reply = input('Enter: ')
-    if reply == 'stop':
-        break
-    l = reply.split(' ')
+    # Start the cluster
+    while True:
+        # reply = input('Enter cmd: <id> <cmd>')
+        reply = input('Enter: ')
+        if reply == 'stop':
+            break
+        l = reply.split(' ')
 
-    print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
-    nClient.send(l[0],'/pleaseExecuteThis',l[1])
+        print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
+        nClient.send(l[0],'/pleaseExecuteThis',l[1])
 
-print('Program stopped.')
+    print('Program stopped.')
+    nd.closed = True
+
+def two_nodes_cluster():
+    nClient = MockedAsyncEndpointNetworkNode('ClientAAA')
+
+    # make one node-cluster
+    s = 'N0'
+    s1 = 'N1'
+    all_endpoints = [s,s1]
+
+    e = MockedExecutable(s)
+    sg = MockedSigner(s)
+    n = MockedAsyncEndpointNetworkNode(s)
+    nd = PbftConsensus(n=n,e=e,s=sg,all_endpoints=all_endpoints)
+
+    e1 = MockedExecutable(s1)
+    sg1 = MockedSigner(s1)
+    n1 = MockedAsyncEndpointNetworkNode(s1)
+    nd1 = PbftConsensus(n=n1,e=e1,s=sg1,all_endpoints=all_endpoints)
+
+    # Start the cluster
+    while True:
+        # reply = input('Enter cmd: <id> <cmd>')
+        reply = input('Enter: ')
+        if reply == 'stop':
+            break
+        l = reply.split(' ')
+
+        print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
+        nClient.send(l[0],'/pleaseExecuteThis',l[1])
+
+    print('Program stopped.')
+    nd.closed = True
+    nd1.closed = True
+
+# single_node_cluster()
+two_nodes_cluster()
+
+
