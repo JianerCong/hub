@@ -871,7 +871,7 @@ class PbftConsensus:
 
         # Check wether the view-change is valid:
         if not self.check_cert(d['new-view-certificate'],d['epoch']):
-            self.say(f'Invalid certificate: {S.RED} {o} {S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
+            self.say(f'Invalid certificate: {S.RED} {data} {S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
             return 'no'
 
 
@@ -1155,7 +1155,47 @@ def two_nodes_cluster():
     nd.closed = True
     nd1.closed = True
 
+def one_plus_one_cluster():
+    nClient = MockedAsyncEndpointNetworkNode('ClientAAA')
+
+    # make one node-cluster
+    s = 'N0'
+    all_endpoints = [s]
+
+    """
+    🦜 : It turns out the only thing that we need to change here is to set all_endpoints to [s]
+    """
+
+    e = MockedExecutable(s)
+    sg = MockedSigner(s)
+    n = MockedAsyncEndpointNetworkNode(s)
+    nd = PbftConsensus(n=n,e=e,s=sg,all_endpoints=all_endpoints)
+
+    sleep(2)                    # Wait until it's up
+
+    print_mt('Starting new nodes')
+    s1 = 'N1'
+    e1 = MockedExecutable(s1)
+    sg1 = MockedSigner(s1)
+    n1 = MockedAsyncEndpointNetworkNode(s1)
+    nd1 = PbftConsensus(n=n1,e=e1,s=sg1,all_endpoints=all_endpoints)  # it should send /pleaseAddMe
+
+    # Start the cluster
+    while True:
+        # reply = input('Enter cmd: <id> <cmd>')
+        reply = input('Enter: ')
+        if reply == 'stop':
+            break
+        l = reply.split(' ')
+
+        print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
+        nClient.send(l[0],'/pleaseExecuteThis',l[1])
+
+    print('Program stopped.')
+    nd.closed = True
+    nd1.closed = True
 # single_node_cluster()
-two_nodes_cluster()
+# two_nodes_cluster()
+one_plus_one_cluster()
 
 
