@@ -416,18 +416,20 @@ class PbftConsensus:
 
         next_primary = self.primary()
 
+        o = {
+            'msg' : f'Dear {next_primary}, I laid down for U',
+            'epoch' : self.epoch,
+            'state' : self.get_state(),
+            'from' : self.net.listened_endpoint()
+        }
+        data = self.sig.sign(json.dumps(o))
+
         # Send to next_primary the state of me
-        self.net.send(next_primary,'/ILaidDown',
-                      self.sig.sign(
-                          json.dumps(
-                              {
-                                  'msg' : f'Dear {next_primary}, I laid down for U',
-                                  'epoch' : self.epoch,
-                                  'state' : self.get_state(),
-                                  'from' : self.net.listened_endpoint()
-                              }
-                          )
-                      ))
+        if next_primary == self.net.listened_endpoint():
+            self.say(f'Send laiddown for myself')
+            self.remember_this_laiddown_and_be_primary_maybe(o,data)
+        else:
+            self.net.send(next_primary,'/ILaidDown',data)
 
     def handle_laid_down(self, endpoint: str, data: str) -> str:
         """Response to a `laid-down` msg.
@@ -463,53 +465,72 @@ class PbftConsensus:
                 self.say(f'🚮️ This view-change is non of my bussinesses: {o}')
                 return 'No'
 
-            state: str = o['state']
-            epoch = o['epoch']
-            to_be_added_list : list[str] = None
-
-            with self.lock_for['laid_down_history']:
-                # 🦜 : 1. Does this epoch already has something ? If not, create a new dict{}
-                if epoch not in self.laid_down_history:
-                    self.say(f'\tAdding new record in laid_down_history for epoch {o["epoch"]}')
-                    self.laid_down_history[epoch] = dict({})
-
-                # 🦜 : 2. Does this epoch already got state like this ? If not, create a new list[]
-                if state not in self.laid_down_history[epoch]:
-                    self.say(f'\t\tAdding new record in laid_down_history for {S.CYAN} epoch={o["epoch"]},state={o["state"]} {S.NOR}')
-                    self.laid_down_history[epoch][state] : list[str] = []
-
-                # 🦜 Now take the list:
-                to_be_added_list = self.laid_down_history[epoch][state]
-
-            # 🦜 : This is the list that data (signed msg) will be added in.
-            if data in to_be_added_list:
-                self.say(f'🚮️ Ignoring duplicated msg from {o["from"]}')
-                return 'No'
-
-            to_be_added_list.append(data)
-
-            """
-            🦜 : How many laiddown msg does one need to collect in order to be the new primary?
-
-            """
-            x = self.N() - 1 - self.f()
-            if len(to_be_added_list) >= x:
-                self.say(f'\t\tCollected enough {S.CYAN}{len(to_be_added_list)}{S.NOR} >= {x} laid-down message{
-                     plural_maybe(len(to_be_added_list))
-                }')
-                self.try_to_be_primary(epoch,state,to_be_added_list)
-
-            # 🦜 : It is my bussinesses and the epoch is right for me. I am just
-            # ganna get majority of same-state, and if I am not one of them...
-            #
-            # I will sync to one of them.
-            #
-            #🐢 : What if the node "doesn't let you synk to its state?"
-            #
-            #🦜 : Then I will keep trying all these 2f + 1 nodes
+            self.remember_this_laiddown_and_be_primary_maybe(o,data)
         except json.JSONDecodeError as e:
             self.say(f'Error parsing msg: {data}')
             return 'No'
+
+    def remember_this_laiddown_and_be_primary_maybe(self, o,data):
+        """Add the laid-down msg `o` for this node into laid_down_history and
+        if enough laid-down msg is collected, then be the primary.
+
+        `data` should be the signed form of `o`:
+
+        data = self.sig.sign(json.dumps(o))
+
+        """
+        state: str = o['state']
+        epoch = o['epoch']
+        to_be_added_list : list[str] = None
+
+        with self.lock_for['laid_down_history']:
+            # 🦜 : 1. Does this epoch already has something ? If not, create a new dict{}
+            if epoch not in self.laid_down_history:
+                self.say(f'\tAdding new record in laid_down_history for epoch {o["epoch"]}')
+                self.laid_down_history[epoch] = dict({})
+
+            # 🦜 : 2. Does this epoch already got state like this ? If not, create a new list[]
+            if state not in self.laid_down_history[epoch]:
+                self.say(f'\t\tAdding new record in laid_down_history for {S.CYAN} epoch={o["epoch"]},state={o["state"]} {S.NOR}')
+                self.laid_down_history[epoch][state] : list[str] = []
+
+            # 🦜 Now take the list:
+            to_be_added_list = self.laid_down_history[epoch][state]
+
+        # 🦜 : This is the list that data (signed msg) will be added in.
+        if data in to_be_added_list:
+            self.say(f'🚮️ Ignoring duplicated msg from {o["from"]}')
+            return 'No'
+
+        to_be_added_list.append(data)
+
+        """
+        🦜 : How many laiddown msg does one need to collect in order to be the new primary?
+
+        🐢 : Every correct node will append to it even the next primary itself.
+        so it's N - f.
+        """
+        x = self.N() - self.f()
+        if len(to_be_added_list) >= x:
+            self.say(f'\t\tCollected enough {S.CYAN}{len(to_be_added_list)}{S.NOR} >= {x} laid-down message{
+                 plural_maybe(len(to_be_added_list))
+            }')
+            self.try_to_be_primary(epoch,state,to_be_added_list)
+        else:
+            self.say(f'\t\tCollected {S.CYAN}{len(to_be_added_list)}{S.NOR} < {x} laid-down message{
+                 plural_maybe(len(to_be_added_list))
+            }, not yet my time')
+            # return it
+            self.laid_down_history[epoch][state] = to_be_added_list
+
+        # 🦜 : It is my bussinesses and the epoch is right for me. I am just
+        # ganna get majority of same-state, and if I am not one of them...
+        #
+        # I will sync to one of them.
+        #
+        #🐢 : What if the node "doesn't let you synk to its state?"
+        #
+        #🦜 : Then I will keep trying all these 2f + 1 nodes
 
     def get_newcommers(self, sigs: list[str]) -> list[str]:
         """Verify and get the newcommers collected"""
@@ -605,8 +626,6 @@ class PbftConsensus:
         # be the primary
         self.epoch = e          # which should point to me.
         self.start_listening_as_primary()
-
-
 
 
     def handle_execute_for_primary(self, endpoint: str, data: str) -> str:
