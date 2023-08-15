@@ -110,70 +110,11 @@ class PbftConsensus:
     """The PBFT Consensus. Can also be named <other>PFT depending on how
     IExecutable is implemented."""
 
-    closed = False     # flag checked by timer
-    epoch: int = 0
-    view_change_state = False
-
-    laid_down_history: dict[int,dict[str,list[str]]] = {}
-    sig_of_nodes_to_be_added: set[str] = set({})
-
-    # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
-
-    # 🦜 : the list l1 which cntains N* = all_endpoints[epoch] forms
-    # the new-view-certificate for N*.
-
-    """🦜 : In fact its just the set of following struct:
-
-        {
-            'msg' : f'Dear {sub}, I laid downed',
-            'epoch' : epoch,
-            'state' : get_state(),
-            'from' : net.listened_endpoint()
-        }
-
-    sorted first by epoch:int, then by state:string
-
-    🐢 : But I feel like this tree-like structure is easier to manage and
-    access. No ?
-
-    🦜 : True
-
-    """
-
-
-    # 🦜 : This list of commands to be confirmed. This is kinda like a
-    # counter. When a command has reached more than 2f + 1 count (confirmed
-    # message) then the command can be savely executed.
-    #
-    # The meaning of to_be_confirmed_commands is kinda like : <cmd> : {set of who received commands}
-    #
-    # So when two sub-nodes call each other, they will exchange what
-    # they've got in their hand. As a result, eventually the node will
-    # still execute what primary sent to most nodes. (🦜: This eventually makes each nodes "selfless").
-    to_be_confirmed_commands: dict[str,set[str]] = {}  # recieved from primary
-
-    lock_for = {
-        'to_be_confirmed_commands' : Lock(),
-        'sig_of_nodes_to_be_added' : Lock(),
-        'laid_down_history' : Lock(),
-        'patience' : Lock(),
-        'all_endpoints' : Lock(),
-        'recieved_commands' : Lock(),
-        'command_history' : Lock(),
-    }
-
-    # The commands received by primary, subs will forward many copied of
-    # command to primary, and the primary just need to accept once.
-    recieved_commands: set[str] = set({})  # recieved by primary
-    command_history: list[str] = []  # executed
-
-    def __init__(self,
+    def start(self,
                  n : IAsyncEndpointBasedNetworkable,
                  e : IExecutable,
                  s : ISignable,
                  all_endpoints : list[str]):
-
-
         self.net = n
         self.exe = e
         self.sig = s
@@ -191,6 +132,80 @@ class PbftConsensus:
                 self.start_listening_as_sub()
 
             Thread(target=self.start_faulty_timer).start()  # here the ctor ends
+
+    def __init__(self,
+                 n : IAsyncEndpointBasedNetworkable,
+                 e : IExecutable,
+                 s : ISignable,
+                 all_endpoints : list[str]):
+
+        """ 🦜 : Here are just class variables that pylint wants us to put into
+        __init__(). It's not happy if we don't.
+
+        -------------------------------------------------- """
+        self.closed = False     # flag checked by timer
+        self.epoch: int = 0
+        self.view_change_state = False
+
+        self.laid_down_history: dict[int,dict[str,list[str]]] = {}
+        self.sig_of_nodes_to_be_added: set[str] = set({})
+
+        # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
+
+        # 🦜 : the list l1 which cntains N* = all_endpoints[epoch] forms
+        # the new-view-certificate for N*.
+
+        """🦜 : In fact its just the set of following struct:
+
+            {
+                'msg' : f'Dear {sub}, I laid downed',
+                'epoch' : epoch,
+                'state' : get_state(),
+                'from' : net.listened_endpoint()
+            }
+
+        sorted first by epoch:int, then by state:string
+
+        🐢 : But I feel like this tree-like structure is easier to manage and
+        access. No ?
+
+        🦜 : True
+
+        """
+
+
+        # 🦜 : This list of commands to be confirmed. This is kinda like a
+        # counter. When a command has reached more than 2f + 1 count (confirmed
+        # message) then the command can be savely executed.
+        #
+        # The meaning of to_be_confirmed_commands is kinda like : <cmd> : {set of who received commands}
+        #
+        # So when two sub-nodes call each other, they will exchange what
+        # they've got in their hand. As a result, eventually the node will
+        # still execute what primary sent to most nodes. (🦜: This eventually makes each nodes "selfless").
+        self.to_be_confirmed_commands: dict[str,set[str]] = {}  # recieved from primary
+
+        self.lock_for = {
+            'to_be_confirmed_commands' : Lock(),
+            'sig_of_nodes_to_be_added' : Lock(),
+            'laid_down_history' : Lock(),
+            'patience' : Lock(),
+            'all_endpoints' : Lock(),
+            'recieved_commands' : Lock(),
+            'command_history' : Lock(),
+        }
+
+        # The commands received by primary, subs will forward many copied of
+        # command to primary, and the primary just need to accept once.
+        self.recieved_commands: set[str] = set({})  # recieved by primary
+        self.command_history: list[str] = []  # executed
+
+
+        """
+        🦜 : Here starts the actual logic
+        -------------------------------------------------- 
+        """
+        self.start(n=n,e=e,s=s,all_endpoints=all_endpoints)
 
 
 
@@ -273,10 +288,10 @@ class PbftConsensus:
             self.start_listening_as_sub()
             return 'Ok'
 
-        self.say(f'Invalid certificate: {S.RED + o + S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
+        self.say(f'❌️ Invalid certificate: {S.RED + o + S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
         return 'No'
 
-    def check_cert(self,l: list[str], e: int) -> bool:
+    def check_cert(self,l: list[str], e: int, for_newcomer: bool = True) -> bool:
         """Check wether the view-change certificate is valid.
 
         🦜 : The view-change certificate is valid if
@@ -298,14 +313,50 @@ class PbftConsensus:
         """
 
         valid_host : set[str] = set({})
+
+        if len(l) == 0:
+            self.say( S.RED + '\t ❌️ What ? Checking empty certificate ? There\'s no such thing.' + S.NOR)
+            return False
+
+
         try:
-            for s in l:
+            # Check and save the first cert
+            """
+
+            🦜 Check and remembers the first cert. If this verification is for
+            newcomer (for_newcomer = True), then we will just make sure that :
+
+               All `state` in the list is same as the first one `cert0`.
+
+            Otherwise, we check that:
+
+               All `state` in the list is same as the `self.get_state()`.
+
+            """
+            s = l[0]
+            assert self.sig.verify(s)
+
+            cert0 = json.loads( self.sig.get_data(s))
+            valid_host.add(self.sig.get_from(s))
+
+            if not for_newcomer:
+                assert cert0['state'] == self.get_state()
+
+            for s in l[1:]:
                 assert self.sig.verify(s)
 
                 cert = json.loads( self.sig.get_data(s))
                 valid_host.add(self.sig.get_from(s))
 
-                assert cert['state'] == self.get_state()
+                if for_newcomer:
+                    assert cert ['state'] == cert0['state']
+                else:
+                    assert cert['state'] == self.get_state()
+
+                """ 🐢  : When a newcomer receives a new-view certificate, it
+                also need to check it. But it won't check the state
+
+                """
                 assert cert['epoch'] == e
 
             """
@@ -325,7 +376,7 @@ class PbftConsensus:
             return False
 
         except AssertionError as a:
-            self.say(f'AssertionError: {a}')
+            self.say(f'❌️ AssertionError: {a}')
             return False
 
         self.say(f'Received ok view-change-msg from:\n{S.CYAN} {valid_host} {S.NOR}')
@@ -430,10 +481,11 @@ class PbftConsensus:
             x = self.N() - 1 - self.f()
             if (len(s)) >= x:
                 self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, {S.MAG} executing it and clear 🚮️{S.NOR}.')
-                self.exe.execute(data)
 
+                self.exe.execute(data)
                 with self.lock_for['command_history']:
                     self.command_history.append(data)
+
                 self.to_be_confirmed_commands[data].clear()
             else:
                 self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, {S.MAG} not yet the time. {S.NOR}')
@@ -477,7 +529,7 @@ class PbftConsensus:
             with self.lock_for['patience']:
                 p = self.patience
             while p > 0:
-                sleep(2)
+                sleep(3)
                 if self.closed:
                     self.say('\t👋 Timer closed')
                     return
@@ -764,22 +816,28 @@ class PbftConsensus:
                   Please try again later.
             """
 
-        if data in self.recieved_commands:
-            return f"I received this."
-
         cmd = data
-        self.recieved_commands.add(data)
-        self.command_history.append(cmd)
+
+        with self.lock_for['recieved_commands']:
+            if data in self.recieved_commands:
+                self.say( S.MAG + f'\tIgnoring duplicated cmd {data}' + S.NOR)
+                return "I received this."
+            self.recieved_commands.add(data)
+
+        with self.lock_for['command_history']:
+            self.command_history.append(cmd)
+
         self.exe.execute(cmd)
         # 🦜 : Can primary just execute it?
         #
         # 🐢 : Yeah, it can. Then it just assume that the group has 2f + 1
         # correct nodes, and that should be fine. It doesn't bother checking
 
-        with self.lock_for['all_endpoints']:
-            for sub in self.all_endpoints:
-                if sub != self.net.listened_endpoint():
-                    self.net.send(sub,'/pleaseExecuteThis',cmd)
+        self.boardcast_to_others('/pleaseExecuteThis',cmd)
+        # with self.lock_for['all_endpoints']:
+        #     for sub in self.all_endpoints:
+        #         if sub != self.net.listened_endpoint():
+        #             self.net.send(sub,'/pleaseExecuteThis',cmd)
 
         return f"""
         Dear {endpoint}
@@ -809,7 +867,13 @@ class PbftConsensus:
             if self.net.listened_endpoint() in self.all_endpoints:
                 my_id = self.all_endpoints.index(self.net.listened_endpoint())
 
-        print_mt(f'{S.CYAN}\t[{my_id}]{S.NOR}: ' + s)
+        cmds = None
+        with self.lock_for['command_history']:
+            cmds =  self.command_history
+
+        e = self.epoch
+
+        print_mt(f'{S.CYAN}\t[{my_id}]{S.NOR} {S.GREEN}[{cmds}]{S.NOR} {S.BLUE}<{e}>{S.NOR}: ' + s)
 
     def boardcast_to_others(self, target : str, data: str):
         """Board cast target with data to all other nodes in
@@ -906,6 +970,8 @@ class PbftConsensus:
 
         for cmd in d['cmds']:
             self.exe.execute(cmd)
+
+        self.command_history = d['cmds']
 
 
         Thread(target=self.start_faulty_timer).start()  # here where the new node are added
@@ -1213,9 +1279,6 @@ def one_plus_one_cluster():
     nd.closed = True
     nd1.closed = True
 
-# single_node_cluster()
-# two_nodes_cluster()
-# one_plus_one_cluster()
 
 """
 
@@ -1252,7 +1315,7 @@ class NodeFactory:
         print_mt(f'🌱 \tInitial cluster size: {S.CYAN}{n}{S.NOR}')
 
         self.all_endpoints : list[str] = [f'N{i}' for i in range(n)]
-        self.N = len(all_endpoints)  # The next node id
+        self.N = len(self.all_endpoints)  # The next node id
 
         for s in self.all_endpoints:
             print_mt(f'\tStarting Node {s}')
@@ -1292,14 +1355,14 @@ def start_cluster():
         if reply == 'stop':
             break
 
-        if reply == 'append':
+        if reply in ['append','a']:
             print_mt(f'{S.HEADER} Appending node {S.NOR}')
             fac.make_node()
             continue
 
         l = reply.split(' ')
 
-        if l[0] == 'kick':
+        if l[0] in ['kick', 'k']:
             print_mt(f'{S.HEADER} Kicking node {l[1]} {S.NOR}')
             fac.kick(l[1])
             continue
@@ -1308,5 +1371,11 @@ def start_cluster():
         nClient.send(l[0],'/pleaseExecuteThis',l[1])
 
     print('Program stopped.')
-    for s in fac.nodes.keys():
-        fac.nodes[s].close()
+    for k,v in fac.nodes.items():
+        print_mt(f'\t {S.RED} Closing {k} {S.NOR}')
+        v.close()
+
+# single_node_cluster()
+# two_nodes_cluster()
+# one_plus_one_cluster()
+start_cluster()
