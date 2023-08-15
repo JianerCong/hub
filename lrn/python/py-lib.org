@@ -68,6 +68,171 @@
       assert not p.exists()
     #+end_src
 
+** udp
+*** official example: echo
+
+🦜 : The official example will send a datagram and wait for a response from the
+server.
+
+**** client
+#+begin_src python
+import asyncio
+
+
+class EchoClientProtocol:
+    def __init__(self, message, on_con_lost):
+        self.message = message
+        self.on_con_lost = on_con_lost
+        self.transport = None
+
+    def connection_made(self, transport):
+        self.transport = transport
+        print('Send:', self.message)
+        self.transport.sendto(self.message.encode())
+
+    def datagram_received(self, data, addr):
+        print("Received:", data.decode())
+
+        print("Close the socket")
+        self.transport.close()
+
+    def error_received(self, exc):
+        print('Error received:', exc)
+        self.transport.close()
+
+    def connection_lost(self, exc):
+        print("Connection closed")
+        self.on_con_lost.set_result(True)
+
+
+async def main():
+    # Get a reference to the event loop as we plan to use
+    # low-level APIs.
+    loop = asyncio.get_running_loop()
+
+    on_con_lost = loop.create_future()
+    message = "aaa"
+
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: EchoClientProtocol(message, on_con_lost),
+        remote_addr=('127.0.0.1', 7778))
+
+    try:
+        await on_con_lost
+    finally:
+        transport.close()
+
+
+asyncio.run(main())
+
+#+end_src
+
+**** server
+#+begin_src python
+import asyncio
+
+
+class EchoServerProtocol:
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def datagram_received(self, data, addr):
+        message = data.decode()
+        print('Received %r from %s' % (message, addr))
+        print('Send %r to %s' % (message, addr))
+        self.transport.sendto(data, addr)
+
+
+async def main():
+    print("Starting UDP server")
+
+    # Get a reference to the event loop as we plan to use
+    # low-level APIs.
+    loop = asyncio.get_running_loop()
+
+    # One protocol instance will be created to serve all
+    # client requests.
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: EchoServerProtocol(),
+        local_addr=('127.0.0.1', 7777))
+
+    try:
+        await asyncio.sleep(3600)  # Serve for 1 hour.
+    finally:
+        transport.close()
+
+
+asyncio.run(main())
+
+#+end_src
+
+*** my example: send and close()
+
+**** client
+#+begin_src python
+import asyncio
+
+
+class EchoClientProtocol:
+    def __init__(self, message, on_con_lost):
+        self.message = message
+        self.on_con_lost = on_con_lost
+        self.transport = None
+
+    def connection_made(self, transport):
+        self.transport = transport
+        print('Send:', self.message)
+        self.transport.sendto(self.message.encode())
+        # 🦜 : Here we just send a message and stop.
+        self.transport.close()
+        """
+
+        🦜 : Will this flush the buffer to be sent ?
+
+        🐢 : Yes. If the transport has a buffer for outgoing data, buffered
+        data will be flushed asynchronously.
+
+        No more data will be received. After all buffered data is flushed, the
+        protocol’s protocol.connection_lost() method will be called with None
+        as its argument.
+
+        The transport should not be used once it is closed. """
+
+    def error_received(self, exc):
+        print('Error received:', exc)
+        self.transport.close()
+
+    def connection_lost(self, exc):
+        print("Connection closed")
+        self.on_con_lost.set_result(True)
+
+
+async def main():
+    # Get a reference to the event loop as we plan to use
+    # low-level APIs.
+    loop = asyncio.get_running_loop()
+
+    on_con_lost = loop.create_future()
+    message = "aaa"
+
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: EchoClientProtocol(message, on_con_lost),
+        remote_addr=('127.0.0.1', 7777))
+
+    try:
+        await on_con_lost
+    finally:
+        transport.close()
+
+
+asyncio.run(main())
+
+#+end_src
+
+**** server
+#+begin_src python
+
+
 * End
 
 # Local Variables:
