@@ -198,7 +198,6 @@ class PbftConsensus:
         self.net.listen('/ILaidDown',self.handle_laid_down)
         self.net.listen('/IamThePrimary',self.handle_new_primary)
 
-        self.net.listen('/pleaseAddMe',self.handle_add_new_node)
         self.net.listen('/pleaseAddMeNoBoardcast',self.handle_add_new_node_no_boardcast)
 
     def handle_new_primary(self, endpoint: str, data: str) -> str:
@@ -808,16 +807,20 @@ class PbftConsensus:
 
         print_mt(f'{S.CYAN}\t[{my_id}]{S.NOR}: ' + s)
 
-    def handle_add_new_node(self, endpoint: str, data: str) -> str:
+    def boardcast_to_others(self, target : str, data: str):
+        """Board cast target with data to all other nodes in
+        `self.all_endpoints`"""
+        with self.lock_for['all_endpoints']:
+            for node in self.all_endpoints:
+                # board-cast-to-others
+                if node != self.net.listened_endpoint():
+                    self.net.send(node,target,data)
+
+    def handle_add_new_node_no_boardcast(self, endpoint: str, data: str) -> str:
         """Add a new node, this just remembers the add-new msg, which should
         have been signed by putting it into the self.sig_of_nodes_to_be_added.
         """
 
-        with self.lock_for['sig_of_nodes_to_be_added']:
-            self.sig_of_nodes_to_be_added.add(data)
-
-
-        self.boardcast_to_others('/pleaseAddMeNoBoardcast',data)
         #    ^^ a set
         """ 🐢 : Using a set is ok, in fact only the next-primary needs to
         remember it, and it will boardcast it when becoming the new primary. At
@@ -828,22 +831,17 @@ class PbftConsensus:
         🐢 : Technically, we do. And the majority should answer 'OK'
 
         """
-
-        return 'OK'
-
-    def boardcast_to_others(self, target : str, data: str):
-        with self.lock_for['all_endpoints']:
-            for node in self.all_endpoints:
-                # board-cast-to-others
-                if node != self.net.listened_endpoint():
-                    self.net.send(node,target,data)
-
-    def handle_add_new_node_no_boardcast(self, endpoint: str, data: str) -> str:
-        self.sig_of_nodes_to_be_added.add(data)
+        with self.lock_for['sig_of_nodes_to_be_added']:
+            self.sig_of_nodes_to_be_added.add(data)
         return 'OK'
 
     def start_listening_as_newcomer(self):
-        self.net.send(self.all_endpoints[0], '/pleaseAddMe',self.sig.sign('Hi,please let me in.'))
+        """🦜 : Here we used `self.boardcast_to_others()`, but because this
+        node is not in `self.all_endpoints` yet, so it will in fact boardcast
+        to the whole group.
+
+        """
+        self.boardcast_to_others('/pleaseAddMeNoBoardcast',self.sig.sign('Hi,please let me in.'))
         self.net.listen('/IamThePrimaryForNewcomer',handler=self.handle_new_primary_for_newcomer)
 
     def handle_new_primary_for_newcomer(self, endpoint: str, data: str) -> str:
@@ -883,7 +881,16 @@ class PbftConsensus:
         # 🦜 : We assume that required fields are in d
 
         newcomers : list[str] = self.get_newcommers(d['sig_of_nodes_to_be_added'])
+
         e = d['epoch']
+        """🦜 : `self.epoch_considering_newcomers` will access
+        `self.all_endpoints`, so make sure to calculate the `epoch` before
+        calling:
+
+            self.all_endpoints += newcomers
+
+        This is important, otherwise you get wrong epoch.
+        """
         self.epoch = self.epoch_considering_newcomers(e, len(newcomers))
         self.say(f'\t🌐️ Epoch set to {S.MAG}{self.epoch}{S.NOR}')
 
@@ -1200,8 +1207,21 @@ def one_plus_one_cluster():
     print('Program stopped.')
     nd.closed = True
     nd1.closed = True
+
 # single_node_cluster()
 # two_nodes_cluster()
 one_plus_one_cluster()
 
+"""
 
+🦜 : How to we write a NodeFactory ?
+
+🐢 : I think first we need to specify an `N`, which is the initial number of
+the cluster.
+
+🦜 : Then, how do we add new node?
+
+🐢 : If think if a new node wants to enter, it needs to know the existing
+`all_endpoints`
+
+"""
