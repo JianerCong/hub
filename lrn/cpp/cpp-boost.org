@@ -481,6 +481,100 @@ handle_request(request<http::string_body>&& req){
 
 
 #+end_src
+**** some survey about handlers
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/asio.hpp>
+
+// colors
+#define S_RED     "\x1b[31m"
+#define S_GREEN   "\x1b[32m"
+#define S_YELLOW  "\x1b[33m"
+#define S_BLUE    "\x1b[34m"
+#define S_MAGENTA "\x1b[35m"
+#define S_CYAN    "\x1b[36m"
+#define S_NOR "\x1b[0m"
+
+using boost::format;
+#include <string>
+using std::string;
+
+
+using namespace std::chrono;
+#include <chrono>
+
+#include <functional>
+using std::function;
+void time_it(function<void(void)> f, double min, double max){
+  time_point<system_clock> start, end;
+  start = system_clock::now();
+  BOOST_TEST_MESSAGE("Before timing");
+
+  f();
+
+  end = system_clock::now();
+  duration<double> elapsed_seconds = end - start;
+  double s = elapsed_seconds.count();
+  BOOST_TEST_MESSAGE((format("Duration %d secs") % s).str()
+                     );
+  BOOST_CHECK(s > min && s < max);  // slept for 3sec
+}
+
+BOOST_AUTO_TEST_CASE(test_basic_sleep){
+  boost::asio::io_context io;
+
+  /*
+    🐢 : The important thing about asio is the `async_sleep` which will give
+    controls to other coroutine.
+
+    🦜 :
+   */
+  time_it([&](){
+    boost::asio::steady_timer(io, boost::asio::chrono::seconds(3)).wait();
+  }, 2, 4);
+}
+
+/*
+  🦜 : Okay, well then, how do we 'run' two tasks in parallel?
+
+  🐢 : You use post() or dispatch(). Which is kinda like saying "hey, execute
+  this". The difference is that post(f) must be wait for the current handler to
+  finish, while the dispatch will just start the job.
+
+  🦜 : So which should I use.
+
+  🐢 : Let's try post() because it's shorter
+ */
+using boost::asio::io_context;
+void asio_sleep(int x=2){
+  boost::asio::io_context io;
+  boost::asio::steady_timer(io, boost::asio::chrono::seconds(x)).wait();
+}
+
+BOOST_AUTO_TEST_CASE(test_post){
+  auto f1 = [](){
+    BOOST_TEST_MESSAGE("111");
+    asio_sleep(3);
+    BOOST_TEST_MESSAGE("111");
+  };
+
+  auto f2 = [](){
+    BOOST_TEST_MESSAGE("222");
+    asio_sleep(3);
+    BOOST_TEST_MESSAGE("222");
+  };
+  // boost::asio::io_context io_context;
+  boost::asio::dispatch(f1);
+  boost::asio::dispatch(f2);
+  BOOST_TEST_MESSAGE("Finished");
+
+  /* 🦜 : They run in series, it looks like.*/
+  }
+
+#+end_src
 *** format
 #+begin_src c++
   #define BOOST_TEST_MAIN

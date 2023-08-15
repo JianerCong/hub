@@ -34,7 +34,18 @@ async def m_with_task():
     t1 = asyncio.create_task(f1())
     t2 = asyncio.create_task(f2())
     await t1
+    print('awaiting a task doesn\'t block so I am after 111 and 222')
     await t2
+
+async def m_linear():
+    """🐢 :Task means 'concurrent corotines'
+
+    """
+
+    await f1()
+    print('awaiting a corotine usually block, so I\'m between 111 and 222')
+    await f2()
 
 # asyncio.run(main())
 asyncio.run(m_with_task())
+# asyncio.run(m_linear())
