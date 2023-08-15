@@ -486,7 +486,11 @@ class PbftConsensus:
                 with self.lock_for['command_history']:
                     self.command_history.append(data)
 
-                self.to_be_confirmed_commands[data].clear()
+                # self.to_be_confirmed_commands[data].clear()
+                """🦜 : In fact we can just remove the entry altogether.
+
+                """
+                self.to_be_confirmed_commands.pop(data)
             else:
                 self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, {S.MAG} not yet the time. {S.NOR}')
                 # return one
@@ -1017,7 +1021,7 @@ class MockedAsyncEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
                handler: Callable[[str,str],Optional[str]]
                ):
         k = f'{self.endpoint}-{target}'
-        print_mt(f'Adding handler: {k}')
+        print_mt(f'  Adding handler:{S.GREEN} {k} {S.NOR}')
         with lock_for_netwok_hub:
             network_hub[k] = handler
 
@@ -1027,7 +1031,7 @@ class MockedAsyncEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
         with lock_for_netwok_hub:
             for k in list(network_hub.keys()):
                 if k.startswith(f'{self.endpoint}-'):
-                    print_mt(f'Removing handler: {k}')
+                    print_mt(f'  Removing handler:{S.MAG} {k} {S.NOR}')
                     network_hub.pop(k)
 
     def send(self,e: str, target: str, data: str):
@@ -1035,7 +1039,7 @@ class MockedAsyncEndpointNetworkNode(IAsyncEndpointBasedNetworkable):
         print_mt(f'{S.CYAN} Calling handler: {k} {S.NOR} with data:\n {S.CYAN} {data} {S.NOR}')
         with lock_for_netwok_hub:
             if k in network_hub:
-                print_mt(f'Handler {k} found')
+                print_mt(f'  Handler {k} found')
                 Thread(target=network_hub[k],args=(self.endpoint,data)).start()
             else:
                 print_mt(f'Handler {k} not found')
@@ -1338,8 +1342,12 @@ class NodeFactory:
 
         # 🦜 : Update the current all_endpoints:
         # N0 should be there.
-        with self.nodes['N0'].nd.lock_for['all_endpoints']:
-            self.all_endpoints = self.nodes['N0'].nd.all_endpoints
+        """
+        🐢 : No, it's possible that N0 is kicked. Let's just add 
+        """
+        n = list(self.nodes.keys())[0]
+        with self.nodes[n].nd.lock_for['all_endpoints']:
+            self.all_endpoints = self.nodes[n].nd.all_endpoints
 
         # Make the node
         self.nodes[s] = PbftAndColleague(s,all_endpoints=self.all_endpoints.copy())
@@ -1347,7 +1355,7 @@ class NodeFactory:
 
 def start_cluster():
     nClient = MockedAsyncEndpointNetworkNode('ClientAAA')
-    fac = NodeFactory(n=2)
+    fac = NodeFactory(n=4)
 
     while True:
         # reply = input('Enter cmd: <id> <cmd>')
