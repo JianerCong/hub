@@ -110,74 +110,76 @@ class PbftConsensus:
     """The PBFT Consensus. Can also be named <other>PFT depending on how
     IExecutable is implemented."""
 
+    closed = False     # flag checked by timer
+    epoch: int = 0
+    view_change_state = False
+
+    laid_down_history: dict[int,dict[str,list[str]]] = {}
+    sig_of_nodes_to_be_added: set[str] = set({})
+
+    # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
+
+    # 🦜 : the list l1 which cntains N* = all_endpoints[epoch] forms
+    # the new-view-certificate for N*.
+
+    """🦜 : In fact its just the set of following struct:
+
+        {
+            'msg' : f'Dear {sub}, I laid downed',
+            'epoch' : epoch,
+            'state' : get_state(),
+            'from' : net.listened_endpoint()
+        }
+
+    sorted first by epoch:int, then by state:string
+
+    🐢 : But I feel like this tree-like structure is easier to manage and
+    access. No ?
+
+    🦜 : True
+
+    """
+
+
+    # 🦜 : This list of commands to be confirmed. This is kinda like a
+    # counter. When a command has reached more than 2f + 1 count (confirmed
+    # message) then the command can be savely executed.
+    #
+    # The meaning of to_be_confirmed_commands is kinda like : <cmd> : {set of who received commands}
+    #
+    # So when two sub-nodes call each other, they will exchange what
+    # they've got in their hand. As a result, eventually the node will
+    # still execute what primary sent to most nodes. (🦜: This eventually makes each nodes "selfless").
+    to_be_confirmed_commands: dict[str,set[str]] = {}  # recieved from primary
+
+    lock_for = {
+        'to_be_confirmed_commands' : Lock(),
+        'sig_of_nodes_to_be_added' : Lock(),
+        'laid_down_history' : Lock(),
+        'patience' : Lock(),
+        'all_endpoints' : Lock(),
+        'recieved_commands' : Lock(),
+        'command_history' : Lock(),
+    }
+
+    # The commands received by primary, subs will forward many copied of
+    # command to primary, and the primary just need to accept once.
+    recieved_commands: set[str] = set({})  # recieved by primary
+    command_history: list[str] = []  # executed
+
     def __init__(self,
                  n : IAsyncEndpointBasedNetworkable,
                  e : IExecutable,
                  s : ISignable,
                  all_endpoints : list[str]):
 
-        self.closed = False     # flag checked by timer
 
         self.net = n
         self.exe = e
         self.sig = s
 
         self.all_endpoints = all_endpoints
-        self.epoch: int = 0
-        self.view_change_state = False
 
-        self.laid_down_history: dict[int,dict[str,list[str]]] = {}
-        self.sig_of_nodes_to_be_added: set[str] = set({})
-
-        # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
-
-        # 🦜 : the list l1 which cntains N* = self.all_endpoints[epoch] forms
-        # the new-view-certificate for N*.
-
-        """🦜 : In fact its just the set of following struct:
-
-            {
-                'msg' : f'Dear {sub}, I laid downed',
-                'epoch' : self.epoch,
-                'state' : self.get_state(),
-                'from' : self.net.listened_endpoint()
-            }
-
-        sorted first by epoch:int, then by state:string
-
-        🐢 : But I feel like this tree-like structure is easier to manage and
-        access. No ?
-
-        🦜 : True
-
-        """
-
-
-        # 🦜 : This list of commands to be confirmed. This is kinda like a
-        # counter. When a command has reached more than 2f + 1 count (confirmed
-        # message) then the command can be savely executed.
-        #
-        # The meaning of to_be_confirmed_commands is kinda like : <cmd> : {set of who received commands}
-        #
-        # So when two sub-nodes call each other, they will exchange what
-        # they've got in their hand. As a result, eventually the node will
-        # still execute what primary sent to most nodes. (🦜: This eventually makes each nodes "selfless").
-        self.to_be_confirmed_commands: dict[str,set[str]] = {}  # recieved from primary
-
-        self.lock_for = {
-            'to_be_confirmed_commands' : Lock(),
-            'sig_of_nodes_to_be_added' : Lock(),
-            'laid_down_history' : Lock(),
-            'patience' : Lock(),
-            'all_endpoints' : Lock(),
-            'recieved_commands' : Lock(),
-            'command_history' : Lock(),
-        }
-
-        # The commands received by primary, subs will forward many copied of
-        # command to primary, and the primary just need to accept once.
-        self.recieved_commands: set[str] = set({})  # recieved by primary
-        self.command_history: list[str] = []  # executed
 
         if self.net.listened_endpoint() not in self.all_endpoints:
             self.start_listening_as_newcomer()
@@ -330,10 +332,12 @@ class PbftConsensus:
         return True
 
     def start_listening_as_primary(self):
+        self.say('\t 🌱: Start listening as primary')
         self.clear_and_listen_common_things()
         self.net.listen('/pleaseExecuteThis', self.handle_execute_for_primary)
 
     def start_listening_as_sub(self):
+        self.say('\t 🌱: Start listening as sub')
         self.clear_and_listen_common_things()
         self.net.listen('/pleaseExecuteThis', self.handle_execute_for_sub)
         self.net.listen('/pleaseConfirmThis', self.handle_confirm_for_sub)
@@ -917,6 +921,9 @@ class PbftConsensus:
         """
         return e + (e // self.N()) * num_newcomers
 
+    def close(self):
+        self.closed = True
+        self.net.clear()
 
 
 
@@ -1008,7 +1015,7 @@ class MockedSigner(ISignable):
 
 🐢 : I think we've got two methods:
 
-    1. Define a special type of command, called 'pleaseAddMe:<from>'. And when
+    1. Define a special type of command, called 'pleaseExecute:<from>'. And when
            the nodes are about to execute it, instead of calling the underlying
            exe, it will parse that command and add that to the
            `self.all_endpoints`.
@@ -1029,7 +1036,7 @@ class MockedSigner(ISignable):
     sending '/pleaseAddMe', it can't just start its faulty timmer right?
 
 🐢 : Yeah, I think a sensible way is just that, it stays still and waits for
-    the next 'IamThePrimary' , which should starts its timmer.
+    the next '/IamThePrimary' , which should starts its timmer.
 
 🦜 : But what if the 'next primary' turns out to be that new node?...
 
@@ -1058,10 +1065,8 @@ class MockedSigner(ISignable):
 
 🐢 : Next, the newcomer will 'start_listening_as_newcomer()'. In details,
 
-        1. It sends a '/pleaseAddMe' to f+1 existing nodes, this will make sure
-        that at least one correct node receives this. (🦜 : An alternative way
-        could be that it just sends to one node and pray for the fact that the
-        node it contact to is correct. 🐢 : That's ..Ok for now)
+        1. It boardcasts a '/pleaseAddMe' to the cluster, this should add them
+        to `sig_of_nodes_to_be_added`.
 
         2. It listens for '/IamThePrimaryForNewcomer' which should contains
         the commands so far, and start_listening_as_sub().
@@ -1210,7 +1215,7 @@ def one_plus_one_cluster():
 
 # single_node_cluster()
 # two_nodes_cluster()
-one_plus_one_cluster()
+# one_plus_one_cluster()
 
 """
 
@@ -1222,6 +1227,86 @@ the cluster.
 🦜 : Then, how do we add new node?
 
 🐢 : If think if a new node wants to enter, it needs to know the existing
-`all_endpoints`
+`all_endpoints` and then it will boardcast '/pleaseAddMeNoBoardcast'.
+
+🦜 : So how do we kick a node out ?
+
+🐢 : I think we can just close() it? This should set `closed` to `True` and
+clears all the listeners.
 
 """
+
+class PbftAndColleague:
+    def __init__(self,s:str, all_endpoints: list):
+        self.e = MockedExecutable(s)
+        self.sg = MockedSigner(s)
+        self.n = MockedAsyncEndpointNetworkNode(s)
+        self.nd = PbftConsensus(n=self.n,e=self.e,s=self.sg,all_endpoints=all_endpoints)
+
+    def close(self):
+        self.nd.close()
+
+class NodeFactory:
+    nodes : dict[str,PbftAndColleague] = dict({})
+    def __init__(self, n: int = 2):
+        print_mt(f'🌱 \tInitial cluster size: {S.CYAN}{n}{S.NOR}')
+
+        self.all_endpoints : list[str] = [f'N{i}' for i in range(n)]
+        self.N = len(all_endpoints)  # The next node id
+
+        for s in self.all_endpoints:
+            print_mt(f'\tStarting Node {s}')
+            self.nodes[s] = PbftAndColleague(s,all_endpoints=self.all_endpoints.copy())
+
+    def kick(self, s: str):
+        if s not in self.nodes:
+            print_mt(f'Trying to kick {S.RED}{s}{S.NOR}, but it doesn''t exist.')
+            return
+
+        print_mt(f'🚮️ kick {S.RED}{s}{S.NOR}.')
+        self.nodes[s].close()
+        self.nodes.pop(s)
+
+    def make_node(self):
+        s = f'N{self.N}'
+        self.N += 1
+
+        print_mt(f'\tAdding node {s}')
+
+        # 🦜 : Update the current all_endpoints:
+        # N0 should be there.
+        with self.nodes['N0'].nd.lock_for['all_endpoints']:
+            self.all_endpoints = self.nodes['N0'].nd.all_endpoints
+
+        # Make the node
+        self.nodes[s] = PbftAndColleague(s,all_endpoints=self.all_endpoints.copy())
+
+
+def start_cluster():
+    nClient = MockedAsyncEndpointNetworkNode('ClientAAA')
+    fac = NodeFactory(n=2)
+
+    while True:
+        # reply = input('Enter cmd: <id> <cmd>')
+        reply = input('Enter: ')
+        if reply == 'stop':
+            break
+
+        if reply == 'append':
+            print_mt(f'{S.HEADER} Appending node {S.NOR}')
+            fac.make_node()
+            continue
+
+        l = reply.split(' ')
+
+        if l[0] == 'kick':
+            print_mt(f'{S.HEADER} Kicking node {l[1]} {S.NOR}')
+            fac.kick(l[1])
+            continue
+
+        print_mt(f'{S.HEADER} Sending {l[1]} to {l[0]} {S.NOR}')
+        nClient.send(l[0],'/pleaseExecuteThis',l[1])
+
+    print('Program stopped.')
+    for s in fac.nodes.keys():
+        fac.nodes[s].close()
