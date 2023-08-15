@@ -711,7 +711,7 @@ class PbftConsensus:
             When sub nodes received this,
             it will first see that the
             `sig_of_nodes_to_be_added` (and the newcomers derived from it) is
-            not empty. Next, it will verify the `new_view_certificate`
+            not empty. Next, it will verify the `new-view-certificate`
             according to the epoch passed.
 
             But then, it will set its epoch according to eqn (1).
@@ -749,7 +749,7 @@ class PbftConsensus:
             # 🦜 : In fact, the above can all be called asynchronously.
 
         # be the primary
-        self.say(f'\t\tEpoch set to {S.MAG} {self.epoch} {S.NOR}')
+        self.say(f'\t🌐️ Epoch set to {S.MAG}{self.epoch}{S.NOR}')
         self.start_listening_as_primary()
 
 
@@ -857,7 +857,7 @@ class PbftConsensus:
             'epoch' : 2,
             'sig_of_nodes_to_be_added' : ['sig1','sig2'],
             'cmds' : ['c1','c2'],
-            'new_view_certificate' : ['sig1','sig2'],
+            'new-view-certificate' : ['sig1','sig2'],
             'msg' : 'Hi, I am the primary now'
         }
         """
@@ -870,6 +870,11 @@ class PbftConsensus:
 
 
         # Check wether the view-change is valid:
+        self.say(f'Checking new cert with \n'+
+                 f'\t{S.MAG} all_endpoints = {self.all_endpoints} {S.NOR}\n' + 
+                 f'\t{S.MAG} cert = {d["new-view-certificate"]} {S.NOR}\n' + 
+                 f'\t{S.MAG} epoch = {d["epoch"]} {S.NOR}\n'
+                 )
         if not self.check_cert(d['new-view-certificate'],d['epoch']):
             self.say(f'Invalid certificate: {S.RED} {data} {S.NOR} from {S.CYAN + endpoint + S.NOR}, Do nothing')
             return 'no'
@@ -878,18 +883,19 @@ class PbftConsensus:
         # 🦜 : We assume that required fields are in d
 
         newcomers : list[str] = self.get_newcommers(d['sig_of_nodes_to_be_added'])
+        e = d['epoch']
+        self.epoch = self.epoch_considering_newcomers(e, len(newcomers))
+        self.say(f'\t🌐️ Epoch set to {S.MAG}{self.epoch}{S.NOR}')
+
         with self.lock_for['all_endpoints']:
             self.all_endpoints += newcomers
+            if self.net.listened_endpoint() not in self.all_endpoints:
+                raise Exception(f'What ? I am not added by the new view?')
 
-        if self.net.listened_endpoint not in self.all_endpoints:
-            raise Exception('What ? I am not added by the new view?')
 
         for cmd in d['cmds']:
             self.exe.execute(cmd)
 
-        e = o['epoch']
-        self.epoch = self.epoch_considering_newcomers(e, len(newcomers))
-        self.say(f'🐸 view changed to {self.epoch}')
 
         Thread(target=self.start_faulty_timer).start()  # here where the new node are added
         self.start_listening_as_sub()
@@ -1178,7 +1184,7 @@ def one_plus_one_cluster():
     e1 = MockedExecutable(s1)
     sg1 = MockedSigner(s1)
     n1 = MockedAsyncEndpointNetworkNode(s1)
-    nd1 = PbftConsensus(n=n1,e=e1,s=sg1,all_endpoints=all_endpoints)  # it should send /pleaseAddMe
+    nd1 = PbftConsensus(n=n1,e=e1,s=sg1,all_endpoints=all_endpoints.copy())  # it should send /pleaseAddMe
 
     # Start the cluster
     while True:
