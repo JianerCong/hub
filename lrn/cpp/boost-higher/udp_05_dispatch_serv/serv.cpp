@@ -16,6 +16,10 @@ int main(int i_argc, const char* i_argv[]){
   try{
       {
         WeakUdpServer serv{port};
+        serv.listen("/abc",
+                    [](string_view s){
+                      BOOST_LOG_TRIVIAL(debug) << format("\t⚙️ handler received %s") % s;}
+                    );
         std::cin.get();
       }
     }

@@ -51,4 +51,22 @@ def test_serv_send_unknown_requests():
     time.sleep(1)               #  wait for it to be handled
 
     o,e = close_and_check(p)
-    assert 'unknown target aaa' in o
+    assert 'unknown target' in o
+
+def test_serv_send_known_requests():
+    time.sleep(1)                   #  1sec
+    HOST, PORT = "localhost", 7780
+
+    # this wait for PIPEs  and port binding/unbinding
+    p = Popen(['./serv', f'{PORT}'],stdin=PIPE,stdout=PIPE,stderr=PIPE,text=True)
+    time.sleep(2)               #  wait till it's up
+
+    data = "/abc:bbb:cc"
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.sendto(bytes(data, "utf-8"), (HOST, PORT))
+
+    time.sleep(1)               #  wait for it to be handled
+
+    o,e = close_and_check(p)
+    assert 'handler received bbb:cc' in o
