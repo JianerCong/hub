@@ -69,12 +69,13 @@
     #+end_src
 
 ** udp
-*** official example: echo
+*** with asyncio
+**** official example: echo
 
 🦜 : The official example will send a datagram and wait for a response from the
 server.
 
-**** client
+***** client
 #+begin_src python
 import asyncio
 
@@ -127,7 +128,7 @@ asyncio.run(main())
 
 #+end_src
 
-**** server
+***** server
 #+begin_src python
 import asyncio
 
@@ -166,9 +167,9 @@ asyncio.run(main())
 
 #+end_src
 
-*** my example: send and close()
+**** my example: send and close()
 
-**** client
+***** client
 #+begin_src python
 import asyncio
 
@@ -229,10 +230,96 @@ asyncio.run(main())
 
 #+end_src
 
-**** server
+***** server
 #+begin_src python
 
+*** with socketserver
+**** example: one-way send and close
+server
+#+begin_src python
+import socketserver
 
+class MyUDPHandler(socketserver.BaseRequestHandler):
+    """
+    This class works similar to the TCP handler class, except that
+    self.request consists of a pair of data and client socket, and since
+    there is no connection the client address must be given explicitly
+    when sending data back via sendto().
+    """
+
+    def handle(self):
+        data = self.request[0].strip()
+        socket = self.request[1]
+        print("{} wrote:".format(self.client_address[0]))
+        print(data)
+        socket.sendto(data.upper(), self.client_address)
+
+if __name__ == "__main__":
+    HOST, PORT = "localhost", 7777
+    with socketserver.UDPServer((HOST, PORT), MyUDPHandler) as server:
+        server.serve_forever()
+
+#+end_src
+client
+#+begin_src python
+import socket
+import sys
+
+HOST, PORT = "localhost", 7777
+# data = " ".join(sys.argv[1:])
+data = "aaa"
+
+# SOCK_DGRAM is the socket type to use for UDP sockets
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# As you can see, there is no connect() call; UDP has no connections.
+# Instead, data is directly sent to the recipient via sendto().
+sock.sendto(bytes(data + "\n", "utf-8"), (HOST, PORT))
+# received = str(sock.recv(1024), "utf-8")
+
+print("Sent:     {}".format(data))
+# print("Received: {}".format(received))
+
+#+end_src
+**** q to quit server
+server
+#+begin_src python
+import socketserver
+import threading
+
+class MyUDPHandler(socketserver.BaseRequestHandler):
+    """
+    This class works similar to the TCP handler class, except that
+    self.request consists of a pair of data and client socket, and since
+    there is no connection the client address must be given explicitly
+    when sending data back via sendto().
+    """
+
+    def handle(self):
+        data = self.request[0].strip()
+        socket = self.request[1]
+        print("{} wrote:".format(self.client_address[0]))
+        print(data)
+        socket.sendto(data.upper(), self.client_address)
+
+
+if __name__ == "__main__":
+    HOST, PORT = "localhost", 7777
+    with socketserver.UDPServer((HOST, PORT), MyUDPHandler) as server:
+        # Start a thread with the server -- that thread will then start one
+        # more thread for each request
+        server_thread = threading.Thread(target=server.serve_forever)
+        # Exit the server thread when the main thread terminates
+        server_thread.daemon = True
+        server_thread.start()
+
+        s = input('Enter anything to quit\n')
+        server.shutdown()
+
+    print('👋 server closed')
+
+
+    #+end_src
 * End
 
 # Local Variables:

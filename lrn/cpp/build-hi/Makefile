@@ -57,7 +57,7 @@ RM = /usr/local/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/hi
+CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_01_client
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/me/Templates/lrn/cpp/build-hi
@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named myexe
+# Target rules for targets named clnt
 
 # Build rule for target.
-myexe: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 myexe
-.PHONY : myexe
+clnt: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clnt
+.PHONY : clnt
 
 # fast build rule for target.
-myexe/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/build
-.PHONY : myexe/fast
+clnt/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/build
+.PHONY : clnt/fast
 
-m.o: m.cpp.o
-.PHONY : m.o
+clnt.o: clnt.cpp.o
+.PHONY : clnt.o
 
 # target to build an object file
-m.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.o
-.PHONY : m.cpp.o
+clnt.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/clnt.cpp.o
+.PHONY : clnt.cpp.o
 
-m.i: m.cpp.i
-.PHONY : m.i
+clnt.i: clnt.cpp.i
+.PHONY : clnt.i
 
 # target to preprocess a source file
-m.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.i
-.PHONY : m.cpp.i
+clnt.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/clnt.cpp.i
+.PHONY : clnt.cpp.i
 
-m.s: m.cpp.s
-.PHONY : m.s
+clnt.s: clnt.cpp.s
+.PHONY : clnt.s
 
 # target to generate assembly for a file
-m.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.s
-.PHONY : m.cpp.s
+clnt.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/clnt.cpp.s
+.PHONY : clnt.cpp.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... myexe"
-	@echo "... m.o"
-	@echo "... m.i"
-	@echo "... m.s"
+	@echo "... clnt"
+	@echo "... clnt.o"
+	@echo "... clnt.i"
+	@echo "... clnt.s"
 .PHONY : help
 
 
