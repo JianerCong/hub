@@ -57,7 +57,7 @@ RM = /usr/local/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_04_dispatch_serv
+CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_05_dispatch_serv
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/me/Templates/lrn/cpp/build-hi
@@ -129,6 +129,19 @@ serv/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/build
 .PHONY : serv/fast
 
+#=============================================================================
+# Target rules for targets named run
+
+# Build rule for target.
+run: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 run
+.PHONY : run
+
+# fast build rule for target.
+run/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
+.PHONY : run/fast
+
 serv.o: serv.cpp.o
 .PHONY : serv.o
 
@@ -161,6 +174,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... run"
 	@echo "... serv"
 	@echo "... serv.o"
 	@echo "... serv.i"

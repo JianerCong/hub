@@ -65,6 +65,7 @@
         ("of" . "std::ofstream")
         ("if" . "std::ifstream")
         ("bf" . "boost::format")
+        ("fn" . "std::function")
         ))
 
 (define-skeleton cpp-boost-add-test-suite
@@ -125,7 +126,7 @@
         ("t" . "<thread>")
         ("ch" . "<chrono>")
         ("tp" . "<tuple>")
-        ("f" . "<functional>")
+        ("fn" . "<functional>")
         ("F" . "<boost/format.hpp>")
         ("L" . "<boost/log/trivial.hpp>>")
         )

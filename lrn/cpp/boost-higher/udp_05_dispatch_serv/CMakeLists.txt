@@ -19,6 +19,9 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework log program_options)
 add_executable(serv serv.cpp)
 target_link_libraries(serv PUBLIC Boost::log)
 configure_file(clnt.py clnt.py)
+configure_file(test_one.py test_one.py)
+
+add_custom_target(run ALL pytest -v -s COMMENT "Runing App 🐸 ")
 # Although beast and axio are all header-only, we need to link to at least one
 # Boost-target in order to bring in the include dirs
 

@@ -39,14 +39,52 @@ using boost::asio::ip::udp;
 using std::unique_ptr;
 using std::make_unique;
 
+#include <functional>
+using std::function;
+#include <unordered_map>
+using std::unordered_map;
+
+// colors
+#define S_RED     "\x1b[31m"
+#define S_GREEN   "\x1b[32m"
+#define S_YELLOW  "\x1b[33m"
+#define S_BLUE    "\x1b[34m"
+#define S_MAGENTA "\x1b[35m"
+#define S_CYAN    "\x1b[36m"
+#define S_NOR "\x1b[0m"
+
+#include <tuple>
+using std::tuple;
+
+#include <optional>
+using std::optional;
+
+
 class WeakUdpServer{
 public:
+  using handler_t = function<void(string_view)>;
+  unordered_map<string,handler_t> lisn_map;
+
   boost::asio::io_context ioc;
   std::atomic_flag closed = ATOMIC_FLAG_INIT; // false
   unique_ptr<udp::socket> socket;
+  std::mutex lock_for_lisn_map;
+
   WeakUdpServer(uint16_t port=7777){
-    this->socket = make_unique<udp::socket>(this->ioc, udp::endpoint(udp::v4(), 7777));
+    this->socket = make_unique<udp::socket>(this->ioc, udp::endpoint(udp::v4(), port));
+    BOOST_LOG_TRIVIAL(debug) << format("🌐️ Listening on UDP port " S_CYAN "%d" S_NOR) % port;
     std::thread{std::bind(&WeakUdpServer::do_session, this)}.detach();
+  }
+
+
+  int remove(string k) noexcept{
+    std::unique_lock g(this->lock_for_lisn_map);
+    return this->lisn_map.erase(k);
+  }
+
+  void listen(string k, handler_t f) noexcept{
+    std::unique_lock g(this->lock_for_lisn_map);
+    this->lisn_map[k] = f;
   }
 
   /*
@@ -69,9 +107,39 @@ public:
                       string_view(s.begin()+pos+1,s.end()));
   }
 
-  void handle_req(vector<char> && data){
+  void handle_req(vector<char> & data){
     string_view s(data.data(), data.size());
     BOOST_LOG_TRIVIAL(debug) << format("Handling data: %s") % s;
+
+    auto r = WeakUdpServer::split_first(s);
+    if (not r){
+      BOOST_LOG_TRIVIAL(debug) << format("❌️ Invalid datagram format:" S_RED " %s" S_NOR)
+        % s;
+      return ;
+    }
+
+    handler_t f;
+    auto [t,d] = r.value();
+    {
+      std::unique_lock g(this->lock_for_lisn_map);
+      string k{t};              // string_view ⇒ string
+      if (not this->lisn_map.contains(k)){
+        BOOST_LOG_TRIVIAL(error) << format("\t ❌️: unknown target " S_RED "%s" S_NOR ", Do nothing.")
+          % k;
+        return ;
+      }
+      f = this->lisn_map.at(k);
+    } // unlocks here
+
+    /*
+      🐢  : Launch the function.
+
+      🦜 : Do we need to start a new thread for it?
+
+      🐢 : I think there's no need to do that because `do_session()` is already
+      launched in a separate thread.
+     */
+    f(d);
   }
 
   void do_session(){
@@ -94,19 +162,18 @@ public:
       boost::system::error_code ignored_error;
       this->socket->receive_from(boost::asio::buffer(data), remote_endpoint,0,ignored_error);
 
-      BOOST_LOG_TRIVIAL(debug) << format("Got data from %s:%d") %
-        string_view(data.data(),data.size()) % remote_endpoint.address().to_string()
+      BOOST_LOG_TRIVIAL(debug) << format("From = " S_CYAN "%s:%d" S_NOR) % remote_endpoint.address().to_string()
         % remote_endpoint.port(); // see the data
 
       // handle it
       std::thread{std::bind(&WeakUdpServer::handle_req, this, move(data))}.detach();
     }
 
-    BOOST_LOG_TRIVIAL(debug) << format("\t server thread ended.");
+    BOOST_LOG_TRIVIAL(debug) << format("\t Server thread ended.");
   }
 
   ~WeakUdpServer(){
     this->closed.test_and_set();
-    BOOST_LOG_TRIVIAL(debug) << format("👋 Udp Server Closed");
+    BOOST_LOG_TRIVIAL(debug) << format(S_GREEN "👋 Udp server closed" S_NOR);
   }
 };

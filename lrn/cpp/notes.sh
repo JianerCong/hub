@@ -17,10 +17,15 @@ curl "https://randomuser.me/api/?nat=gb,ch&results=3&inc=name,nat&seed=abc"
 curl "https://randomuser.me/api/?inc=name,nat?nat=ch&results=3"
 
 
-rm ./build-hi -rf && cmake -S ./boost-higher/udp_04_dispatch_serv/ -B ./build-hi
+rm ./build-hi -rf && cmake -S ./boost-higher/udp_05_dispatch_serv/ -B ./build-hi
+cmake --build build-hi
 python ./build-hi/clnt.py
 
 cd boost-higher
 rm udp_05_dispatch_serv/clnt.py
 ln -s $(pwd)/udp_03_q_to_quit_serv/clnt.py udp_04_serv_class/clnt.py
 ln -s $(pwd)/udp_03_q_to_quit_serv/clnt.py udp_05_dispatch_serv/clnt.py
+
+./build-hi/serv
+
+python ./build-hi/clnt.py

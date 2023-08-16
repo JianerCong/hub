@@ -1,1 +1,18 @@
-/home/me/Templates/lrn/cpp/boost-higher/udp_03_q_to_quit_serv/clnt.py
+import socket
+import sys
+
+HOST, PORT = "localhost", 7777
+# data = " ".join(sys.argv[1:])
+data = sys.argv[1]
+print("Sending:     {}".format(data))
+
+# SOCK_DGRAM is the socket type to use for UDP sockets
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# As you can see, there is no connect() call; UDP has no connections.
+# Instead, data is directly sent to the recipient via sendto().
+sock.sendto(bytes(data + "\n", "utf-8"), (HOST, PORT))
+# received = str(sock.recv(1024), "utf-8")
+
+# print("Received: {}".format(received))
+
