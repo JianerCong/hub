@@ -57,7 +57,7 @@ RM = /usr/local/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_01_client
+CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_02_serv
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/me/Templates/lrn/cpp/build-hi
@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named clnt
+# Target rules for targets named serv
 
 # Build rule for target.
-clnt: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clnt
-.PHONY : clnt
+serv: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 serv
+.PHONY : serv
 
 # fast build rule for target.
-clnt/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/build
-.PHONY : clnt/fast
+serv/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/build
+.PHONY : serv/fast
 
-clnt.o: clnt.cpp.o
-.PHONY : clnt.o
+serv.o: serv.cpp.o
+.PHONY : serv.o
 
 # target to build an object file
-clnt.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/clnt.cpp.o
-.PHONY : clnt.cpp.o
+serv.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/serv.cpp.o
+.PHONY : serv.cpp.o
 
-clnt.i: clnt.cpp.i
-.PHONY : clnt.i
+serv.i: serv.cpp.i
+.PHONY : serv.i
 
 # target to preprocess a source file
-clnt.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/clnt.cpp.i
-.PHONY : clnt.cpp.i
+serv.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/serv.cpp.i
+.PHONY : serv.cpp.i
 
-clnt.s: clnt.cpp.s
-.PHONY : clnt.s
+serv.s: serv.cpp.s
+.PHONY : serv.s
 
 # target to generate assembly for a file
-clnt.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/clnt.dir/build.make CMakeFiles/clnt.dir/clnt.cpp.s
-.PHONY : clnt.cpp.s
+serv.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/serv.cpp.s
+.PHONY : serv.cpp.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... clnt"
-	@echo "... clnt.o"
-	@echo "... clnt.i"
-	@echo "... clnt.s"
+	@echo "... serv"
+	@echo "... serv.o"
+	@echo "... serv.i"
+	@echo "... serv.s"
 .PHONY : help
 
 
