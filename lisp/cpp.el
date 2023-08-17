@@ -165,6 +165,7 @@
 
 
 (define-abbrev c++-mode-abbrev-table "cmag" "\" S_MAGENTA \"")
+(define-abbrev c++-mode-abbrev-table "cred" "\" S_RED \"")
 (define-abbrev c++-mode-abbrev-table "ccyn" "\" S_CYAN \"")
 (define-abbrev c++-mode-abbrev-table "cnor" "\" S_NOR \"")
 
@@ -178,6 +179,7 @@
 (define-abbrev c++-mode-abbrev-table "sb" "" (lambda () (skeleton-insert '(nil "std::begin(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "se" "" (lambda () (skeleton-insert '(nil "std::end(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "fmt" "" (lambda () (skeleton-insert '(nil "(format(\"" _ "\")).str()"))))
+(define-abbrev c++-mode-abbrev-table "ffmt" "" (lambda () (skeleton-insert '(nil "format(\"" _ "\")"))))
 (define-abbrev c++-mode-abbrev-table "ccm" "" (lambda () (skeleton-insert '(nil "/*" _ "*/"))))
 
 (define-abbrev c++-mode-abbrev-table "vct" "" (lambda () (skeleton-insert '(nil "vector<" _ ">"))))
@@ -189,7 +191,8 @@
 ;; post handler for Rpc
 (define-abbrev c++-mode-abbrev-table "hpost" "" (lambda () (skeleton-insert '(nil "tuple<bool,string> "
                                                                                  _ "(string data)"))))
-
+(define-abbrev c++-mode-abbrev-table "hdl" "" (lambda () (skeleton-insert '(nil "void "
+                                                                                  _ "(string endpoint, string data)"))))
 ;; json::value_to...
 (define-abbrev c++-mode-abbrev-table "vti" "" (lambda ()
                                                 (skeleton-insert '(nil
@@ -197,6 +200,13 @@
 (define-abbrev c++-mode-abbrev-table "vts" "" (lambda ()
                                                 (skeleton-insert '(nil
                                                                    "value_to<string>(v.at(\"" _ "\"));"))))
+(define-abbrev c++-mode-abbrev-table "sul" "" (lambda ()
+                                                (skeleton-insert '(nil
+                                                                   "std::unique_lock l(" _ ");"
+                                                                   )
+                                                                 )
+                                                )
+  )
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")

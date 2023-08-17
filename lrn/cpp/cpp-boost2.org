@@ -868,6 +868,8 @@ By default, the linker ld dosen't known the non-standard locations of shared
 libraries.
 
 Solution: before ~find_package~ set
+
+set(Boost_USE_STATIC_LIBS ON)
 *** lock_free: ringbuffer
 #+begin_src c++
 #define BOOST_TEST_MAIN

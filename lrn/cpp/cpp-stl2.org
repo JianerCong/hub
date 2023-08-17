@@ -1,88 +1,111 @@
 ** stl
 *** lock
+**** basic usage
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  using boost::format;
+
+  #include <vector>
+  using std::vector;
+  #include <algorithm>
+
+  #include <map>
+  #include <string>
+  #include <chrono>
+  #include <thread>
+  #include <mutex>
+  using std::string;
+
+  BOOST_AUTO_TEST_CASE(basic_lock){
+    std::map<std::string, std::string> m;
+    std::mutex lock_for_m;
+
+    auto f = [&](const string &k){
+      // simulate a long page fetch
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+      std::string r = "aaa";
+
+      std::lock_guard<std::mutex> g(lock_for_m);
+      m[k] = r;
+    };                            // unlock here
+
+    {
+      std::jthread t1(f,"k1");
+      std::jthread t2(f,"k2");
+    } // join here
+
+    BOOST_CHECK_EQUAL(m.size(),2);
+    BOOST_CHECK_EQUAL(m["k1"],"aaa");
+    BOOST_CHECK_EQUAL(m["k2"],"aaa");
+  }
+
+  BOOST_AUTO_TEST_CASE(unique_lock){
+    std::map<std::string, std::string> m;
+    std::mutex lock_for_m;
+
+    auto f = [&](const string &k){
+      // simulate a long page fetch
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+      std::string r = "aaa";
+
+      std::unique_lock g(lock_for_m); // movable lock
+      m[k] = r;
+    };                            // unlock here
+
+    {
+      std::jthread t1(f,"k1");
+      std::jthread t2(f,"k2");
+    } // join here
+
+    BOOST_CHECK_EQUAL(m.size(),2);
+    BOOST_CHECK_EQUAL(m["k1"],"aaa");
+    BOOST_CHECK_EQUAL(m["k2"],"aaa");
+  }
+
+  BOOST_AUTO_TEST_CASE(test_move_lock){
+    std::map<std::string, std::string> m;
+    std::mutex lock_for_m;
+
+    auto g = [&](){
+      BOOST_TEST_MESSAGE("Deadlock here if the calling function forgot to unlock.");
+      std::unique_lock l(lock_for_m); // movable lock
+      m["B"] = "b";
+    };                            // unlock here
+
+    auto f = [&](){
+      std::unique_lock l(lock_for_m); // movable lock
+      m["A"] = "a";
+      l.unlock();                 // call this before pass it
+      g();
+    };                            // unlock here
+    f();
+    BOOST_CHECK_EQUAL(m.size(),2);
+  }
+
+
+#+end_src
+**** my template
 #+begin_src c++
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
-using boost::format;
+#include <boost/log/trivial.hpp>
 
-#include <vector>
-using std::vector;
-#include <algorithm>
-
-#include <map>
-#include <string>
-#include <chrono>
-#include <thread>
 #include <mutex>
-using std::string;
+template<typename T>
+struct LockedObject{
+  T o;
+  std::mutex lock;
+};
 
-BOOST_AUTO_TEST_CASE(basic_lock){
-  std::map<std::string, std::string> m;
-  std::mutex lock_for_m;
+BOOST_AUTO_TEST_CASE(test_one){
+  LockedObject<int> i;
+  i.o = 2;
 
-  auto f = [&](const string &k){
-    // simulate a long page fetch
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    std::string r = "aaa";
-
-    std::lock_guard<std::mutex> g(lock_for_m);
-    m[k] = r;
-  };                            // unlock here
-
-  {
-    std::jthread t1(f,"k1");
-    std::jthread t2(f,"k2");
-  } // join here
-
-  BOOST_CHECK_EQUAL(m.size(),2);
-  BOOST_CHECK_EQUAL(m["k1"],"aaa");
-  BOOST_CHECK_EQUAL(m["k2"],"aaa");
+  BOOST_CHECK_EQUAL(i.o,2);
 }
-
-BOOST_AUTO_TEST_CASE(unique_lock){
-  std::map<std::string, std::string> m;
-  std::mutex lock_for_m;
-
-  auto f = [&](const string &k){
-    // simulate a long page fetch
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    std::string r = "aaa";
-
-    std::unique_lock g(lock_for_m); // movable lock
-    m[k] = r;
-  };                            // unlock here
-
-  {
-    std::jthread t1(f,"k1");
-    std::jthread t2(f,"k2");
-  } // join here
-
-  BOOST_CHECK_EQUAL(m.size(),2);
-  BOOST_CHECK_EQUAL(m["k1"],"aaa");
-  BOOST_CHECK_EQUAL(m["k2"],"aaa");
-}
-
-BOOST_AUTO_TEST_CASE(test_move_lock){
-  std::map<std::string, std::string> m;
-  std::mutex lock_for_m;
-
-  auto g = [&](){
-    BOOST_TEST_MESSAGE("Deadlock here if the calling function forgot to unlock.");
-    std::unique_lock l(lock_for_m); // movable lock
-    m["B"] = "b";
-  };                            // unlock here
-
-  auto f = [&](){
-    std::unique_lock l(lock_for_m); // movable lock
-    m["A"] = "a";
-    l.unlock();                 // call this before pass it
-    g();
-  };                            // unlock here
-  f();
-  BOOST_CHECK_EQUAL(m.size(),2);
-}
-
 
 #+end_src
 *** std::function
@@ -393,51 +416,60 @@ BOOST_AUTO_TEST_CASE(test_bind_to_data2){
 #+end_src
 *** atomic
 #+begin_src c++
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
-#include <boost/format.hpp>
-using boost::format;
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  using boost::format;
 
-#include <atomic>
-#include <thread>
-#include <vector>
+  #include <atomic>
+  #include <thread>
+  #include <vector>
 
-// with and without atomic
+  // with and without atomic
 
-BOOST_AUTO_TEST_CASE(test_basic_atomic){
-  std::atomic_int acnt;
-  int cnt;
-  auto f = [&acnt,&cnt](){
-    for (int n = 0; n < 1e3; ++n){
-      ++acnt;
-      ++cnt;
-      // Note: for this example, relaxed memory order
-      // is sufficient, e.g. acnt.fetch_add(1, std::memory_order_relaxed);
-    }
-  };
+  BOOST_AUTO_TEST_CASE(test_basic_atomic){
+    std::atomic_int acnt;
+    int cnt;
+    auto f = [&acnt,&cnt](){
+      for (int n = 0; n < 1e3; ++n){
+        ++acnt;
+        ++cnt;
+        // Note: for this example, relaxed memory order
+        // is sufficient, e.g. acnt.fetch_add(1, std::memory_order_relaxed);
+      }
+    };
 
-  {
-    std::vector<std::jthread> pool;
-    for (int n = 0; n < 10; ++n)
-      pool.emplace_back(f);
-  } // joins here
-  BOOST_CHECK_EQUAL(acnt,1e4);  // acnt is incremented sanely
-  BOOST_CHECK_NE(cnt,1e4);      // cnt is crazy
-}
+    {
+      std::vector<std::jthread> pool;
+      for (int n = 0; n < 10; ++n)
+        pool.emplace_back(f);
+    } // joins here
+    BOOST_CHECK_EQUAL(acnt,1e4);  // acnt is incremented sanely
+    // BOOST_CHECK_NE(cnt,1e4);      // cnt is crazy, 🦜 : okay, occasionally it will
+                                  // go sane.
+  }
 
-BOOST_AUTO_TEST_CASE(test_bool_atomic){
-  // ALL atomic
-  std::atomic_flag b = ATOMIC_FLAG_INIT;
-  BOOST_CHECK_EQUAL(b.test(),false);
+  BOOST_AUTO_TEST_CASE(test_bool_atomic){
+    // ALL atomic
+    std::atomic_flag b = ATOMIC_FLAG_INIT;
+    BOOST_CHECK_EQUAL(b.test(),false);
 
-  BOOST_CHECK_EQUAL(b.test_and_set(),false); // set to true, return current
-  BOOST_CHECK_EQUAL(b.test_and_set(),true); // set to true, return current
-  BOOST_CHECK_EQUAL(b.test(),true);
+    BOOST_CHECK_EQUAL(b.test_and_set(),false); // set to true, return current
+    BOOST_CHECK_EQUAL(b.test_and_set(),true); // set to true, return current
+    BOOST_CHECK_EQUAL(b.test(),true);
 
-  b.clear();                    // set to false
-  BOOST_CHECK_EQUAL(b.test(),false);
-}
+    b.clear();                    // set to false
+    BOOST_CHECK_EQUAL(b.test(),false);
+  }
 
+  BOOST_AUTO_TEST_CASE(test_get_set){
+    std::atomic<int> i = 2;
+
+    BOOST_CHECK_EQUAL(i.load(),2);
+    BOOST_CHECK_EQUAL(i.load(std::memory_order::relaxed),2); // I don't care about order
+    i.store(3,std::memory_order::relaxed);
+    BOOST_CHECK_EQUAL(i.load(),3);
+  }
 #+end_src
 *** bit_cast (C++20)
 #+begin_src c++
@@ -512,7 +544,137 @@ BOOST_AUTO_TEST_CASE(test_view){
   }
 
   #+end_src
+*** string, string_view: split yourself
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/asio.hpp>
 
+// colors
+#define S_RED     "\x1b[31m"
+#define S_GREEN   "\x1b[32m"
+#define S_YELLOW  "\x1b[33m"
+#define S_BLUE    "\x1b[34m"
+#define S_MAGENTA "\x1b[35m"
+#define S_CYAN    "\x1b[36m"
+#define S_NOR "\x1b[0m"
+
+using boost::format;
+#include <string>
+using std::string;
+
+#include <string_view>
+using std::string_view;
+#include <tuple>
+
+using std::tuple;
+using std::make_tuple;
+
+
+using namespace std::chrono;
+#include <chrono>
+
+#include <optional>
+using std::optional;
+
+#include <functional>
+using std::function;
+
+
+
+BOOST_AUTO_TEST_CASE(test_find_first_of){
+  string s{"aa:bb"};
+
+  BOOST_CHECK_EQUAL(s.find_first_of(':'),2);
+  BOOST_CHECK_EQUAL(string("aa:bb:cc").find_first_of(':'),2);
+
+}
+
+/**
+ * @brief Split the string into two.
+ *
+ * @param s The string to split
+ */
+optional<tuple<string_view,string_view>> split_first(string_view s, char c = ':'){
+  string::size_type pos = s.find_first_of(c);
+  if (pos == string::npos)
+    return {};
+
+  return make_tuple(string_view(s.begin(),s.begin()+pos),
+                    string_view(s.begin()+pos+1,s.end()));
+}
+optional<tuple<string_view,string_view>> split_first(const string & s, char c = ':'){
+  return split_first(string_view(s));
+}
+
+void test_split_set(string s, string_view rv1, string_view rv2){
+
+  string_view v1,v2;
+  auto r = split_first(s);
+  BOOST_REQUIRE(r);
+  std::tie(v1,v2) = r.value();
+  BOOST_CHECK_EQUAL(v1,rv1);
+  BOOST_CHECK_EQUAL(v2,rv2);
+}
+
+BOOST_AUTO_TEST_CASE(test_split_first){
+  test_split_set("aa:bb:cc","aa","bb:cc");
+  test_split_set("aa:","aa","");
+  test_split_set("aa::::","aa",":::");
+  test_split_set(":::","","::");
+}
+
+BOOST_AUTO_TEST_CASE(failed_split_first){
+  BOOST_REQUIRE(not split_first(string_view("aa")));
+  }
+
+#+end_src
+*** ranges algorithm
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+#include <vector>
+using std::vector;
+
+#include <functional>
+#include <algorithm>
+#include <numeric>
+
+namespace ranges = std::ranges;
+
+template<typename T>
+void veq(vector<T> v, vector<T> v2){
+  BOOST_CHECK_EQUAL(v.size(), v2.size());
+  for (int i=0;i<v.size();i++) \
+    BOOST_CHECK_EQUAL(v[i],v2[i]);
+};
+
+BOOST_AUTO_TEST_CASE(test_partial_sum){
+  vector<int> v(4,2);
+  veq(v,{2,2,2,2});
+
+  std::partial_sum(v.cbegin(),v.cend(),v.begin());
+  veq(v,{2,4,6,8});
+}
+
+template<typename T>
+bool contains(vector<T> v, T x){
+  return ranges::any_of(v,[x](T y){return x == y;});
+}
+
+BOOST_AUTO_TEST_CASE(test_my_contain){
+  vector<int> v1{1,2,3};
+  BOOST_REQUIRE(contains(v1,1));
+  BOOST_REQUIRE(contains(v1,2));
+  BOOST_REQUIRE(not contains(v1,4));
+}
+
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

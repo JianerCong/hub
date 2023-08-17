@@ -452,7 +452,7 @@ class PbftConsensus:
 
         return 'OK'
 
-    def add_to_to_be_confirmed_commands(self, endpoint:str, data:str) ->int:
+    def add_to_to_be_confirmed_commands(self, endpoint:str, data:str):
         """Remember that endpoint `received` data.
 
         🦜 : Is this the only method that touch `self.to_be_confirmed_commands` ?
