@@ -213,6 +213,7 @@
   )
 
 (define-abbrev c++-mode-abbrev-table "bam" "" (lambda () (skeleton-insert '(nil "BOOST_ASSERT_MSG(" _ ")"))))
+(define-abbrev c++-mode-abbrev-table "bas" "" (lambda () (skeleton-insert '(nil "BOOST_ASSERT(" _ ")"))))
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")

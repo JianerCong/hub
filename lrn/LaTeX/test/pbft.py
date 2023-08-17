@@ -336,28 +336,28 @@ class PbftConsensus:
             s = l[0]
             assert self.sig.verify(s)
 
-            cert0 = json.loads( self.sig.get_data(s))
+            msg0 = json.loads( self.sig.get_data(s))
             valid_host.add(self.sig.get_from(s))
 
             if not for_newcomer:
-                assert cert0['state'] == self.get_state()
+                assert msg0['state'] == self.get_state()
 
             for s in l[1:]:
                 assert self.sig.verify(s)
 
-                cert = json.loads( self.sig.get_data(s))
+                msg = json.loads( self.sig.get_data(s))
                 valid_host.add(self.sig.get_from(s))
 
                 if for_newcomer:
-                    assert cert ['state'] == cert0['state']
+                    assert msg ['state'] == msg0['state']
                 else:
-                    assert cert['state'] == self.get_state()
+                    assert msg['state'] == self.get_state()
 
-                """ 🐢  : When a newcomer receives a new-view certificate, it
+                """ 🐢  : When a newcomer receives a new-view msgificate, it
                 also need to check it. But it won't check the state
 
                 """
-                assert cert['epoch'] == e
+                assert msg['epoch'] == e
 
             """
 
@@ -462,7 +462,8 @@ class PbftConsensus:
         with self.lock_for['to_be_confirmed_commands']:
             if data not in self.to_be_confirmed_commands:
                 self.say(f'Adding {S.MAG + data + S.NOR} from {S.MAG + endpoint + S.NOR}')
-                self.to_be_confirmed_commands[data] = set({endpoint})
+                # self.to_be_confirmed_commands[data] = set({endpoint})
+                self.to_be_confirmed_commands[data] = set({})
 
             # take one
             s: set[str] = self.to_be_confirmed_commands[data]

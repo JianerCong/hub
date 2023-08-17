@@ -982,6 +982,12 @@ BOOST_AUTO_TEST_CASE(test_substr){
   BOOST_CHECK_EQUAL(i,string::npos);
 }
 
+BOOST_AUTO_TEST_CASE(test_join){
+  vector<string> v{"aa","bb","cc"};
+  string s = boost::algorithm::join(v,":");
+  BOOST_CHECK_EQUAL(s,"aa:bb:cc");
+  }
+
 #+end_src
 *** cast
 #+begin_src c++
