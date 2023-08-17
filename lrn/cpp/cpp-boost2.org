@@ -1014,6 +1014,49 @@ BOOST_AUTO_TEST_CASE(test_substr){
     //   },boost::bad_lexical_cast);
   }
 #+end_src
+*** assert custom
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+// define this to enable custom handler
+#define BOOST_ENABLE_ASSERT_HANDLER
+#include <boost/assert.hpp>
+
+// Called when BOOST_ASSERT failed
+void boost::assertion_failed(char const * expr, char const * function,
+                             char const * file, long line){
+  BOOST_TEST_MESSAGE((format("assertion_failed() is called with:\n"
+                             "function=%s\n"
+                             "expr=%s\n"
+                             "file=%s\n"
+                             "line=%ld"
+                             ) % function % expr % file % line).str());
+}
+
+// Called when BOOST_ASSERT_MSG failed
+void boost::assertion_failed_msg(char const * expr, char const * function,
+                                 char const * msg, char const * file, long line){
+  BOOST_TEST_MESSAGE((format("assertion_failed_msg() is called with:\n"
+                             "function=%s\n"
+                             "expr=%s\n"
+                             "msg=%s\n"
+                             "file=%s\n"
+                             "line=%ld"
+                             ) % function % expr
+                      % msg
+                      % file % line).str());
+}
+
+BOOST_AUTO_TEST_CASE(test_1){
+  BOOST_ASSERT(false);
+  BOOST_ASSERT_MSG(false,"my msg");
+  BOOST_CHECK_EQUAL(1,1);
+}
+
+#+end_src
 
 * End
 # Local Variables:

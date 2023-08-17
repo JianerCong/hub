@@ -38,15 +38,15 @@
      )
   )
 
-;; (define-skeleton cpp-ostream-say
-;;   "insert the cout << overloading"
-;;   nil
-;;   "friend ostream& operator<<(ostream& os, const "
-;;   (setq c (skeleton-read "Class name ?"))
-;;    "& " (substring c 0 1) "){" \n
-;;   _ \n
-;;   "return os;" \n
-;;   "};")
+(define-skeleton cpp-ostream-say
+  "insert the cout << overloading"
+  nil
+  "friend ostream& operator<<(ostream& os, const "
+  (setq c (skeleton-read "Class name ?"))
+   "& " (substring c 0 1) "){" \n
+  _ \n
+  "return os;" \n
+  "};")
 
 
 (setq c-my-using-alist
@@ -71,9 +71,9 @@
 (define-skeleton cpp-boost-add-test-suite
   "Add a BOOST_AUTO_TEST_SUITE"
   nil
-  "BOOST_AUTO_TEST_SUITE(" (skeleton-read "name:") ");" \n
+  "BOOST_AUTO_TEST_SUITE(" (setq x (skeleton-read "name:")) ");" \n
   _ \n
-  "BOOST_AUTO_TEST_SUITE_END();"
+  "BOOST_AUTO_TEST_SUITE_END(); //" x 
   )
 
 (define-skeleton cpp-boost-add-test-case
@@ -200,6 +200,10 @@
 (define-abbrev c++-mode-abbrev-table "vts" "" (lambda ()
                                                 (skeleton-insert '(nil
                                                                    "value_to<string>(v.at(\"" _ "\"));"))))
+
+(define-abbrev c++-mode-abbrev-table "ssy" "" (lambda ()
+                                                (skeleton-insert '(nil
+                                                                   "this->say(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "sul" "" (lambda ()
                                                 (skeleton-insert '(nil
                                                                    "std::unique_lock l(" _ ");"
@@ -207,6 +211,8 @@
                                                                  )
                                                 )
   )
+
+(define-abbrev c++-mode-abbrev-table "bam" "" (lambda () (skeleton-insert '(nil "BOOST_ASSERT_MSG(" _ ")"))))
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")
