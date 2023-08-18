@@ -168,6 +168,7 @@
 (define-abbrev c++-mode-abbrev-table "cred" "\" S_RED \"")
 (define-abbrev c++-mode-abbrev-table "ccyn" "\" S_CYAN \"")
 (define-abbrev c++-mode-abbrev-table "cnor" "\" S_NOR \"")
+(define-abbrev c++-mode-abbrev-table "cgrn" "\" S_GREEN \"")
 
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
 (define-abbrev c++-mode-abbrev-table "js" "json::")

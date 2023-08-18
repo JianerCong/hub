@@ -185,13 +185,6 @@ class PbftConsensus:
         # still execute what primary sent to most nodes. (🦜: This eventually makes each nodes "selfless").
         self.to_be_confirmed_commands: dict[str,set[str]] = {}  # received from primary
 
-        """ When a node has collected enough `comfirm` for a command, it will
-        boardcast the `commit` for a command.
-
-        When a node has collected enough `commit` for a command, it executes it
-        no matter what. """
-        self.to_be_committed_commands: dict[str,set[str]] = {}
-
         self.lock_for = {
             'to_be_confirmed_commands' : Lock(),
             'sig_of_nodes_to_be_added' : Lock(),
@@ -200,7 +193,6 @@ class PbftConsensus:
             'all_endpoints' : Lock(),
             'received_commands' : Lock(),
             'command_history' : Lock(),
-            'to_be_committed_commands': Lock()
         }
 
         # The commands received by primary, subs will forward many copied of
@@ -328,6 +320,7 @@ class PbftConsensus:
             self.say( S.RED + '\t ❌️ What ? Checking empty certificate ? There\'s no such thing.' + S.NOR)
             return False
 
+
         try:
             # Check and save the first cert
             """
@@ -372,7 +365,7 @@ class PbftConsensus:
 
             🦜 : How many laiddown do we need ?
 
-            🐢 : Every correct node sends this, so there should be N - f
+            🐢 : Every correct node sends this, so there should be N - f 
 
             """
             x = self.N() - self.f()
@@ -401,7 +394,6 @@ class PbftConsensus:
         self.clear_and_listen_common_things()
         self.net.listen('/pleaseExecuteThis', self.handle_execute_for_sub)
         self.net.listen('/pleaseConfirmThis', self.handle_confirm_for_sub)
-        self.net.listen('/pleaseCommitThis', self.handle_commit_for_sub)
 
     def primary(self) -> str:
         "The current primary"
@@ -441,9 +433,18 @@ class PbftConsensus:
         if endpoint == self.primary():
             """🦜 : Boardcast to other subs"""
 
-            self.boardcast_to_other_subs('/pleaseConfirmThis',data)
+            # 🦜 : take out the endpoints, because self.primary() will also
+            # lock 'all_endpoints'
+            all_endpoints = None
+            with self.lock_for['all_endpoints']:
+                all_endpoints = self.all_endpoints
 
-            self.say( S.BLUE + '\t\tConfirming cmd to myself' + S.NOR)
+            self.say('\t\tBoardcasting cmd confirm')
+            for sub in all_endpoints:
+                if sub not in [self.net.listened_endpoint(), self.primary()]:
+                    self.net.send(sub,'/pleaseConfirmThis',data)
+
+            self.say('\t\tAdding cmd to myself')
             self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
 
             return 'OK'
@@ -456,15 +457,9 @@ class PbftConsensus:
     def add_to_to_be_confirmed_commands(self, endpoint:str, data:str):
         """Remember that endpoint `received` data.
 
-
-
         🦜 : Is this the only method that touch `self.to_be_confirmed_commands` ?
 
         🐢 : Looks so.
-
-
-        When `to_be_confirmed_commands` have collected enough. Add that to the
-        `to_be_confirmed_commands` (this might boardcast '/pleaseCommitThis'.)
         """
         with self.lock_for['to_be_confirmed_commands']:
             if data not in self.to_be_confirmed_commands:
@@ -488,101 +483,21 @@ class PbftConsensus:
             """
             x = self.N() - 1 - self.f()
             if (len(s)) >= x:
-                self.say(f'⚙️ command {S.MAG + data + S.BLUE} comfirmed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} executing it and clear 🚮️{S.NOR}.')
+                self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, {S.MAG} executing it and clear 🚮️{S.NOR}.')
 
-                self.say('\t\tBoardcasting commit')
-                self.boardcast_to_other_subs('/pleaseCommitThis',data)
+                self.exe.execute(data)
+                with self.lock_for['command_history']:
+                    self.command_history.append(data)
 
-                self.say( S.GREEN + '\t\tCommitting cmd to myself' + S.NOR)
-                self.add_to_to_be_committed_commands(self.net.listened_endpoint(),data)
                 # self.to_be_confirmed_commands[data].clear()
-
                 """🦜 : In fact we can just remove the entry altogether.
+
                 """
                 self.to_be_confirmed_commands.pop(data)
             else:
-                self.say(f'⚙️ command {S.MAG + data + S.BLUE} comfirmed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} not yet the time. {S.NOR}')
+                self.say(f'⚙️ command {S.MAG + data + S.NOR} comfirmed by {len(s)} node{plural_maybe(len(s))}, {S.MAG} not yet the time. {S.NOR}')
                 # return one
                 self.to_be_confirmed_commands[data] = s
-
-    def boardcast_to_other_subs(self,target:str,data:str):
-        """ boardcast something to all peers
-
-        """
-        # 🦜 : take out the endpoints, because self.primary() will also
-        # lock 'all_endpoints'
-        all_endpoints = None
-        with self.lock_for['all_endpoints']:
-            all_endpoints = self.all_endpoints
-
-        for sub in all_endpoints:
-            if sub not in [self.net.listened_endpoint(), self.primary()]:
-                self.net.send(sub,target,data)
-
-    def finally_execute_it(self, data : str):
-        self.exe.execute(data)
-        with self.lock_for['command_history']:
-            self.command_history.append(data)
-
-
-    def add_to_to_be_committed_commands(self, endpoint:str, data:str):
-        """Remember that endpoint `received` data.
-
-        🦜 : Is this the only method that touch `self.to_be_confirmed_commands` ?
-
-        🐢 : Looks so.
-
-
-        When `to_be_committed_commands` have collected enough. It will finally
-        execute.
-
-        🦜 : Most of the code here is copied from add_to_to_be_confirmed_commands
-        """
-        with self.lock_for['to_be_committed_commands']:
-            if data not in self.to_be_committed_commands:
-                self.say(f'Adding {S.MAG + data + S.NOR} from {S.MAG + endpoint + S.NOR}')
-                # self.to_be_committed_commands[data] = set({endpoint})
-                self.to_be_committed_commands[data] = set({})
-
-            # take one
-            s: set[str] = self.to_be_committed_commands[data]
-            s.add(endpoint)
-
-            """
-
-            🦜 : How many we should collect?
-
-            🐢 : I think it should be N - 1 - f, 1 corresponds to the
-            primary. For example, when N = 2, there should be one confirm
-            (the one N1 put it after received the command). When N = 3,
-            there should be two, (needs an extra one from N2).
-
-            """
-            x = self.N() - 1 - self.f()
-            if (len(s)) >= x:
-                self.say(f'⚙️⚙️ command {S.MAG + data + S.GREEN} committed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} executing it and clear 🚮️{S.NOR}.')
-
-                self.finally_execute_it(data)
-                # self.to_be_committed_commands[data].clear()
-                """🦜 : In fact we can just remove the entry altogether.
-
-                """
-                self.to_be_committed_commands.pop(data)
-            else:
-                self.say(f'⚙️⚙️ command {S.MAG + data + S.GREEN} committed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} not yet the time. {S.NOR}')
-                # return one
-                self.to_be_committed_commands[data] = s
-
-    def handle_commit_for_sub(self, endpoint: str, data: str) -> str:
-        if self.view_change_state:
-            return f"""
-            Dear {endpoint}
-                  We are currently selecting new primary for epoch {self.epoch + 1}.
-                  Please try again later.
-            """
-
-        self.add_to_to_be_committed_commands(endpoint,data)
-        return 'OK'
 
 
     def handle_confirm_for_sub(self, endpoint: str, data: str) -> str:
@@ -601,9 +516,11 @@ class PbftConsensus:
             return len(self.all_endpoints)
     def f(self) -> int:
         """Get the number of random nodes the system can tolerate"""
+        ff = None
         with self.lock_for['all_endpoints']:
             N = len(self.all_endpoints)
-            return  (N - 1) // 3        # number of random nodes
+            ff = (N - 2) // 2        # number of random nodes
+        return max(ff,0)
 
     def start_faulty_timer(self):
         """Life always has up-and-downs, but time moves toward Qian.
@@ -906,6 +823,7 @@ class PbftConsensus:
                   Please try again later.
             """
 
+        cmd = data
 
         with self.lock_for['received_commands']:
             if data in self.received_commands:
@@ -913,13 +831,16 @@ class PbftConsensus:
                 return "I received this."
             self.received_commands.add(data)
 
-        self.finally_execute_it(data)
+        with self.lock_for['command_history']:
+            self.command_history.append(cmd)
+
+        self.exe.execute(cmd)
         # 🦜 : Can primary just execute it?
         #
         # 🐢 : Yeah, it can. Then it just assume that the group has 2f + 1
         # correct nodes, and that should be fine. It doesn't bother checking
 
-        self.boardcast_to_others('/pleaseExecuteThis',data)
+        self.boardcast_to_others('/pleaseExecuteThis',cmd)
         # with self.lock_for['all_endpoints']:
         #     for sub in self.all_endpoints:
         #         if sub != self.net.listened_endpoint():

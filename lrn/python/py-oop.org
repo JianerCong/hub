@@ -572,6 +572,19 @@ if __name__ == "__main__":
 res = Maths.addNum(1, 2)
 print("The result is", res)
 #+end_src
+** attr
+#+begin_src python
+  class X:
+      def __init__(self):
+          self.x = 1
+        
+  x = X()
+  x.x
+  getattr(x,'x')                  # 1
+  setattr(x,'x',2)
+  x.x                             # 2
+#+end_src
+
 * End
 
 # Local Variables:
