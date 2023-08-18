@@ -214,6 +214,9 @@
 
 (define-abbrev c++-mode-abbrev-table "bam" "" (lambda () (skeleton-insert '(nil "BOOST_ASSERT_MSG(" _ ")"))))
 (define-abbrev c++-mode-abbrev-table "bas" "" (lambda () (skeleton-insert '(nil "BOOST_ASSERT(" _ ")"))))
+;; 🦜 : this will always be evaluated. So use this for something like BOOST_VERIFY(s.fromString())
+(define-abbrev c++-mode-abbrev-table "bvf" "" (lambda () (skeleton-insert '(nil "BOOST_VERIFY(" _ ")"))))
+(define-abbrev c++-mode-abbrev-table "bvm" "" (lambda () (skeleton-insert '(nil "BOOST_VERIFY_MSG(" _ ")"))))
 
 ;;a function that modifies the value of type V
 (define-abbrev c++-mode-abbrev-table "fv" "void (*f)(V&)")

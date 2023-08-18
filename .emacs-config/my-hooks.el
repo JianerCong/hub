@@ -10,13 +10,18 @@
 
 
 (add-hook 'prog-mode-hook 'show-paren-mode)
+(add-hook 'prog-mode-hook 'flycheck-mode)
 (add-hook 'prog-mode-hook 'column-number-mode)
 (add-hook 'prog-mode-hook 'electric-pair-mode)
 (add-hook 'prog-mode-hook 'hs-minor-mode)
 
 (add-hook 'prog-mode-hook 'hungry-delete-mode)
 (add-hook 'prog-mode-hook 'global-linum-mode)
-(add-hook 'prog-mode-hook 'folding-mode)
+
+;; 🦜 : I feel like hs-minor mode is better than folding mode. Folding mode is a
+;; bit slow.. Don't know why..
+
+;; (add-hook 'prog-mode-hook 'folding-mode)
 (add-hook 'org-mode-hook 'auto-fill-mode)
 
 ;; Enable rainbow paren

@@ -2,6 +2,7 @@
 (setq inhibit-splash-screen 1)
 (setq make-backup-files nil)
 (setq auto-save-default nil)
+(setq flycheck-gcc-language-standard "c++20")
 (if (string-equal system-type "windows-nt")
     (setq-default
      shell-file-name
