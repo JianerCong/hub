@@ -1,3 +1,29 @@
+"""Pbft with cmds_db.
+
+🦜 : In fact, during the process of consensus. We only need to boardcast the
+hash of the cmd to be executed. So after we have received the cmd from the
+primary. We can save it in a `cmds_db` which is a kv store <cmd:hash><cmd>.
+
+And we only need the actual cmd when we need to actually execute it.
+
+🐢 : Okay, but probably when we actually need to execute it, the command we
+need is not found in our local `cmds_db`, then what should we do ?
+
+🦜 : We resort to other nodes?
+
+🐢 : Or maybe we boardcast the actual command at the commit stage ?
+
+🦜 : Or even better, we clear our memory every new view:
+
++ to_be_confirmed_commands
++ to_be_committed_commands
+
+🐢 : That's a bit dangerous to be honest. I feel like that's not less risky
+than storing the hash.
+
+🦜 : Okay, fine. Let's hash.
+
+"""
 import threading
 from typing import Union, Optional
 from threading import Thread, Timer, Lock
@@ -59,6 +85,9 @@ class ISignable:
         pass
     # def get_sig(self, msg: str) -> str:
     #     pass
+
+    def hash(self, s:str) ->str:
+        pass
 
 
 class IExecutable:
@@ -150,6 +179,7 @@ class PbftConsensus:
         self.laid_down_history: dict[int,dict[str,list[str]]] = {}
         self.sig_of_nodes_to_be_added: set[str] = set({})
 
+
         # map[epoch -> map[state -> l1 = list of msg that confirm to state (unique)]]
 
         # 🦜 : the list l1 which cntains N* = all_endpoints[epoch] forms
@@ -192,6 +222,9 @@ class PbftConsensus:
         no matter what. """
         self.to_be_committed_commands: dict[str,set[str]] = {}
 
+        self.cmds_db: dict[str,str] = {}
+        # cmd-hash : cmd
+
         self.lock_for = {
             'to_be_confirmed_commands' : Lock(),
             'sig_of_nodes_to_be_added' : Lock(),
@@ -200,7 +233,8 @@ class PbftConsensus:
             'all_endpoints' : Lock(),
             'received_commands' : Lock(),
             'command_history' : Lock(),
-            'to_be_committed_commands': Lock()
+            'to_be_committed_commands': Lock(),
+            'cmds_db': Lock()
         }
 
         # The commands received by primary, subs will forward many copied of
@@ -261,7 +295,7 @@ class PbftConsensus:
             self.say(f'Ignoring older msg in epoch={o["epoch"]}')
             return 'No'
 
-        if self.check_cert(o['new-view-certificate'],o['epoch'],for_newcomer=False):
+        if self.check_cert(o['new-view-certificate'],o['epoch']):
             """
 
             🦜 : Now we are ready to start a new view. We do the following:
@@ -441,10 +475,14 @@ class PbftConsensus:
         if endpoint == self.primary():
             """🦜 : Boardcast to other subs"""
 
-            self.boardcast_to_other_subs('/pleaseConfirmThis',data)
+            cmdh = self.sig.hash(data)
+            with self.lock_for['cmds_db']:
+                self.cmds_db[cmdh] = data
+
+            self.boardcast_to_other_subs('/pleaseConfirmThis',cmdh)
 
             self.say( S.BLUE + '\t\tConfirming cmd to myself' + S.NOR)
-            self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),data)
+            self.add_to_to_be_confirmed_commands(self.net.listened_endpoint(),cmdh)
 
             return 'OK'
 
@@ -488,9 +526,9 @@ class PbftConsensus:
             """
             x = self.N() - 1 - self.f()
             if (len(s)) >= x:
-                self.say(f'⚙️ command {S.MAG + data + S.BLUE} comfirmed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} commit it and clear 🚮️{S.NOR}.')
+                self.say(f'⚙️ command {S.MAG + data + S.BLUE} comfirmed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} executing it and clear 🚮️{S.NOR}.')
 
-                # self.say('\t\tBoardcasting commit')
+                self.say('\t\tBoardcasting commit')
                 self.boardcast_to_other_subs('/pleaseCommitThis',data)
 
                 self.say( S.GREEN + '\t\tCommitting cmd to myself' + S.NOR)
@@ -562,11 +600,13 @@ class PbftConsensus:
             if (len(s)) >= x:
                 self.say(f'⚙️⚙️ command {S.MAG + data + S.GREEN} committed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} executing it and clear 🚮️{S.NOR}.')
 
-                self.finally_execute_it(data)
-                # self.to_be_committed_commands[data].clear()
-                """🦜 : In fact we can just remove the entry altogether.
 
-                """
+                with self.lock_for['cmds_db']:
+                    if data not in self.cmds_db:
+                        raise Exception('What? cmd not found in memory?')
+
+                    self.finally_execute_it(self.cmds_db[data])
+
                 self.to_be_committed_commands.pop(data)
             else:
                 self.say(f'⚙️⚙️ command {S.MAG + data + S.GREEN} committed {S.NOR} by {len(s)} node{plural_maybe(len(s))}, {S.MAG} not yet the time. {S.NOR}')
@@ -1154,6 +1194,9 @@ class MockedSigner(ISignable):
         l = msg.split(':', maxsplit=1)
         print_mt(f'⚙️ Extract from in {S.CYAN}{l}{S.NOR}')
         return l[0]
+
+    def hash(self, s:str) ->str:
+        return s
 
 
 """🐢 : Different to ListenToOneConsensus, nodes in *bft must be started simultaneously.

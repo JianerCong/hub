@@ -171,6 +171,7 @@
 (define-abbrev c++-mode-abbrev-table "cgrn" "\" S_GREEN \"")
 
 (define-abbrev c++-mode-abbrev-table "nx" "noexcept")
+(define-abbrev c++-mode-abbrev-table "szt" "std::size_t")
 (define-abbrev c++-mode-abbrev-table "js" "json::")
 (define-abbrev c++-mode-abbrev-table "rdb" "rocksdb::")
 (define-abbrev c++-mode-abbrev-table "fs" "filesystem::")

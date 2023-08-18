@@ -674,6 +674,17 @@ BOOST_AUTO_TEST_CASE(test_my_contain){
   BOOST_REQUIRE(not contains(v1,4));
 }
 
+BOOST_AUTO_TEST_CASE(test_find){
+  vector<int> v{1,2,2,3};
+
+  BOOST_REQUIRE(ranges::find(v,4) == v.end());
+  BOOST_REQUIRE(ranges::find(v,2) == v.begin() + 1);
+  BOOST_CHECK_EQUAL(std::distance(v.begin(),ranges::find(v,2)),1);
+  BOOST_CHECK_EQUAL(std::distance(ranges::find(v,2),v.begin()),-1);
+  BOOST_CHECK_EQUAL(std::distance(ranges::find(v,2),v.end()),3);
+  }
+
+
 #+end_src
 * End
 # Local Variables:
