@@ -57,7 +57,7 @@ RM = /usr/local/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_05_dispatch_serv
+CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_06_dispatch_serv_thread_safe
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/me/Templates/lrn/cpp/build-hi

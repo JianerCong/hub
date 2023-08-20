@@ -146,11 +146,18 @@
 (define-abbrev c++-mode-abbrev-table "vve" "" 'cpp-say-err)
 (define-abbrev c++-mode-abbrev-table "bnnr" "" 'cpp-add-banner)
 
-(define-abbrev c++-mode-abbrev-table "lg0" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(trace) << format(\"" _ "\");"))))
-(define-abbrev c++-mode-abbrev-table "lg1" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(debug) << format(\"" _ "\");"))))
-(define-abbrev c++-mode-abbrev-table "lg2" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(info) << format(\"" _ "\");"))))
-(define-abbrev c++-mode-abbrev-table "lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << format(\"" _ "\");"))))
-(define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "Lg0" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(trace) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "Lg1" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(debug) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "Lg2" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(info) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "Lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << format(\"" _ "\");"))))
+(define-abbrev c++-mode-abbrev-table "Lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << format(\"" _ "\");"))))
+
+(define-abbrev c++-mode-abbrev-table "lg0" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(trace) << " _ ";"))))
+(define-abbrev c++-mode-abbrev-table "lg1" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(debug) << " _ ";"))))
+(define-abbrev c++-mode-abbrev-table "lg2" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(info) << " _ ";"))))
+(define-abbrev c++-mode-abbrev-table "lg3" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(warning) << " _ ";"))))
+(define-abbrev c++-mode-abbrev-table "lg4" "" (lambda () (skeleton-insert '(nil "BOOST_LOG_TRIVIAL(error) << " _ ";"))))
+
 (define-abbrev c++-mode-abbrev-table "beq" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_EQUAL(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "bne" "" (lambda () (skeleton-insert '(nil "BOOST_CHECK_NE(" _ ");"))))
 (define-abbrev c++-mode-abbrev-table "beqr" "" (lambda () (skeleton-insert '(nil "BOOST_REQUIRE_EQUAL(" _ ");"))))
@@ -233,5 +240,6 @@
 (setq flycheck-gcc-language-standard "c++20")
 ;; (setq flycheck-gcc-language-standard "c++17")
 (flycheck-mode 1)   ;🦜 : Use this to renable flycheck.
+(flycheck-select-checker `c/c++-gcc)
 ;; Fold all: folding-whole-buffer
 ;; (folding-add-to-marks-list 'c++-mode "#{{{" "#}}}" nil t)

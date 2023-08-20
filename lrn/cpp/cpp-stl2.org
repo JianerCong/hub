@@ -686,6 +686,7 @@ BOOST_AUTO_TEST_CASE(test_find){
 
 
 #+end_src
+*** thread, timer, atomic clock
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"
