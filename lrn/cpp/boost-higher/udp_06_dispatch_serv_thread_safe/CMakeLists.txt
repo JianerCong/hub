@@ -28,3 +28,7 @@ add_custom_target(run ALL pytest -v -s COMMENT "Runing App 🐸 ")
 # add_custom_target(run ALL
 #   weak-server 0.0.0.0 7777
 #   COMMENT "Runing App 🐸")
+
+rm build-hi -rf
+cmake -S boost-higher/udp_06_dispatch_serv_thread_safe -B build-hi
+cmake --build build-hi

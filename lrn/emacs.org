@@ -251,7 +251,47 @@ Convert a region that was decoded using coding system wrong, decoding it using c
 #+begin_src csharp
 // Local Variables:
 // eval: (setq flycheck-gcc-include-path (list ".."))
+// org-what-lang-is-for: "emacs-lisp"
 // End:
+#+end_src
+** dir local var
+*** basic
+in ~.dir-locals.el~
+#+begin_src emacs-lisp
+(
+ (nil . ((indent-tabs-mode . t)
+         (fill-column . 80)
+         (mode . auto-fill))            ;special element `mode': enable auto-fill mode
+      )
+
+ ;; major mode name ⇒ alist
+ (c-mode . (
+            (c-file-style . "BSD")
+            (subdirs . nil)             ;special keyword `subdirs' : settings not applied
+                                        ;recursively.
+            )
+         )
+
+ ("src/imported"
+  . (
+     (nil . ((change-log-default-name
+              . "ChangeLog.local")))
+     )
+  )                                     ;applied only to src/imported
+ )
+
+ #+end_src
+*** use command
+M-x add-dir-local-variable.
+
+M-x delete-dir-local-variable
+*** set dir local-var without creating a file
+#+begin_src lisp
+(dir-locals-set-class-variables 'unwritable-directory
+   '((nil . ((some-useful-setting . value)))))
+
+(dir-locals-set-directory-class
+   "/usr/include/" 'unwritable-directory)
 #+end_src
 * Spacemacs Q/A
 ** problem with python import magic?
@@ -259,3 +299,6 @@ pip install epc
 pip install importmagic
 
 
+
+
+* End

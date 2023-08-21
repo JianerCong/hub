@@ -128,7 +128,7 @@
         ("tp" . "<tuple>")
         ("fn" . "<functional>")
         ("F" . "<boost/format.hpp>")
-        ("L" . "<boost/log/trivial.hpp>>")
+        ("L" . "<boost/log/trivial.hpp>")
         )
       )
 
@@ -237,9 +237,11 @@
 (define-key c++-mode-map (kbd "\C-c s") 'cpp-show-one-values)
 (define-key c++-mode-map (kbd "\C-c b") 'cpp-boost-unit-test-boilerplate)
 
-(setq flycheck-gcc-language-standard "c++20")
+;; 🦜 These can also be set in you .dir.local.el
+;; (flycheck-select-checker `c/c++-gcc)
+;; (setq flycheck-gcc-language-standard "c++20")
 ;; (setq flycheck-gcc-language-standard "c++17")
-(flycheck-mode 1)   ;🦜 : Use this to renable flycheck.
-(flycheck-select-checker `c/c++-gcc)
+(flycheck-mode 1)   ;🦜 : Use this to enable/refresh flycheck.
+
 ;; Fold all: folding-whole-buffer
 ;; (folding-add-to-marks-list 'c++-mode "#{{{" "#}}}" nil t)
