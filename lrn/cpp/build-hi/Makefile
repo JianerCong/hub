@@ -57,7 +57,7 @@ RM = /usr/local/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/udp_06_dispatch_serv_thread_safe
+CMAKE_SOURCE_DIR = /home/me/Templates/lrn/cpp/boost-higher/http_13_async_server_q2quit
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/me/Templates/lrn/cpp/build-hi
@@ -117,17 +117,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named serv
+# Target rules for targets named myexe
 
 # Build rule for target.
-serv: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 serv
-.PHONY : serv
+myexe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 myexe
+.PHONY : myexe
 
 # fast build rule for target.
-serv/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/build
-.PHONY : serv/fast
+myexe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/build
+.PHONY : myexe/fast
 
 #=============================================================================
 # Target rules for targets named run
@@ -142,29 +142,29 @@ run/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
 .PHONY : run/fast
 
-serv.o: serv.cpp.o
-.PHONY : serv.o
+m.o: m.cpp.o
+.PHONY : m.o
 
 # target to build an object file
-serv.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/serv.cpp.o
-.PHONY : serv.cpp.o
+m.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.o
+.PHONY : m.cpp.o
 
-serv.i: serv.cpp.i
-.PHONY : serv.i
+m.i: m.cpp.i
+.PHONY : m.i
 
 # target to preprocess a source file
-serv.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/serv.cpp.i
-.PHONY : serv.cpp.i
+m.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.i
+.PHONY : m.cpp.i
 
-serv.s: serv.cpp.s
-.PHONY : serv.s
+m.s: m.cpp.s
+.PHONY : m.s
 
 # target to generate assembly for a file
-serv.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/serv.dir/build.make CMakeFiles/serv.dir/serv.cpp.s
-.PHONY : serv.cpp.s
+m.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/myexe.dir/build.make CMakeFiles/myexe.dir/m.cpp.s
+.PHONY : m.cpp.s
 
 # Help Target
 help:
@@ -175,10 +175,10 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... run"
-	@echo "... serv"
-	@echo "... serv.o"
-	@echo "... serv.i"
-	@echo "... serv.s"
+	@echo "... myexe"
+	@echo "... m.o"
+	@echo "... m.i"
+	@echo "... m.s"
 .PHONY : help
 
 
