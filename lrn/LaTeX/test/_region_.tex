@@ -1,3 +1,5 @@
+\message{ !name(m.tex)}
+\message{ !name(m.tex) !offset(-2) }
 \documentclass[dvipsnames]{article}
 % \documentclass[dvipsnames]{ctexart}
 
@@ -107,12 +109,12 @@ are read and written by different services.
 \begin{table}[htbp]
   \centering
   \begin{tabularx}{0.8\textwidth}{XXXX}
-    \textbf{Specification} & \textbf{Swift} & \textbf{Cinder} & \textbf{Manila} \\
+    \textbf{Specification} & \textbf{Swift} & Cinder & Manila \\
     \hline
-    \textbf{Access mode} & REST API & Block device & File system \\
-    \textbf{Multi-access} & Yes & No & Yes \\
-    \textbf{Persistent} & Yes & Yes & Yes \\
-    \textbf{Accessibility} & Anywhere & Within single VM & Within multiple VMs \\
+    Access mode & REST API & Block device & File system \\
+    Multi-access & Yes & No & Yes \\
+    Persistent & Yes & Yes & Yes \\
+    Accessibility & Anywhere & Within single VM & Within multiple VMs \\
   \end{tabularx}
 \end{table}
 
@@ -124,3 +126,4 @@ are read and written by different services.
 % TeX-command-extra-options: "-shell-escape"
 % TeX-master: "m.tex"
 % End:
+\message{ !name(m.tex) !offset(-129) }

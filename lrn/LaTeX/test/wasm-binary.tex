@@ -1,0 +1,660 @@
+\documentclass[dvipsnames]{article}
+% \documentclass[dvipsnames]{ctexart}
+
+\title{WebAssembly Binary}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+\usepackage{graphicx}
+
+\usepackage{svg}
+
+\usepackage[skip=5pt plus1pt, indent=0pt]{parskip}
+% Color
+\newcommand{\mycola}{MidnightBlue}
+\newcommand{\mycolb}{Mahogany}
+\newcommand{\mycolc}{OliveGreen}
+
+\newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
+\newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
+\newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
+\renewcommand{\emph}[1]{\texbf{#1}}
+\usepackage{amssymb}            %\mathbb
+
+\usepackage{fontspec}
+
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+% --------------------------------------------------
+% Windows
+% \setmonofont{Cascadia}[
+% Path=C:/Windows/Fonts/,
+% Extension = .ttf,
+% UprightFont=*Mono,              %find CascadiaMono.ttf
+% BoldFont=*Code,               %find CascadiaCodePL.ttf ...
+% ItalicFont=*Code,
+% BoldItalicFont=*Code
+% ]
+
+
+\usepackage{minted}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usepackage{tikz}
+\usetikzlibrary{shapes} % ellipse node shape
+\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\usetikzlibrary{arrows.meta}    %-o arrow head
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+\usetikzlibrary{snakes}
+
+\usepackage{amsmath}
+% ??? still xelatex?
+% \usepackage{xeCJK}
+\usepackage{emoji}
+% \setemojifont{NotoColorEmoji.ttf}[Path=C:/Users/congj/repo/myFonts/]
+% \setemojifont{TwitterColorEmoji-SVGinOT.ttf}[Path=C:/Users/congj/repo/myFonts/]
+\usepackage{cleveref}
+
+\date{\today}
+\author{作者}
+
+\newtcblisting{simplec}{
+  listing engine=minted,
+  minted language=c++,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter, 
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20
+}
+\tcbuselibrary{breakable}
+\newtcblisting{simplepy}{
+  listing engine=minted,
+  minted language=python,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter,
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20,
+  breakable
+}
+\newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
+
+\tikzstyle{myMatrix}=[matrix of nodes,below right,
+nodes={above,text centered},                  %apply to all nodes
+row sep=1cm,column sep=2cm]
+\tikzstyle{every node}=[inner sep=0pt]
+
+\newcommand\uptoleft[3][-o]{\draw[very thick,#1](#2.south) |- (#3.west);}
+\newcommand\uptodown[3][-o]{\draw[very thick,#1](#2.south) to [out=270,in=90] (#3.north);}
+\newcommand\downtoup[3][-latex]{\draw[very thick,#1](#2.north) to [out=90,in=270] (#3.south);}
+
+\newcommand\lefttoright[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=180] (#3.west);}
+\newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
+
+
+\newtcolorbox{leftDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.east) --
+      +(0,2mm) --
+      +(3mm,0) --
+      +(0,-2mm)
+      ;
+    \end{scope}
+  }}
+
+
+\newtcolorbox{rightDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.west) --
+      +(0,2mm) --
+      +(-3mm,0) --
+      +(0,-2mm);
+    \end{scope}
+  }}
+
+\newcommand{\mycolaa}{\mycola!20}
+
+
+\usepackage{changepage}   % for the adjustwidth environment
+\newenvironment{myIndent}[1][7mm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
+
+\usepackage{tabularx}
+
+\newcolumntype{b}{X}
+\newcolumntype{s}{>{\hsize=.2\hsize}X}
+
+% --------------------------------------------------
+\begin{document}
+\maketitle{}
+
+\section{Modules}
+
+A WebAssembly binary takes the form of a \cola{module} that contains \colb{definitions} for
+\begin{itemize}
+\item functions
+\item tables
+\item linear memories
+\item as well as mutable or immutable global variables.
+\end{itemize}
+
+\colb{Definitions} can also be \Cola{imported}, specifying a module/name pair
+and a suitable type. Each \colb{definition} can optionally be \Cola{exported}
+under one or more names.
+
+In addition to definitions, modules can
+
+\begin{itemize}
+\item define initialization data for their memories or tables that takes the
+  form of segments copied to given offsets.
+\item define a start function that is automatically executed.
+\end{itemize}
+
+\section{Encoding of module}
+
+
+The encoding of a \cola{mocule} starts with a preamble containing a 4-byte
+\Cola{magic number} (the string \verb|\0asm|) and a \Cola{version field}. The
+current version of the WebAssembly binary format is 1.
+
+\begin{align*}
+  \mathtt{magic} &= \mathtt{0x00 0x61 0x73 0x6D} \\
+  \mathtt{version} &= \mathtt{0x01 0x00 0x00 0x00} \\
+  \mathtt{module} &= \mathtt{magic} + \mathtt{version} + \mathtt{<other-things>}
+\end{align*}
+
+\section{Sections}
+
+The binary encoding of modules is organized into \cola{sections}. Most sections
+correspond to one component of a \cola{module} record, except that
+\cola{function definitions} are split into two sections:
+
+\begin{enumerate}
+\item type declarations in the \cola{function section}
+\item bodies in the \cola{code section}. (\emoji{parrot} : It's like the the
+  header files and implementation file.)
+\end{enumerate}
+\emoji{turtle} : This seperation enables \cola{parallel} and \cola{streaming}
+compilation of the functions in a module.
+
+Each section consists of
+\begin{enumerate}
+\item a one-byte \cola{section id}
+\item the \colb{\texttt{u32}} size of the contents, in bytes.
+\item the actual \colc{contents}, whose structure is dependent on the \cola{section id}
+\end{enumerate}
+
+\cola{Every section is optional;} an omitted section is equivalent to the
+section being present with empty contents. In other words, a section is either a
+triple:
+\[
+  N\cola{: \mathtt{bytes}} + \text{content-size} \cola{: \mathtt{u32}} + \text{content}
+  \cola{: B}
+\]
+
+Or an empty content. $B$ above is the ``grammar'' (structure) of the content.
+
+\emoji{parrot} : So we first read $N$ to get a \colb{section parser}. And then
+use that to parse a content right?
+
+\emoji{turtle} : Yeah. And other than for unknown \cola{custom sections}, the
+\cola{size} is not required for decoding, but can be used to skip sections when
+navigating through a binary. The module is \Cola{malformed} if the size does not
+match the length of the binary contents $B$.
+
+\emoji{parrot} : What? You mean (for known section) the size can be determined
+from the type $N$?
+
+\newcommand{\heading}[1]{\multicolumn{1}{c}{#1}}
+\begin{table}[htbp]
+  \centering
+  % \begin{tabularx}{\textwidth}{| X | X | X |}
+  \begin{tabularx}{\textwidth}{sb}
+    \hline
+    \heading{Id}     & \heading{Section}     \\ \hline
+    0& custom section\\
+
+    1& type section\\
+
+    2& import section\\
+
+    3& function section\\
+
+    4& table section\\
+
+    5& memory section\\
+
+    6& global section\\
+
+    7& export section\\
+
+    8& start section\\
+
+    9& element section\\
+
+    10& code section\\
+
+    11& data section\\
+
+    12& data count section\\
+  \end{tabularx}
+\end{table}
+
+\subsection{Custom Section}
+
+\Cola{Custom seconds} have id 0. They are intended to be used for debugging
+information or third-party extensions, and are \Cola{ignored} by the WebAssembly
+semantics. Their contents consist of a \cola{name} further identifying the
+custom section, followed by an uninterpreted sequence of bytes for custom use.
+
+\emoji{parrot} So the ``content'' is \cola{name + \texttt{byte*}}
+\emoji{turtle} Yeah
+\[ \text{content} = \mathtt{name} + \cola{\mathtt{bytes*}}\]
+
+\subsection{Type Section}
+\label[subsection]{sec:type}
+
+The \cola{type section} has the id 1. It decodes into a vector of \cola{function
+  types} that represent the \cola{types} component of a module.
+
+\[ \text{content} = \cola{\mathtt{vector<functionType>}}\]
+
+\emoji{parrot} : So is \cola{functionType} the header of function?
+
+\emoji{turtle} : No, it's just the type. It's something like:
+
+\begin{simplec}
+  using F1 = function<int(void)>;
+  using F2 = function<int(int)>;
+
+  F1 f1 = [](){return 1};
+  F1 f2 = [](){return 2};
+\end{simplec}
+
+All function types used in a module must be defined in this component. They are
+referenced by \cola{type indices}.
+
+\subsection{Import Section}
+
+The \Cola{import section} has the id 2. It decodes into a vector of
+\cola{\texttt{imports}} that represent the \Cola{imports component} of a module.
+
+\begin{align*}
+  \text{content} &= \cola{\mathtt{vector<import>}}\\
+\end{align*}
+
+And each \texttt{import} contains
+\begin{enumerate}
+\item \texttt{module: \cola{name}}
+\item \texttt{name: \cola{name}}
+\item \texttt{d: \cola{import\_description}}
+\end{enumerate}
+
+\emoji{parrot} : So I guess the important things are in \texttt{d}, right?
+
+\emoji{turtle} Yeah, a \verb|import_description| (officially
+\texttt{importdesc}) is one of following byte sequence.
+
+\begin{enumerate}
+\item \texttt{0x00 + \cola{<typeidx>}} $\Rightarrow{}$ a function
+\item \texttt{0x01 + \cola{<tabletype>}} $\Rightarrow{}$ a table
+\item \texttt{0x02 + \cola{<memtype>}} $\Rightarrow{}$ a mem
+\item \texttt{0x03 + \cola{<globaltype>}} $\Rightarrow{}$ a global
+\end{enumerate}
+
+\emoji{parrot} What are these ?
+
+\emoji{turtle} : Memory is a resizable ArrayBuffer that contains the linear
+array of bytes read and written by WebAssembly's low-level memory access
+instructions.
+
+\emoji{parrot} : Oh, I remember that JS can pass an ArrayBuffer to the
+underlying WebAssembly function to do something like transforming a PNG.
+
+\emoji{turtle} : Yeah. Table is a resizable typed array of references (e.g. to
+functions) that could not otherwise be stored as raw bytes in Memory (for safety
+and portability reasons).
+
+\subsection{Function Section}
+
+The \cola{function section} has the id 3. It decodes into a vector of \cola{type
+indices} that represent the \cola{type} fields of the \cola{functions} in the
+\cola{funcs} component of a \cola{module}.
+
+\emoji{parrot} : So in WebAssembly, \texttt{typeidx} kinda represents a function
+right?
+
+\emoji{turtle} : That's should specify the \cola{type} of a function (i.e. input
+and output).
+
+\emoji{parrot} : So what makes a function?
+
+\emoji{turtle} : Three component:
+
+\begin{enumerate}
+\item \Cola{The type} declares its signature by reference to a \cola{type}
+  defined in the module. (\cref{sec:type}). The parameters of the function are
+  \cola{referenced through 0-based \textbf{local indices} in the function's
+    body}; they are mutable.
+\item \Cola{The locals} declares a \cola{vector of mutable variables and their
+    types}. These variables are referenced through \cola{local indices} in the
+  function's body. \cola{The index of the first local is the smallest index not
+    referencing a parameter}.
+\item \Cola{The body} is an \cola{instruction} sequence that upon termination
+  must \cola{produce a stack} matching the function type's \cola{result type}
+\end{enumerate}
+
+Functions are referenced through \cola{function indices}, starting with the
+smallest index not referencing a function \cola{import}.
+
+The \cola{locals} and \cola{body} fields of the respective functions are encoded
+separately in the \cola{code section}
+
+\[ \text{content} = \cola{\mathtt{vector<typeidx>}}\]
+
+\subsection{Table Section}
+
+The \cola{table section} has the id 4. It decodes into a vector of \cola{tables}.
+
+\[ \text{content} = \cola{\mathtt{vector<table>}}\]
+
+In WebAssembly, a table is a vector of opaque values of a particular
+\cola{reference type}. The \cola{min} size in the \cola{limits} of the table
+type specifies the \cola{initial size} of that table, while its \cola{max}, if
+present, restricts the size to which it can grow later.
+
+So here:
+\[
+  \cola{\mathtt{table}} = 
+  \cola{\mathtt{tableType}}
+\]
+
+\emoji{parrot} : So here we just declares a list of \texttt{tableTypes} right?
+But what is a \texttt{tableType} ?
+
+\emoji{turtle} : \texttt{tableType} is just one of the types in WebAssembly.
+Just like \texttt{int, float} are types in C. WebAssembly has its own types
+which includes:
+
+\newcommand{\textmytype}[1]{\texttt{\cola{#1}}}
+\begin{description}
+\item[Number Types \textmytype{numtype}] \textmytype{ = i32,i64,f32,f64}
+\item[Vector Types \textmytype{vectype}] vector of numeric values = \textmytype{v128}. \textmytype{v128}
+  means a 128-bit vector of packed integer or floating-point data. The packed
+  data can be interpreted arbitrarily, signed or unsigned integers, or even a
+  128 bit type. The interpretation is determined by individual operations.
+  \cola{vector types}, like \cola{numeric types} are \colb{transparent}, meaning
+  that their bit patterns can be observed. Values of vector type can be stored
+  in \cola{memories}
+\item[Reference Types \textmytype{reftype}] \textmytype{ = funcref, externref}, classify
+  first-class references to objects in the runtime \cola{store}. Reference types
+  are \colb{opaque}, meaning that neither
+  \begin{itemize}
+  \item their size nor 
+  \item their bit pattern
+  \end{itemize}
+  can be observed. Values of reference type can be stored in \cola{tables}.
+
+  \textmytype{funcref} can reference \cola{any} function. \textmytype{externref}
+  reference objects owned by the \Cola{embedder}.
+
+  \emoji{parrot} : What's embedder?
+
+  \emoji{turtle} : That's usually the host environment that defines
+  \begin{itemize}
+  \item how loading of modules are initiated
+  \item how imports are provided (including host-side definitions), and 
+  \item how exports can be accessed.
+  \end{itemize}
+\item[Value Types \textmytype{valtype}] \textmytype{= numtype, vectype, reftype}
+  classify the individual values that WebAssembly code can compute with and the
+  values that a variable accepts.
+\item[Result Types \textmytype{resulttype}] \textmytype{= vec<valtype>}classify the
+  result of executing instructions or functions, which is a sequence of values,
+  written with brackets.
+\item[Function Types \textmytype{functype}] \textmytype{= resulttype
+    $\rightarrow$ resulttype}
+\item[Limits \textmytype{limits}] \textmytype{ = \{min : u32, max=None : u32\}} 
+\item[Memory Types \textmytype{memtype}] Memory types classify linear \cola{memories} and their size
+  range. \textmytype{= limits}
+\item[Table Types \textmytype{tabletype}] \textmytype{ = \{limits, reftype \}} 
+\item[Global Types \textmytype{globaltype}] \textmytype{ = \{const | var,
+    valtype\}} 
+\item[External Types] \textmytype{externtype = functype | tabletype | memtype | globaltype}
+\end{description}
+
+\emoji{parrot} That's heavy.
+
+\emoji{turtle} Should have said that in a separate section
+
+\subsection{Memory Section}
+
+
+The \cola{memory section} has the id 5. It decodes into a vector of \cola{memorys}.
+\[ \text{content} = \cola{\mathtt{vector<memory>}}\]
+
+\subsection{Global Section}
+
+
+The \cola{table section} has the id 6. It decodes into a vector of
+\cola{globals} that represent the \cola{globals} component of a \cola{module}.
+
+\[ \text{content} = \cola{\mathtt{vector<global>}}\]
+
+\emoji{parrot} : What's a \text{global}?
+
+\emoji{turtle} : Global is short for \cola{global variable}. Each global stores
+a single value of the given \cola{global type}. Its \cola{type} also specifies
+whether it's
+
+\begin{enumerate}
+\item immutable, or
+\item mutable
+\end{enumerate}
+
+Moreover, each global is initialized with an \cola{\text{init}} value given by a
+\cola{constant} initializer \cola{expression}.
+
+\emoji{parrot} : So a global is kinda like
+
+\begin{simplec}
+  int x = 10 + 1;
+\end{simplec}
+
+At the top of a file, and \texttt{10 + 1 } in this case is the \texttt{init}
+
+\emoji{turtle} : Yeah. It just that there's no name for each global. Instead.
+Globals are referenced through \cola{global indices}, \cola{starting with the
+  smallest index not referencing a global \textbf{import}}.
+
+\subsection{Export Section}
+
+
+The \cola{export section} has the id 7. It decodes into a vector of
+\cola{exports} that represent the \texttt{exports} component of a \cola{module}.
+
+\emoji{parrot} This is similar to \cola{imports} right?
+
+\emoji{turtle} Yeah, but it doesn't need to specify the \cola{module} name,
+because, ..., well, this's this module.
+
+\begin{align*}
+  \text{content} &= \cola{\mathtt{vector<export>}}\\
+\end{align*}
+
+And each \texttt{export} contains
+\begin{enumerate}
+\item \texttt{name: \cola{name}}
+\item \texttt{d: \cola{export\_description}}
+\end{enumerate}
+
+\emoji{turtle} \verb|export_description| is same as \verb|import_description|.
+
+\subsection{Start Section}
+
+The \cola{start section} has the id 8. It decodes into
+into an optional start function that represents the 
+component of a module.
+\begin{align*}
+  \text{content} &= \cola{\mathtt{funcidx}}\\
+\end{align*}
+
+\emoji{parrot} : So if this is, say...,0, then the first function will be run as
+init right?
+
+\emoji{turtle} : Yes.
+
+\subsection{Element Section}
+
+The \cola{element section} has the id 9. It decodes into a vector of
+\cola{element segments}.
+
+\emoji{parrot} What's element segments?
+
+\emoji{turtle} It is used initialize a subrange of a table from a static vector
+of elements. It has many different ways to do that, but for now, let's move on.
+
+\subsection{Code Section}
+
+The \cola{code section} has the id 10. It decodes into a vector of \cola{code}
+entries that are pairs
+
+\newcommand{\mathmytype}[1]{\mathtt{\cola{#1}}}
+\begin{align*}
+  \text{content} &= \cola{\mathmytype{code}}\\
+  \mathmytype{code} &= \{\mathmytype{size-of-func: u32, code: func}\}\\
+  \mathmytype{func} &= \{\mathmytype{v:vec(locals), e:expr}\\
+  \mathmytype{lacals} &= \{\mathmytype{n: u32, t:valtype}\}
+  \\
+\end{align*}
+
+\subsection{Data Section}
+
+The \cola{data section} has the id 11. It decodes into a vector of
+\cola{data segments} that represent the \textmytype{datas} component of a
+module.
+
+\begin{tcolorbox}
+  \emoji{parrot} : What's  \cola{data segments}?
+
+  \emoji{turtle} : The initial contents of a \cola{memory} are zero bytes,
+  \Cola{Data segments} can be used to initialize a range of memory from a static
+  vector of bytes.
+
+  \emoji{parrot} : Oh, so it's like
+  \begin{simplec}
+    int x[3] = {1,2,2,2};
+  \end{simplec}
+
+  \emoji{turtle} : Yeah, something like that...
+
+  The \Cola{datas} component of a module defines a vector of data segments.
+
+  Like element segments, data segments have a mode that identifies them as either
+
+  \begin{itemize}
+  \item passive
+  \item active
+  \end{itemize}.
+
+  A passive data segment's contents can be copied into a memory using the
+  \textmytype{memory.init} instruction.
+
+  An active data segment copies its contents into a memory during
+  \cola{instantiation}, as specified by a \cola{memory index} and a
+  \cola{constant expression} defining an offset into the memory.
+
+  \emoji{parrot} : Oh so it's like the difference between
+
+  \begin{simplec}
+    int passive[3] = {1,2,3};
+    int active[3] = {1,2,passive[2]};
+  \end{simplec}
+
+  \emoji{turtle} Yeah.. 
+
+  \begin{align*}
+    \text{data} &= \{\mathtt{init} \quad \mathmytype{vec[byte]},
+                  \mathtt{mode} \quad \mathmytype{datamode}\} \\
+    \mathmytype{datamode} &= \text{passive} \, | \, \text{active \{\texttt{memory},\texttt{offset}\}} 
+  \end{align*}
+  
+\end{tcolorbox}
+
+So the content is a vector of \texttt{data}, and
+\begin{align*}
+  \mathtt{data} =& 0 + e + b*: \mathmytype{vec[byte]} &\Rightarrow{}& \text{init $b$, active mode, memory=0, offset=$e$}\\
+                |& 1 + b*: \mathmytype{vec[byte]} &\Rightarrow{}& \text{init $b$, passive mode}\\
+                |& 2 + x + e + b*: \mathmytype{vec[byte]} & \Rightarrow{}& \text{init $b$, active mode, memory=$x$, offset=$e$}
+\end{align*}
+
+\emoji{turtle} : You can just check whether the initial integer is even. If it
+is, then it's active.
+
+In the current version of WebAssembly, at most one memory may be defined or
+imported in a single module, so all valid \colb{active} data segments have a
+\colb{memory} value of 0.
+
+\subsection{Data Count Section}
+
+The \cola{data count section} has the id 12. It decodes into an optional
+\textmytype{u32}, that represents the number of \cola{data segments} in the
+\cola{data section}.
+
+\emoji{parrot} : Why do we need this at all ? I remember there's a
+\textmytype{u32} for each section already no ? At the beginning.
+
+\emoji{turtle} : Yeah, This is used to simplify single-pass validation. Since
+the data section occurs after the code section, the \textmytype{memory.init} and
+\textmytype{data.drop} instructions would not be able to check....
+
+\emoji{parrot} : Okay, Okay, it's needed for some reasons..
+
+\end{document}
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-parse-self: t
+% TeX-auto-save: t
+% End:

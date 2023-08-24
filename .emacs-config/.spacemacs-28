@@ -32,13 +32,13 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(nginx
+   '(windows-scripts
+     nginx
      docker
      lua
      go
      yaml
      typescript
-     flycheck
      html
      javascript
      markdown
@@ -81,6 +81,11 @@ This function should only modify configuration layer settings."
                                       cdlatex
                                       hungry-delete
                                       solidity-mode
+                                      editorconfig
+                                      (copilot :location (recipe
+                                                          :fetcher github
+                                                          :repo "zerolfx/copilot.el"
+                                                          :files ("*.el" "dist")))
                                       )
 
    ;; A list of packages that cannot be updated.
@@ -603,6 +608,22 @@ before packages are loaded."
   (require 'my-buffer-init)
   (require 'my-modes)
   (require 'my-abbrev-and-expand)
+
+
+  ;; accept completion from copilot and fallback to company
+
+  (with-eval-after-load 'company
+    ;; disable inline previews
+    (delq 'company-preview-if-just-one-frontend company-frontends))
+  
+  (with-eval-after-load 'copilot
+    (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+    (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+    (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-word)
+    (define-key copilot-completion-map (kbd "C-<tab>") 'copilot-accept-completion-by-word))
+
+  (add-hook 'prog-mode-hook 'copilot-mode)
+
 )
 
 ;; Do not write anything past this comment. This is where Emacs will
@@ -645,7 +666,7 @@ This function is called at the very end of Spacemacs initialization."
  '(js-indent-level 2)
  '(org-confirm-babel-evaluate nil)
  '(package-selected-packages
-   '(dockerfile-mode company-lua lua-mode popwin godoctor go-tag go-rename go-impl go-guru go-gen-test go-fill-struct go-eldoc flycheck-golangci-lint dap-mode lsp-docker lsp-treemacs bui yaml spinner company-go go-mode solidity-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode impatient-mode htmlize helm-css-scss haml-mode evil-matchit emmet-mode counsel-css company-web web-completion-data load-env-vars pyvenv markdown-toc epc concurrent deferred gh-md ctable pythonic tablist aio ess-R-data-view ess auctex-latexmk auctex toml-mode ron-mode racer rust-mode helm-gtags ggtags flycheck-rust counsel-gtags counsel swiper ivy cargo typescript-mode smartparens import-js grizzl add-node-modules-path origami lsp-mode markdown-mode flycheck-pos-tip pos-tip vue-mode edit-indirect ssass-mode vue-html-mode mmm-mode helm-ctest cmake-mode evil-tex company-reftex company-math math-symbol-lists company-auctex hungry-delete yasnippet-snippets tern helm-company helm-c-yasnippet fuzzy company-anaconda company auto-yasnippet ac-ispell auto-complete rainbow-delimiters transient cdlatex yapfify which-key use-package treemacs-projectile treemacs-icons-dired treemacs-evil sphinx-doc quickrun pytest pylookup pyenv-mode pydoc py-isort pippel pipenv pip-requirements pcre2el overseer nose nameless monokai-theme macrostep live-py-mode inspector importmagic hybrid-mode holy-mode help-fns+ helm-xref helm-themes helm-swoop helm-pydoc helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag flycheck-package flycheck-elsa evil-evilified-state emr elisp-slime-nav elisp-def dotenv-mode diminish cython-mode code-cells blacken bind-map anaconda-mode ace-jump-helm-line))
+   '(powershell wfnames bmx-mode editorconfig dockerfile-mode company-lua lua-mode popwin godoctor go-tag go-rename go-impl go-guru go-gen-test go-fill-struct go-eldoc flycheck-golangci-lint dap-mode lsp-docker lsp-treemacs bui yaml spinner company-go go-mode solidity-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode impatient-mode htmlize helm-css-scss haml-mode evil-matchit emmet-mode counsel-css company-web web-completion-data load-env-vars pyvenv markdown-toc epc concurrent deferred gh-md ctable pythonic tablist aio ess-R-data-view ess auctex-latexmk auctex toml-mode ron-mode racer rust-mode helm-gtags ggtags flycheck-rust counsel-gtags counsel swiper ivy cargo typescript-mode smartparens import-js grizzl add-node-modules-path origami lsp-mode markdown-mode flycheck-pos-tip pos-tip vue-mode edit-indirect ssass-mode vue-html-mode mmm-mode helm-ctest cmake-mode evil-tex company-reftex company-math math-symbol-lists company-auctex hungry-delete yasnippet-snippets tern helm-company helm-c-yasnippet fuzzy company-anaconda company auto-yasnippet ac-ispell auto-complete rainbow-delimiters transient cdlatex yapfify which-key use-package treemacs-projectile treemacs-icons-dired treemacs-evil sphinx-doc quickrun pytest pylookup pyenv-mode pydoc py-isort pippel pipenv pip-requirements pcre2el overseer nose nameless monokai-theme macrostep live-py-mode inspector importmagic hybrid-mode holy-mode help-fns+ helm-xref helm-themes helm-swoop helm-pydoc helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag flycheck-package flycheck-elsa evil-evilified-state emr elisp-slime-nav elisp-def dotenv-mode diminish cython-mode code-cells blacken bind-map anaconda-mode ace-jump-helm-line))
  '(safe-local-variable-values
    '((flycheck-gcc-include-path . "c++20")
      (eval flycheck-select-checker `c/c++-gcc)
