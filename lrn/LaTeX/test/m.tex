@@ -110,11 +110,60 @@ are read and written by different services.
     \textbf{Specification} & \textbf{Swift} & \textbf{Cinder} & \textbf{Manila} \\
     \hline
     \textbf{Access mode} & REST API & Block device & File system \\
-    \textbf{Multi-access} & Yes & No & Yes \\
-    \textbf{Persistent} & Yes & Yes & Yes \\
+    \textbf{Multi-access} & \emoji{check-mark-button} & \emoji{cross-mark} & \emoji{check-mark-button} \\
+    \textbf{Persistent} & \emoji{check-mark-button} & \emoji{check-mark-button} & \emoji{check-mark-button} \\
     \textbf{Accessibility} & Anywhere & Within single VM & Within multiple VMs \\
   \end{tabularx}
 \end{table}
+
+\subsubsection{Nova - compute service}
+
+\emoji{turtle} : Nova is the compute service. It's the most complex service in OpenStack.
+
+\emoji{parrot} : Wait... I remember you said that Nova is replaced by Cinder ?
+
+\emoji{turtle} : Only the \Cola{volume service }is replaced by Cinder. 
+
+\emoji{parrot} : Oh, I see. So how it's complex ?
+
+\emoji{turtle} : First, it needs to interact with many other services. Second,
+its internal components are complex, because it needs to respond to user
+requests for running VMs.
+
+Let's decompose it into its components:
+
+\begin{description}
+\item[nova-api] : It accepts and responds to user requests of creating instances
+  (VMs) via the OpenStack API or the EC2 API.
+\item[nova-compute] : It creates and terminates VMs via the hypervisor's APIs
+  (XenAPI for XenServer, libvirt for KVM and the VMware API for VMware).
+\item[nova-network] : It provides network connectivity for VMs. It's deprecated
+  in favor of Neutron \emoji{litter-in-bin-sign}.
+\item[nova-scheduler] : It schedules VMs to run on different compute nodes.
+  (\emoji{parrot} : So here's where OpenStack find the best node to run a VM ?,
+  \emoji{turtle} : Yes).
+\item[nova-conductor] : It provides database access for the other components.
+  (\emoji{parrot} : Why bother adding access control ? \emoji{turtle} : This is
+  for security. If some nodes are compromised, we can't just let them access the
+  database however they want).
+\end{description}
+
+\subsubsection{Neutron - networking services}
+
+\emoji{turtle} : \Cola{Neutron} provides a \Cola{Network as Service (NaaS)}
+capability between \cola{interface devices (routers, switches, load balancers,
+  VPNs, firewalls)} managed by other OpenStack services (such as Nova) or
+external networks.
+
+It has the following features:
+
+\begin{itemize}
+\item It allows users to create their own networks and attach interfaces to them.
+\item Its backend is extensible, so it can take advantage of commodity gear or
+  vandor-supported equipment.
+\end{itemize}
+
+
 
 \end{document}
 
@@ -123,4 +172,4 @@ are read and written by different services.
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"
 % TeX-master: "m.tex"
-% End:
+% End
