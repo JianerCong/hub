@@ -141,7 +141,7 @@ s1 <prompt s2> s3 _ s4
       ("nte" "\\notag")
       ("dr" "\\draw")
       ("tm" "\\times")
-      ("ip" "" tex-tikz-inputpage)
+      ;; ("ip" "" tex-tikz-inputpage)
       ("gt" "\\MyGet" )
       ("mb" "\\mbox")
       ("mwhr" " \\\\[-1cm]               %remove the extra spacing

@@ -3,6 +3,66 @@
 
 \title{Openstack}
 \input{h}
+
+
+% svgs
+\newcommand{\svgOs}[2][0.3\linewidth]{\includesvg[width=#1]{/home/me/Pictures/opstk/#2.svg}}
+% \newcommand{\svgNeutron}[1][1.5cm]{\includesvg[width=#1]{/home/me/Pictures/opstk/neutron.svg}}
+\newcommand{\svgD}[1][8mm]{\includesvg[width=#1]{/home/me/Pictures/d1.svg}}
+\newcommand{\svgC}[1][8mm]{\includesvg[width=#1]{/home/me/Pictures/c1.svg}}
+
+% params:
+% 1: width of dialog box
+% 2: the speaker
+% 3: the text
+\newcommand{\leftSay}[3][0.7\linewidth]{
+  \begin{tikzpicture}
+    \node (N1) {
+      #2
+    };
+    \leftDialogBox[#1]{N1}{
+      #3
+    }
+  \end{tikzpicture}
+}
+
+\newcommand{\rightSay}[3][0.7\linewidth]{
+  \begin{tikzpicture}
+    \node (N1) {
+      #2
+    };
+    \rightDialogBox[#1]{N1}{
+      #3
+    }
+  \end{tikzpicture}
+}
+
+% 🦜 : Let d1 and c1 say and ask .
+\newcommand{\dSay}[1]{
+  \begin{tikzpicture}
+    \node (D1) {
+      \svgD
+    };
+    \rightDialogBox[0.7\linewidth]{D1}{
+      #1
+    }
+  \end{tikzpicture}
+}
+
+
+\newcommand{\cSay}[1]{
+  \begin{flushright}
+    \begin{tikzpicture}
+      \node (C1) {
+        \svgC
+      };
+      \leftDialogBox[0.7\linewidth]{C1}{
+        #1
+      }
+    \end{tikzpicture}
+  \end{flushright}
+}
+
 % --------------------------------------------------
 \begin{document}
 \maketitle
@@ -11,8 +71,7 @@
 
 \subsection{The logical architecture}
 
-\emoji{turtle} : OpenStack uses a microservice architecture. So it's composed of
-many many services. 
+\cSay{ OpenStack uses a microservice architecture. So it's composed of many many services. }
 
 About this services:
 
@@ -25,22 +84,19 @@ About this services:
 
 \subsubsection{Keystone - identity management}
 
-\emoji{turtle} : Keystone is the identity management service. It's the simplest
-service in OpenStack.
+\cSay{ Keystone is the identity management service. It's the simplest service in OpenStack.}
 
 It provides a REST API for authentication and authorization. It also provides a
 service catalog, which is a list of all the services.
 
-\emoji{parrot} : Why is it keeping it ?
+\dSay{ Why is it keeping it ?}
 
-\emoji{turtle} : I think probably because it needs to know which services are
-accessible for a user anyway.
+\cSay{ I think probably because it needs to know which services are accessible for a user anyway.}
 
 \subsubsection{Swift - object storage}
 
-\emoji{turtle} : Swift is the object storage service (an object store). To store
-an object, it splits the object into chunks and stores them in different
-containers redundantly.
+
+\cSay{ Swift is the object storage service (an object store). To store an object, it splits the object into chunks and stores them in different containers redundantly.}
 
 Some of the benefits of this design are:
 
@@ -50,15 +106,13 @@ Some of the benefits of this design are:
 \item It has inexpensive hardware that can be used for redundant storage clusters.
 \end{itemize}
 
-\emoji{parrot} : Wow, \cola{auto-recovey} is cool.
+\dSay{ Wow, \cola{auto-recovey} is cool.}
 
 \subsubsection{Cinder - block storage}
 
-\emoji{parrot} : What if I just want a block of bytes ? For example, for the
-volume of a VM.
+\dSay{ What if I just want a block of bytes ? For example, for the volume of a VM.}
 
-\emoji{turtle} : Then you can use Cinder. It provides raw volumes that can be
-used as hand disks in VMs.
+\cSay{ Then you can use Cinder. It provides raw volumes that can be used as hand disks in VMs.}
 
 Some of the features of Cinder are:
 
@@ -70,39 +124,37 @@ Some of the features of Cinder are:
 Also, like Keystone, different storage backends can be plugged into Cinder such
 as from IBM, NetApp, Nexenta, and VMware.
 
-\emoji{parrot} : What are these ?
+\dSay{ What are these ?}
 
-\emoji{turtle} : I don't know. I think they are companies that provide
-storage....
+\cSay{ I don't know. I think they are companies that provide storage....}
 
 \begin{tcolorbox}
-  \emoji{turtle} : Cinder replaces the old \Cola{Nova Volume service}. 
+\cSay{ Cinder replaces the old \Cola{Nova Volume service}. }
 \end{tcolorbox}
 
 \subsubsection{Manila - file share (since \cola{Juno})}
 
-\emoji{turtle} : Manila is the file share service. It provides a remote file
-system. In operation, it resembles the \Cola{Network File System (NFS)} or
-\Cola{SAMBA} storage service that you can find in Linux.
+\cSay{ Manila is the file share service. It provides a remote file system. In
+  operation, it resembles the \Cola{Network File System (NFS)} or \Cola{SAMBA}
+  storage service that you can find in Linux.}
 
-\emoji{parrot} : Oh, I know SAMBA. I remember it's how linux can access windows
-file.
 
-\emoji{turtle} : Yes, it's a file sharing protocol.
+\dSay{Oh, I know SAMBA. I remember it's how linux can access windows file.}
+\cSay{Yes, it's a file sharing protocol.}
+
 
 In contrast to Cinder, it resembles the \Cola{Storage Area Network (SAN)}
 service. In fact, NFS and SAMBA or the \Cola{Common Internet File System (CIFS)}
 are supported as backend drivers. Manila provides the orchestration of shares on
 the share services.
 
-\emoji{parrot} : What do you mean by \cola{orchestration of shares} ?
+\dSay{What do you mean by \cola{orchestration of shares} ?}
 
-\emoji{turtle} : I think it means that it will take care of the shares when they
-are read and written by different services.
+\cSay{ I think it means that it will take care of the shares when they are read and written by different services.}
 
-\emoji{parrot} : Oh, so what's the difference between Swift, Cinder and Manila ?
+\dSay{Oh, so what's the difference between Swift, Cinder and Manila ?}
 
-\emoji{turtle} : Let's see a table:
+\cSay{ Let's see a table:}
 
 \begin{table}[htbp]
   \centering
@@ -117,18 +169,15 @@ are read and written by different services.
 \end{table}
 
 \subsubsection{Nova - compute service}
+\leftSay{\svgOs{nova}}{My name is \Cola{Nova}. I am the compute service, the most complex service in OpenStack.}
 
-\emoji{turtle} : Nova is the compute service. It's the most complex service in OpenStack.
+\dSay{Wait... I remember you said that Nova is replaced by Cinder ?}
 
-\emoji{parrot} : Wait... I remember you said that Nova is replaced by Cinder ?
+\cSay{ Only the \Cola{volume service }is replaced by Cinder. }
 
-\emoji{turtle} : Only the \Cola{volume service }is replaced by Cinder. 
+\dSay{Oh, I see. So how it's complex ?}
 
-\emoji{parrot} : Oh, I see. So how it's complex ?
-
-\emoji{turtle} : First, it needs to interact with many other services. Second,
-its internal components are complex, because it needs to respond to user
-requests for running VMs.
+\cSay{ First, it needs to interact with many other services. Second, its internal components are complex, because it needs to respond to user requests for running VMs.}
 
 Let's decompose it into its components:
 
@@ -150,12 +199,16 @@ Let's decompose it into its components:
 
 \subsubsection{Neutron - networking services}
 
-\emoji{turtle} : \Cola{Neutron} provides a \Cola{Network as Service (NaaS)}
-capability between \cola{interface devices (routers, switches, load balancers,
-  VPNs, firewalls)} managed by other OpenStack services (such as Nova) or
-external networks.
 
-It has the following features:
+\rightSay{\svgOs{neutron}}{
+  My name is \Cola{Nova}. I am the compute service, the most complex service in OpenStack.
+  My name is \Cola{Neutron}.I provide a \Cola{Network
+    as Service (NaaS)} capability between \cola{interface devices (routers,
+    switches, load balancers, VPNs, firewalls)} managed by other OpenStack
+  services (such as Nova) or external networks.
+}
+
+\cSay{ \Cola{Neutron} has the following features:}
 
 \begin{itemize}
 \item It allows users to create their own networks and attach interfaces to them.
@@ -163,13 +216,37 @@ It has the following features:
   vandor-supported equipment.
 \end{itemize}
 
+Neutron has three main components:
+
+\begin{description}
+\item[server] : It accepts API requests and routes them to the appropriate
+  \cola{plugin} for action.
+\item[plugins] : They perform the actual work for the orchestration of backend devices such as
+  \begin{itemize}
+  \item plugging in or unplugging ports
+  \item creating networks and subnets
+  \item IP addressing.
+  \end{itemize}
+\item[agents] : They run on compute and network nodes. They receive commands
+  from the plugins on the server and bring the changes into effect on the
+  individual nodes. (\emoji{parrot}: Oh, so agent is like a client ?
+  \emoji{turtle}: Yes).
+
+  There're different types of agents. They provide different services. For example:
+  \begin{description}
+  \item[L3 agents] : They provide routing services.
+  \item[Open vSwitch agents] : They provide layer 2 connectivity, by plugging
+    and unplugging ports onto \Cola{Open vSwitch(OVS)} bridges.
+  \end{description}
+  \emoji{parrot}: What is OVS ? \emoji{turtle}: It's a virtual switch.
+
+\end{description}
 
 
 \end{document}
-
 
 % Local Variables:
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"
 % TeX-master: "m.tex"
-% End
+% End:
