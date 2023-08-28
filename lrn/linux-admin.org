@@ -1,0 +1,8 @@
+** sudo
+*** perserve env
+#+begin_src bash
+  sudo bash -c 'echo $HTTP_PROXY'
+  # <empty>
+  sudo --preserve-env=HTTP_PROXY bash -c 'echo $HTTP_PROXY'
+  # http://proxy:8080
+#+end_src

@@ -357,6 +357,9 @@ services without a password.
 #+begin_src bash
 sudo ssh-keygen -t rsa -N '' -f /etc/ssh/my_ssh_host_rsa_key
 #+end_src
+****** Generate the default ssh public key
+ssh-keygen
+
 ***** Start the ssh server
 ****** On Debian-based
 sshd not installed by default.

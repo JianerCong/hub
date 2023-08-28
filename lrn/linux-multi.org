@@ -1,4 +1,6 @@
-** multipass
+** multipass [failed -> fixed]
+🦜 : I feels like multipass doesn't work well when http proxy is enabled. So I
+am gonna try uvtool.
 *** build
 #+begin_src bash
   m=multipass
@@ -22,7 +24,9 @@
   # 🦜 : 
   cd ..
   mkdir build-multipass
-  cmake -S $m -B build-multipass
+
+  # 🦜 : configure the project but disable the testing
+  cmake -S $m -B build-multipass -DMULTIPASS_ENABLE_TESTS=OFF 
   cmake --build build-multipass
 
   # running the multipass daemon and client
@@ -36,7 +40,11 @@
        iptables iputils-ping libatm1 libxtables12 xterm
 
   # run the daemon
-  sudo build-multipass/bin/multipassd
+
+  export MULTIPASS_STORAGE=/tmp/multipass
+  sudo --preserve-env=HTTP_PROXY build-multipass/bin/multipassd -V trace --logger stderr
+  sudo build-multipass/bin/multipassd --address 0.0.0.0:7777
+
 
   # copy the desktop file multipass clients expect to find in your home
   mkdir -p ~/.local/share/multipass/
@@ -47,6 +55,10 @@
 
   # run the client
   build-multipass/bin/multipass launch --name test
+
+  # cleanup
+
+  sudo rm /root/.local/share/multipass/ -rf
 #+end_src
 *** basic
 #+begin_src bash
@@ -64,6 +76,21 @@
 
   # get the IP address of the instance
   multipass info my-jammy | grep IPv4 | awk '{print $2}'
+
+  # attach to the instance
+  multipass shell my-jammy
+
+  # copy files to the instance
+  multipass transfer /home/me/hi.txt my-jammy:/home/ubuntu/hi.txt
+  multipass transfer my-jammy:/home/ubuntu/hi.txt /home/me/hi.txt
+#+end_src
+
+*** generate and add the ssh key
+#+begin_src bash
+  ssh-keygen
+  # see the public key
+  ls -l ~/.ssh
+
 #+end_src
 *** Q/A
 **** Image hash mismatch ?
@@ -75,6 +102,8 @@ download the image again. So we need to remove the image and try again.
   sudo snap remove multipass
   sudo snap install multipass
 #+end_src
+
+
 ** ansible
 *** hi
 1. install
@@ -175,6 +204,35 @@ Or group-scoped
   vars:
     ansible_user: my_server_user
 #+end_src
+*** playbook
+🐢 : playbook is like the startup script for the managed hosts.
+
++ play :: an ordered list of *tasks* to execute against nodes in an *inventory*.
++ task :: A list of one or more *modules* that defines the operations to be
+  performed by Ansible. that Ansible performs.
++ module :: a unit of code or binary that Ansible runs on managed nodes.
+
+1. Create the playbook to print "Hello world".
+
+playbook.yaml:
+#+begin_src yaml
+  - name: My first play
+    hosts: virtualmachines
+    tasks:
+     - name: Ping my hosts
+       ansible.builtin.ping:
+
+     - name: Print message
+       ansible.builtin.debug:
+         msg: Hello world
+#+end_src
+
+2. Run the playbook.
+
+inventory.yaml:
+   #+begin_src bash
+     ansible-playbook -i inventory.yaml playbook.yaml
+   #+end_src
 
 * End
 
