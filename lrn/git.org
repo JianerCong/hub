@@ -74,3 +74,13 @@ from ~pick-pick-pick~ to ~pick-squash-squash~.
   # remove
   git config --global unset http.proxy
 #+end_src
+** [when building other project] checkout the release and add the submodules.
+#+begin_src bash
+
+  # list the releases
+  git tag -l "v*"
+  git checkout v1.12.2
+
+  # update the submodules
+  git submodule update --init --recursive
+#+end_src

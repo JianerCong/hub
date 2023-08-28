@@ -1,0 +1,183 @@
+** multipass
+*** build
+#+begin_src bash
+  m=multipass
+
+  # clone the multipass repo
+  git clone https://github.com/canonical/multipass.git
+  # check out the release v1.12.2
+  cd $m
+  git checkout v1.12.2
+
+  # 🦜 : It seems like we have to clone the repo manually instead of using the
+  # provided release file. Because we need the .git folder to add the submodules.
+
+  # build dependencies
+  cd $m
+  sudo apt install devscripts equivs
+  mk-build-deps -s sudo -i
+
+  # build
+  git submodule update --init --recursive
+  # 🦜 : 
+  cd ..
+  mkdir build-multipass
+  cmake -S $m -B build-multipass
+  cmake --build build-multipass
+
+  # running the multipass daemon and client
+  # --------------------------------------------------
+
+  # install the runtime dependencies
+  sudo apt update
+  sudo apt install libgl1 libpng16-16 libqt6core6 libqt6gui6 \
+       libqt6network6 libqt6widgets6 libxml2 libvirt0 dnsmasq-base \
+       dnsmasq-utils qemu-system-x86 qemu-utils libslang2 iproute2 \
+       iptables iputils-ping libatm1 libxtables12 xterm
+
+  # run the daemon
+  sudo build-multipass/bin/multipassd
+
+  # copy the desktop file multipass clients expect to find in your home
+  mkdir -p ~/.local/share/multipass/
+  cp $m/data/multipass.gui.autostart.desktop ~/.local/share/multipass/
+
+  # enable auto-complete
+  . $m/completion/bash/multipass
+
+  # run the client
+  build-multipass/bin/multipass launch --name test
+#+end_src
+*** basic
+#+begin_src bash
+  # list all multipass instances
+  multipass list
+
+  # list all multipass instances and delete them
+  multipass list | grep -v State | awk '{print $1}' | xargs -n1 multipass delete --purge
+
+  # start a new jammy instance
+  multipass launch lts --name my-jammy --cpus 2 --memory 2G --disk 10G
+
+  # get the info about the instance
+  multipass info my-jammy
+
+  # get the IP address of the instance
+  multipass info my-jammy | grep IPv4 | awk '{print $2}'
+#+end_src
+*** Q/A
+**** Image hash mismatch ?
+🦜 : It looks like when multipass failed to verify the image hash, it will not
+download the image again. So we need to remove the image and try again.
+
+#+begin_src bash
+  # reinstall the multipass
+  sudo snap remove multipass
+  sudo snap install multipass
+#+end_src
+** ansible
+*** hi
+1. install
+#+begin_src bash
+python3 -m pip install --user ansible
+#+end_src
+
+2. create an inventory by adding the IP address in ~/etc/ansible/hosts`.
+
+#+begin_src yaml
+  [myvirtualmachines]
+  192.0.2.50
+  192.0.2.51
+  192.0.2.52 
+#+end_src
+
+3. verify the hosts
+
+ansible all --list-hosts
+
+4. Set up SSH connections so Ansible can connect to the managed hosts.
+
+   a. Add the public SSH key to the `authorized_keys` file on each remote
+   system.
+   b. Test the SSH connections.
+
+   #+begin_src bash
+     ssh me@192.0.2.50
+   #+end_src
+
+   If the username on the control node is different, you need to pass the ~-u~
+   option with the ~ansible~ command.
+
+5. Ping the managed hosts.
+
+   #+begin_src bash
+     ansible all -m ping
+   #+end_src
+*** create inventory
+1. Create the inventory file ~inventory.yaml~ in any folder:
+#+begin_src yaml
+  myvms:
+    hosts:
+      vm01:
+        ansible_host: 192.0.2.50
+      vm02:
+        ansible_host: 192.0.2.51
+      vm03:
+        ansible_host: 192.0.2.52
+#+end_src
+
+Add a new group for your hosts then specify the IP address or fully qualified
+domain name (FQDN) of managed node in the group with ~ansible_host~ field.
+
+2. Verify your inventory.
+
+   #+begin_src bash
+     ansible-inventory -i inventory.yaml --list
+   #+end_src
+
+3. ping the managed hosts.
+
+   #+begin_src bash
+     ansible myvms -i inventory.yaml -m ping
+   #+end_src
+
+🐢 : Note:
+
++ Ensure that group names are meaningful and unique. They are case-sensitive.
++ Invalid group names include "I have space", "I-have-hyphens", "1IhavePrecedingNum"
+*** variables
+Variables are like the args passed to the ansible command.
+
+They can be local
+
+#+begin_src yaml
+ webservers:
+  hosts:
+    webserver01:
+      ansible_host: 192.0.2.140
+      http_port: 80
+    webserver02:
+      ansible_host: 192.0.2.150
+      http_port: 443 
+#+end_src
+
+Or group-scoped
+
+#+begin_src yaml
+  webservers:
+  hosts:
+    webserver01:
+      ansible_host: 192.0.2.140
+      http_port: 80
+    webserver02:
+      ansible_host: 192.0.2.150
+      http_port: 443
+  vars:
+    ansible_user: my_server_user
+#+end_src
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:
