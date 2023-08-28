@@ -69,6 +69,7 @@ am gonna try uvtool.
   multipass list | grep -v State | awk '{print $1}' | xargs -n1 multipass delete --purge
 
   # start a new jammy instance
+  multipass launch lts --name my-jammy
   multipass launch lts --name my-jammy --cpus 2 --memory 2G --disk 10G
 
   # get the info about the instance
@@ -85,13 +86,47 @@ am gonna try uvtool.
   multipass transfer my-jammy:/home/ubuntu/hi.txt /home/me/hi.txt
 #+end_src
 
-*** generate and add the ssh key
+*** generate (optional) and add the ssh key
 #+begin_src bash
-  ssh-keygen
+
+  # remove the ~/.ssh folder if already exists
+  rm -rf ~/.ssh
+  ssh-keygen -t ed25519
   # see the public key
   ls -l ~/.ssh
+  myvm=my-jammy
+  multipass shell $myvm
+
+  # 🦜 append the content of ~/.ssh/id_rsa.pub to the file /home/ubuntu/.ssh/authorized_keys
+  content=$(cat ~/.ssh/id_ed25519.pub)
+  multipass exec $myvm -- bash -c "echo $content >> /home/ubuntu/.ssh/authorized_keys"
+
+  # [optional] see the content of the file /home/ubuntu/.ssh/authorized_keys
+  multipass exec $myvm -- bash -c "cat /home/ubuntu/.ssh/authorized_keys"
+
+  # 🦜 get the ip address of the vm
+  vmip=$(multipass info $myvm | grep IPv4 | awk '{print $2}')
+
+  # 🦜 ssh into the vm
+  ssh ubuntu@$vmip
 
 #+end_src
+*** set up a new VM and add script
+#+begin_src bash
+  myvm="my-jammy2"
+  multipass launch lts --name $myvm
+  vmip=$(multipass info $myvm | grep IPv4 | awk '{print $2}')
+
+  # 🦜 append the content of ~/.ssh/id_rsa.pub to the file /home/ubuntu/.ssh/authorized_keys
+  content=$(cat ~/.ssh/id_ed25519.pub)
+  multipass exec $myvm -- bash -c "echo $content >> /home/ubuntu/.ssh/authorized_keys"
+
+  # 🦜 get the ip address of the vm
+  vmip=$(multipass info $myvm | grep IPv4 | awk '{print $2}')
+  # 🦜 ssh into the vm
+  ssh ubuntu@$vmip
+#+end_src
+
 *** Q/A
 **** Image hash mismatch ?
 🦜 : It looks like when multipass failed to verify the image hash, it will not
@@ -109,6 +144,10 @@ download the image again. So we need to remove the image and try again.
 1. install
 #+begin_src bash
 python3 -m pip install --user ansible
+#+end_src
+#+begin_src bash
+  # just install in the venv
+  pip install ansible
 #+end_src
 
 2. create an inventory by adding the IP address in ~/etc/ansible/hosts`.

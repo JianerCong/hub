@@ -359,7 +359,18 @@ sudo ssh-keygen -t rsa -N '' -f /etc/ssh/my_ssh_host_rsa_key
 #+end_src
 ****** Generate the default ssh public key
 ssh-keygen
+****** the format of ~authorized_keys~
 
+ssh[type] [public key] [comment]
+
++ ssh-[type] :: This specifies the type of public key. The most common types are
+  ssh-rsa and ssh-dsa. Dsa is based on the Digital
+  Signature Algorithm and ssh-ed25519.
++ [public key] :: This is the actual public key. It is usually a long string of
+  characters.
+
+  see ~linux-multi.org~ for an example of
+  authenticate with ssh-ed25519 in a multipass environment.
 ***** Start the ssh server
 ****** On Debian-based
 sshd not installed by default.
