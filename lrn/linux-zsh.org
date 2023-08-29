@@ -6,7 +6,35 @@
 #+end_src
 ** theme
 #+begin_src shell
+  sudo apt-get install fonts-powerline
   omz theme use agnoster
+#+end_src
+** show the proxy
+in ~/.oh-my-zsh/themes/
+
+Add in the middle
+#+begin_src bash
+# 🦜 : Let's show the current http proxy
+prompt_proxy(){
+    if [[ -n "$HTTP_PROXY" ]]; then
+        s1=${HTTP_PROXY#http://} # localhost:7890/
+        s2=${s1%/} # localhost:7890
+        prompt_segment green black "${s2}"
+    fi
+}
+
+#+end_src
+
+Add to the end
+#+begin_src bash
+  ## Main prompt
+  build_prompt() {
+    RETVAL=$?
+    ...
+    prompt_proxy
+    ...
+  }
+
 #+end_src
 * End
 # Local Variables:

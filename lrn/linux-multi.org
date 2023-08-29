@@ -42,8 +42,10 @@ am gonna try uvtool.
   # run the daemon
 
   export MULTIPASS_STORAGE=/tmp/multipass
-  sudo --preserve-env=HTTP_PROXY build-multipass/bin/multipassd -V trace --logger stderr
-  sudo build-multipass/bin/multipassd --address 0.0.0.0:7777
+  # 🦜 : path won't know your PATH, so you have to specify the full path to the binary
+  sudo --preserve-env=HTTP_PROXY /home/me/repo/build-multipass/bin/multipassd -V trace --logger stderr
+  # 🦜 : It looks like for some reason, you have to turn on the http proxy to let
+  # the multipass fetch the image from ubuntu's cloud-image server.
 
 
   # copy the desktop file multipass clients expect to find in your home
@@ -138,140 +140,6 @@ download the image again. So we need to remove the image and try again.
   sudo snap install multipass
 #+end_src
 
-
-** ansible
-*** hi
-1. install
-#+begin_src bash
-python3 -m pip install --user ansible
-#+end_src
-#+begin_src bash
-  # just install in the venv
-  pip install ansible
-#+end_src
-
-2. create an inventory by adding the IP address in ~/etc/ansible/hosts`.
-
-#+begin_src yaml
-  [myvirtualmachines]
-  192.0.2.50
-  192.0.2.51
-  192.0.2.52 
-#+end_src
-
-3. verify the hosts
-
-ansible all --list-hosts
-
-4. Set up SSH connections so Ansible can connect to the managed hosts.
-
-   a. Add the public SSH key to the `authorized_keys` file on each remote
-   system.
-   b. Test the SSH connections.
-
-   #+begin_src bash
-     ssh me@192.0.2.50
-   #+end_src
-
-   If the username on the control node is different, you need to pass the ~-u~
-   option with the ~ansible~ command.
-
-5. Ping the managed hosts.
-
-   #+begin_src bash
-     ansible all -m ping
-   #+end_src
-*** create inventory
-1. Create the inventory file ~inventory.yaml~ in any folder:
-#+begin_src yaml
-  myvms:
-    hosts:
-      vm01:
-        ansible_host: 192.0.2.50
-      vm02:
-        ansible_host: 192.0.2.51
-      vm03:
-        ansible_host: 192.0.2.52
-#+end_src
-
-Add a new group for your hosts then specify the IP address or fully qualified
-domain name (FQDN) of managed node in the group with ~ansible_host~ field.
-
-2. Verify your inventory.
-
-   #+begin_src bash
-     ansible-inventory -i inventory.yaml --list
-   #+end_src
-
-3. ping the managed hosts.
-
-   #+begin_src bash
-     ansible myvms -i inventory.yaml -m ping
-   #+end_src
-
-🐢 : Note:
-
-+ Ensure that group names are meaningful and unique. They are case-sensitive.
-+ Invalid group names include "I have space", "I-have-hyphens", "1IhavePrecedingNum"
-*** variables
-Variables are like the args passed to the ansible command.
-
-They can be local
-
-#+begin_src yaml
- webservers:
-  hosts:
-    webserver01:
-      ansible_host: 192.0.2.140
-      http_port: 80
-    webserver02:
-      ansible_host: 192.0.2.150
-      http_port: 443 
-#+end_src
-
-Or group-scoped
-
-#+begin_src yaml
-  webservers:
-  hosts:
-    webserver01:
-      ansible_host: 192.0.2.140
-      http_port: 80
-    webserver02:
-      ansible_host: 192.0.2.150
-      http_port: 443
-  vars:
-    ansible_user: my_server_user
-#+end_src
-*** playbook
-🐢 : playbook is like the startup script for the managed hosts.
-
-+ play :: an ordered list of *tasks* to execute against nodes in an *inventory*.
-+ task :: A list of one or more *modules* that defines the operations to be
-  performed by Ansible. that Ansible performs.
-+ module :: a unit of code or binary that Ansible runs on managed nodes.
-
-1. Create the playbook to print "Hello world".
-
-playbook.yaml:
-#+begin_src yaml
-  - name: My first play
-    hosts: virtualmachines
-    tasks:
-     - name: Ping my hosts
-       ansible.builtin.ping:
-
-     - name: Print message
-       ansible.builtin.debug:
-         msg: Hello world
-#+end_src
-
-2. Run the playbook.
-
-inventory.yaml:
-   #+begin_src bash
-     ansible-playbook -i inventory.yaml playbook.yaml
-   #+end_src
 
 * End
 
