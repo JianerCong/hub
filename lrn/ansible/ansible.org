@@ -146,7 +146,69 @@ group, for orphan nodes).
   ansible all -i my-first-inventory.yaml -m ping
 #+end_src
 **** control the openstack cloud
+** OpenStack Ansible
+*** all in one [for testing]
+🦜 : All the following commands should be run with ~sodo~.
+1. Prepare the host
+   #+begin_src bash
+     apt update
+     apt dist-upgrade
+     reboot
+   #+end_src
 
+2. bootstrap Ansible and the required roles.
+#+begin_src bash
+  git clone https://opendev.org/openstack/openstack-ansible /opt/openstack-ansible
+  cd /opt/openstack-ansible
+#+end_src
+
+3. checkout the appropriate branch
+   #+begin_src bash
+     git checkout 27.0.1
+   #+end_src
+
+4. run the bootstrap-ansible script
+   #+begin_src bash
+     TMPDIR=/var/tmp scripts/bootstrap-ansible.sh
+   #+end_src
+  🦜 : There's a lot of configurable options here, but I am gonna stick to the
+   default for now.
+
+5. run the bootstrap-aio script
+    #+begin_src bash
+      scripts/bootstrap-aio.sh
+    #+end_src
+
+6. run the playbooks
+   #+begin_src bash
+     cd /opt/openstack-ansible/playbooks
+     openstack-ansible setup-hosts.yml
+     openstack-ansible setup-infrastructure.yml
+     openstack-ansible setup-openstack.yml
+   #+end_src   
+
+ 🐢 : Once the playbooks have been fully executed, you can run individual
+   playbooks. For example,
+
+   #+begin_src bash
+     cd /opt/openstack-ansible/playbooks
+     openstack-ansible os-keycloak-install.yml
+   #+end_src
+
+*** Interact with the cloud
+
+The horizon web interface provides a graphical user interface (GUI) for
+interacting with the AIO deployment. Be default, it listens on port 443 (or 80,
+if SSL certificate configuration was disabled). So, simply browse to the IP of
+the host.
+
+🦜 : Where are the user and password?
+
+🐢 : By default, there's user called ~admin~. Password is the
+~keystone_auth_admin_password~ in ~/etc/openstack_deploy/user_secrets.yml~.
+
+
+   
 * End
 
 # Local Variables:

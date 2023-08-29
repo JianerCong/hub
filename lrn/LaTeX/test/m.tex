@@ -243,6 +243,21 @@ Neutron has three main components:
 \end{description}
 
 
+\section{Networking requirements}
+
+\cSay{
+  Due to the use of containers to isolate the OpenStack services, special network
+  configuration is needed. In particular \Cola{OpenStack Ansible} uses
+  \Cola{linux bridges} to provide network connectivity to the LXC containers.
+}
+
+\dSay{What is a linux bridge ?}
+
+\cSay{It's a virtual switch that can be used to connect multiple network
+  interfaces together. You can see what are on your system by running the command
+  \texttt{ip link show}.
+}
+
 \end{document}
 
 % Local Variables:
