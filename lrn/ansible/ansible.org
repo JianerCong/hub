@@ -209,6 +209,134 @@ the host.
 
 
    
+*** SSL issues
+By default, the deploying host uses self-signed certificates. But these are not
+trusted by the client host. To fix this:
+
+1. copy the certificate to the client host. The name and location of the
+   certificate of the generated certificate are configured by the
+   ~pki_authorities~ and ~pki_trust_store_location~ variables (default to
+   ~ExampleCorpRoot~). So you might wanna do something like:
+
+   #+begin_src bash
+     scp aio:/usr/local/share/ca-certificates/ExampleCorpRoot.crt ~/.config/openstack/aio.crt
+   #+end_src
+
+   And next, in your ~cloud.yaml~:
+   #+begin_src yaml
+     clouds:
+       aio:
+         # ...
+         cacert: /home/<username>/.config/openstack/aio.crt
+   #+end_src
+ 
+
+
+** openstack client
+*** install
+#+begin_src bash
+  pip install python-openstackclient
+#+end_src
+*** get started
+
+*** help
+#+begin_src bash
+  cmd=(address group create)
+  openstack help $cmd
+#+end_src
+**** available commands
+  access rule delete  Delete access rule(s)
+  ...
+  volume type unset  Unset volume type properties
+  volume unset  Unset volume properties
+
+*** global options
+openstack takes global options. Most have a corresponding environment variable,
+but the command-line option takes priority. For example:
+
++ --os-cloud <cloud-name> ::  look for ~clouds.yaml~
++ --os-auth-url <auth-url>
++ --os-auth-type <auth-type>
++ --os-region-name :: Authentication region name
+
+*** cloud configuration
+opensatck will look for a file called ~clouds.yaml~ in the following locations:
+
++ current folder
++ ~/.config/openstack
++ /etc/openstack
+
+The first one found will be used.
+
+The structure is something like:
+#+begin_src yaml
+  clouds:
+    my_cloud1:
+      k1 : v1
+      k2 : v2
+    my_cloud2:
+      k1 : v1
+      k2 : v2
+#+end_src
+
+Where k1, k2 match the openstack global options but without the ~os-~ prefix：
+#+begin_src yaml
+  clouds:
+    devstack:
+      auth:
+        auth_url: http://192.168.122.10:5000/
+        project_name: demo
+        username: demo
+        password: 0penstack
+      region_name: RegionOne
+    ds-admin:
+      auth:
+        auth_url: http://192.168.122.10:5000/
+        project_name: admin
+        username: admin
+        password: 0penstack
+      region_name: RegionOne
+    infra:
+      cloud: rackspace
+      auth:
+        project_id: 275610
+        username: openstack
+        password: xyzpdq!lazydog
+      region_name: DFW,ORD,IAD
+#+end_src
+
+🦜 : What? So ~region_name~ should correspond to ~os-region-name~, ~cloud~
+should correspond to ~os-cloud~, but why is ~auth~ different? There are
+subfields under it.
+
+🐢 : The official document just said that the ~auth_url~ for the ~rackspace~
+cloud is taken from ~clouds-public.yaml~.:
+#+begin_src yaml
+  public-clouds:
+    rackspace:
+      auth:
+        auth_url: 'https://identity.api.rackspacecloud.com/v2.0/'
+      #+end_src
+
+      To be honest. I don't get that either. But I guess the cloud providers
+      will let us know.
+
+
+
+
+
+*** create security group
+Open the tcp ports 8774,...,8790 (which are the service ports for an openstack
+AIO deployment.)
+#+begin_src bash
+  openstack security group create openstack-apis \
+      --description 'Allow access to various OpenStack services'
+  for port in 8774 8776 9292 9696 5000 8780; do
+      openstack security group rule create openstack-apis \
+        --protocol tcp --dst-port ${port}:${port} --remote-ip 0.0.0.0/0
+    done
+  openstack server add security group $SERVER openstack-apis
+#+end_src
 * End
 
 # Local Variables:

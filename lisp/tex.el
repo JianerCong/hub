@@ -234,7 +234,7 @@ s1 <prompt s2> s3 _ s4
 ;; 🦜 add our own Font-Inserting command
 LaTeX-font-list
 
-(setq-default TeX-master "m") ; All master files by default called "m".
+;; (setq-default TeX-master "m") ; All master files by default called "m".
 
 (add-to-list 'LaTeX-font-list '(?a "\\cola{" "}"))                       ;C-c C-f a
 (add-to-list 'LaTeX-font-list '(?A "\\Cola{" "}"))                       ;C-c C-f a

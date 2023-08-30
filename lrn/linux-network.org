@@ -1,3 +1,20 @@
+** cable connect two linux
+On machine 1:
+
+Wired setting :
+ipv4 address = 10.0.0.1
+mask = 255.255.255.0
+router = ""
+
+On machine 2:
+
+Wired setting :
+ipv4 address = 10.0.0.2
+mask = 255.255.255.0
+router = ""
+
+Now ping each other
+https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-ethernet-without-a-router?noredirect=1&lq=1
 ** Network on linex
 *** Lower
 **** ? My exe can't bound to port?
@@ -159,6 +176,14 @@ turn off your network proxy
     # see config
     cat /etc/NetworkManager/NetworkManager.conf
   #+END_SRC
+**** linux as router
+🦜 : Am I forwarding ?
+
+sysctl net.ipv4.ip_forward
+
+🦜 : turn on forwarding
+
+sudo sysctl -w net.ipv4.ip_forward=1
 **** DNS
   1. app calls a function to look up the ip addr behind an host name. The function
      is usually in sys shared lib.
@@ -373,6 +398,11 @@ ssh[type] [public key] [comment]
   authenticate with ssh-ed25519 in a multipass environment.
 ***** Start the ssh server
 ****** On Debian-based
+#+begin_src bash
+  sudo apt install ssh
+  pgrep ssh --list-full
+  # 18001 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+#+end_src
 sshd not installed by default.
 Upon installed:
 1. New keys generated
