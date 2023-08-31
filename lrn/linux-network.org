@@ -17,6 +17,20 @@ Now ping each other
 https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-ethernet-without-a-router?noredirect=1&lq=1
 ** Network on linex
 *** Lower
+**** bridge
+
+#+begin_src bash
+  # create a bridge named my_bridge
+  b=my_bridge
+  ip link add $b type bridge
+
+  # show the bridge
+  ip -d link show $b
+  ip -j -p -d link show $b        # see the bridge in JSON
+
+  #  🦜 : The above will now just show a bunch of
+#+end_src
+
 **** ? My exe can't bound to port?
 turn off your network proxy
 **** listening port

@@ -138,6 +138,9 @@ echo $HOME
 alias
 export HISTCONTROL=ignoredups
 alias  l.='ls -d.* --color=auto'
+
+
+
 * Devices
 ** list block devices
    #+BEGIN_SRC bash  

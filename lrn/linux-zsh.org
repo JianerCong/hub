@@ -1,3 +1,53 @@
+** buildin commands
+#+begin_src bash
+cd                              # go home
+pwd
+#   ~/src/zsh-3.0.8/Src
+cd 0.8 1.9                      # go from 0.8 to 1.9
+~/src/zsh-3.1.9/Src
+
+
+builtin cd                      # make sure we are using the builtin cd
+command python3                  # make sure we are using the command python
+
+# useless command:
+: # just return zero exis status
+false #return 1
+bye # = exit
+
+
+# globe
+ls a*                           # starts with a
+ls a?t*                         # a[some char]t *
+ls *python*                     # contains python
+ls python[[:alpha:]0-9]         # start with python and end in an char or a
+                                # number
+
+# Replace the current shell with command rather than forking. If command is a
+# shell builtin command or a shell function, the shell executes it, and exits
+# when the command is complete.
+
+exec -cl -a "my shell" zsh
+# -c: clear the env
+# -l: prepend - to the argv[0]
+# -a: set the argv[0] to "my shell"
+
+
+print -o 1 3 4 2                # 1 2 3 4
+print -O 1 3 4 2                # 4 3 2 1
+
+print -n -f "hello %s" world
+
+# print array
+a=(xx yy)
+print $a
+# xx yy
+print -l $a
+# xx
+# yy
+
+#+end_src
+
 ** forloop
 #+begin_src shell
   for n in a b c; do

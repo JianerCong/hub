@@ -274,12 +274,37 @@ add_header Strict-Transport-Security max-age=31536000;
 ** Clash
 *** add proxy
 #+begin_src bash
-  export http_proxy="http://127.0.0.1:7890"
-  export https_proxy="http://127.0.0.1:7890"
+  h="127.0.0.1"
+  export http_proxy="http://${h}:7890"
+  export https_proxy="http://${h}:7890"
   export no_proxy="localhost,127.0.0.1"
 
   git config --global http.proxy 'http://127.0.0.1:7890'
 #+end_src
+Or in ubuntu
+
+Network > Proxy > 
+# localhost,127.0.0.0/8, ::1.10.0.0.0/24
+🦜 : Sometimes (often), programs doesn't recognise
+CIDR/IP range. So you kinda have to expand all the
+ip addresses and add them to the variable. 
+
+To download PDF textbook from web, recommanded sites
+are:
+
++ libgen.is
++ b-ok.cc
++ booksc.org
++ book4you.org
++ booksc.xyz
++ pdfdrive.com
+
+#+begin_src bash
+  # set x to this
+  printf -v x '%s,' 10.0.0.{0..255}
+  echo $x
+#+end_src
+
 ** file sharing
 #+begin_src bash
   sudo apt install samba

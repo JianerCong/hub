@@ -146,6 +146,7 @@ group, for orphan nodes).
   ansible all -i my-first-inventory.yaml -m ping
 #+end_src
 **** control the openstack cloud
+
 ** OpenStack Ansible
 *** all in one [for testing]
 🦜 : All the following commands should be run with ~sodo~.
@@ -195,6 +196,17 @@ group, for orphan nodes).
      openstack-ansible os-keycloak-install.yml
    #+end_src
 
+*** not all in one (normal steps)
+Usually, there're 5 steps.
+
+1. Prepare *deployment host* (🦜 : only one)
+2. Prepare *target hosts* (many)
+3. Configure deployment
+4. Run playbooks
+5. Verify OpenStack operation
+
+🐢 : We explain it one-by-one
+
 *** Interact with the cloud
 
 The horizon web interface provides a graphical user interface (GUI) for
@@ -208,7 +220,6 @@ the host.
 ~keystone_auth_admin_password~ in ~/etc/openstack_deploy/user_secrets.yml~.
 
 
-   
 *** SSL issues
 By default, the deploying host uses self-signed certificates. But these are not
 trusted by the client host. To fix this:
@@ -230,7 +241,6 @@ trusted by the client host. To fix this:
          cacert: /home/<username>/.config/openstack/aio.crt
    #+end_src
  
-
 
 ** openstack client
 *** install
@@ -324,7 +334,6 @@ cloud is taken from ~clouds-public.yaml~.:
 
 
 
-
 *** create security group
 Open the tcp ports 8774,...,8790 (which are the service ports for an openstack
 AIO deployment.)
@@ -337,6 +346,7 @@ AIO deployment.)
     done
   openstack server add security group $SERVER openstack-apis
 #+end_src
+
 * End
 
 # Local Variables:
