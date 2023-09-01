@@ -219,7 +219,6 @@ the host.
 🐢 : By default, there's user called ~admin~. Password is the
 ~keystone_auth_admin_password~ in ~/etc/openstack_deploy/user_secrets.yml~.
 
-
 *** SSL issues
 By default, the deploying host uses self-signed certificates. But these are not
 trusted by the client host. To fix this:

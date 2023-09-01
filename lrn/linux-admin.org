@@ -6,3 +6,11 @@
   sudo --preserve-env=HTTP_PROXY bash -c 'echo $HTTP_PROXY'
   # http://proxy:8080
 #+end_src
+** make bootable disk
+In ubuntu store, install *Startup Disk Creater*.
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# fill-column: 50
+# End:
