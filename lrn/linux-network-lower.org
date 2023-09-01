@@ -17,6 +17,14 @@
   host -6 www.example.com
   host -4 www.example.com
   #+END_SRC
+** the OSI 7-layers
++ 7. Application :: HTTP, FTP, DNS, SSH, SMTP,  
++ 6. Presentation :: ASCII, Unicode, SSL, TLS
++ 5. Session :: APIs, Tunneling(GRE, MPLS,PPTP) ...
++ 4. Transport :: TCP, UDP
++ 3. Network :: Routers, Layer 3 Switches, ICMP, Routing Protocols
++ 2. Data Link :: Switches, Wireless Access Points
++ 1. Physical :: Cables, Wi-Fi, Media Converters
 ** Lower
 *** cable connect two linux
 On machine 1:
@@ -183,6 +191,46 @@ turn off your network proxy
 ip -4 neigh
 #+end_src
 *** turn interface on and off
+#+begin_src bash
+  i=ens33
+  # turn off
+  sudo ip link set $i down
+  # turn on
+  sudo ip link set $i up
+#+end_src
+
+🐢 : If you are doing this remotely, don't cut off the branch that you are
+sitting on.
+*** COMMENT Change the frame size.
+
+🐢 : An increasingly popular operation is setting the *Message Transfer
+Unit(MTU)*. This is the size of the largest *Protocol Datagram Unit(PDU, a.k.a.
+frame)* that the interface will send/receive. On the Ethernet, the default is
+1500 bytes.
+
+🦜 : Why do we need to change this?
+
+🐢 : Because when dealing with storage traffic, in particular *iSCSI*, large
+frame sizes are desired so that the packet size can accommodate more data. In
+these cases, the MTU is usually set to 9000 bytes (often called a jumbo packet).
+Usually these are used when the network has a speed of 1 Gbps or faster.
+
+🦜 : Oh, I see...
+
+🐢 : There're other cases. For example, some applications will set the *DF(Don't
+Fragment)* bit in their traffic. In that case, when an application that expect,
+say, 1000-byte packets, receives a 1500-byte packets with DF, it will simply
+fail, and often without useful error messages.
+
+🦜 : Okay. So how do we set that?
+
+🐢 : We need to set a particular variable called "802-3-ethernet.mtu":
+
+#+begin_src bash
+  c="Wired connection 1"
+  sudo nmcli con mod $c 802-3-ethernet.mtu 9000
+  sudo nmcli connection up $c     # save changes
+#+end_src
 
 *** ipv6
   Each host has at least two ipv6 address: 
