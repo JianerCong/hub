@@ -17,6 +17,7 @@ router = ""
 Now ping each other
 https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-ethernet-without-a-router?noredirect=1&lq=1
 *** bridge
+**** create and bridge
 #+begin_src bash
 
   # create a bridge named my_bridge
@@ -30,8 +31,28 @@ https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-
   # -p, -pretty
   # -d, -details
 
-  #  🦜 : The above will now just show a bunch of
+  #  🦜 : The above will now just show a bunch of info about the newly created
+  #  bridge. But a bridge is useless if it can't "bridge" anything. So let's
+  #  actually bridge two interfaces together.
+
+  iface1=veth0
+  iface2=tap0
+  ip link set $iface1 master $b
+  ip link set $iface2 master $b
 #+end_src
+
+**** Spanning Tree Protocol
+
+🐢 : When a network interface receives a packet that is
+not on its subnet, it pass the packet to all the
+neighbors (the interfaces that are bridged to it).
+And its neighbors will do the same...
+
+🦜 : Wait, then how do we ensure that there's no
+loop?
+
+🐢 : That's when Spanning Tree Protocol STP comes
+in. 
 
 *** ? My exe can't bound to port?
 turn off your network proxy
