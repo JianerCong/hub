@@ -1,3 +1,22 @@
+** Tools
+  ICMP: Internet Control Message Protoco -- the debugging protoco that dosen't
+  carry any user info. A transport layer protoco that dosn;t have application
+  layers build on it.
+
+  _DNS_: the Domain Name System -- Application layer protoco that maps names to
+  ip-address.
+*** ping
+  Send an ICMP echo request packets to a host.
+*** Trace the route
+#+begin_src bash
+  tracepath -b  39.156.66.10
+#+end_src
+*** host
+  #+BEGIN_SRC bash
+  host www.example.com
+  host -6 www.example.com
+  host -4 www.example.com
+  #+END_SRC
 ** Lower
 *** cable connect two linux
 On machine 1:
@@ -43,16 +62,24 @@ https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-
 
 **** Spanning Tree Protocol
 
-🐢 : When a network interface receives a packet that is
-not on its subnet, it pass the packet to all the
-neighbors (the interfaces that are bridged to it).
-And its neighbors will do the same...
+🐢 : When a network interface receives a packet
+that is not on its subnet, it pass the packet to
+all the neighbors (the interfaces that are bridged
+to it). And its neighbors will do the same...
 
 🦜 : Wait, then how do we ensure that there's no
 loop?
 
 🐢 : That's when Spanning Tree Protocol STP comes
-in. 
+in. To enable STP on a bridge, use:
+
+#+begin_src bash
+  ip link set $b type bridge stp_state 1
+
+  # show the blocking state
+  ip -j -p -d link show $b | grep root_port
+
+#+end_src
 
 *** ? My exe can't bound to port?
 turn off your network proxy
@@ -71,7 +98,10 @@ turn off your network proxy
   sudo netstat -tupn              # to outside world
   netstat                        # see all 
 #+end_src
-*** the ip-address
+*** see address
+**** local host
+  lo: ::1 (v6) or 127.0.0.1 is your own machine
+**** see addresses
   #+BEGIN_SRC bash
     ip address show
     # briefly show the interfaces
@@ -88,12 +118,10 @@ turn off your network proxy
          valid_lft forever preferred_lft forever
 
   #+END_SRC
-*** Subnet
-  _Classless Inter-Domain Routing (CIDR)_ : where a subnet such as
-  10.23.2.0/255.255.255.0 is written as 10.23.2.0/24.
-*** Who is my router?
+*** see/set router?
      #+BEGIN_SRC bash
-  ip route show
+       ip route
+       ip r
      #+END_SRC
 
      Each line is a _routing rule_. The second line says the directly reachable
@@ -107,50 +135,100 @@ turn off your network proxy
   169.254.0.0/16 dev enx000ec6b5dbf8 scope link metric 1000 
   192.168.1.0/24 dev enx000ec6b5dbf8 proto kernel scope link src 192.168.1.12 metric 100
   #+END_SRC
+
+  🐢 : To set router:
+
+  #+begin_src bash
+    # add router
+    sudo nmcli connection modify "Wired connection 1" +ipv4.routes "10.10.11.0/24 192.168.122.11"
+    # save
+    sudo nmcli connection up "Wired connection 1"
+  #+end_src
+
+  🐢 : You can also use the ip command:
+  #+begin_src bash
+    sudo ip route add 10.10.10.0/24 via 192.168.122.10
+  #+end_src
+
+  but this won't survive a reboot.
+  
+*** see my wifi/eth name, and configure my static address (needed for each server).
+🦜 : We need to do the following for each server.
+
+#+begin_src bash
+  sudo nmcli connection show
+
+  sudo nmcli connection modify "Wired connection 2" ipv4.addresses 10.0.0.1/24
+  sudo nmcli connection modify "Wired connection 2" ipv4.gateway 10.0.0.1
+  sudo nmcli connection modify "Wired connection 1" ipv4.dns "8.8.8.8"
+  # 🦜 : Here we used shorthand :
+  sudo nmcli con mod "Wired connection 1" ipv4.method manual
+
+  # save changes
+  sudo nmcli connection up "Wired connection 1"
+#+end_src
+
+🐢 : In fact, if you prefer to edit the file, you can do so in
+
+1. /etc/resolv.conf:
+
+   #+begin_quote
+   nameserver 8.8.8.8
+   #+end_quote
+   🐢 : ^^ use google's DNS server. But usually you do not want to do this.
+
+*** see my neibour over the network
+#+begin_src bash
+# Who are my known neibor
+ip -4 neigh
+#+end_src
+*** turn interface on and off
+
 *** ipv6
   Each host has at least two ipv6 address: 
        _global unicast address_
        _the link local address(for local network)_
 
-  Link-local addresses always have an fe80::/10 prefix, followed by an all-zero
-  54-bit network ID, and end with a 64-bit interface ID. The result is that ~a
-  link-local address will be in the fe80::/64 subnet~.
+  Link-local addresses always have an fe80::/10 prefix,followed by an all-zero
+  54-bit network ID, and end with a 64-bit interface ID.
+
+  fe80 = 1111 1110 1000 0000
+  #      f    e    8    0
+  #      ---- ---- -| <- 🦜 : masked to here
+
+  🦜 : Emmm.. Make sense. But what are link-local addresses?
+
+  🐢 : They are addresses that is automatically configured on any interface that
+       uses the link-local prefix FE80:/10 and the interface ID. They are not
+       necessarily bound to the MAC address. (They can also be manually configured).
+       These addresses refer only to a *particular physical link* and are used for
+       addresses on a *single link* for purposes such as *automatic address
+       configuration* and *neighbor discovery*.
+
+       _Routers do not forward datagram with these addresses._ All IPv6 enabled
+       interfaces have a link-local address.
+
+   🦜 : So it's kinda like an address for the interface ?
+
+   🐢 : Not quite. They are just, well, link-local. Each interface usually has a
+   link-local address and a global address.
+
+
+The result is that ~a link-local address will be in the fe80::/64 subnet~.
 
   Glocal unicast addresses have prefixes 2000::/3. Because the first byte starts
   with 001 with this prefix, that byte can be completed as 0010 or 0011. As a
   result, ~a global unicast address always starts with 2 or 3~.
-**** view
+**** view address, route
   ip -6 address show
   ip -6 route show
-*** Tools
-  ICMP: Internet Control Message Protoco -- the debugging protoco that dosen't
-  carry any user info. A transport layer protoco that dosn;t have application
-  layers build on it.
-
-  _DNS_: the Domain Name System -- Application layer protoco that maps names to
-  ip-address.
-**** ping
-  Send an ICMP echo request packets to a host.
-**** host
-  #+BEGIN_SRC bash
-  host www.example.com
-  host -6 www.example.com
-  host -4 www.example.com
-  #+END_SRC
+  ping ::1                      # ping localhost
 *** Ethernet network
   Each host in an ethernet network has a _Media Access Control(MAC)_ address. The
   frame sent over an ethernet network contains the From- and To- MAC address.
 
   The router can unpack the frame and re-package the data, and send that to other
   ethernet network, which is exactly what internet does.
-*** linux as router
-🦜 : Am I forwarding ?
-
-sysctl net.ipv4.ip_forward
-
-🦜 : turn on forwarding
-
-sudo sysctl -w net.ipv4.ip_forward=1
 *** DNS
   1. app calls a function to look up the ip addr behind an host name. The function
      is usually in sys shared lib.
@@ -180,8 +258,6 @@ sudo sysctl -w net.ipv4.ip_forward=1
   #+BEGIN_SRC bash
     resolvectl status               # check current DNS setting
   #+END_SRC
-*** local host
-  lo: ::1 (v6) or 127.0.0.1 is your own machine
 *** Transport layer (Transmission Control Pro, User Datagram Pro)
   transport layer bridge between the gap between the raw packets and your app.
 **** TCP
@@ -256,22 +332,14 @@ sudo sysctl -w net.ipv4.ip_forward=1
 
  #+end_src
 
-*** Trace the route
-#+begin_src bash
-  tracepath -b  39.156.66.10
-#+end_src
 *** The ipv4 private address space
- + 10.0.0.0/8
- + 192.168.0.0/16
- + 172.16.0.0/12
+ + 10.0.0.0/8 = 10.x.x.x
+ + 192.168.0.0/16 = 192.168.x.x
+ + 172.16.0.0/12 = 172.16.x.x - 172.31.x.x
+
 *** The link-local and global-unicast ipv6
  + link-local: fe80::/10
  + global-unicast: 2000::/3
-*** neibour over the network
-#+begin_src bash
-# Who are my known neibor
-ip -4 neigh
-#+end_src
 *** Wireless
 **** SSID
 Service Set ID = Network Name
@@ -381,5 +449,5 @@ Service Set ID = Network Name
 * End
 # Local Variables:
 # org-what-lang-is-for: "bash"
-# fill-column: 50
+# fill-column: 80
 # End:
