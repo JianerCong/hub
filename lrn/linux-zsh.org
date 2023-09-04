@@ -100,6 +100,44 @@ Add to the end
   display_emoji faces
   display_emoji people
 #+end_src
+*** web-search
+$ web_search google oh-my-zsh
+$ google oh-my-zsh
+```
+
+Available search contexts are:
+
+| Context               | URL                                      |
+| --------------------- | ---------------------------------------- |
+| `bing`                | `https://www.bing.com/search?q=`         |
+| `google`              | `https://www.google.com/search?q=`       |
+| `brs` or `brave`      | `https://search.brave.com/search?q=`     |
+| `yahoo`               | `https://search.yahoo.com/search?p=`     |
+| `ddg` or `duckduckgo` | `https://www.duckduckgo.com/?q=`         |
+| `sp` or `startpage`   | `https://www.startpage.com/do/search?q=` |
+| `yandex`              | `https://yandex.ru/yandsearch?text=`     |
+| `github`              | `https://github.com/search?q=`           |
+| `baidu`               | `https://www.baidu.com/s?wd=`            |
+| `ecosia`              | `https://www.ecosia.org/search?q=`       |
+| `goodreads`           | `https://www.goodreads.com/search?q=`    |
+| `qwant`               | `https://www.qwant.com/?q=`              |
+| `givero`              | `https://www.givero.com/search?q=`       |
+| `stackoverflow`       | `https://stackoverflow.com/search?q=`    |
+| `wolframalpha`        | `https://wolframalpha.com/input?i=`      |
+| `archive`             | `https://web.archive.org/web/*/`         |
+| `scholar`             | `https://scholar.google.com/scholar?q=`  |
+| `ask`                 | `https://www.ask.com/web?q=`             |
+
+Also there are aliases for bang-searching DuckDuckGo:
+
+| Context   | Bang  |
+|-----------|-------|
+| `wiki`    | `!w`  |
+| `news`    | `!n`  |
+| `youtube` | `!yt` |
+| `map`     | `!m`  |
+| `image`   | `!i`  |
+| `ducky`   | `!`   |
 * End
 # Local Variables:
 # org-what-lang-is-for: "shell"

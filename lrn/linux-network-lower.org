@@ -105,7 +105,11 @@ turn off your network proxy
 *** see all connections
 #+begin_src bash
   sudo netstat -tupn              # to outside world
-  netstat                        # see all 
+  # -t tcp
+  # -u udp
+  # -n numeric (no DNS)
+  # -p process
+  # -a all (listening and non-listening)
 #+end_src
 *** see address
 **** local host
@@ -202,7 +206,7 @@ ip -4 neigh
 
 🐢 : If you are doing this remotely, don't cut off the branch that you are
 sitting on.
-*** COMMENT Change the frame size.
+*** Change the frame size.
 
 🐢 : An increasingly popular operation is setting the *Message Transfer
 Unit(MTU)*. This is the size of the largest *Protocol Datagram Unit(PDU, a.k.a.
@@ -406,6 +410,36 @@ Service Set ID = Network Name
   cat /etc/wpa_supplicant.conf
 
  #+end_src
+*** port scan
+**** test one port
+#+begin_src bash
+  nc -zv 192.168.122.241 80
+#+end_src
+**** scan ports
+#+begin_src bash
+  sudo apt update
+  sudo apt install nmap
+
+  n=192.168.1.93/24
+  # 🐢 : Who can I ping to in this network
+  nmap -sn $n
+
+  # 🦜 : But I feels like sometimes the following is what we need ?
+  ip neighbor
+
+  # 🐢 : Who is running HTTPS?
+  n=192.168.1.93/24
+  nmap -p 443 --open $n           # who can send SYN
+  nmap -p 443 -sT --open $n       # who can establish connection
+
+  # 🐢 : Who is running SSH?
+  n=192.168.1.93/24
+  nmap -p 22 --open $n           # who can send SYN
+
+  # 🐢 : Who's listening UDP 53
+  n=192.168.1.93/24
+  nmap -sU -p 53 --open $n           # who can send SYN
+#+end_src
 
 ** Kernal
 *** MAC
