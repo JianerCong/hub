@@ -438,7 +438,7 @@ Service Set ID = Network Name
 
   # 🐢 : Who's listening UDP 53
   n=192.168.1.93/24
-  nmap -sU -p 53 --open $n           # who can send SYN
+  sudo nmap -sU -p 53 --open $n           # who can send SYN
 #+end_src
 
 ** Kernal

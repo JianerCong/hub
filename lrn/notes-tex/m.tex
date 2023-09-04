@@ -19,6 +19,7 @@
 \begin{document}
 \maketitle
 
+\begin{comment}
 \section{Media Access Control (MAC) Address}
 
 \subsection{what does it look like}
@@ -88,6 +89,88 @@ MAC address has format something like: \texttt{00-0c-29-3b-73-cb}
   \end{description}
 }
 
+\end{comment}
+
+\section{DNS}
+
+\subsection{public DNS}
+
+DNS has a large and complex infrastructure on the internet. This is made up of
+\begin{itemize}
+\item 13 \cola{root name servers}(which are each a reliable cluster
+  of servers)
+\item a group of commonly used name servers (for instance, the servers at Google or Cloudflare)
+\item a series of registrars who will, for a fee, register a DNS domain name for
+  you -- for instance, your organization's domain name.
+\end{itemize}
+
+\dSay{So Route 53 service in AWS is one of the third kind}
+\cSay{I guess so.}
+\dSay{Who are the 13 clusters?}
+\cSay{They are listed in \url{https://www.iana.org/domains/root/servers}. For example,
+Verisign,Inc, Department of Defence, NASA,...
+
+
+}
+
+
+\subsection{internal DNS}
+\cSay{
+
+  However, for the most part, most administrators are working with the needs of
+  their organization -- working with their \Cola{internal DNS} name servers that
+  face their internal folks, or with their \colb{external DNS} name servers that
+  face the internet. 
+
+}
+
+The internal DNS server has a \Cola{zone file} populated with DNS records for internal
+DNS resolution. This file can either be populated
+\begin{itemize}
+\item manually by editing it
+\item automatically by the clients
+\item automatically by \Cola{Dynamic Host Configuration Protocol (DHCP) leases}.
+\end{itemize}
+
+\cSay{Often, all three methods are combined.}
+
+The basic request flow is simple. A client makes a DNS request. \cola{If that
+  request is for a host that's internal to the organization and the request is
+  to an internal DNS server,} the DNS response is supplied immediately since
+it's on that local DNS server.
+
+If it's for an external host, then things are bit more complex -- for instance,
+let's query for \texttt{www.example.com}.
+
+\begin{tikzpicture}
+
+  
+  \newcommand{\dns}{DNS}
+  \draw[step=1cm,help lines] (0,0) grid +(15cm,10cm);
+  \matrix (M1) [matrix of nodes,row sep=1.5cm,matrix anchor=south]{
+    \dns\\
+    \dns\\
+    \dns\\
+    \dns\\
+  };
+
+  % \draw[->] (M1-1-1.west) .. controls +(left:5mm) and +(left:10mm) ..  (M1-2-1.west);
+  % 🦜 : another way 
+
+  \newcommand{\comeAndGo}[4]{
+    \draw[-latex] (#1) to[out = 180, in=180] node[auto,swap] {#3} (#2);
+    \draw[-latex] (#2) to[out = 0, in=0] node[auto,swap] {#4} (#1);
+  }
+
+  \comeAndGo{M1-1-1}{M1-2-1}{2}{3}
+  \comeAndGo{M1-1-1}{M1-3-1}{4}{5}
+  \comeAndGo{M1-1-1}{M1-4-1}{6}{7}
+
+  \draw[fill=gray]
+  (7cm , 0) node[text centered] {Organization's Firewall}
+  ++(-0.5cm,1cm) rectangle ++(1cm,4cm);
+  
+\end{tikzpicture}
 
 \end{document}
 
