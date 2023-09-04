@@ -1,9 +1,9 @@
 
 \usepackage{geometry}\geometry{
-  a4paper,
-  total={170mm,257mm},
-  left=20mm,
-  top=20mm,
+a4paper,
+total={170mm,257mm},
+left=20mm,
+top=20mm,
 }
 
 
@@ -69,10 +69,10 @@ BoldItalicFont=*CodePLItalic
 
 
 \newtcolorbox[auto counter]{myBox}[2][]{
-  fonttitle=\bfseries,title={共识~\thetcbcounter: #2},#1
+fonttitle=\bfseries,title={共识~\thetcbcounter: #2},#1
 }
 \newtcolorbox[]{noteBox}[1][]{
-  tile,left=1mm,nobeforeafter,fontupper=\small,#1
+tile,left=1mm,nobeforeafter,fontupper=\small,#1
 }
 
 \tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
@@ -80,38 +80,38 @@ BoldItalicFont=*CodePLItalic
 \author{作者}
 
 \newtcblisting{simplec}{
-  listing engine=minted,
-  minted language=c++,
-  minted style=vs,
-  minted options={fontsize=\small,autogobble,
-    % framesep=1cm
-  },
-  tile,
-  listing only,
-  % bottom=0cm,
-  % nobeforeafter, 
-  boxsep=0mm,
-  left=1mm,
-  opacityback=0.5,
-  colback=gray!20
+listing engine=minted,
+minted language=c++,
+minted style=vs,
+minted options={fontsize=\small,autogobble,
+% framesep=1cm
+},
+tile,
+listing only,
+% bottom=0cm,
+% nobeforeafter, 
+boxsep=0mm,
+left=1mm,
+opacityback=0.5,
+colback=gray!20
 }
 \tcbuselibrary{breakable}
 \newtcblisting{simplepy}{
-  listing engine=minted,
-  minted language=python,
-  minted style=vs,
-  minted options={fontsize=\small,autogobble,
-    % framesep=1cm
-  },
-  tile,
-  listing only,
-  % bottom=0cm,
-  % nobeforeafter,
-  boxsep=0mm,
-  left=1mm,
-  opacityback=0.5,
-  colback=gray!20,
-  breakable
+listing engine=minted,
+minted language=python,
+minted style=vs,
+minted options={fontsize=\small,autogobble,
+% framesep=1cm
+},
+tile,
+listing only,
+% bottom=0cm,
+% nobeforeafter,
+boxsep=0mm,
+left=1mm,
+opacityback=0.5,
+colback=gray!20,
+breakable
 }
 \newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
 
@@ -128,45 +128,45 @@ row sep=1cm,column sep=2cm]
 \newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
 
 \newcommand{\rightDialogBox}[3][0.8\linewidth]{
-  \node[right,text width=#1] at ([xshift=0.5cm]#2.east) {
-    \begin{tcolorbox}[tile,
-      nobeforeafter,
-      boxsep=0pt,
-      % show bounding box,
-      colback=\mycola!10,
-      overlay={
-        \begin{scope}
-          % \fill[gray!10] (frame.east) circle (2pt);
-          \fill[\mycola!10] (frame.west) --
-          +(0,2mm) --
-          +(-3mm,0) --
-          +(0,-2mm)
-          ;
-        \end{scope}
-      } ] #3
-    \end{tcolorbox}
-  };
+\node[right,text width=#1] at ([xshift=0.5cm]#2.east) {
+\begin{tcolorbox}[tile,
+nobeforeafter,
+boxsep=0pt,
+% show bounding box,
+colback=\mycola!10,
+overlay={
+\begin{scope}
+% \fill[gray!10] (frame.east) circle (2pt);
+\fill[\mycola!10] (frame.west) --
++(0,2mm) --
++(-3mm,0) --
++(0,-2mm)
+;
+\end{scope}
+} ] #3
+\end{tcolorbox}
+};
 }
 
 \newcommand{\leftDialogBox}[3][0.8\linewidth]{
-  \node[left,text width=#1] at ([xshift=-0.5cm]#2.west) {
-    \begin{tcolorbox}[tile,
-      nobeforeafter,
-      boxsep=0pt,
-      % show bounding box,
-      colback=gray!10,
-      overlay={
-        \begin{scope}
-          % \fill[gray!10] (frame.east) circle (2pt);
-          \fill[gray!10] (frame.east) --
-          +(0,2mm) --
-          +(3mm,0) --
-          +(0,-2mm)
-          ;
-        \end{scope}
-      } ] #3
-    \end{tcolorbox}
-  };
+\node[left,text width=#1] at ([xshift=-0.5cm]#2.west) {
+\begin{tcolorbox}[tile,
+nobeforeafter,
+boxsep=0pt,
+% show bounding box,
+colback=gray!10,
+overlay={
+\begin{scope}
+% \fill[gray!10] (frame.east) circle (2pt);
+\fill[gray!10] (frame.east) --
++(0,2mm) --
++(3mm,0) --
++(0,-2mm)
+;
+\end{scope}
+} ] #3
+\end{tcolorbox}
+};
 }
 
 
@@ -182,12 +182,12 @@ row sep=1cm,column sep=2cm]
 \tcbuselibrary{theorems}
 \newtcbtheorem[use counter=myDefCounter,number within=section]{myDef}{Definition}%
 {
-  % colback=green!5,colframe=green!35!black,
-  fonttitle=\bfseries}{def}
+% colback=green!5,colframe=green!35!black,
+fonttitle=\bfseries}{def}
 
 \newcommand{\myThmBeforeProof}{
-  \texttt{Proof: }\par
-  \begin{myIndent}
+\texttt{Proof: }\par
+\begin{myIndent}
 }
 
 \newcommand{\myThmAfterProof}{
@@ -197,42 +197,44 @@ row sep=1cm,column sep=2cm]
 
 \tcbuselibrary{skins}
 \tcbsubskin{myThmSkin}{enhanced}{
-  parbox=false,
-  % colback=green!5,
-  colframe=\mycola,
-  fonttitle=\bfseries,
-  breakable,
-  before lower={\myThmBeforeProof{}},
-  after lower={\myThmAfterProof{}}
+parbox=false,
+% colback=green!5,
+colframe=\mycola,
+fonttitle=\bfseries,
+breakable,
+before lower={\myThmBeforeProof{}},
+after lower={\myThmAfterProof{}}
 }
 
 \newtcbtheorem[
 use counter=myTheoCounter,number within=section
 ]{myTheo}{Theorem}%
 {
-  skin=myThmSkin
+skin=myThmSkin
 }{thm}
 
 
 \newtcbtheorem[use counter=myTheoCounter,number within=section]{myCor}{Corollary}%
 {
-  % colback=green!5,
-  skin=myThmSkin
+% colback=green!5,
+skin=myThmSkin
 }{cor}
 
 \newtcbtheorem[use counter=myTheoCounter,number within=section]{myLem}{Lemma}%
 {% colback=green!5,
-  skin=myThmSkin
+skin=myThmSkin
 }{lem}
 
 \newcommand{\refCorollary}[1]{Corollary~\ref{cor:#1}}
 \newcommand{\refLemma}[1]{Lemma~\ref{lem:#1}}
 
-\usepackage{cleveref}
+\usepackage{hyperref}
+
+\usepackage{cleveref}           %🦜 : must be loaded after hyperref
 \crefname{myDefCounter}{definition}{definitions}
-                                   % ^^^ plural
+% ^^^ plural
 \Crefname{myDefCounter}{Definition}{Definitions}
-         % ^^^^^^ type = counter name
+% ^^^^^^ type = counter name
 
 \crefname{myTheoCounter}{theorem}{theorems}
 \Crefname{myTheoCounter}{Theorem}{Theorems}
@@ -241,3 +243,5 @@ use counter=myTheoCounter,number within=section
 
 \usepackage{tabularx}
 
+\usepackage{enumitem}
+\setlist[description]{leftmargin=0.1\linewidth,labelindent=0.1\linewidth}

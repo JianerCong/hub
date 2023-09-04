@@ -25,6 +25,7 @@
 + 3. Network :: Routers, Layer 3 Switches, ICMP, Routing Protocols
 + 2. Data Link :: Switches, Wireless Access Points
 + 1. Physical :: Cables, Wi-Fi, Media Converters
+
 ** Lower
 *** cable connect two linux
 On machine 1:
@@ -407,13 +408,119 @@ Service Set ID = Network Name
  #+end_src
 
 ** Kernal
+*** MAC
+refers to ~linux-network.tex~
+
+**** view arp
+See the Mac to IP map:
+#+begin_src bash
+  arp -a
+  # ip [L3] -> mac [L2] -> network interface card (NIC) [L1]
+
+  # these k:v will timeout the interval is
+
+  cat /proc/sys/net/ipv4/neigh/default/gc_stale_time
+  ls /proc/sys/net/ipv4/neigh/    # show the network adapter
+#+end_src
+🐢 : These are usually called the *matching MAC address table* (commonly called
+the CAM table). The one on switch usually has a timeout of 5min. Router 4hrs. 
+
+🦜 : Why router's is so long ?
+
+🐢 : Historical remains. So sometimes a ~clear arp~ will magically fix the
+migration issue on router.
+
+**** /proc
+🐢 : This is a virtual dir that contains various settings on the host.
+
+#+begin_src bash
+  # 🐢 See the network throughput on iface:
+  cat /proc/net/dev
+  # 🐢 See the memory stats
+  cat /proc/meminfo | grep Mem
+  # 🐢 But you can also just use
+  lsmem
+#+end_src
+
+**** change arp
+🐢 : You can add or delete arp entry.
+
+🦜 : Why ?
+
+🐢 : For example, when you bought a new router, you need to delete those entries
+on the hosts. Adding new ARP entry manually is usually for debugging(not
+necessary).
+
+#+begin_src bash
+  # add
+  sudo arp -s 192.168.122.200 00:11:22:22:33:33
+  # see it . Note the PERM flag means ‘Permanent’
+  arp -a | grep 192.168.122.200
+  # delete
+  sudo arp –i ens33 -d 192.168.122.200
+#+end_src
+
+**** fake an ip
+🐢 : You can even masquerade as a given IP address - for instance to answer ARP
+requests for IP 10.0.0.1 (say that you are 10.0.0.1):
+#+begin_src bash
+
+  # This will answer ARP requests for 10.0.0.2 on eth0 with the MAC address for eth1
+  sudo arp -i eth0 -Ds 10.0.0.2 eth1 pub
+  # -i : IF, select an interface. This must be different from the interface to
+  # which the IP datagrams will be routed.
+  # -D : Instead of a hw_addr, the given argument is the name of an interface.
+  # -s : setup a new table entry.
+
+#+end_src
+
+**** change your MAC
+🐢 : Each of your network interface card (NIC) has a Burned-In Address (BIA) MAC
+address value. But you can actually lie about it.
+
+To do it temporarily:
+#+begin_src bash
+  i=enx34298f10a60e
+  sudo ip link set dev $i down
+  sudo ip link set dev $i address 00:88:77:66:55:44
+  sudo ip link set dev $i  up
+#+end_src
+
+To do it permanently:
+
+1. backup the config file
+#+begin_src bash
+  sudo cp /etc/netplan/ /etc/netplan.old -rv
+#+end_src
+
+2. edit the config file
+🐢 : What you need is a ~match~ statement for the hardware *Burned-In Address*
+(BIA) MAC address value, then the line after sets the new MAC:
+#+begin_src yaml
+  network:
+      version: 2
+      ethernets:
+          ens33:
+              dhcp4: true
+              match:
+                  macaddress: b6:22:eb:7b:92:44
+              macaddress: xx:xx:xx:xx:xx:xx
+#+end_src
+
+3. test and apply the config
+   #+begin_src bash
+     sudo netplan try
+     sudo netplan apply
+   #+end_src
+
+*** network interface
   Network interfaces usually have names that indicate the kind of hardware
   underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is
   called a predictable network interface device name, because it remains the same
   after a reboot. At boot time, interfaces have traditional names such as eth0
   (the first Ethernet card in the computer) and wlan0 (a wireless interface), but
   on most machines running systemd, they are quickly renamed
-*** network interface
+
   After running _ip address show_,we get in our example, three network interface:
   #+BEGIN_SRC 
   1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000

@@ -86,6 +86,20 @@ Add to the end
   }
 
 #+end_src
+** plugins
+*** emoji
+#+begin_src bash
+  echo $emoji[mouse_face]
+
+  random_emoji fruits
+  random_emoji animals
+  random_emoji vehicles
+  random_emoji faces
+
+  display_emoji
+  display_emoji faces
+  display_emoji people
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "shell"
