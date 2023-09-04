@@ -222,3 +222,105 @@ For the enumerate environment
 + enumiii
 + enumiv
 
+
+*** read and increment the counter
+    #+BEGIN_SRC latex
+    % Insert figure with caption in minipage 
+\documentclass{article}
+
+
+\begin{document}
+
+\section{One section}
+Hi
+\section{Another section}
+This is a dummy section with no purpose whatsoever but to contain text. 
+This section has assigned the number \thesection.
+
+\stepcounter{equation}          %increment the counter
+\begin{equation}
+  \label{1stequation}
+  \int_{0}^{\infty} \frac{x}{\sin(x)}
+\end{equation}
+
+\end{document}
+    #+END_SRC
+*** get
+#+BEGIN_SRC latex
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\newcounter{example}[section]   %define a counter (renewed at each section)
+% define an env
+% use \refstepcounter to increment it , so that we can \ref and \label it
+% use \theexample to access the counter
+\newenvironment{example}[1][]{\refstepcounter{example}\par\medskip
+  \textbf{Example~\theexample. #1} \rmfamily}{\medskip}
+
+\begin{document}
+This document will present...
+
+\begin{example}\label{hi}
+  This is the first example. The counter will be reset at each section.
+\end{example}
+
+Above is the example~\ref{hi}.
+It can also be
+
+example~\roman{example}
+example~\arabic{example}
+example~\Roman{example}
+example~\Alph{example}
+example~\alph{example}
+example~\fnsymbol{example}
+
+Use \texttt{$\backslash$value\{example\}} to access it in a numeric expression as in
+
+\texttt{$\backslash$setcounter\{section\}\{$\backslash$value\{subsection\}\}}
+
+Below is a second example
+
+\begin{example}
+  And here's another numbered example.
+\end{example}
+
+\section{Another section}
+This is a dummy section with no purpose whatsoever but to contain text. 
+This section has assigned the number \thesection.
+
+\stepcounter{equation}
+\begin{equation}
+  \label{1stequation}
+  \int_{0}^{\infty} \frac{x}{\sin(x)}
+\end{equation}
+
+\begin{example}
+  This is the first example in this section. 
+\end{example}
+
+\end{document}
+#+END_SRC
+*** How label works
+Well, \label is defined in the LaTeX kernel as
+
+#+begin_src latex
+\def\label#1{\@bsphack
+  \protected@write\@auxout{}%
+         {\string\newlabel{#1}{{\@currentlabel}{\thepage}}}%
+  \@esphack}
+  #+end_src
+Note that (despite all the other things going on), it writes to the .aux file something that looks like this:
+#+begin_src latex
+\newlabel{<label>}{{<currentlabel>}{<page>}}
+#+end_src
+where <label> is what supply in the form \label{<label>} and <currentlabel> is
+the current value of ~\@currentlabel~ - a macro that is usually updated whenever
+you call ~\refstepcounter{<cntr>}~.
+
+So, if \@currentlabel is not up-to-date according to the reference you're after,
+then you'll obtain an incorrect reference. Most notably this happens when you
+place a \label before \caption, since \caption increases some counter (figure or
+table counter, say). <page> is the page on which the reference occurs within the
+document and has the value of \thepage at that time - this could be anything set
+out in the definition of \thepage, just for clarity.

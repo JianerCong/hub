@@ -143,11 +143,34 @@ If it's for an external host, then things are bit more complex -- for instance,
 let's query for \texttt{www.example.com}.
 
 \begin{tikzpicture}
-
   
+  \tikzstyle{dnsStyle}=[inner sep=10pt,fill=\mycola!20,rounded corners]
+
+  \newcounter{req}
   \newcommand{\dns}{DNS}
-  \draw[step=1cm,help lines] (0,0) grid +(15cm,10cm);
-  \matrix (M1) [matrix of nodes,row sep=1.5cm,matrix anchor=south]{
+
+  \node at (10cm, 3cm)[dnsStyle, name=internal-dns] {\dns};
+
+  \node at ([yshift=2cm]internal-dns) [name=we,dnsStyle,fill=\mycolb!20] {we};
+
+  \newcommand{\noop}[1]{}
+
+  \newcommand{\refPlusPlus}{
+    \arabic{req}
+    \makebox[0cm]{\stepcounter{req}} %ignore the width of it
+  }
+
+  % \uptodown[-latex]{we}{internal-dns}
+  \draw[-latex] (we) --
+  node [midway, left] {
+    \refPlusPlus{}
+  }
+  (internal-dns);
+  
+  \draw[step=1cm,help lines,] (0,0) grid +(15cm,10cm);
+  \matrix (M1) [matrix of nodes,
+  nodes={style=dnsStyle},
+  row sep=1.5cm,matrix anchor=south]{
     \dns\\
     \dns\\
     \dns\\
@@ -157,9 +180,14 @@ let's query for \texttt{www.example.com}.
   % \draw[->] (M1-1-1.west) .. controls +(left:5mm) and +(left:10mm) ..  (M1-2-1.west);
   % 🦜 : another way 
 
-  \newcommand{\comeAndGo}[4]{
-    \draw[-latex] (#1) to[out = 180, in=180] node[auto,swap] {#3} (#2);
-    \draw[-latex] (#2) to[out = 0, in=0] node[auto,swap] {#4} (#1);
+  \newcommand{\comeAndGo}[2]{
+    \draw[-latex] (#1) to[out = 180, in=180] node[auto,swap] {
+      \refPlusPlus{}
+    } (#2);
+
+    \draw[-latex] (#2) to[out = 0, in=0] node[auto,swap] {
+      \refPlusPlus{}
+    } (#1);
   }
 
   \comeAndGo{M1-1-1}{M1-2-1}{2}{3}
@@ -168,7 +196,7 @@ let's query for \texttt{www.example.com}.
 
   \draw[fill=gray]
   (7cm , 0) node[text centered] {Organization's Firewall}
-  ++(-0.5cm,1cm) rectangle ++(1cm,4cm);
+  ++(-0.5cm,1cm) rectangle ++(1cm,8cm);
   
 \end{tikzpicture}
 
