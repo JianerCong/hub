@@ -62,6 +62,68 @@ am gonna try uvtool.
 
   sudo rm /root/.local/share/multipass/ -rf
 #+end_src
+*** try use tuna mirror 
+
+🦜 : Every time we start multipass, we need a proxy. Is it possible to change
+it?
+
+🐢 : modify the ~src/daemon/daemon_config.cpp~ to change
+#+begin_src c++
+          // 🦜 : Let's try to use a mirror
+
+        const char * src = "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cloud-images/";
+        image_hosts.push_back(std::make_unique<mp::UbuntuVMImageHost>(
+                                                                      std::vector<std::pair<std::string, UbuntuVMImageRemote>>{
+                                                                        {mp::release_remote, UbuntuVMImageRemote{src, "releases/",
+                                                                                                                 std::make_optional<QString>(mp::mirror_key)}},
+                                                                        {mp::daily_remote, UbuntuVMImageRemote{src, "daily/",
+                                                                                                               std::make_optional<QString>(mp::mirror_key)}},
+                                                                        {mp::snapcraft_remote, UbuntuVMImageRemote{src, "buildd/daily/",
+                                                                                                                   std::make_optional<QString>(mp::mirror_key)}},
+                                                                        {mp::appliance_remote, UbuntuVMImageRemote{"https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cdimage/", "ubuntu-core/appliances/"}}},
+                                                                      url_downloader.get(), manifest_ttl));
+
+        // image_hosts.push_back(std::make_unique<mp::UbuntuVMImageHost>(
+        //     std::vector<std::pair<std::string, UbuntuVMImageRemote>>{
+        //         {mp::release_remote, UbuntuVMImageRemote{"https://cloud-images.ubuntu.com/", "releases/",
+        //                                                  std::make_optional<QString>(mp::mirror_key)}},
+        //         {mp::daily_remote, UbuntuVMImageRemote{"https://cloud-images.ubuntu.com/", "daily/",
+        //                                                std::make_optional<QString>(mp::mirror_key)}},
+        //         {mp::snapcraft_remote, UbuntuVMImageRemote{"https://cloud-images.ubuntu.com/", "buildd/daily/",
+        //                                                    std::make_optional<QString>(mp::mirror_key)}},
+        //         {mp::appliance_remote, UbuntuVMImageRemote{"https://cdimage.ubuntu.com/", "ubuntu-core/appliances/"}}},
+        //     url_downloader.get(), manifest_ttl));
+#+end_src
+
+Then build it. And now we should be able to use the mirror :
+
+#+begin_src bash
+sudo /home/me/repo/build-multipass/bin/multipassd -V trace --logger stderr
+#+end_src
+
+🦜 : But then when we enter shell:
+#+begin_src bash
+  sudo mv /etc/apt/sources.list /etc/apt/sources.list.bak
+  echo "# 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse
+  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse
+  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse
+  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse
+
+  # deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse
+  # # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse
+
+  deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+  # deb-src http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+
+  # 预发布软件源，不建议启用
+  # deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-proposed main restricted universe multiverse
+  # # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-proposed main restricted universe multiverse" > hi.txt
+  sudo mv hi.txt /etc/apt/sources.list
+#+end_src
+
 *** basic
 #+begin_src bash
   # list all multipass instances

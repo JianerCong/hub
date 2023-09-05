@@ -316,6 +316,7 @@ The worst-case process is as follows:
 
 
 \subsubsection{needed features}
+\label[subsubsection]{sec:needed-features}
 \dSay{
   \colz{
     Which key features fo we need to enable on our \colZ{internal DNS server} to make
@@ -406,19 +407,63 @@ The worst-case process is as follows:
 }
 
 \begin{enumerate}
-\item Restrict recursion: \colz{This server should \colZ{answer the request directly}.
-    It doesn't forward it. }
+\item Restrict recursion: \colz{This server should \colZ{answer the request
+      directly}. It doesn't forward it. }
 \item Cache is less important : \colz{Similar reason. This server is about
     \colZ{answering}, not \colZ{asking}.}
-\item Host redundancy: \colZ{Please get a back up...}
+\item Host redundancy: \colz{Please get a back up...}
 \item Restricting zone transfers:
-\colZ{  You might want to answer individual DNS
+\colz{  You might want to answer individual DNS
   queries as they arrive. There isn't a good reason for a DNS client on the
   internet to request all entries for an organization. (\emoji{parrot} : What
-  does it mean..?)
+  does it mean..? \emoji{turtle} : I didn't get that either.)
+
+  \colZ{Zone transfers} are meant to maintain your zone between redundant
+  servers so that as a zone is edited, the changes are replicated to the other
+  servers in the cluster. (\emoji{parrot} : Oh...so zone transfer is like a
+  mirroring process? \emoji{turtle} : Yeah, more or less.)
 }
+\item Rate limiting : \colz{anti-DoS}
+\item Restricting dynamic registration: \colz{
+    This is usually disabled for most cases.}
 \end{enumerate}
 
+\subsection{common DNS implementations}
+
+\Cola{BIND} (see \cref{sec:needed-features}). also called \Cola{\texttt{named} (name
+  daemon)}, is the DNS tool most often implemented in Linux.
+
+\colz{
+
+  It's and is arguably both the most flexible and complete, as well as the most
+  difficult to configure and troubleshoot. For better or worse, though, it's the
+  service you are most likely to see and to implement in most organizations.
+}
+
+\cSay{
+  \colz{
+    \colZ{DNS masquerade (\texttt{dnsmasq})} is a competing DNS server
+    implementation. It's commonly seen on network appliances because of its
+    \colZ{small footprint}, but also makes a fine DNS server for a smaller
+    organization. The key advantages to \texttt{dnsmasq} would be:
+    \begin{enumerate}
+    \item it has a \colZ{built-in GUI}
+    \item it has \colZ{integration with DHCP}, allowing DNS registration
+      directly from the DHCP database.
+    \end{enumerate}
+
+    In addition, \texttt{dnsmasq} implements a friendly way to implement
+    \colZ{DNS blocklists}, which are very nicely packaged up in the Pi-hole
+    application.  If your home network has a DNS server on its perimeter
+    firewall or \colZ{Wireless Access Point (WAP)}, that DNS server is most
+    likely \texttt{dnsmasq}.
+
+    However, here, we will only talk about \colZ{BIND} in \cref{sec:install-bind}.
+  }
+}
+
+\subsection{basic installation: BIND for internal use}
+\label[subsection]{sec:install-bind}
 
 \end{document}
 

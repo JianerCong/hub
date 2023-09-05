@@ -547,6 +547,60 @@ To do it permanently:
      sudo netplan apply
    #+end_src
 
+*** DNS
+**** BIND for internal use
+1. install 
+#+begin_src bash
+  sudo apt install bind9
+  # Adding system user `bind' (UID 113) ...
+  # Adding new user `bind' (UID 113) with group `bind' ...
+  # Not creating home directory `/var/cache/bind'.
+  # wrote key file "/etc/bind/rndc.key"
+  # named-resolvconf.service is a disabled or a static unit, not starting it.
+  # Created symlink /etc/systemd/system/bind9.service → /lib/systemd/system/named.service.
+  # Created symlink /etc/systemd/system/multi-user.target.wants/named.service → /lib/systemd/system/named.service.
+
+  # 🦜 : Now :
+  cat /etc/bind/named.conf
+  cat /etc/bind/named.conf.options
+#+end_src
+2. Modify the ~/etc/bind/named.conf.options~ to
+#+begin_src c
+  options {
+
+      directory "/var/cache/bind";
+      listen-on port 53 { localhost; };
+      allow-query { localhost; 192.168.0.0/16; 10.0.0.0/8; 172.16.0.0/12; };
+    // use google's and cloudflare's public dns servers as forwarders
+      forwarders { 8.8.8.8; 8.8.4.4; 1.1.1.1; };
+      recursion yes;
+  }
+#+end_src
+3. Edit ~/etc/bind/named.conf.local~, and add the server type, zone, and zone
+   filename. Also permit hosts on the specified subnets to register their DNS
+   recprds with the DNS server using the ~allow-update~
+#+begin_src js
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "aaa.net" IN {
+  type master;
+  file "aaa.net.zone";
+  allow-update { 192.168.0.0/16; 10.0.0.0/8;172.16.0.0/12 };
+};
+#+end_src
+
+4. Make the zone file ~aaa.net.zone~:
+
+#+begin_src js
+  
+#+end_src
+
 *** network interface
   Network interfaces usually have names that indicate the kind of hardware
   underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is
