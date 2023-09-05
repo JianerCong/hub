@@ -240,7 +240,10 @@ LaTeX-font-list
 (add-to-list 'LaTeX-font-list '(?A "\\Cola{" "}"))                       ;C-c C-f a
 (add-to-list 'LaTeX-font-list '(?b "\\colb{" "}"))                       ;C-c C-f b
 (add-to-list 'LaTeX-font-list '(?c "\\colc{" "}"))                       ;C-c C-f c
+(add-to-list 'LaTeX-font-list '(?z "\\colz{" "}"))                       ;C-c C-f z
+(add-to-list 'LaTeX-font-list '(?Z "\\colZ{" "}"))                       ;C-c C-f Z
 (add-to-list 'LaTeX-font-list '(?t "\\text{" "}"))                       ;C-c C-f t
 
 ;;This reload the 'LaTeX-font-list
 (TeX-normal-mode)
+(rainbow-delimiters-mode)

@@ -1244,3 +1244,8 @@ indeed.
 \end{comment}
 \end{document}
 #+end_src
+** magic
+*** use for side effect
+#+begin_src latex
+  \makebox[0cm]{\myThing{}} %ignore the width of it
+#+end_src

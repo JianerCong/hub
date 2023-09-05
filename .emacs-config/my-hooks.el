@@ -36,6 +36,30 @@
       (add-hook 'LaTeX-mode-hook 'yas-minor-mode)
       (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
 
+
+      ;; 🐢 : These cdlatex settings must be loaded in the hook.
+      (add-hook 'cdlatex-mode-hook
+                ;; 🦜 : I feel like cdlatex's font insertion is handier than
+                ;; the C-x C-f [..] command of AuCTeX....
+                ;; You can just use 'a to insert your font for change the font
+                ;; of previous word.
+
+                ;; 🐢 : Yeah. But I feel like cdlatex is not good at turning an
+                ;; selected buffer of text into a fonted one. So let's keep both.
+                (lambda ()
+                  (setq cdlatex-math-modify-alist
+                        '(
+                          (?a "\\cola" "\\cola" t nil nil)
+                          (?b "\\colb" "\\colb" t nil nil)
+                          (?c "\\colc" "\\colc" t nil nil)
+                          (?A "\\Cola" "\\Cola" t nil nil)
+                          (?z "\\colz" "\\colz" t nil nil)
+                          (?Z "\\colZ" "\\colZ" t nil nil)
+                          )
+                        )
+                  )
+                )
+
       )
   (message "Library `auctex' not found, skipping config")
 )

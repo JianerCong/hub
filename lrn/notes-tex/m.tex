@@ -105,22 +105,38 @@ DNS has a large and complex infrastructure on the internet. This is made up of
 \end{itemize}
 
 \dSay{So Route 53 service in AWS is one of the third kind}
+
 \cSay{I guess so.}
+
 \dSay{Who are the 13 clusters?}
-\cSay{They are listed in \url{https://www.iana.org/domains/root/servers}. For example,
-Verisign,Inc, Department of Defence, NASA,...
 
-
+\cSay{
+  They answer you questions liks : ``Where is the \texttt{.com} server?''
+  \colz{(These servers are called \Cola{top-level domain (TLD)} authoritative name
+    server.)
+    In face, all 13 root (clusters of) servers  are same for redundancy.
+    They are listed in \url{https://www.iana.org/domains/root/servers}. For example,
+    Verisign,Inc, Department of Defence, NASA,...
+  }
 }
 
+\dSay{
+  Oh, do they need a consensus mechanism then ?
+}
+
+\cSay{
+  I think say do. But let's stop.
+}
 
 \subsection{internal DNS}
 \cSay{
 
-  However, for the most part, most administrators are working with the needs of
-  their organization -- working with their \Cola{internal DNS} name servers that
-  face their internal folks, or with their \colb{external DNS} name servers that
-  face the internet. 
+  \colz{
+    However, for the most part, most administrators are working with the needs of
+    their organization -- working with their \Cola{internal DNS} name servers that
+    face their internal folks, or with their \colb{external DNS} name servers that
+    face the internet. 
+  }
 
 }
 
@@ -134,6 +150,9 @@ DNS resolution. This file can either be populated
 
 \cSay{Often, all three methods are combined.}
 
+\subsubsection{basic request flow}
+
+
 The basic request flow is simple. A client makes a DNS request. \cola{If that
   request is for a host that's internal to the organization and the request is
   to an internal DNS server,} the DNS response is supplied immediately since
@@ -143,39 +162,44 @@ If it's for an external host, then things are bit more complex -- for instance,
 let's query for \texttt{www.example.com}.
 
 \begin{tikzpicture}
+  % \draw[step=1cm,help lines,] (0,0) grid +(15cm,10cm);
   
-  \tikzstyle{dnsStyle}=[inner sep=10pt,fill=\mycola!20,rounded corners]
+  \tikzstyle{dnsStyle}=[inner sep=7pt,fill=\mycola!20,rounded corners,
+  text width=2.5cm,text centered]
+
+  % the wall
+  \draw[fill=gray]
+  (6cm , 0) node[text centered] {Organization's Firewall}
+  ++(-0.5cm,1cm) rectangle ++(1cm,9cm);
 
   \newcounter{req}
-  \newcommand{\dns}{DNS}
+  \setcounter{req}{1}
+  \newcommand{\dns}{\textbf{DNS}}
 
-  \node at (10cm, 3cm)[dnsStyle, name=internal-dns] {\dns};
+  % internal dns
+  \node at (9cm, 3cm)[dnsStyle, name=internal-dns, text width=2cm] {Internal \dns};
 
-  \node at ([yshift=2cm]internal-dns) [name=we,dnsStyle,fill=\mycolb!20] {we};
-
-  \newcommand{\noop}[1]{}
+  % us
+  \node at ([xshift=3cm]internal-dns) [name=we,dnsStyle,fill=\mycolb!20, text width=1cm] {we};
 
   \newcommand{\refPlusPlus}{
     \arabic{req}
-    \makebox[0cm]{\stepcounter{req}} %ignore the width of it
+    \stepcounter{req}
   }
+
+  
 
   % \uptodown[-latex]{we}{internal-dns}
   \draw[-latex] (we) --
-  node [midway, left] {
-    \refPlusPlus{}
-  }
+  node [midway,above] {\refPlusPlus{}}
   (internal-dns);
   
-  \draw[step=1cm,help lines,] (0,0) grid +(15cm,10cm);
-  \matrix (M1) [matrix of nodes,
-  nodes={style=dnsStyle},
+  \matrix (M1) [matrix of nodes, nodes={style=dnsStyle},
   row sep=1.5cm,matrix anchor=south]{
-    \dns\\
-    \dns\\
-    \dns\\
-    \dns\\
-  };
+    Public \dns{} Server (forwarder) \\
+    \dns{} Root Name Servers \\
+    \dns{} Authoritative server for \texttt{.com}\\
+    \dns{} Authoritative server for \texttt{example.com}\\};
 
   % \draw[->] (M1-1-1.west) .. controls +(left:5mm) and +(left:10mm) ..  (M1-2-1.west);
   % 🦜 : another way 
@@ -190,15 +214,108 @@ let's query for \texttt{www.example.com}.
     } (#1);
   }
 
+  
+  % over the wall
+  \draw[-latex] (internal-dns) to[out=180,in=0]
+  node [midway, left] {\refPlusPlus{}}
+  (M1-1-1);
+
+
+  % pass around
   \comeAndGo{M1-1-1}{M1-2-1}{2}{3}
   \comeAndGo{M1-1-1}{M1-3-1}{4}{5}
   \comeAndGo{M1-1-1}{M1-4-1}{6}{7}
 
-  \draw[fill=gray]
-  (7cm , 0) node[text centered] {Organization's Firewall}
-  ++(-0.5cm,1cm) rectangle ++(1cm,8cm);
+  % go back  in wall
+  \draw[-latex] (M1-1-1) to[out=90,in=90]
+  node [midway, left] {\refPlusPlus{}}
+  (internal-dns);
+
+  % back to us
+  \draw[-latex] (internal-dns) to[out=90,in=90]
+  node [midway, left] {\refPlusPlus{}}
+  (we);
   
 \end{tikzpicture}
+
+The worst-case process is as follows:
+
+\newcommand{\goTo}[1]{$\Rightarrow $ Step #1}
+\begin{enumerate}
+\item If the entry is in the \cola{DNS cache} of the \cola{internal DNS server},
+  and the \Cola{time to live (TTL)} of that entry has not expired, then the
+  response is supplied \cola{immediately }to the client.
+
+  Similarly, if the client is requesting an entry that's hosted on the server in
+  a \Cola{zone file}, the answer is supplied immediately to the client.
+\colz{  (\emoji{parrot} : So it feels like the zone file holds the ``defined DNS
+  entries'', and the cache holds entries of ``somebody else's zone file's
+  entry''?, \emoji{turtle} : Seem so....)}
+\item If the entry is not in the cache of the internal DNS server, or if it's
+  expired, then the server \cola{forwards the request} to its \Cola{upstream
+    providers} (often called \Cola{forwarders}) to refresh the entry.
+
+  If the query is in the \cola{cache} of the forwarder, it will simply return the
+  answer. If not found, \goTo{3}.
+
+  If this server has the \cola{authoritative name server} for the domain, it
+  will simply query that host (\goTo{5}).
+\item Forwarder request upstream. In this case, though, it will likely query the
+  \Cola{root name servers}.
+\colz{  The goal in this is to find the ``authoritative name
+  server'' that has the actual entries (in a zone file) for that domain. In this
+  case, the query is made to the root name servers for \texttt{.com}.}
+  % \goTo{4}
+\item The \Cola{root name server} will not return the actual answer, but will
+  instead return the authoritative name server for the \Cola{top-level domain
+    (TLD)} -- in this case, for \texttt{.com}. 
+  \colz{(
+    \emoji{parrot} : Oh, so this is
+    the server that you can ask ``Who should I ask for \texttt{.com} name''.
+    \emoji{turtle} : Yeah.)}
+\item After the forwarder gets this response, it updates its \cola{cache} with
+  that \cola{name server entry}, then makes the actual query against that
+  server. \colz{(\emoji{parrot} : Oh, so there's a cache entry just for the \texttt{.com} name
+  server. \emoji{turtle} : If you can cache \texttt{www.example.com}, why not
+  \texttt{.com}? \emoji{parrot} : Oh...)}
+\item The authoritative server for \texttt{.com} returns the authoritative DNS
+  server for \texttt{example.com}.
+\item
+\colz{\colZ{The forwarder server} then makes a request against this \colZ{final authoritative name server}.}
+\item
+\colz{The \colZ{authoritative name server} for \colZ{\texttt{example.com}} returns the actual query
+  ``answer'' to the \colZ{forwarder server}.}
+\item \colz{The \colZ{forwarder name server} caches that answer, then sends a reply back to
+  your \colZ{internal name server}.}
+\item \colz{Your \colZ{internal DNS server }also caches that answer, then
+    forwards it back to the client. The \colZ{client} caches the request in its
+    local cache, then passes the requested information (the DNS response) to the
+    application that requested it (perhaps your web browser)}. (\emoji{parrot} :
+  This is like ``backward propagation?'' \emoji{turtle} : No, not at all. They
+  just return the previously asked requests....)
+\end{enumerate}
+
+\cSay{ \colz{
+    Again, this process shows the \colZ{worst-case}. In practice, once the
+    servers have been up for even a short period of time, caching shortens this
+    \colZ{considerably}. Once in a steady state, the \colZ{internal DNS server}
+    for most organizations will have most requests cached.
+  }
+}
+
+\dSay{So usually just two steps. Right?}
+
+\cSay{Yeah.
+  \colz{
+    In addition, your \colZ{forwarding DNS server} will cache -- in particular,
+    it will almost never query the root name servers; usually, it will have \colZ{the
+    TLD servers (in this case, the server for \texttt{.com} cached as well.)}
+  }
+}
+
+\subsubsection{needed features}
+
+
 
 \end{document}
 
