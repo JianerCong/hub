@@ -231,3 +231,9 @@ Don’t go down the stairs!\hspace{3em}
 
 \end{document}
     #+END_SRC
+
+** write something special
+#+begin_src latex
+  {\color{red} \rule{\linewidth}{0.5mm}}
+\colorbox{BurntOrange}{orange background}
+#+end_src

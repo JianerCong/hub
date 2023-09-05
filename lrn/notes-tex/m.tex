@@ -89,7 +89,6 @@ MAC address has format something like: \texttt{00-0c-29-3b-73-cb}
   \end{description}
 }
 
-\end{comment}
 
 \section{DNS}
 
@@ -313,8 +312,112 @@ The worst-case process is as follows:
   }
 }
 
-\subsubsection{needed features}
+\end{comment}
 
+
+\subsubsection{needed features}
+\dSay{
+  \colz{
+    Which key features fo we need to enable on our \colZ{internal DNS server} to make
+    all this work?
+  }
+}
+
+\cSay{We need:}
+
+\begin{enumerate}
+  \item DNS recursion: \colz{This model relies on DNS recursion -- the
+      ability for each server in turn to make the client's DNS request ``up the
+      line''. }
+  \item Forwarder entries: \colz{If the requested DNS entry is not hosted on the
+    internal server, \Cola{internal DNS service (iDNS)} requests are forwarded
+    to these configured IP addresses -- these should be two or more reliable
+    upstream DNS servers.
+
+    These upstream servers will in turn cache DNS entries.
+
+    In days past, people would use their \colZ{internet service provider's (ISP)
+      (e.g. \texttt{OO Telecom})} DNS servers for forwarders. In more modern
+    times, the larger DNS providers are both more reliable and provide more
+    features. Some are shown in \cref{tab:dns-prov}
+  }
+\item Caching: \colz{Just cache what it knows.}
+\item Dynamic registration: \colz{While server usually have static IP addresses
+    and static DNS entries, it's common for client hosts to have addresses
+    assigned by DHCP, and having those hosts in DNS would be nice.
+
+    DNS is often configured to allow dynamic registration of these hosts, either
+    by populating DNS from DHCP addresses as they are assigned or by permitting
+    the hosts to register themselves in DNS.
+
+    Microsoft implements an authentication mechanism into their dynamic update
+    process, and this is where it is most commonly seen. It is, however, an
+    option in Linux DNS \colZ{(Berkeley Internet Name Domain, or BIND)} as well.
+  }
+\item Host redundancy: \colz{Please get a backup.}
+\end{enumerate}
+
+\begin{table}
+  \centering
+
+  \begin{tabularx}{0.8\textwidth} {X|X}
+    \hline
+    \textbf{Provider} & \textbf{Addresses}\\
+    \hline
+    Google & \texttt{8.8.(8.8|4.4),\newline
+      2001:4860:4860::(8888 | 8844)
+    }\\
+    \hline
+    Cloudflare & \texttt{1.(1.1 | 0.0).1,\newline
+      2606:4700:4700::(1111 | 1001)
+    }\\
+    \hline
+    Quad9 & \texttt{9.9.9.9,\newline
+      149.112.112.112,\newline
+      2620:fe::(fe|9),
+    }\\
+    \hline
+    OpenDNS (now Cisco Umbrella) &
+    \texttt{
+      208.67.(222 | 220).(220 | 222),
+      2620:119:(35::35 | 53::53)
+    }
+  \end{tabularx}
+
+  \caption{Common DNS providers}
+  \label{tab:dns-prov}
+\end{table}
+
+\subsection{internet-facing DNS server}
+
+\dSay{
+  \colz{
+    So how to make a DNS server to serve a public zone ? For example, if I already
+    have \texttt{aaa.com} as our domain, how can we serve \texttt{bbb.aaa.com}?
+  }
+}
+
+\cSay{
+  \colz{
+    For a public-facing DNS server, \colZ{security} matters more than
+    \colZ{efficiency.}
+  }
+  In particular, we might implement:
+}
+
+\begin{enumerate}
+\item Restrict recursion: \colz{This server should \colZ{answer the request directly}.
+    It doesn't forward it. }
+\item Cache is less important : \colz{Similar reason. This server is about
+    \colZ{answering}, not \colZ{asking}.}
+\item Host redundancy: \colZ{Please get a back up...}
+\item Restricting zone transfers:
+\colZ{  You might want to answer individual DNS
+  queries as they arrive. There isn't a good reason for a DNS client on the
+  internet to request all entries for an organization. (\emoji{parrot} : What
+  does it mean..?)
+}
+\end{enumerate}
 
 
 \end{document}
@@ -323,4 +426,6 @@ The worst-case process is as follows:
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"
 % TeX-master: "m.tex"
+% TeX-parse-self: t
+% TeX-auto-save: t
 % End:

@@ -20,8 +20,13 @@ top=20mm,
 \newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
 \newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
 
-\newcommand{\colZ}[1]{\textcolor{black}{#1}} %go back
-\newcommand{\colz}[1]{\textcolor{gray}{#1}}
+% 🦜 : \textcolor doesn't allow multiple paragraphs in it, so we used {\color{...}}
+\newcommand{\colZ}[1]{
+{\color{black}#1}
+} %go back
+\newcommand{\colz}[1]{
+{\color{gray}#1}
+}
 
 % \let\emph\relax % there's no \RedeclareTextFontCommand
 % \DeclareTextFontCommand{\emph}{\bfseries}
@@ -248,3 +253,15 @@ skin=myThmSkin
 
 \usepackage{enumitem}
 \setlist[description]{leftmargin=0.1\linewidth,labelindent=0.1\linewidth}
+
+% 🦜 : Remember to specify the mode, because without a \documentclass{}, emacs
+% will consider this as a plain TeX document.
+
+% Local Variables:
+% mode: LaTeX
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
+% TeX-parse-self: t
+% TeX-auto-save: t
+% End:

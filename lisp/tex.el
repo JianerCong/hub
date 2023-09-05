@@ -247,3 +247,4 @@ LaTeX-font-list
 ;;This reload the 'LaTeX-font-list
 (TeX-normal-mode)
 (rainbow-delimiters-mode)
+(auto-fill-mode)
