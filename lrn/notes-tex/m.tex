@@ -22,7 +22,7 @@
 \begin{comment}
 \section{Media Access Control (MAC) Address}
 
-\subsection{what does it look like}
+\subsection{What does it look like}
 
 MAC address has format something like: \texttt{00-0c-29-3b-73-cb}
 
@@ -92,7 +92,7 @@ MAC address has format something like: \texttt{00-0c-29-3b-73-cb}
 
 \section{DNS}
 
-\subsection{public DNS}
+\subsection{Public DNS}
 
 DNS has a large and complex infrastructure on the internet. This is made up of
 \begin{itemize}
@@ -127,7 +127,7 @@ DNS has a large and complex infrastructure on the internet. This is made up of
   I think say do. But let's stop.
 }
 
-\subsection{internal DNS}
+\subsection{Internal DNS}
 \cSay{
 
   \colz{
@@ -312,10 +312,9 @@ The worst-case process is as follows:
   }
 }
 
-\end{comment}
 
 
-\subsubsection{needed features}
+\subsubsection{Needed features}
 \label[subsubsection]{sec:needed-features}
 \dSay{
   \colz{
@@ -462,8 +461,145 @@ The worst-case process is as follows:
   }
 }
 
-\subsection{basic installation: BIND for internal use}
+\end{comment}
+
+\subsection{Basic installation: BIND for internal use}
 \label[subsection]{sec:install-bind}
+
+Detailed installation process sees \texttt{linux-network-lower.org}.
+
+\subsubsection{SOA record}
+
+\colz{
+
+  A \Cola{start of authority record (SOA record)} is a type of \colZ{resource
+    record} in the Domain Name System (DNS) containing administrative
+  information about the zone, espacially regarding \colZ{zone transfers}. The
+  SOA record format is specified in RFC 1025. (\emoji{parrot} : Oh, so it's not
+  a BIND thing. \emoji{turtle} : It's not.)
+
+  Normally DNS name servers are set up in clusters. The database within each
+  cluster is synchronized through \colZ{zone transder}. \colZ{The SOA record for
+    a zone contains data to control the zone transfer.} This is the serial
+  number and different timespans.
+
+  It also contains the \colZ{email address} of the responsible person for this
+  zone, as well as the name of the \colZ{primary master name server.} Usually
+  the SOA record is located at the top of the zone. A zone without a SOA record
+  does not conform to the standard required by RFC 1035. 
+}
+
+\dSay{
+  So what's the structure of a record?
+}
+
+\cSay{
+  It's usually
+  \begin{enumerate}
+  \item \texttt{NAME}: \texttt{@} \colz{is a shortcut to match previous record
+      in BIND}.
+  \item \texttt{CLASS}: \texttt{IN} \colz{for internet}
+  \item \texttt{TYPE (= SOA)}
+  \item \texttt{MNAME}: Primary master name for this zone.
+  \item \texttt{RNAME}: Email address of the admin respinsible for this zone.
+    \colz{(As usual (\emoji{turtle} : Is it?), the email address is encoded as a
+      name. The part of the email address before the \texttt{@} becomes the
+      \colZ{first label} of the name; the domain name after the \texttt{@}
+      becomes the \colZ{rest of the name}.
+
+      In zone-file format, dots in labels are escaped with blackslashes; thus
+      the email address \texttt{aaa.doe@example.com} would be represented in a
+      zone file as
+      \texttt{aaa\textbackslash{}.doe.example.com}
+      )
+    }
+  \item \texttt{SERIAL}: Serial number for this zone.
+  \item \texttt{REFRESH}: \colz{Number of seconds after which secondary name
+      servers should \colZ{query the master} for the SOA record, to detect zone
+      changes.} \colz{(recommanded = 86 400 = 24 hrs)}
+
+  \item \texttt{RETRY}: \colz{Number of seconds after which secondary name
+      servers should \colZ{retry to request} the serial number from the master.
+      recommanded = 7 200 = 2hr.}
+
+  \item \texttt{EXPIRE}: = 1000hrs
+  \item \texttt{MINIMUM}: = 2 days.
+
+  \end{enumerate}
+}
+
+\subsubsection{Fully qualified domain name (FQDN)}
+
+\colz{Fully qualified domain name is a \colZ{domain name} that specifies its
+  exact location in the tree hierarchy of the DNS. It specifies all domain
+  levels, including the \colZ{top level domain} and the \colZ{root zone}.
+
+  Example : \texttt{en.wikipedia.org.} (note the last dot.)
+
+  What's not : \texttt{localhost}
+}
+
+\subsubsection{The important zone file}
+\label{sec:zone-file}
+
+\colz{The \colZ{zone files} are where the DNS records are all stored. They are
+  in the \colZ{\texttt{/var/cache/bind/}}
+  folder. For example,
+  \texttt{/var/cache/bind/aaa.net.zone}.
+}
+
+Usually you will need to do the following:
+
+\colz{
+  \begin{enumerate}
+  \item Add records as needed.
+  \item Update the \colZ{SOA} line with your zone and name server's \colZ{FQDN}.
+  \item If needed, update the \colZ{TTL} calue in the last line in the
+    \colZ{SOA} record -- the default is \colZ{24 hours} (86400 seconds). This is
+    usually a good compromise as it favors caching of records across multiple
+    servers
+
+    If you are doing any DNS maintenance, though, you might want to
+    edit the file the day before (that is, 24 hours or more prior to maintenance
+   ) and shorten this to 5 or 10 minutes so that your changes aren't delayed due
+   to caching.
+ \item Update the \colZ{ns} record, which identidies the DNS server(s) for your
+   domain.
+ \item Add \Cola{A record} as needed -- these identify the IP addresses for each
+   host. Note that for \Cola{A records,} we're only using the 
+  \end{enumerate}
+}
+
+\newcommand{\dmq}{\texttt{dnsmasq}}
+\subsection{\dmq{}}
+
+\subsubsection{Intro}
+
+
+\Cola{\dmq{}} is a lightweight DNS, TFTP, PXE, router advertisement and
+DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
+
+\colz{
+  \dmq{} \colZ{accepts DNS queries} and either answers them from a small, local, cache
+  or forwards them to a real, recursive, DNS server. It loads the contents of
+  \colZ{\texttt{etc/hosts}} so that \colZ{local hostnames which do not appear in the global DNS can be resolved and also
+    answers DNS queries for DHCP  configured hosts.}
+
+  It can also act as the authoritative DNS server for one or more domains,
+  allowing local names to appear in the global DNS. 
+
+  \colZ{The \dmq{} DHCP server} supports static address assignments and multiple
+  networks. It automatically sends a sensible default set of DHCP options
+  (configurable).
+}
+
+\subsubsection{Configure \dmq{}}
+
+\colz{
+  Configuring \dmq{} to act as an authoritative DNS server is complicated by the
+  fact that it involves configuration of \colZ{external DNS servers} to provide
+  delegation. 
+}
 
 \end{document}
 

@@ -3,127 +3,484 @@
 \documentclass[dvipsnames]{article}
 % \documentclass[dvipsnames]{ctexart}
 
-\title{Openstack}
+\title{Linux Network}
 \input{h}
+\input{h-says}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=magenta,      
+  urlcolor=cyan,
+  pdftitle={Linux Network},
+  pdfpagemode=FullScreen,
+}
+\urlstyle{same}
+
 % --------------------------------------------------
 \begin{document}
 \maketitle
 
-\section{Consideration}
+\begin{comment}
+\section{Media Access Control (MAC) Address}
 
-\subsection{The logical architecture}
+\subsection{what does it look like}
 
-\emoji{turtle} : OpenStack uses a microservice architecture. So it's composed of
-many many services. 
+MAC address has format something like: \texttt{00-0c-29-3b-73-cb}
 
-About this services:
+\cSay{
+  In practice, these addresses are used to communicate between hosts in the
+  same VLAN or subnet. If you look at a packet capture, at the start of a TCP
+  conversation you'll see the sending host send a broadcast \Cola{ARP request} saying
+  \begin{center}
+    ``Who has IP address x.x.x.x ?''
+  \end{center}
+  The \Cola{ARP reply} from some host will be
+  \begin{center}
+    ``That's me, and my MAC address is aaaa.bbbb.cccc ?''
+  \end{center}
+}
 
+\dSay{
+  What if the target IP is on a different subnet ?
+}
+
+\cSay{
+  Then the sender will \Cola{ARP for} the gateway for that subnet.
+
+  Switch is much faster than router, because hosts can use MAC to communicate.
+}
+
+\dSay{So why router ?}
+
+\cSay{
+  Because switches only work in LAN.
+}
+
+\subsection{Organizationally Unique Identifier (OUI)}
+
+\cSay{The leading (usually 3 ) bytes of a MAC address usually points to its
+  manufacturer, like \texttt{OOtronics Ltd. Kibbutz Yizrael, IL} or \texttt{OOel Corporate Kedah,
+    MY} see \url{https://standards-oui.ieee.org/oui/oui.txt}
+}
+
+\subsection{Address Resolution Protocol (ARP)}
+
+\Cola{ARP} is used to find the MAC address of a network neighbour for a given IPv4 Address.
+
+\cSay{
+  When a host wants to \cola{talk} to another host \cola{in the same subnet} using its IP address, it will
+  \begin{enumerate}
+  \item check its \Cola{ARP cache} to see whether there's a MAC address that matches that IP.
+  \item If there isn't, it will send an ARP request to the local broadcast address.
+  \item When the corresponding MAC is found, it will \colb{establish port-to-port communications (Next)}.
+  \end{enumerate}
+}
+
+\section{Port to Port : TCP and UDP}
+
+\cSay{There're two types of ports:
+  \begin{description}
+  \item[fixed server ports:] $0 <= p <= 1023$ usually for \cola{server}
+  \item[ephemeral (short-lived) ports:] $1024 <= p <= 65535$ usually for
+    \cola{client}. Among them, we have
+    \begin{itemize}
+    \item $1024 <= p <= 49151$ user ports
+    \item $49152  <= p <= 65535$ dynamic or private ports
+    \end{itemize}
+  \end{description}
+}
+
+
+\section{DNS}
+
+\subsection{Public DNS}
+
+DNS has a large and complex infrastructure on the internet. This is made up of
 \begin{itemize}
-\item Most of them of them are written in \cola{Python}.
-\item All of them provide a \cola{REST API}.
-\item Each service may be implemented as different components. The components
-  communicate with each other using a \cola{message queue}.
+\item 13 \cola{root name servers}(which are each a reliable cluster
+  of servers)
+\item a group of commonly used name servers (for instance, the servers at Google or Cloudflare)
+\item a series of registrars who will, for a fee, register a DNS domain name for
+  you -- for instance, your organization's domain name.
 \end{itemize}
 
-\subsubsection{Keystone - identity management}
+\dSay{So Route 53 service in AWS is one of the third kind}
 
-\emoji{turtle} : Keystone is the identity management service. It's the simplest
-service in OpenStack.
+\cSay{I guess so.}
 
-It provides a REST API for authentication and authorization. It also provides a
-service catalog, which is a list of all the services.
+\dSay{Who are the 13 clusters?}
 
-\emoji{parrot} : Why is it keeping it ?
+\cSay{
+  They answer you questions liks : ``Where is the \texttt{.com} server?''
+  \colz{(These servers are called \Cola{top-level domain (TLD)} authoritative name
+    server.)
+    In face, all 13 root (clusters of) servers  are same for redundancy.
+    They are listed in \url{https://www.iana.org/domains/root/servers}. For example,
+    Verisign,Inc, Department of Defence, NASA,...
+  }
+}
 
-\emoji{turtle} : I think probably because it needs to know which services are
-accessible for a user anyway.
+\dSay{
+  Oh, do they need a consensus mechanism then ?
+}
 
-\subsubsection{Swift - object storage}
+\cSay{
+  I think say do. But let's stop.
+}
 
-\emoji{turtle} : Swift is the object storage service (an object store). To store
-an object, it splits the object into chunks and stores them in different
-containers redundantly.
+\subsection{Internal DNS}
+\cSay{
 
-Some of the benefits of this design are:
+  \colz{
+    However, for the most part, most administrators are working with the needs of
+    their organization -- working with their \Cola{internal DNS} name servers that
+    face their internal folks, or with their \colb{external DNS} name servers that
+    face the internet. 
+  }
 
+}
+
+The internal DNS server has a \Cola{zone file} populated with DNS records for internal
+DNS resolution. This file can either be populated
 \begin{itemize}
-\item It has no central brain, and indicates no \Cola{Single Point of Failure (SPOF)}.
-\item It has \cola{auto-revovery}.
-\item It has inexpensive hardware that can be used for redundant storage clusters.
+\item manually by editing it
+\item automatically by the clients
+\item automatically by \Cola{Dynamic Host Configuration Protocol (DHCP) leases}.
 \end{itemize}
 
-\emoji{parrot} : Wow, \cola{auto-recovey} is cool.
+\cSay{Often, all three methods are combined.}
 
-\subsubsection{Cinder - block storage}
+\subsubsection{basic request flow}
 
-\emoji{parrot} : What if I just want a block of bytes ? For example, for the
-volume of a VM.
 
-\emoji{turtle} : Then you can use Cinder. It provides raw volumes that can be
-used as hand disks in VMs.
+The basic request flow is simple. A client makes a DNS request. \cola{If that
+  request is for a host that's internal to the organization and the request is
+  to an internal DNS server,} the DNS response is supplied immediately since
+it's on that local DNS server.
 
-Some of the features of Cinder are:
+If it's for an external host, then things are bit more complex -- for instance,
+let's query for \texttt{www.example.com}.
 
-\begin{itemize}
-\item You can create snapshots of volumes.
-\item You can create backups of volumes.
-\end{itemize}
+\begin{tikzpicture}
+  % \draw[step=1cm,help lines,] (0,0) grid +(15cm,10cm);
+  
+  \tikzstyle{dnsStyle}=[inner sep=7pt,fill=\mycola!20,rounded corners,
+  text width=2.5cm,text centered]
 
-Also, like Keystone, different storage backends can be plugged into Cinder such
-as from IBM, NetApp, Nexenta, and VMware.
+  % the wall
+  \draw[fill=gray]
+  (6cm , 0) node[text centered] {Organization's Firewall}
+  ++(-0.5cm,1cm) rectangle ++(1cm,9cm);
 
-\emoji{parrot} : What are these ?
+  \newcounter{req}
+  \setcounter{req}{1}
+  \newcommand{\dns}{\textbf{DNS}}
 
-\emoji{turtle} : I don't know. I think they are companies that provide
-storage....
+  % internal dns
+  \node at (9cm, 3cm)[dnsStyle, name=internal-dns, text width=2cm] {Internal \dns};
 
-\begin{tcolorbox}
-  \emoji{turtle} : Cinder replaces the old \Cola{Nova Volume service}. 
-\end{tcolorbox}
+  % us
+  \node at ([xshift=3cm]internal-dns) [name=we,dnsStyle,fill=\mycolb!20, text width=1cm] {we};
 
-\subsubsection{Manila - file share (since \cola{Juno})}
+  \newcommand{\refPlusPlus}{
+    \arabic{req}
+    \stepcounter{req}
+  }
 
-\emoji{turtle} : Manila is the file share service. It provides a remote file
-system. In operation, it resembles the \Cola{Network File System (NFS)} or
-\Cola{SAMBA} storage service that you can find in Linux.
+  
 
-\emoji{parrot} : Oh, I know SAMBA. I remember it's how linux can access windows
-file.
+  % \uptodown[-latex]{we}{internal-dns}
+  \draw[-latex] (we) --
+  node [midway,above] {\refPlusPlus{}}
+  (internal-dns);
+  
+  \matrix (M1) [matrix of nodes, nodes={style=dnsStyle},
+  row sep=1.5cm,matrix anchor=south]{
+    Public \dns{} Server (forwarder) \\
+    \dns{} Root Name Servers \\
+    \dns{} Authoritative server for \texttt{.com}\\
+    \dns{} Authoritative server for \texttt{example.com}\\};
 
-\emoji{turtle} : Yes, it's a file sharing protocol.
+  % \draw[->] (M1-1-1.west) .. controls +(left:5mm) and +(left:10mm) ..  (M1-2-1.west);
+  % 🦜 : another way 
 
-In contrast to Cinder, it resembles the \Cola{Storage Area Network (SAN)}
-service. In fact, NFS and SAMBA or the \Cola{Common Internet File System (CIFS)}
-are supported as backend drivers. Manila provides the orchestration of shares on
-the share services.
+  \newcommand{\comeAndGo}[2]{
+    \draw[-latex] (#1) to[out = 180, in=180] node[auto,swap] {
+      \refPlusPlus{}
+    } (#2);
 
-\emoji{parrot} : What do you mean by \cola{orchestration of shares} ?
+    \draw[-latex] (#2) to[out = 0, in=0] node[auto,swap] {
+      \refPlusPlus{}
+    } (#1);
+  }
 
-\emoji{turtle} : I think it means that it will take care of the shares when they
-are read and written by different services.
+  
+  % over the wall
+  \draw[-latex] (internal-dns) to[out=180,in=0]
+  node [midway, left] {\refPlusPlus{}}
+  (M1-1-1);
 
-\emoji{parrot} : Oh, so what's the difference between Swift, Cinder and Manila ?
 
-\emoji{turtle} : Let's see a table:
+  % pass around
+  \comeAndGo{M1-1-1}{M1-2-1}{2}{3}
+  \comeAndGo{M1-1-1}{M1-3-1}{4}{5}
+  \comeAndGo{M1-1-1}{M1-4-1}{6}{7}
 
-\begin{table}[htbp]
+  % go back  in wall
+  \draw[-latex] (M1-1-1) to[out=90,in=90]
+  node [midway, left] {\refPlusPlus{}}
+  (internal-dns);
+
+  % back to us
+  \draw[-latex] (internal-dns) to[out=90,in=90]
+  node [midway, left] {\refPlusPlus{}}
+  (we);
+  
+\end{tikzpicture}
+
+The worst-case process is as follows:
+
+\newcommand{\goTo}[1]{$\Rightarrow $ Step #1}
+\begin{enumerate}
+\item If the entry is in the \cola{DNS cache} of the \cola{internal DNS server},
+  and the \Cola{time to live (TTL)} of that entry has not expired, then the
+  response is supplied \cola{immediately }to the client.
+
+  Similarly, if the client is requesting an entry that's hosted on the server in
+  a \Cola{zone file}, the answer is supplied immediately to the client.
+\colz{  (\emoji{parrot} : So it feels like the zone file holds the ``defined DNS
+  entries'', and the cache holds entries of ``somebody else's zone file's
+  entry''?, \emoji{turtle} : Seem so....)}
+\item If the entry is not in the cache of the internal DNS server, or if it's
+  expired, then the server \cola{forwards the request} to its \Cola{upstream
+    providers} (often called \Cola{forwarders}) to refresh the entry.
+
+  If the query is in the \cola{cache} of the forwarder, it will simply return the
+  answer. If not found, \goTo{3}.
+
+  If this server has the \cola{authoritative name server} for the domain, it
+  will simply query that host (\goTo{5}).
+\item Forwarder request upstream. In this case, though, it will likely query the
+  \Cola{root name servers}.
+\colz{  The goal in this is to find the ``authoritative name
+  server'' that has the actual entries (in a zone file) for that domain. In this
+  case, the query is made to the root name servers for \texttt{.com}.}
+  % \goTo{4}
+\item The \Cola{root name server} will not return the actual answer, but will
+  instead return the authoritative name server for the \Cola{top-level domain
+    (TLD)} -- in this case, for \texttt{.com}. 
+  \colz{(
+    \emoji{parrot} : Oh, so this is
+    the server that you can ask ``Who should I ask for \texttt{.com} name''.
+    \emoji{turtle} : Yeah.)}
+\item After the forwarder gets this response, it updates its \cola{cache} with
+  that \cola{name server entry}, then makes the actual query against that
+  server. \colz{(\emoji{parrot} : Oh, so there's a cache entry just for the \texttt{.com} name
+  server. \emoji{turtle} : If you can cache \texttt{www.example.com}, why not
+  \texttt{.com}? \emoji{parrot} : Oh...)}
+\item The authoritative server for \texttt{.com} returns the authoritative DNS
+  server for \texttt{example.com}.
+\item
+\colz{\colZ{The forwarder server} then makes a request against this \colZ{final authoritative name server}.}
+\item
+\colz{The \colZ{authoritative name server} for \colZ{\texttt{example.com}} returns the actual query
+  ``answer'' to the \colZ{forwarder server}.}
+\item \colz{The \colZ{forwarder name server} caches that answer, then sends a reply back to
+  your \colZ{internal name server}.}
+\item \colz{Your \colZ{internal DNS server }also caches that answer, then
+    forwards it back to the client. The \colZ{client} caches the request in its
+    local cache, then passes the requested information (the DNS response) to the
+    application that requested it (perhaps your web browser)}. (\emoji{parrot} :
+  This is like ``backward propagation?'' \emoji{turtle} : No, not at all. They
+  just return the previously asked requests....)
+\end{enumerate}
+
+\cSay{ \colz{
+    Again, this process shows the \colZ{worst-case}. In practice, once the
+    servers have been up for even a short period of time, caching shortens this
+    \colZ{considerably}. Once in a steady state, the \colZ{internal DNS server}
+    for most organizations will have most requests cached.
+  }
+}
+
+\dSay{So usually just two steps. Right?}
+
+\cSay{Yeah.
+  \colz{
+    In addition, your \colZ{forwarding DNS server} will cache -- in particular,
+    it will almost never query the root name servers; usually, it will have \colZ{the
+    TLD servers (in this case, the server for \texttt{.com} cached as well.)}
+  }
+}
+
+\end{comment}
+
+
+\subsubsection{needed features}
+\label[subsubsection]{sec:needed-features}
+\dSay{
+  \colz{
+    Which key features fo we need to enable on our \colZ{internal DNS server} to make
+    all this work?
+  }
+}
+
+\cSay{We need:}
+
+\begin{enumerate}
+  \item DNS recursion: \colz{This model relies on DNS recursion -- the
+      ability for each server in turn to make the client's DNS request ``up the
+      line''. }
+  \item Forwarder entries: \colz{If the requested DNS entry is not hosted on the
+    internal server, \Cola{internal DNS service (iDNS)} requests are forwarded
+    to these configured IP addresses -- these should be two or more reliable
+    upstream DNS servers.
+
+    These upstream servers will in turn cache DNS entries.
+
+    In days past, people would use their \colZ{internet service provider's (ISP)
+      (e.g. \texttt{OO Telecom})} DNS servers for forwarders. In more modern
+    times, the larger DNS providers are both more reliable and provide more
+    features. Some are shown in \cref{tab:dns-prov}
+  }
+\item Caching: \colz{Just cache what it knows.}
+\item Dynamic registration: \colz{While server usually have static IP addresses
+    and static DNS entries, it's common for client hosts to have addresses
+    assigned by DHCP, and having those hosts in DNS would be nice.
+
+    DNS is often configured to allow dynamic registration of these hosts, either
+    by populating DNS from DHCP addresses as they are assigned or by permitting
+    the hosts to register themselves in DNS.
+
+    Microsoft implements an authentication mechanism into their dynamic update
+    process, and this is where it is most commonly seen. It is, however, an
+    option in Linux DNS \colZ{(Berkeley Internet Name Domain, or BIND)} as well.
+  }
+\item Host redundancy: \colz{Please get a backup.}
+\end{enumerate}
+
+\begin{table}
   \centering
-  \begin{tabularx}{0.8\textwidth}{XXXX}
-    \textbf{Specification} & \textbf{Swift} & Cinder & Manila \\
+
+  \begin{tabularx}{0.8\textwidth} {X|X}
     \hline
-    Access mode & REST API & Block device & File system \\
-    Multi-access & Yes & No & Yes \\
-    Persistent & Yes & Yes & Yes \\
-    Accessibility & Anywhere & Within single VM & Within multiple VMs \\
+    \textbf{Provider} & \textbf{Addresses}\\
+    \hline
+    Google & \texttt{8.8.(8.8|4.4),\newline
+      2001:4860:4860::(8888 | 8844)
+    }\\
+    \hline
+    Cloudflare & \texttt{1.(1.1 | 0.0).1,\newline
+      2606:4700:4700::(1111 | 1001)
+    }\\
+    \hline
+    Quad9 & \texttt{9.9.9.9,\newline
+      149.112.112.112,\newline
+      2620:fe::(fe|9),
+    }\\
+    \hline
+    OpenDNS (now Cisco Umbrella) &
+    \texttt{
+      208.67.(222 | 220).(220 | 222),
+      2620:119:(35::35 | 53::53)
+    }
   \end{tabularx}
+
+  \caption{Common DNS providers}
+  \label{tab:dns-prov}
 \end{table}
 
-\end{document}
+\subsection{internet-facing DNS server}
 
+\dSay{
+  \colz{
+    So how to make a DNS server to serve a public zone ? For example, if I already
+    have \texttt{aaa.com} as our domain, how can we serve \texttt{bbb.aaa.com}?
+  }
+}
+
+\cSay{
+  \colz{
+    For a public-facing DNS server, \colZ{security} matters more than
+    \colZ{efficiency.}
+  }
+  In particular, we might implement:
+}
+
+\begin{enumerate}
+\item Restrict recursion: \colz{This server should \colZ{answer the request
+      directly}. It doesn't forward it. }
+\item Cache is less important : \colz{Similar reason. This server is about
+    \colZ{answering}, not \colZ{asking}.}
+\item Host redundancy: \colz{Please get a back up...}
+\item Restricting zone transfers:
+\colz{  You might want to answer individual DNS
+  queries as they arrive. There isn't a good reason for a DNS client on the
+  internet to request all entries for an organization. (\emoji{parrot} : What
+  does it mean..? \emoji{turtle} : I didn't get that either.)
+
+  \colZ{Zone transfers} are meant to maintain your zone between redundant
+  servers so that as a zone is edited, the changes are replicated to the other
+  servers in the cluster. (\emoji{parrot} : Oh...so zone transfer is like a
+  mirroring process? \emoji{turtle} : Yeah, more or less.)
+}
+\item Rate limiting : \colz{anti-DoS}
+\item Restricting dynamic registration: \colz{
+    This is usually disabled for most cases.}
+\end{enumerate}
+
+\subsection{common DNS implementations}
+
+\Cola{BIND} (see \cref{sec:needed-features}). also called \Cola{\texttt{named} (name
+  daemon)}, is the DNS tool most often implemented in Linux.
+
+\colz{
+
+  It's and is arguably both the most flexible and complete, as well as the most
+  difficult to configure and troubleshoot. For better or worse, though, it's the
+  service you are most likely to see and to implement in most organizations.
+}
+
+\cSay{
+  \colz{
+    \colZ{DNS masquerade (\texttt{dnsmasq})} is a competing DNS server
+    implementation. It's commonly seen on network appliances because of its
+    \colZ{small footprint}, but also makes a fine DNS server for a smaller
+    organization. The key advantages to \texttt{dnsmasq} would be:
+    \begin{enumerate}
+    \item it has a \colZ{built-in GUI}
+    \item it has \colZ{integration with DHCP}, allowing DNS registration
+      directly from the DHCP database.
+    \end{enumerate}
+
+    In addition, \texttt{dnsmasq} implements a friendly way to implement
+    \colZ{DNS blocklists}, which are very nicely packaged up in the Pi-hole
+    application.  If your home network has a DNS server on its perimeter
+    firewall or \colZ{Wireless Access Point (WAP)}, that DNS server is most
+    likely \texttt{dnsmasq}.
+
+    However, here, we will only talk about \colZ{BIND} in \cref{sec:install-bind}.
+  }
+}
+
+\subsection{Basic installation: BIND for internal use}
+\label[subsection]{sec:install-bind}
+
+Detailed installation process sees \texttt{linux-network-lower.org}.
+
+\subsubsection{The important zone file}
+\label{sec:zone-file}
+
+
+
+\end{document}
 
 % Local Variables:
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"
 % TeX-master: "m.tex"
+% TeX-parse-self: t
+% TeX-auto-save: t
 % End:
-\message{ !name(m.tex) !offset(-129) }
+\message{ !name(m.tex) !offset(-486) }

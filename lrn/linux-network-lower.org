@@ -596,9 +596,76 @@ zone "aaa.net" IN {
 #+end_src
 
 4. Make the zone file ~aaa.net.zone~:
-
 #+begin_src js
-  
+  // An example BIND zone file:
+
+  $TTL 86400
+
+  @   IN SOA  ns1.aaa.net. admin.aaa.net. (
+      2006030701  ; Serial
+      28800       ; Refresh
+      7200        ; Retry
+      604800      ; Expire
+      86400       ; Minimum TTL
+  )
+
+  @       IN  NS  ns1.aaa.net.
+  ns1     IN  A  10.0.0.1         // IP address of ns1.aaa.net
+  ns2     IN  A  10.0.0.2         // IP address of ns2.aaa.net
+#+end_src
+
+5. Edit the ~named.conf~ file to allow clients to register themselves in DNS.
+
+🐢 : Note that this requires us to add *access control lists (ACLs)* to permit
+ranges of IP addresses to update their DNS entries.
+
+In the applicable zone, add the following line:
+#+begin_src bash
+acl dhcp-clients { 192.168.122.128/25; };
+
+acl static-clients { 192.168.122.64/26; };
+
+zone "aaa.net" {
+    allow-update { dhcp-clients; static-clients; };
+
+};
+#+end_src
+
+6. check the config
+#+begin_src bash
+  sudo named-checkconf
+  sudo named-checkzone aaa.net /etc/bind/aaa.net.zone
+#+end_src
+
+7. restart or start the service
+#+begin_src bash
+  # start
+
+  sudo systemctl enable bind9
+  sudo systemctl start bind9
+
+  # or pushing an update
+  sudo systemctl restart bind9
+
+  # check status
+  sudo systemctl status bind9
+#+end_src
+
+
+8. test with dig
+
+ 🐢 : dig is a DNS lookup utility.Unless it is told to query a specific name
+   server, dig tries each of the servers listed in /etc/resolv.conf. If no
+   usable server addresses are found, dig sends the query to the local host.
+
+   #+begin_src bash
+      dig @localhost +short ns1.aaa.net
+      dig @localhost +short ns2.aaa.net
+   #+end_src
+
+And because we have set the forwarders, we can also do:
+#+begin_src bash
+  dig @localhost +short www.google.com
 #+end_src
 
 *** network interface
