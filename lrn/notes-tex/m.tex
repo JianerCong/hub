@@ -659,11 +659,36 @@ DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
   file. (configured by \texttt{--log-facility}).
 }
 
-\subsubsection{How it does DNS}
+\subsubsection{some options}
 
-\newcommand{\colZt}[1]{
-  \colZ{\texttt{#1}}
-}
+\begin{itemize}
+\item \texttt{-h,--no-hosts}: \colz{Don't read the hostnames in
+    \texttt{/etc/hosts}.}
+\item \texttt{-H,--addn-hosts=<file>}: \colz{Read the hostnames in
+    \texttt{<file>} in addition to \texttt{/etc/hosts}.
+
+    If \texttt{--no-hists} is given, read only \texttt{<file>}.
+  }
+\item \texttt{-d,--no-daemon}: \colz{Debug mode: \colZ{don't fork to the background}.
+    don't write a pid file, don't change user id, generate a complete cache dump
+    on receipt on \colZt{SIGUSR1}, log to stderr as well as syslog, don't fork new
+    processes to handle TCP queries.
+
+    \emoji{turtle} : Use \texttt{-k,--keep-in-foreground} in production.
+  }
+\item \texttt{-q,--log-queries}: \colz{Log the results of DNS queries handled by
+    dnsmasq.}
+\item \texttt{-8,--log-facility=<facility>}: \colz{
+    If \texttt{<facility>} contains \texttt{/}, then it's considered a filename,
+    and \dmq{} won't log to syslog, but will log to the specified file.
+  }
+\item \texttt{-p,--port=<port>}: \colz{Listen on \texttt{<port>} instead of the
+    standard DNS port (53). Setting this to zero completely disables DNS,
+    leaving only DHCP and/or TFTP.
+  }
+\end{itemize}
+
+\subsubsection{How it does DNS}
 
 \dmq{} is a  query forwarder: it is not capable of recursively answering
 arbitrary queries starting from the root servers but forwards such queries to a
@@ -675,7 +700,31 @@ arbitrary queries starting from the root servers but forwards such queries to a
   This allows the DNS servers to be \colZ{set dynamically by PPP or DHCP}
 }
 
-\dSay{Oh, so it will watch a \texttt{resolve.conf} file.} \cSay{Yeah.}
+\dSay{Oh, so it will watch a \texttt{resolve.conf} file.}
+
+\cSay{Yeah..
+  \texttt{-r,--resolv-filr = <file>}\newline
+  Read the IP addresses of the \cola{upstream nameservers} from \texttt{<file>}.
+  \colz{default to \texttt{/etc/resolv.conf}.}
+}
+
+\dSay{
+  Is it possible to use commandline to specify it ?
+}
+
+\cSay{Yes. Use:
+
+  \begin{enumerate}
+  \item \texttt{-R,--no-resolv} Don't read \texttt{/etc/resolv.conf}. \colz{ Get
+      upstream servers only from the command line or the \dmq{} configuration
+      file.}
+  \item \texttt{--rev-server=...} This specify the \cola{upstream server(s)} directly.
+    \colz{For example, --rev-server=1.2.3.0/24,192.168.0.1}
+  \end{enumerate}
+
+
+}
+
 
 \dSay{Wait, what's PPP?}
 
@@ -694,6 +743,7 @@ arbitrary queries starting from the root servers but forwards such queries to a
   \dmq{} simply keep checking in case this file is created at any time. \dmq{}
   can be told to parse more than one \texttt{resolve.conf} file. This is useful
   on a laptop, where both PPP and DHCP may be used.
+
 
   \colZ{Upstream servers may also be specified.} These server specifications
   optionally take a domain name which tells \dmq{} to use that server only to
@@ -741,6 +791,81 @@ arbitrary queries starting from the root servers but forwards such queries to a
   \item a tag whose name is the name of the interface on which the request
     arrived is also set.
   \end{enumerate}
+
+  \cSay{
+    Here are some details, first,
+
+    \texttt{-F,--dhcp-range=
+        \cola{tag1:<tag1>,tag2:<tag2>,...}\colb{, set:<tag>}
+        \colc{<start-addr>,[<end-addr>],}
+        [<many options>]
+      } Enable the DHCP server.
+
+      Addresses will be given out from the range \colZt{<start-addr>} to
+      \colZt{<end-addr>} and from statically defined addresses given in
+      \texttt{--dhcp-host} options.
+
+      \colz{
+
+        A lease time can be given. By default, it's one hour for IPv4 and
+        one day for IPv6.
+
+        For IPv6, there's an prefix length which must be equal to or larger then
+        the prefix length on the local interface. This defaults to 64. Unlike
+        the IPv4 case, the prefix length is not automatically derived from the
+        interface. confiugration. (minimum prefix length = 64.)
+
+      }
+  }
+
+  \cSay{
+    \colz{
+      IPv6 supports another type of range, In this, the start address and
+      optional end address \colZ{contain only the network part (ie
+        \texttt{::1})} and they are followed by
+      \texttt{constructor:<interface>}, for example,
+      \colZt{--dhcp-range=::1,::400,constructor:eth0}, will look for addresses
+      on \texttt{eth0} , and then create a range from \texttt{<network>::1} to
+      \texttt{<network>::400}.  Note that not just any address on
+      \texttt{eth0} will not do: it must not be an autoconfigured or privacy
+      address, or be deprecated.
+
+      If a \texttt{--dhcp-range} is only being used for stateless DHCP, then
+      it can simply be:
+      \colZt{--dhcp-range=::,constructor:eth0}
+    }
+  }
+
+  Any configuration lines which include one or more \texttt{tag:<tag>}
+  constructs will only be valid if all that tags are matched in the set derived
+  above. Typically this is \colZt{--dhcp-option}, tagged version of
+  \texttt{--dhcp-options} is prefered, provided that all the tags match
+  somewhere in the set collected as described above. The prefix \texttt{!} on a
+  tag means ``not'' so \colZt{--dhcp-option=tag:!purple,3,1.2.2.3.4} sends the
+  option when the taf \texttt{purple} is not in the set of valid tags.
+  (\emoji{turtle} : If using
+  this in a command line rather than a config file, be sure to escape
+  \texttt{!}, which is a shell metachar...)
+
+  When selecting \colZt{--dhcp-options}, a tag from \colZt{--dhcp-range} is
+  second class relative to other tags, to make it easy to override options for
+  individual hosts, so
+  \colZt{
+    \newline
+    --dhcp-range=set:interface1,....\newline
+    --dhcp-option=tag:interface1,\cola{option:nis-domain,domain1} \newline
+    --dhcp-option=tag:myhost,\cola{option:nis-domain,domain2 }
+  }
+
+  will set the NIS-domain to \colZt{domain1} for hosts in range, but override that to
+  \colZt{domain2} for \colZt{myhost}.
+
+  \colZ{
+    Note that for \texttt{--dhcp-range} both \texttt{tag:<tag>} and
+    \texttt{set:<tag>} are allowed, to both select the range in use based on
+    (eg) \texttt{--dhcp-host},and to affect the options sent, based on the range
+    selected.
+  }
 }
 
 \section{DHCP}
