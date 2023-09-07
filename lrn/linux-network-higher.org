@@ -101,6 +101,26 @@ def test_encrypt_decrypt():
  Host: example.org
  # return twice to get an html page
  # Ctrl-D to terminate 
+** netcat
+
+Use netcat to call a web server
+#+begin_src bash
+  nc example.com 80
+  # Send a request
+  GET / HTTP/1.1
+  Host: example.org
+  # return twice to get an html page
+  # Ctrl-D to terminate
+#+end_src
+
+Use netcat to call the local server at port 7777
+#+begin_src bash
+  nc ::1 7777
+  # Send a request
+  GET / HTTP/1.1
+  # return twice to get an html page
+  # Ctrl-D to terminate
+#+end_src
 
 ** curl
 #+begin_src bash

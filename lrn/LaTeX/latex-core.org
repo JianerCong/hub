@@ -5,6 +5,12 @@
 \let\emph\relax % there's no \RedeclareTextFontCommand
 \DeclareTextFontCommand{\emph}{\bfseries\em}
 #+end_src
+*** switch command
+| command | switch    |
+|---------+-----------|
+| \textrm | \rmfamily |
+| \textsf | \sffamily |
+| \texttt | \ttfamily |
 *** size
 \tiny
 \scriptsize

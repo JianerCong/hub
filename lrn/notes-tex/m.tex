@@ -836,6 +836,105 @@ arbitrary queries starting from the root servers but forwards such queries to a
     }
   }
 
+  \dSay{\colz{What about \texttt{--dhcp-host} ?}}
+
+  \cSay{
+{
+
+  \ttfamily
+  -G,--dhcp-host= \cola{[<hwaddr>]}
+  \colz{
+    [,id:<client\_id>|*]
+    [,set:<tag>] [,tag:<tag>] \colb{[,<ipaddr>]} \cola{[,<hostname>]} \colZ{[,<lease\_time>]} [,ignore]
+  }  
+}
+    
+
+    Specify per host parameters for the DHCP server. This allows a machine with
+    a particular hardware address to be always allocated the same
+    \begin{enumerate}
+    \item hostname,
+    \item IP address and
+    \item lease time.
+    \end{enumerate}
+  }
+
+  \dSay{
+    Oh, this one is pretty important for those servers that need a static IP.
+  }
+
+  \cSay{
+    \colz{
+      A hostname specified like this overrides any supplied by the \colZ{DHCP
+        client on the host}.
+
+      It is also allowable to omit the hardware address and include the
+      hostname. In this case, the IP address and lease times will \colZ{applied
+        to any machine claiming that name}. For example
+      \colZt{--dhcp-host=00:11:22:33:44:55,myhost,infinite} tells \dmq{} to give
+      the machine with hardware address \texttt{00:11:22:33:44:55} the name
+      ``\texttt{myhost}'' and an infinite lease. For another example,
+      \colZt{--dhcp-host=myhost2,10.0.0.2} tells \dmq{} to give the machine
+      ``\texttt{myhost2}'' the IP address \texttt{10.0.0.2}
+    }
+  }
+
+  \dSay{
+    What ? Hosts can have names before they are assigned an IP address ?
+  }
+
+  \cSay{It just said so in the manual. Let's just believe it.}
+
+  \dSay{
+    Okay...
+  }
+
+  \cSay{
+    \colz{
+      Addresses allocated like this are not constrained to be in the range
+      given in \texttt{--dhcp-range} options. For subnets which don't need a pool
+      of dynamically allocated addresses, you can use a ``\texttt{static}''
+      keyword in the \texttt{--dhcp-range} declaration.
+    }
+  }
+
+  \dSay{ Oh, so DHCP can also be used to assign static IP addresses?}
+
+  \cSay{Seem so.}
+
+  \dSay{What is \texttt{client\_id} ?}
+
+  \cSay{It's a unique identifier for the client. It's called \texttt{DUID} in
+    IPv6. It's an alternative to the hardware address.
+
+    \colz{
+      Thus:
+
+      \colZt{--dhcp-host=id:01:02:03:04,...} refers to the host with client
+      identifier \texttt{01:02:03:04}. It is also possible to use text as in
+      \colZt{--dhcp-host=id:myhost,...}.
+    }
+  }
+
+  \cSay{
+    \colz{
+      A single \texttt{--dhcp-host} option may contain
+      \begin{enumerate}
+      \item an IPv4 address, or 
+      \item one or more IPv6 addresses, or
+      \item both
+      \end{enumerate}.
+
+      IPv6 addresses must be bracketed by square brackets thus:
+
+      \colZt{--dhcp-host=01:02:03:04:05,[2001:db8::1],[2001:db8::2],myhost}
+
+      
+    }
+  }
+
+  
+
   Any configuration lines which include one or more \texttt{tag:<tag>}
   constructs will only be valid if all that tags are matched in the set derived
   above. Typically this is \colZt{--dhcp-option}, tagged version of
@@ -857,8 +956,8 @@ arbitrary queries starting from the root servers but forwards such queries to a
     --dhcp-option=tag:myhost,\cola{option:nis-domain,domain2 }
   }
 
-  will set the NIS-domain to \colZt{domain1} for hosts in range, but override that to
-  \colZt{domain2} for \colZt{myhost}.
+  will set the NIS-domain to \colZt{domain1} for hosts in range, but override
+  that to \colZt{domain2} for \colZt{myhost}.
 
   \colZ{
     Note that for \texttt{--dhcp-range} both \texttt{tag:<tag>} and
@@ -867,6 +966,7 @@ arbitrary queries starting from the root servers but forwards such queries to a
     selected.
   }
 }
+
 
 \section{DHCP}
 \label{sec:dhcp}
