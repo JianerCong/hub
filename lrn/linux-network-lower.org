@@ -667,7 +667,96 @@ And because we have set the forwarders, we can also do:
 #+begin_src bash
   dig @localhost +short www.google.com
 #+end_src
+*** CA
+1. create a location for the CA
+#+begin_src bash
+  # Use SSL to generate CA
+  sudo mkdir /etc/ssl/demoCA
+  sudo mkdir /etc/ssl/demoCA/certs
+#+end_src
 
+2. Set the certificate serial number
+   #+begin_src bash
+     sudo sh -c "echo '01' > /etc/ssl/demoCA/serial"
+     # -c : run as root and exit.
+     sudo touch /etc/ssl/demoCA/index.txt
+   #+end_src
+3. Next, we'll edit the existing ~/etc/ssl/openssl.cnf~ config file and navigate
+   to the ~[CA_default]~ section. 
+   #+begin_src conf
+     [ CA_default ]
+     dir             = ./demoCA              # Where everything is kept
+     certs           = $dir/certs            # Where the issued certs are kept
+     crl_dir         = $dir/crl              # Where the issued crl are kept
+     database        = $dir/index.txt        # database index file.
+     #unique_subject = no                    # Set to 'no' to allow creation of
+     # several certs with same subject.
+     new_certs_dir   = $dir/newcerts         # default place for new certs.
+     certificate     = $dir/cacert.pem       # The CA certificate
+     serial          = $dir/serial           # The current serial number
+     crlnumber       = $dir/crlnumber        # the current crl number
+     # must be commented out to leave a V1 CRL
+     crl             = $dir/crl.pem          # The current CRL
+     private_key     = $dir/private/cakey.pem# The private key
+     x509_extensions = usr_cert              # The extensions to add to the cert    
+   #+end_src
+
+🦜 : Wait.. I am just gonna make the default CA work..
+
+4. Create the CA certificate
+#+begin_src bash
+  sudo openssl req \
+       -newkey ec \
+       -pkeyopt ec_paramgen_curve:P-256 \
+       -x509 \
+       -extensions v3_ca \
+       -keyout /etc/ssl/demoCA/private/cakey.pem \
+       -out /etc/ssl/demoCA/cacert.pem \
+       -days 3650
+
+  # -newkey : generate a new certificate request and a new private key
+  # -x509 : generate a self-signed certificate instead of a certificate request
+  # -extensions v3_ca : the extensions to add to a certificate request
+  # -keyout : the file to write the private key to
+  # -out : the file to write the certificate to
+  # -days : the number of days to certify the certificate for
+
+  # 🐢 : Then you will be asked to enter the information that will be incorporated
+  # into your certificate request.
+
+  # pswd = 516826
+#+end_src
+5. openssl key gen and create a CSR
+#+begin_src bash
+  # generate a private key using the P-256 curve
+  openssl genpkey -algorithm EC -out mykey.pem \
+          -pkeyopt ec_paramgen_curve:P-256 \
+          -pkeyopt ec_param_enc:named_curve
+
+  # generate a CSR using the private key
+  openssl req -newkey ec \
+          -pkeyopt ec_paramgen_curve:P-256 \
+          mykey.pem -out mycsr.pem
+#+end_src
+
+🦜 : What curves are available in openssl?
+🐢 : Use ~openssl ecparam -list_curves~. But usually you wanna stick to P-256 or
+P-384, which are named "prime256v1" and "secp384r1" in openssl, because they are
+the ones supported by most browsers.
+
+6. Sign the CSR
+#+begin_src bash
+    # sign the CSR using the CA private key
+  openssl ca -in mycsr.pem -out mycert.pem -config openssl.cnf
+
+  # see the certificate
+  cat /etc/ssl/certs/mycert.pem
+
+  # see the incremented serial number
+  cat /etc/ssl/demoCA/serial
+  cat /etc/ssl/demoCA/index.txt
+#+end_src
+             
 *** network interface
   Network interfaces usually have names that indicate the kind of hardware
   underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is

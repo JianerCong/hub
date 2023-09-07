@@ -698,6 +698,49 @@ arbitrary queries starting from the root servers but forwards such queries to a
   \colZ{Upstream servers may also be specified.} These server specifications
   optionally take a domain name which tells \dmq{} to use that server only to
   find names in that particular domain.
+
+  In order to configure \dmq{} to act as chache on the host on which it is
+  running, put \colZt{"name server 127.0.0.1"} in \colZt{/etc/resolve.conf} to
+  force local processes to send queries to \dmq{}.
+
+  Then either
+
+  \begin{enumerate}
+  \item specifying the upstream servers directly to \dmq{} using
+    \colZt{--server} options, or
+  \item putting their addresses real in another file, say
+    \texttt{/home/me/my-resolve.conf} and use \texttt{--resolv-file
+      /home/me/my-resolve.conf}.
+  \end{enumerate}
+
+  The second method allows for dynamic update of server addresses by PPP or DHCP.
+
+  \colZ{Addresses in \texttt{/etc/hosts} will ``shadow'' different addresses for
+    the same names in the upstream DNS, so ``\texttt{aaa.com 1.2.3.4}'' in
+    \texttt{/etc/hosts} will ensure that queries for ``\texttt{aaa.com}'' always
+    return \texttt{1.2.3.4} even if queries in the upstream DNS would say
+    something else.}There's one exception to this: it's something to do with an
+  upstream \texttt{CNAME} entry, but let's stop here.
+}
+
+\subsubsection{How it does DHCP}
+
+\colz{
+  The tag system works as follows:
+
+  \begin{enumerate}
+  \item For each DHCP request, \dmq{} collects a set of valid tags from active
+    configuration lines which include \texttt{set:<tag>}, including
+    \begin{enumerate}
+    \item one from the \colZ{\texttt{--dhcp-range}} used to allocate the
+      address,
+    \item one from any matching \colZt{--dhcp-host}
+    \item and ``known'' or ``known-ethernet'' if a \texttt{--dhcp-host} matches.
+    \end{enumerate}
+  \item The tag ``bootp'' is set for BOOTP requests, 
+  \item a tag whose name is the name of the interface on which the request
+    arrived is also set.
+  \end{enumerate}
 }
 
 \section{DHCP}
