@@ -20,6 +20,10 @@ alias cb=". ~/Templates/scripts/cmakebuild.sh"
 
 # . ~/Templates/scripts/my-prompt.sh
 
+dayrmd_dir="/home/me/Templates/scripts/dayrmd"
+python3 $dayrmd_dir/dayrmd.py
+cat $dayrmd_dir/msg.txt
+
 export PATH="$HOME/repo/build-multipass/bin:$HOME/.local/wabt-1.0.33/bin/:/usr/local/blender-3.5.0-linux-x64/:/usr/local/texlive/2023/bin/x86_64-linux:$PATH"
 export MANPATH="/usr/local/texlive/2023/texmf-dist/doc/man:$MANPATH"
 INFOPATH=/usr/local/texlive/2023/texmf-dist/doc/info:$INFOPATH; export INFOPATH

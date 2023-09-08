@@ -7,8 +7,10 @@ top=20mm,
 }
 
 
-\usepackage{svg}
-
+\usepackage[inkscapearea=page]{svg}
+% 🐢 : I guess what we need is to just include the page... not the whole
+% drawing... So set inkscapearea=page should work... If not, delete the
+% .\svg-inkscape and try again. (this pkg does some magical caching..)
 \usepackage[skip=5pt plus1pt, indent=0pt]{parskip}
 % Color
 \newcommand{\mycola}{MidnightBlue}
