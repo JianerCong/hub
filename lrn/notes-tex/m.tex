@@ -1,6 +1,7 @@
 \documentclass[dvipsnames]{article}
 % \documentclass[dvipsnames]{ctexart}
 
+
 \title{Linux Network}
 \input{h}
 \input{h-says}
@@ -34,7 +35,9 @@ information.
 
 \section{NDP}
 
-\begin{tikzpicture}
+\begin{figure}
+  \centering
+ \begin{tikzpicture}
   \draw[step=1cm,help lines,] (-7.5cm,-5cm) grid +(15cm,10cm);
   \tikzstyle{ndp-dialog}= [text width=7cm, fill=gray!10]
   \begin{scope}
@@ -48,6 +51,7 @@ information.
         
       }
     };
+    
     \node[above right, ndp-dialog] at (-4cm,-4cm){
       \colii{Step 2: \texttt{Router Advertisement}:}
       \colz{\small
@@ -66,16 +70,73 @@ information.
     \coordinate (router) at (4cm,0);
 
     \leftDialogBoxColored[3cm]{newcomer}{
-        Who's the router?
+        1. Who's the router?
     }{\mycoli}
 
-    \rightDialogBoxColored[1.5cm]{router}{
-        Me
+    \rightDialogBoxColored[2cm]{router}{
+        2. Me
     }{\mycolii}
-
-    
   \end{scope}
 \end{tikzpicture}
+  \caption{Step 1 and 2 of NDP}
+  \label{fig:dnp-step12}
+\end{figure}
+
+\begin{figure}
+  \centering
+ \begin{tikzpicture}
+  \draw[step=1cm,help lines,] (-7.5cm,-5cm) grid +(15cm,10cm);
+  \tikzstyle{ndp-dialog}= [text width=7cm, fill=gray!10]
+  \begin{scope}
+
+    \node[below right, ndp-dialog] at (-7cm,5cm){
+      \coliii{Step 3: \texttt{Neighbor Solicitation}:}
+      {\color{gray}\small
+        Sent by a node to
+        \begin{enumerate}
+        \item verify that a neighbor is still up.
+        \item determine the link-layer address
+        \end{enumerate}
+        This is also used for \colZ{Duplicate Address Detection}
+      }
+    };
+
+    \node[above right, ndp-dialog] at (-4cm,-4cm){
+      \coliv{Step 4: \texttt{Neighbor Advertisement}:}
+      \colz{\small
+        A response to a \texttt{Neighbor Solicitation} message.
+      }
+    };
+    
+    \fill (3cm,0) circle (0pt)
+    node {
+      \includesvg[width=8cm]{../../mysvgs/ndp5.svg}
+    };
+
+    \coordinate (newcomer) at (-1cm,0);
+    \coordinate (router) at (4cm,0);
+
+    \coordinate (n1) at (1.6cm,3.6cm);
+    \coordinate (n2) at (6cm,3.4cm);
+    \coordinate (n3) at (6cm,-2.3cm);
+
+    \leftDialogBoxColored[3cm]{newcomer}{
+        3. Who's in ?
+    }{\mycoliii}
+
+    \foreach \i in {1,2,3}{
+      \topDialogBoxColored[2cm]{n\i}{
+        4. Me
+      }{\mycoliv}
+    }
+
+  \end{scope}
+\end{tikzpicture}
+  \caption{Step 3 and 4 of NDP}
+  \label{fig:dnp-step34}
+\end{figure}
+
+
 
 \section{IPv6 Jargen}
 
