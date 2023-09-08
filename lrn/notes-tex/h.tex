@@ -17,10 +17,22 @@ top=20mm,
 \newcommand{\mycolb}{Mahogany}
 \newcommand{\mycolc}{OliveGreen}
 
+\newcommand{\mycoli}{\mycola!10!\mycolb}
+\newcommand{\mycolii}{\mycola!30!\mycolb}
+\newcommand{\mycoliii}{\mycola!50!\mycolb}
+\newcommand{\mycoliiii}{\mycola!70!\mycolb}
+\newcommand{\mycoliiiii}{\mycola!90!\mycolb}
+
 \newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
 \newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
 \newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
 \newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+\newcommand{\coli}[1]{\textcolor{\mycoli}{#1}}
+\newcommand{\colii}[1]{\textcolor{\mycolii}{#1}}
+\newcommand{\coliii}[1]{\textcolor{\mycoliii}{#1}}
+\newcommand{\coliiii}[1]{\textcolor{\mycoliiii}{#1}}
+\newcommand{\coliiiii}[1]{\textcolor{\mycoliiiii}{#1}}
 
 % 🦜 : \textcolor doesn't allow multiple paragraphs in it, so we used {\color{...}}
 \newcommand{\colZ}[1]{
@@ -137,47 +149,95 @@ breakable
 \newcommand\lefttoright[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=180] (#3.west);}
 \newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
 
+
+\newcommand{\rightDialogBoxColored}[4][0.8\linewidth]{
+  \node[right,text width=#1] at ([xshift=0.5cm]#2.east) {
+    \begin{tcolorbox}[tile,
+      nobeforeafter,
+      boxsep=0pt,
+      % show bounding box,
+      colback=#4!10,
+      overlay={
+        \begin{scope}
+          % \fill[gray!10] (frame.east) circle (2pt);
+          \fill[#4!10] (frame.west) --
+          +(0,2mm) --
+          +(-3mm,0) --
+          +(0,-2mm)
+          ;
+        \end{scope}
+      } ] #3
+    \end{tcolorbox}
+  };
+}
+
 \newcommand{\rightDialogBox}[3][0.8\linewidth]{
-\node[right,text width=#1] at ([xshift=0.5cm]#2.east) {
-\begin{tcolorbox}[tile,
-nobeforeafter,
-boxsep=0pt,
-% show bounding box,
-colback=\mycola!10,
-overlay={
-\begin{scope}
-% \fill[gray!10] (frame.east) circle (2pt);
-\fill[\mycola!10] (frame.west) --
-+(0,2mm) --
-+(-3mm,0) --
-+(0,-2mm)
-;
-\end{scope}
-} ] #3
-\end{tcolorbox}
-};
+% \node[right,text width=#1] at ([xshift=0.5cm]#2.east) {
+% \begin{tcolorbox}[tile,
+% nobeforeafter,
+% boxsep=0pt,
+% % show bounding box,
+% colback=\mycola!10,
+% overlay={
+% \begin{scope}
+% % \fill[gray!10] (frame.east) circle (2pt);
+% \fill[\mycola!10] (frame.west) --
+% +(0,2mm) --
+% +(-3mm,0) --
+% +(0,-2mm)
+% ;
+% \end{scope}
+% } ] #3
+% \end{tcolorbox}
+% };
+  \rightDialogBoxColored[#1]{#2}{#3}{\mycola}
+}
+
+
+\newcommand{\leftDialogBoxColored}[4][0.8\linewidth]{
+  \node[left,text width=#1] at ([xshift=-0.5cm]#2.west) {
+    \begin{tcolorbox}[tile,
+      nobeforeafter,
+      boxsep=0pt,
+      % show bounding box,
+      colback=#4!10,
+      overlay={
+        \begin{scope}
+          % \fill[gray!10] (frame.east) circle (2pt);
+          \fill[#4!10] (frame.east) --
+          +(0,2mm) --
+          +(3mm,0) --
+          +(0,-2mm)
+          ;
+        \end{scope}
+      } ] #3
+    \end{tcolorbox}
+  };
 }
 
 \newcommand{\leftDialogBox}[3][0.8\linewidth]{
-\node[left,text width=#1] at ([xshift=-0.5cm]#2.west) {
-\begin{tcolorbox}[tile,
-nobeforeafter,
-boxsep=0pt,
-% show bounding box,
-colback=gray!10,
-overlay={
-\begin{scope}
-% \fill[gray!10] (frame.east) circle (2pt);
-\fill[gray!10] (frame.east) --
-+(0,2mm) --
-+(3mm,0) --
-+(0,-2mm)
-;
-\end{scope}
-} ] #3
-\end{tcolorbox}
-};
+% \node[left,text width=#1] at ([xshift=-0.5cm]#2.west) {
+% \begin{tcolorbox}[tile,
+% nobeforeafter,
+% boxsep=0pt,
+% % show bounding box,
+% colback=gray!10,
+% overlay={
+% \begin{scope}
+% % \fill[gray!10] (frame.east) circle (2pt);
+% \fill[gray!10] (frame.east) --
+% +(0,2mm) --
+% +(3mm,0) --
+% +(0,-2mm)
+% ;
+% \end{scope}
+% } ] #3
+% \end{tcolorbox}
+% };
+  \leftDialogBoxColored[#1]{#2}{#3}{gray}
 }
+
+
 
 
 \newcommand{\mycolaa}{\mycola!20}

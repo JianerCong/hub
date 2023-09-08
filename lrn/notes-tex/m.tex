@@ -22,6 +22,7 @@
 % \input{sec-net-mac-addr}
 % \input{sec-net-ports}
 % \input{sec-net-dns}
+% \input{sec-net-dnsmaq}
 
 \section{DHCP}
 \label{sec:dhcp}
@@ -35,11 +36,42 @@ information.
 
 \begin{tikzpicture}
   \draw[step=1cm,help lines,] (-7.5cm,-5cm) grid +(15cm,10cm);
+  \tikzstyle{ndp-dialog}= [text width=7cm, fill=gray!10]
   \begin{scope}
-    \fill (0,0) circle (2pt)
+
+    \node[below right, ndp-dialog] at (-7cm,5cm){
+      \coli{Step 1: \texttt{Router Solicitation}:}
+      {\color{gray}\small
+        When an interface becomes enabled,
+        hosts may send a \texttt{Router Solicitation} that request routers to
+        generate \texttt{Router Advertisement} messages immediately.
+        
+      }
+    };
+    \node[above right, ndp-dialog] at (-4cm,-4cm){
+      \colii{Step 2: \texttt{Router Advertisement}:}
+      \colz{\small
+        Routers advertise their presence and many parameters periodically and in
+        response to a \texttt{Router Solicitation} message. (\emoji{parrot}: Oh,
+        so it's like heartbeat. \emoji{turtle} : Yeah, kinda.) 
+      }
+    };
+    
+    \fill (3cm,0) circle (0pt)
     node {
       \includesvg[width=8cm]{../../mysvgs/ndp5.svg}
     };
+
+    \coordinate (newcomer) at (-1cm,0);
+    \coordinate (router) at (4cm,0);
+
+    \leftDialogBoxColored[3cm]{newcomer}{
+        Who's the router?
+    }{\mycoli}
+
+    \rightDialogBoxColored[1.5cm]{router}{
+        Me
+    }{\mycolii}
 
     
   \end{scope}
