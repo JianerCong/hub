@@ -1,4 +1,16 @@
 * Emac
+** start as a server:
+🦜 : I defined a helper function called (start-my-emacs-server), which will
+start listening on port 1234
+
+Now to invoke it, do :
+#+begin_src bash
+  server_file= ~/.emacs.d/server/server
+  emacsclient hi.txt -f $server_file -c
+  # -c,--create-frame : create a new frame
+  # -f : use the server file, which contains info like the port number
+#+end_src
+
 ** useful keys
 + C-M-S-v :: scroll other window up
 + C-M-v :: scroll other window down
