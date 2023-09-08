@@ -463,6 +463,7 @@ The worst-case process is as follows:
 
 \end{comment}
 
+
 \subsection{Basic installation: BIND for internal use}
 \label[subsection]{sec:install-bind}
 
@@ -974,6 +975,94 @@ iPhones, \Cola{Wireless Access Points (WAP)}, or even \Cola{Pre Execution
   Environment (PXE)} devices that can load their entire OS from DHCP
 information.
 
+\section{IPv6 Jargen}
+
+\begin{itemize}
+\item IP : \colz{Internet Protocol Version 6.}
+\item ICMP : \colz{Internet Control Message Protocol for IPv6. (e.g. ping)}
+\item node : \colz{a device that implement IP.}
+\item router: \colz{a node that forwards IP packets not explicitly addressed to
+    itself.}
+\item host: \colz{a node that is not a router.}
+\item upper layer: \colz{any layer above IP. Examples are TCP , UDP, control
+    protocols (ICMP)}
+\item link : \colz{a communication facility or medium over which nodes can
+    communicate at the link layer, i.e. the layer immediately below IP. Examples
+    are } Ethernet, 802.11 (Wifi).
+\item interface : \colz{a node's attachment to a link}
+\item neighbors : \colz{nodes attached to the same link.}
+\item address : \colz{an IP-layer identifier for an interface or a set of
+    interfaces.}
+\item anycast address : \colz{an identifier for a set of interfaces (typically
+    belonging to different nodes). \colZ{A packet sent to an anycast address is
+      delivered to one of the interfaces identified by that address.
+    }
+
+    An anycast address is syntactically indistinguishable from a unicast
+    address. So nodes sending packets to anycast addresses don't generally known
+    that it is anycast.
+  }
+\item prefix : \colz{a bit string that consists of some number of initial bits
+    of an address.}
+\item link-layer address : \colz{a link-layer identifier for an interface. For
+    example, IEEE 802 addresses (such as MAC addresses)}
+\item on-link, off-link : \colz{an address is \colZ{on-link}, if it is assigned to an
+    interface on a specified link.
+
+    A node considers an address to be \colZ{on-link} if:
+
+    \begin{enumerate}
+    \item it is covered by one of the \colZ{link's prefixes},(e.g., as indicated
+      by the on-link flag in the Prefix Information option) or
+    \item a neighboring router specifies the address as the target of a \cola{Redirect
+        message}, or
+    \item a \cola{Neighbor Advertisement message} is received for the address, or
+    \item any \cola{Neibor Discovery} message is received from the address.
+    \end{enumerate}
+
+    \colZ{If an address is not \cola{on-link}, it is \cola{off-link}.} It means
+    that it is not assigned to any interfaces on the specified link.
+  }
+\end{itemize}
+
+\dSay{
+  This first one is a bit confusing. What's \cola{Prefix Information option} ?
+}
+
+\cSay{
+  I am not sure either. Let's just move on.
+}
+
+\begin{itemize}
+\item longest prefix match : \colz{  the process of determining which prefix (if any) in
+  a set of prefixes covers a target address. }
+\item reachablility : whether or not the one-way ``forward'' path to a neighbor
+  is functioning properly. \colz{ It's kinda like ``whether IP is working for a
+    node''.}
+\item packet : \colz{an IP header plus payload.}
+\item link MTU : \colz{the maximum transmission unit, i.e. the maximum packet
+    size in octets that can be transmitted on a link.}
+\item target : \colz{an address about which address resolution information is
+    sought, or an address that is the new first hop when being redirected.
+  }
+\item proxy : a node that responds to Neighbor Discovery query messages on
+  behalf of another node. 
+\end{itemize}
+
+\subsection{Addresses}
+
+\begin{itemize}
+\item link-local address : \colz{a unicast address having link-only scope that
+    can be used to reach neighbors.}
+\item unspecified address : \colz{the address with all zero bits:
+    \texttt{0:0:0:0:0:0:0:0},
+    which kinda means ``I don't known my address''. It can be the source address.
+  }
+\item all-nodes multicast address : \colz{the link-local address to reach all
+    nodes, \texttt{FF02::1}.}
+\item all-routers multicast address : \colz{the link-local address to reach all
+    routers, \texttt{FF02::2}.}
+\end{itemize}
 
 \end{document}
 
