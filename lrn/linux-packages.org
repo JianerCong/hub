@@ -111,6 +111,12 @@ tlmgr update --list
 sudo apt-get install build-essential install-info info libx11-dev libxpm-dev libjpeg-dev libpng-dev libgif-dev libtiff-dev libgtk2.0-dev libncurses5-dev libxpm-dev automake autoconf libgnutls28-dev mailutils
 sudo apt install libcanberra-gtk-module libcanberra-gtk3-module
 #+end_src
+#+begin_src bash
+  # configure it to install in ~/local/emacs
+  ./configure --prefix=$HOME/local/emacs
+  make build
+  make install
+#+end_src
 ** Build git
 #+begin_src bash
   sudo apt install libssl-dev libcurl4-gnutls-dev gettext asciidoc

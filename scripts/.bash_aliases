@@ -18,9 +18,21 @@ alias gpsh=". ~/Templates/scripts/gpsh.sh"
 alias pyenv=". ~/work/lcode/myenv/bin/activate"
 alias cb=". ~/Templates/scripts/cmakebuild.sh"
 
+
+# --------------------------------------------------
+export PS1="[\$http_proxy]$PS1"
+
+# a function to unset proxy
+proxy_off() {
+    unset http_proxy
+    unset https_proxy
+    unset no_proxy
+    echo -e "Proxy environment variable removed."
+}
+
 # . ~/Templates/scripts/my-prompt.sh
 
-export PATH="/usr/local/blender-3.5.0-linux-x64/:/usr/local/texlive/2023/bin/x86_64-linux:$PATH"
+export PATH="$HOME/local/emacs/bin:/usr/local/blender-3.5.0-linux-x64/:/usr/local/texlive/2023/bin/x86_64-linux:$PATH"
 export MANPATH="/usr/local/texlive/2023/texmf-dist/doc/man:$MANPATH"
 INFOPATH=/usr/local/texlive/2023/texmf-dist/doc/info:$INFOPATH; export INFOPATH
 #  Local Variables:
