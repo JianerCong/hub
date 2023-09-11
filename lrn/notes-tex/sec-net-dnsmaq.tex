@@ -1,8 +1,8 @@
 
 \newcommand{\dmq}{\texttt{dnsmasq}}
-\subsection{\dmq{}}
+\section{\dmq{}}
 
-\subsubsection{Intro}
+\subsection{Intro}
 
 
 \Cola{\dmq{}} is a lightweight DNS, TFTP, PXE, router advertisement and
@@ -27,7 +27,7 @@ DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
   the \texttt{/etc/hosts}...
 }
 
-\subsubsection{Configure \dmq{}}
+\subsection{Configure \dmq{}}
 
 \colz{
   Configuring \dmq{} to act as an authoritative DNS server is complicated by the
@@ -55,7 +55,7 @@ DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
     }
   }'' }
 
-\subsubsection{Notes for \texttt{SIGHUP}}
+\subsection{Notes for \texttt{SIGHUP}}
 \colz{
   When it recieves a \colZ{\texttt{SIGHUP}}, \dmq{} \colZ{clears its cache and
     then re-loads
@@ -77,7 +77,7 @@ DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
 
 \cSay{Yeah.}
 
-\subsubsection{dump log}
+\subsection{dump log}
 
 \colz{
   
@@ -88,7 +88,7 @@ DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
   file. (configured by \texttt{--log-facility}).
 }
 
-\subsubsection{some options}
+\subsection{some options}
 
 \begin{itemize}
 \item \texttt{-h,--no-hosts}: \colz{Don't read the hostnames in
@@ -117,7 +117,7 @@ DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
   }
 \end{itemize}
 
-\subsubsection{How it does DNS}
+\subsection{How it does DNS}
 
 \dmq{} is a  query forwarder: it is not capable of recursively answering
 arbitrary queries starting from the root servers but forwards such queries to a
@@ -202,7 +202,7 @@ arbitrary queries starting from the root servers but forwards such queries to a
   upstream \texttt{CNAME} entry, but let's stop here.
 }
 
-\subsubsection{How it does DHCP}
+\subsection{How it does DHCP}
 
 \colz{
   The tag system works as follows:
@@ -330,6 +330,26 @@ arbitrary queries starting from the root servers but forwards such queries to a
   \dSay{ Oh, so DHCP can also be used to assign static IP addresses?}
 
   \cSay{Seem so.}
+
+  \dSay{
+    I remember for IPv6, there're different ways to do automatic address
+    configuration...Right? What's said about this in the manual?
+  }
+
+  \cSay{
+    For IPv6, the mode may be some combination of
+    \begin{enumerate}
+    \item \texttt{slaac} \colz{stateless address autoconfiguration},
+    \item \texttt{ra-only} \colz{router advertisement only},
+    \item \texttt{ra-names} \colz{router advertisement plus names from DNS}.
+    \item \texttt{ra-stateless} \colz{address from SLAAC and others from DHCP}.
+    \item \texttt{ra-advrouter} \colz{enables a mode where router address(es)rather
+      than prefix(es) are included in the advertisements.}
+  \item \texttt{off-link} \colz{
+      tells \dmq{} to advertise the prefix without the on-link bit set.
+    }
+    \end{enumerate}
+  }
 
   \dSay{What is \texttt{client\_id} ?}
 

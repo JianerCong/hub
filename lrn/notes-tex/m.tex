@@ -24,118 +24,9 @@
 % \input{sec-net-ports}
 % \input{sec-net-dns}
 % \input{sec-net-dnsmaq}
+% \input{sec-net-ndp}
 
-\section{DHCP}
-\label{sec:dhcp}
-
-We will want to consider what we need for special purpose devices such as
-iPhones, \Cola{Wireless Access Points (WAP)}, or even \Cola{Pre Execution
-  Environment (PXE)} devices that can load their entire OS from DHCP
-information.
-
-\section{NDP}
-
-\begin{figure}
-  \centering
- \begin{tikzpicture}
-  \draw[step=1cm,help lines,] (-7.5cm,-5cm) grid +(15cm,10cm);
-  \tikzstyle{ndp-dialog}= [text width=7cm, fill=gray!10]
-  \begin{scope}
-
-    \node[below right, ndp-dialog] at (-7cm,5cm){
-      \coli{Step 1: \texttt{Router Solicitation}:}
-      {\color{gray}\small
-        When an interface becomes enabled,
-        hosts may send a \texttt{Router Solicitation} that request routers to
-        generate \texttt{Router Advertisement} messages immediately.
-        
-      }
-    };
-    
-    \node[above right, ndp-dialog] at (-4cm,-4cm){
-      \colii{Step 2: \texttt{Router Advertisement}:}
-      \colz{\small
-        Routers advertise their presence and many parameters periodically and in
-        response to a \texttt{Router Solicitation} message. (\emoji{parrot}: Oh,
-        so it's like heartbeat. \emoji{turtle} : Yeah, kinda.) 
-      }
-    };
-    
-    \fill (3cm,0) circle (0pt)
-    node {
-      \includesvg[width=8cm]{../../mysvgs/ndp5.svg}
-    };
-
-    \coordinate (newcomer) at (-1cm,0);
-    \coordinate (router) at (4cm,0);
-
-    \leftDialogBoxColored[3cm]{newcomer}{
-        1. Who's the router?
-    }{\mycoli}
-
-    \rightDialogBoxColored[2cm]{router}{
-        2. Me
-    }{\mycolii}
-  \end{scope}
-\end{tikzpicture}
-  \caption{Step 1 and 2 of NDP}
-  \label{fig:dnp-step12}
-\end{figure}
-
-\begin{figure}
-  \centering
- \begin{tikzpicture}
-  \draw[step=1cm,help lines,] (-7.5cm,-5cm) grid +(15cm,10cm);
-  \tikzstyle{ndp-dialog}= [text width=7cm, fill=gray!10]
-  \begin{scope}
-
-    \node[below right, ndp-dialog] at (-7cm,5cm){
-      \coliii{Step 3: \texttt{Neighbor Solicitation}:}
-      {\color{gray}\small
-        Sent by a node to
-        \begin{enumerate}
-        \item verify that a neighbor is still up.
-        \item determine the link-layer address
-        \end{enumerate}
-        This is also used for \colZ{Duplicate Address Detection}
-      }
-    };
-
-    \node[above right, ndp-dialog] at (-4cm,-4cm){
-      \coliv{Step 4: \texttt{Neighbor Advertisement}:}
-      \colz{\small
-        A response to a \texttt{Neighbor Solicitation} message.
-      }
-    };
-    
-    \fill (3cm,0) circle (0pt)
-    node {
-      \includesvg[width=8cm]{../../mysvgs/ndp5.svg}
-    };
-
-    \coordinate (newcomer) at (-1cm,0);
-    \coordinate (router) at (4cm,0);
-
-    \coordinate (n1) at (1.6cm,3.6cm);
-    \coordinate (n2) at (6cm,3.4cm);
-    \coordinate (n3) at (6cm,-2.3cm);
-
-    \leftDialogBoxColored[3cm]{newcomer}{
-        3. Who's in ?
-    }{\mycoliii}
-
-    \foreach \i in {1,2,3}{
-      \topDialogBoxColored[2cm]{n\i}{
-        4. Me
-      }{\mycoliv}
-    }
-
-  \end{scope}
-\end{tikzpicture}
-  \caption{Step 3 and 4 of NDP}
-  \label{fig:dnp-step34}
-\end{figure}
-
+\input{sec-net-dhcp}
 
 
 \section{IPv6 Jargen}
@@ -165,7 +56,7 @@ information.
     address. So nodes sending packets to anycast addresses don't generally known
     that it is anycast.
   }
-\item prefix : \colz{a bit string that consists of some number of initial bits
+\item prefix : \colz{a bit string that consists of some number of intial bits
     of an address.}
 \item link-layer address : \colz{a link-layer identifier for an interface. For
     example, IEEE 802 addresses (such as MAC addresses)}
@@ -212,7 +103,77 @@ information.
   behalf of another node. 
 \end{itemize}
 
-\subsection{Addresses}
+\section{Addresses}
+
+% 2.4 Address Type Representation
+
+%    The specific type of an IPv6 address is indicated by the leading bits
+%    in the address.  The variable-length field comprising these leading
+%    bits is called the Format Prefix (FP).  The initial allocation of
+%    these prefixes is as follows:
+
+%     Allocation                            Prefix         Fraction of
+%                                           (binary)       Address Space
+%     -----------------------------------   --------       -------------
+%     Reserved                              0000 0000      1/256
+%     Unassigned                            0000 0001      1/256
+
+%     Reserved for NSAP Allocation          0000 001       1/128
+%     Reserved for IPX Allocation           0000 010       1/128
+
+%     Unassigned                            0000 011       1/128
+%     Unassigned                            0000 1         1/32
+%     Unassigned                            0001           1/16
+
+%     Aggregatable Global Unicast Addresses 001            1/8
+%     Unassigned                            010            1/8
+%     Unassigned                            011            1/8
+%     Unassigned                            100            1/8
+%     Unassigned                            101            1/8
+%     Unassigned                            110            1/8
+
+%     Unassigned                            1110           1/16
+%     Unassigned                            1111 0         1/32
+%     Unassigned                            1111 10        1/64
+%     Unassigned                            1111 110       1/128
+%     Unassigned                            1111 1110 0    1/512
+
+%     Link-Local Unicast Addresses          1111 1110 10   1/1024
+%     Site-Local Unicast Addresses          1111 1110 11   1/1024
+
+%     Multicast Addresses                   1111 1111      1/256
+
+\subsection{Address type representation}
+
+The initial bits of an address form the \Cola{Format Prefix (FP)}. This tells us
+the type of the address. The initial allocation of these prefixes is as follows
+in \cref{tab:fp}:
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{1.0\linewidth}{XXX}
+    Allocation& Prefix & Fraction of Address Space \\
+    \hline
+    Reserved & \texttt{0000 0000 (00)} & 1/256\\
+    Unassigned & \texttt{0000 0001 (01)} & 1/256\\
+    Reserved for NSAP Allocation & \texttt{0000 001 (02)} & 1/128\\
+    Reserved for IPX Allocation & \texttt{0000 010 (04)} & 1/128\\
+    Link-Local Unicast Addresses & \texttt{1111 1110 10 (FE80)} & 1/1024\\
+    Site-Local Unicast Addresses & \texttt{1111 1110 11 (FEC0)} & 1/1024\\
+    Multicast Addresses & \texttt{1111 1111 (FF)} & 1/256\\
+  \end{tabularx}
+  \caption{The Format Prefix}
+  \label{tab:fp}
+\end{table}
+
+In addition to the above, the prefixes \texttt{
+  010, 011, 100, 101, 110, 1110, 1111 0, 1111 10, 1111 110, 1111 1110 0} are
+\cola{unassigned} and reserved for future use.
+
+
+
+
+\clearpage{}
 
 \begin{itemize}
 \item link-local address : \colz{a unicast address having link-only scope that
