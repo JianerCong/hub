@@ -1,0 +1,211 @@
+
+
+
+\section{IPv6 Jargen}
+
+\begin{itemize}
+\item IP : \colz{Internet Protocol Version 6.}
+\item ICMP : \colz{Internet Control Message Protocol for IPv6. (e.g. ping)}
+\item node : \colz{a device that implement IP.}
+\item router: \colz{a node that forwards IP packets not explicitly addressed to
+    itself.}
+\item host: \colz{a node that is not a router.}
+\item upper layer: \colz{any layer above IP. Examples are TCP , UDP, control
+    protocols (ICMP)}
+\item link : \colz{a communication facility or medium over which nodes can
+    communicate at the link layer, i.e. the layer immediately below IP. Examples
+    are } Ethernet, 802.11 (Wifi).
+\item interface : \colz{a node's attachment to a link}
+\item neighbors : \colz{nodes attached to the same link.}
+\item address : \colz{an IP-layer identifier for an interface or a set of
+    interfaces.}
+\item anycast address : \colz{an identifier for a set of interfaces (typically
+    belonging to different nodes). \colZ{A packet sent to an anycast address is
+      delivered to one of the interfaces identified by that address.
+    }
+
+    An anycast address is syntactically indistinguishable from a unicast
+    address. So nodes sending packets to anycast addresses don't generally known
+    that it is anycast.
+  }
+\item prefix : \colz{a bit string that consists of some number of intial bits
+    of an address.}
+\item link-layer address : \colz{a link-layer identifier for an interface. For
+    example, IEEE 802 addresses (such as MAC addresses)}
+\item on-link, off-link : \colz{an address is \colZ{on-link}, if it is assigned to an
+    interface on a specified link.
+
+    A node considers an address to be \colZ{on-link} if:
+
+    \begin{enumerate}
+    \item it is covered by one of the \colZ{link's prefixes},(e.g., as indicated
+      by the on-link flag in the Prefix Information option) or
+    \item a neighboring router specifies the address as the target of a \cola{Redirect
+        message}, or
+    \item a \cola{Neighbor Advertisement message} is received for the address, or
+    \item any \cola{Neibor Discovery} message is received from the address.
+    \end{enumerate}
+
+    \colZ{If an address is not \cola{on-link}, it is \cola{off-link}.} It means
+    that it is not assigned to any interfaces on the specified link.
+  }
+\end{itemize}
+
+\dSay{
+  This first one is a bit confusing. What's \cola{Prefix Information option} ?
+}
+
+\cSay{
+  I am not sure either. Let's just move on.
+}
+
+\begin{itemize}
+\item longest prefix match : \colz{  the process of determining which prefix (if any) in
+  a set of prefixes covers a target address. }
+\item reachablility : whether or not the one-way ``forward'' path to a neighbor
+  is functioning properly. \colz{ It's kinda like ``whether IP is working for a
+    node''.}
+\item packet : \colz{an IP header plus payload.}
+\item link MTU : \colz{the maximum transmission unit, i.e. the maximum packet
+    size in octets that can be transmitted on a link.}
+\item target : \colz{an address about which address resolution information is
+    sought, or an address that is the new first hop when being redirected.
+  }
+\item proxy : a node that responds to Neighbor Discovery query messages on
+  behalf of another node. 
+\end{itemize}
+
+\section{Addresses}
+
+% 2.4 Address Type Representation
+
+%    The specific type of an IPv6 address is indicated by the leading bits
+%    in the address.  The variable-length field comprising these leading
+%    bits is called the Format Prefix (FP).  The initial allocation of
+%    these prefixes is as follows:
+
+%     Allocation                            Prefix         Fraction of
+%                                           (binary)       Address Space
+%     -----------------------------------   --------       -------------
+%     Reserved                              0000 0000      1/256
+%     Unassigned                            0000 0001      1/256
+
+%     Reserved for NSAP Allocation          0000 001       1/128
+%     Reserved for IPX Allocation           0000 010       1/128
+
+%     Unassigned                            0000 011       1/128
+%     Unassigned                            0000 1         1/32
+%     Unassigned                            0001           1/16
+
+%     Aggregatable Global Unicast Addresses 001            1/8
+%     Unassigned                            010            1/8
+%     Unassigned                            011            1/8
+%     Unassigned                            100            1/8
+%     Unassigned                            101            1/8
+%     Unassigned                            110            1/8
+
+%     Unassigned                            1110           1/16
+%     Unassigned                            1111 0         1/32
+%     Unassigned                            1111 10        1/64
+%     Unassigned                            1111 110       1/128
+%     Unassigned                            1111 1110 0    1/512
+
+%     Link-Local Unicast Addresses          1111 1110 10   1/1024
+%     Site-Local Unicast Addresses          1111 1110 11   1/1024
+
+%     Multicast Addresses                   1111 1111      1/256
+
+\subsection{Address type representation}
+
+The initial bits of an address form the \Cola{Format Prefix (FP)}. This tells us
+the type of the address. The initial allocation of these prefixes is as follows
+in \cref{tab:fp}:
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{1.0\linewidth}{XXX}
+    Allocation& Prefix & Fraction of Address Space \\
+    \hline
+    Reserved & \texttt{0000 0000 (00)} & 1/256\\
+    Unassigned & \texttt{0000 0001 (01)} & 1/256\\
+    Reserved for NSAP Allocation & \texttt{0000 001 (02)} & 1/128\\
+    Reserved for IPX Allocation & \texttt{0000 010 (04)} & 1/128\\
+    Link-Local Unicast Addresses & \texttt{1111 1110 10 (FE80)} & 1/1024\\
+    Site-Local Unicast Addresses & \texttt{1111 1110 11 (FEC0)} & 1/1024\\
+    Multicast Addresses & \texttt{1111 1111 (FF)} & 1/256\\
+  \end{tabularx}
+  \caption{The Format Prefix}
+  \label{tab:fp}
+\end{table}
+
+In addition to the above, the prefixes \texttt{
+  010, 011, 100, 101, 110, 1110, 1111 0, 1111 10, 1111 110, 1111 1110 0} are
+\cola{unassigned} and reserved for future use.
+
+
+\clearpage{}
+
+\begin{itemize}
+\item link-local address : \colz{a unicast address having link-only scope that
+    can be used to reach neighbors.}
+\item unspecified address : \colz{the address with all zero bits:
+    \texttt{0:0:0:0:0:0:0:0},
+    which kinda means ``I don't known my address''. It can be the source address.
+  }
+\item all-nodes multicast address : \colz{the link-local address to reach all
+    nodes, \texttt{FF02::1}.}
+\item all-routers multicast address : \colz{the link-local address to reach all
+    routers, \texttt{FF02::2}.}
+\end{itemize}
+
+\subsection{special addresses}
+
+There are two types of special addresses related to IPv4:
+\begin{enumerate}
+\item \cola{IPv4-compatible IPv6 addresses} : \texttt{<80-bits of 0s> + <16
+    bits of 0s> + <32 bits of IPv4 address>}.
+\item \cola{IPv4-mapped IPv6 addresses} : \texttt{<80-bits of 0s> + <16 bits of
+    1s> + <32 bits of IPv4 address>}. (These represet nodes that do not support IPv6.)
+\end{enumerate}
+
+\colz{
+  Addresses endded with trailing zeros are \colZ{anycast addresses}.
+}
+
+\colz{
+  \cola{Multicast addresses} are identified by the leading bits \texttt{1111
+    1111}.
+
+  They have the following sctructure:
+
+  \begin{center}
+    \begin{tabularx}{0.8\linewidth}{X|X|X|X}
+      \texttt{ff} & \texttt{flgs} & \texttt{scope} & \texttt{group ID} \\
+      \hline
+      8 bits & 4 bits & 4 bits & 112 bits \\
+    \end{tabularx}
+  \end{center}
+
+  The \texttt{flgs} has the form \texttt{000T}. Where:
+  \[
+    \mathtt{T} = \begin{cases}
+      1 & \text{transient} \\
+                     0 & \text{``well-known'', the address is assigned by IEFT} \\
+    \end{cases}
+  \]
+}
+
+Some well-knwon multicast addresses are listed in \cref{tab:multicast}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{1.0\linewidth}{XX}
+    Address & Description \\
+    \hline
+    \texttt{FF02::1} & All Nodes Address  \\
+    \texttt{FF02::2} & All Routers Address  \\
+  \end{tabularx}
+  \caption{Well-known multicast addresses}
+  \label{tab:multicast}
+\end{table}
+
