@@ -2,6 +2,34 @@
 \section{SLAAC}
 \label{sec:slaac}
 
+\Cola{Stateless Address Autoconfiguration (SLAAC)} is designed with the
+following goals:
+
+\colz{
+  \begin{enumerate}
+  \item \colZ{Manual configuration} of individual machines before connecting them to the
+    network should \colZ{not be required}.
+  \item Small sites consisting of a set of machines attached to a single link
+    should \colZ{not require }the presence of a \colZ{DHCPv6 server or router}.
+    \colZ{Plug-and-play} should is achieved through the use of link-local
+    addresses.
+  \item global address -  an address with unlimited scope.
+
+
+    % Link-local addresses have a \colZ{``well-known'' prefixes} that identifies
+    % the (single) shared link to which a set of nodes attach.
+  \item A large site with multiple networks and routers should not require the
+    presence of a \colZ{DHCPv6 server} for address configuration. In order to
+    generate \colZ{global addresses}, hosts must determine the prefixes that
+    identify the the subnets to which they attach. \colZ{Routers generate
+      periodic Router Advertisements
+    } that include options listing the set of active prefixes on a link.
+  \item Address configuration should facilitate the graceful renumbering of a
+    site's machines.
+  \end{enumerate}
+}
+
+
 \subsection{jargons}
 
 \begin{enumerate}
@@ -19,5 +47,25 @@
     Neighbor Discovery packets related to Duplicate Address Detection (DAD) for
     the tentative address.
   }
-\item 
+\item preferred address \colz{
+    a "normal" address assigned to an interface.
+  }
+\item deprecated address \colz{
+    an address that is assigned to an interface whose use is discouraged. It can
+    be \colZ{source}, but \colZ{not destination}. However, sometimes, there are
+    exceptions. For example, when there's an active TCP connection.
+  }
+\item valid address \colz{
+    preferred or deprecated address.
+  }
+\item invalid address \colz{
+    an address that is not assigned to any interface.
+  }
+\item interface identifier
+  a link-dependent identifier for an interface that is unique per link.
+  \cola{SLACC combines an interface identifier with a prefix to form an address.}
+  \colz{
+    From address autoconfiguration's perspective, an interface identifier is a
+    bit string of known length. 
+  }
 \end{enumerate}
