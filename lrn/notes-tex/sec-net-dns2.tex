@@ -55,7 +55,8 @@ configuration might be shown in \cref{fig:name-serv-arch}
 
 \subsubsection{Format}
 
-All Resource Record (RR) have the same top level format shown in \cref{tab:rr-format}
+All Resource Record (RR) have the same top level format shown in
+\cref{tab:rr-format}. The numbers are all big-endien. (the ``internet-endien'')
 
 \newcolumntype{s}{>{\hsize=.2\hsize}X}
 \newcolumntype{c}{>{\hsize=.2\hsize \centering\arraybackslash}X}
@@ -85,10 +86,9 @@ All Resource Record (RR) have the same top level format shown in \cref{tab:rr-fo
 \end{table}
 
 \FloatBarrier                   % \usepackage{placeins}
-Following \texttt{TYPE} fields are available (\cref{tab:rr-types}):
-
 
 \subsubsection{\texttt{TYPE} values}
+Following \texttt{TYPE} fields are available (\cref{tab:rr-types}):
 \label{sec:rr-types}
 \begin{table}[h]
   \centering
@@ -113,6 +113,85 @@ Following \texttt{TYPE} fields are available (\cref{tab:rr-types}):
 \cSay{
   \colz{
     You may have noticed that some of the values are missing, e.g. \texttt{3,
-      4}. This is because they are either obsolete or experimental.
+      4}. Those are either obsolete or experimental.
   }
 }
+
+\texttt{TYPE} values are in fact subset of \texttt{QTYPE} values. \texttt{QTYPE}
+values that are not \texttt{TYPE} values are shown in \cref{tab:qtypes}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{0.8\linewidth}{scX}
+    QTYPE& value & meaning \\[2pt]
+    \hline
+    \texttt{AXFR} & 252 & A request for a transfer of an entire zone \\
+    \texttt{MAILB} & 253 & A request for mailbox-related records \\
+    \texttt{*} & 255 & A request for all records \\
+  \end{tabularx}
+  \caption{Defined \texttt{QTYPE} values}
+  \label{tab:qtypes}
+\end{table}
+
+\subsubsection{\texttt{CLASS} values}
+
+You just need to remember one value: \texttt{IN} (value=1) which stands for
+``internet''.
+
+\subsubsection{\texttt{CNAME RDATA} format}
+
+\texttt{CNAME} RDATA just contains a \cola{domain name}, which is represented as
+a series of labels, and terminated by a label with zero length. 
+
+\subsection{Message}
+
+All DNS messages have the same top level format shown in \cref{tab:msg-format}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{0.8\linewidth}{sX}
+    Field & Description \\[2pt]
+    \hline
+    \texttt{Header} & A fixed format header. \\
+    \texttt{Question} & the question for the name server. \\
+    \texttt{Answer} & RRs answering the question. \\
+    \texttt{Authority} & RRs pointing toward an authority. \\
+    \texttt{Additional} & RRs holding additional information. \\
+  \end{tabularx}
+  \caption{The DNS message format}
+  \label{tab:msg-format}
+\end{table}
+
+\subsubsection{Header}
+
+The header contains the following fields (\cref{tab:msg-header}).
+
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{0.8\linewidth}{scX}
+    field & size (bits) & meaning \\[2pt]
+    \hline
+    \texttt{ID} & 16 & Id assigned by the \cola{program that
+                       generates the query}. \colz{
+                        This id is copied the corresponding reply and
+                       can be used by the \colZ{requester} to match up replies
+                       to outstanding queries.
+                       } \\
+    \texttt{QR} & 1 & \colz{
+                      A one bit field that specifies whether this message is a
+                      \colZ{query (0), or a response (1).}} \\
+    \texttt{OPCODE} & 4 & \colz{
+                          the kind of query. It can be
+                          \begin{align*}
+                            0 &\quad \Rightarrow \text{a standard query (QUERY)}\\
+                            1 &\quad \Rightarrow \text{an inverse query (IQUERY)}\\
+                            2 &\quad \Rightarrow \text{a server status
+                                request}\\
+                            3-15 &\quad \Rightarrow \text{reserved for future use}
+                          \end{align*}
+                          }
+  \end{tabularx}
+  \caption{The DNS message header format}
+  \label{tab:msg-header}
+\end{table}
