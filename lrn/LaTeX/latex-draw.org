@@ -234,6 +234,35 @@ Don’t go down the stairs!\hspace{3em}
 
 ** write something special
 #+begin_src latex
-  {\color{red} \rule{\linewidth}{0.5mm}}
-\colorbox{BurntOrange}{orange background}
+    {\color{red} \rule{\linewidth}{0.5mm}}
+  \colorbox{BurntOrange}{orange background}
+
+
+  \tikz[baseline=.5ex]{\draw[thick,blue] (0,0) -- (0.8\linewidth,0pt);}
+  \tikz[baseline=(1ex,1ex)]{\draw[thick,blue] (0,0) -- (0.8\linewidth,0pt);}
+
+  \tikz[baseline=(X.base)] \node [cross out,draw] (X) {world.};
+  \tikz[baseline=(current bounding box.north)]
+  \draw (0,0) rectangle (1cm,1ex);
+
+  % fill the picture boundary
+  \begin{tikzpicture}[execute at end picture=%
+  {
+    \begin{pgfonlayer}{background}
+      \path[fill=yellow,rounded corners]
+      (current bounding box.south west) rectangle
+      (current bounding box.north east);
+    \end{pgfonlayer}
+  }]
+  \node at (0,0) {X};
+  \node at (2,1) {Y};
+  \end{tikzpicture}
+#+end_src
+
+** invisible char/box
+#+begin_src latex
+
+  \hphantom{aaa}
+  \vphantom{aaa}
+  \phantom{aaa}
 #+end_src
