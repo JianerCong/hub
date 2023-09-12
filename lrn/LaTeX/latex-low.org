@@ -48,9 +48,14 @@ sometimes represented by \( \S \)
 #+END_SRC
 ** dimen
 #+begin_src tex
-\newdimen\variable
-\variable=42pt
-The value is now \the\variable.
+  \newdimen\variable
+  \variable=42pt
+  The value is now \the\variable.
+
+      
+    \newdimen\x
+    \x=2cm
+    \draw[very thick] (0,-\x) -- +(0,2\x);
 #+end_src
 ** newenvironment
 *** synopsis
