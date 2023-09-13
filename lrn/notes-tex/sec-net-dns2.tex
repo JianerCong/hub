@@ -105,6 +105,11 @@ Following \texttt{TYPE} fields are available (\cref{tab:rr-types}):
     \texttt{MINFO} & 14 & mailbox or mail list information \\
     \texttt{MX} & 15 & mail exchange \\
     \texttt{TXT} & 16 & text strings \\
+
+    \texttt{AAAA} & 28 &  a host address (IPv6) \cola{[RFC3596]}\\
+    \texttt{CAA} & 257 &  Certification Authority Authorization: constrains
+                         acceptable CAs for a domain. \cola{[RFC6844]}\\
+    \texttt{CDS} & 59 & Child copy of DS record \cola{[RFC7344]}
   \end{tabularx}
   \caption{Defined \texttt{TYPE} values}
   \label{tab:rr-types}
@@ -141,7 +146,44 @@ You just need to remember one value: \texttt{IN} (value=1) which stands for
 \subsubsection{\texttt{CNAME RDATA} format}
 
 \texttt{CNAME} RDATA just contains a \cola{domain name}, which is represented as
-a series of labels, and terminated by a label with zero length. 
+a series of labels, and terminated by a label with zero length.
+
+\subsubsection{\texttt{SOA RDATA} format}
+
+\texttt{SOA} RDATA has the following format (\cref{tab:soa-rdata}).
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{0.8\linewidth}{sX}
+    Field & Description \\[2pt]
+    \hline
+    \texttt{MNAME} & \colz{
+                     The \cola{\texttt{<domain-name>}} of the name server that was the original of data for this zone.
+                     }\\
+    \texttt{RNAME} & \colz{Admin's email} \\
+    \texttt{SERIAL} & \colz{
+                      \texttt{uint32} \cola{version number} of the original copy of the zone.
+                      }\\
+    \texttt{REFRESH} & \colz{
+                       \texttt{uint32} time interval before the zone should be
+                       \colZ{refreshed}.
+                       }\\
+    \texttt{RETRY} & \colz{
+                      \texttt{uint32} Retry-time for failed \texttt{REFRESH}
+                     }\\
+    \texttt{EXPIRE} & \colz{
+                      Expire-time
+                      }\\
+    \texttt{MINIMUM} & \colz{
+                       \texttt{uint32}
+                       Minimum allowable TTL value exportable from this zone.
+                        }\\
+  \end{tabularx}
+  \caption{SOA RDATA format}
+  \label{tab:soa-rdata}
+\end{table}
+
+All times are in units of seconds.
 
 \subsection{Message}
 
@@ -164,8 +206,7 @@ All DNS messages have the same top level format shown in \cref{tab:msg-format}.
 
 \subsubsection{Header}
 
-The header contains the following fields (\cref{tab:msg-header}).
-
+The header contains the following fields (\cref{tab:msg-header,tab:msg-header2}).
 
 \begin{table}[h]
   \centering
@@ -186,12 +227,210 @@ The header contains the following fields (\cref{tab:msg-header}).
                           \begin{align*}
                             0 &\quad \Rightarrow \text{a standard query (QUERY)}\\
                             1 &\quad \Rightarrow \text{an inverse query (IQUERY)}\\
-                            2 &\quad \Rightarrow \text{a server status
-                                request}\\
+                            2 &\quad \Rightarrow \text{a server status request}\\
                             3-15 &\quad \Rightarrow \text{reserved for future use}
                           \end{align*}
-                          }
+                                   } \\
+    \texttt{AA} & 1 & \colz{Authoritative Answer. Only valid in responses. It
+                      means that \colZ{the responding name server is an
+                      authority for the domain name in question section.}
+                      }
+    \\
   \end{tabularx}
   \caption{The DNS message header format}
   \label{tab:msg-header}
 \end{table}
+
+\dSay{Oh, so it's like we have to keep asking until this bit is set?}
+
+\cSay{
+  \colz{
+    No. It's just a flag that tells you whether the
+    responding name server is an authority for the domain name in question
+    section.
+  }
+}
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{0.8\linewidth}{scX}
+    field & size (bits) & meaning \\[2pt]
+    \hline
+    \texttt{TC} & 1 & \colz{This message is truncated}\\
+    \texttt{RD} & 1 & \colz{Recursion Desired.
+
+                      If \colZ{RD} is set, it
+                      directs the name server to pursue the query recursively.
+                      \colZ{Recursive query support is optional.}
+                      } \\
+    \texttt{RA} & 1 & \colz{Recursion Available in the name server.}\\
+    \texttt{Z} & 3 & \colz{Reserved for future use. Must be zero in all queries
+                     and responses.}\\
+    \texttt{RCODE} & 4 & \colz{Response code. It can be
+                         \begin{align*}
+                           0 &\quad \Rightarrow \text{No error condition}\\
+                           1 &\quad \Rightarrow \text{Format error}\\
+                           2 &\quad \Rightarrow \text{Server failure}\\
+                           3 &\quad \Rightarrow \text{Name error}\\
+                           4 &\quad \Rightarrow \text{Not implemented}\\
+                           5 &\quad \Rightarrow \text{Refused}
+                         \end{align*}
+                               } \\
+    \texttt{QDCOUNT} & 16 & \colz{an \texttt{uint16} specifying the number of entries in the
+                            \colZ{question section}.}\\
+    \texttt{ANCOUNT} & 16 & \colz{an \texttt{uint16} specifying the number of
+                            RRs in
+                            the \colZ{answer section}.}\\
+    \texttt{NSCOUNT} & 16 & \colz{an \texttt{uint16} specifying the number of name server
+                            RRs in the \colZ{authority records
+                            section}.}\\
+    \texttt{ARCOUNT} & 16 & \colz{an \texttt{uint16} specifying the number of
+                            RRs in the \colZ{additional records section}.}\\
+  \end{tabularx}
+  \caption{The DNS message header format}
+  \label{tab:msg-header2}
+\end{table}
+
+\FloatBarrier
+
+\subsubsection{Question}
+
+The question section contains \texttt{QDCOUNT} (usually 1) entries, each is
+shown in \cref{tab:msg-question}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{0.8\linewidth}{scX}
+    field & size (bits) & meaning \\[2pt]
+    \hline
+    \texttt{QNAME} & variable & \colz{a domain name represented as a sequence of labels,
+                                where each label consists of a length octet
+                                followed by that number of octets.
+
+                                The domain
+                                name terminates with the zero length octet for
+                                the null label of the root. Note that this field
+                                may be an \cola{odd number of octets} (i.e., not
+                                \cola{word aligned}).
+                                } \\
+    \texttt{QTYPE} & 16 & \colz{a \texttt{TYPE} field.}\\
+    \texttt{QCLASS} & 16 & \colz{a \texttt{CLASS} field.}\\
+  \end{tabularx}
+  \caption{The DNS message question format}
+  \label{tab:msg-question}
+\end{table}
+
+\FloatBarrier
+\subsubsection{Answer, Authority, Additional}
+
+The answer, authority, and additional sections all share the same format: a
+variable number of \Cola{resource record}, which is shown previously in
+\cref{tab:rr-format} as we discussed in \cref{sec:rr-defs}.
+
+\subsection{message compression}
+\label{sec:cmpr}
+
+There's a compression mechanism in DNS messages, which uses pointers to avoid
+duplicated domain names. But let's skip it for now.
+
+\subsection{Transport}
+
+DNS server uses both UDP (port 53) and TCP (port 53). For UDP the size of a
+message is limited to 512 bytes, excluding the IP and UDP headers.
+
+\subsection{Zone files (master files)}
+\label{sec:mfile}
+
+If RRs are data, then zone files are the database (in plain text).
+
+\colz{
+  The format is a sequence of entries. Each is a single line. (can be extended
+  using parentheses). Any combination of tabs and spaces act as a delimiter that
+  separates items that make up an entry.
+
+  The end of any line can end with a comment. A comment starts with a ``\texttt{;}''
+}
+
+\subsubsection{zone file entries}
+\label{sec:zone-entries}
+
+The following entries are available:
+
+\begin{enumerate}
+\item \texttt{\cola{\$ORIGIN}  \colc{<domain-name>}} : \colz{resets the \colZ{current
+    origin} for \colZ{relative domain names} to the stated name.
+  }
+\item \texttt{\cola{\$INCLUDE} <file-name> \colc{[<domain-name>]}} : \colz{inserts
+    the named file into the current file. If the domain name is present, it
+    specifies its \cola{\texttt{\$ORIGIN}}. Note that this entry never change
+    the relative origin of the parent file.
+  }
+\item \texttt{\colc{[<domain-name>]}<rr>} : \colz{
+    an actual RR record. If the domain name is missing, then the RR belongs to
+    the last stated owner.
+  }
+\end{enumerate}
+
+Blank lines, with or without comments, are allowed.
+
+\subsubsection{Format of RR}
+\label{sec:rr-format}
+
+Each \texttt{<rr>} has the following forms:
+
+\begin{center}
+  \ttfamily
+ \cola{[<class>]} \colb{[<TTL>]} \cola{<type>} <RDATA>
+\end{center}
+
+Where the order of \texttt{\cola{<class>}} and \texttt{\colb{<TTL>}} can varies.
+
+\texttt{\colb{<TTL>}} is a decimal integer. If either \texttt{\cola{<class>}} or
+\texttt{\colb{<TTL>}} is missing, the last value stated is used.
+
+\texttt{\colc{[<domain-name>]}} are expressed as a sequence of character strings
+separated by dots. \colz{Domain names that end in a dot are called \cola{fully
+    qualified domain names} (FQDNs). Domain names that do not end in a dot are
+  called \cola{relative domain names} (RDNs). In that case, the actual domain
+  name is the concatenation of the RDN and the \texttt{\cola{\$ORIGIN}}.
+}
+
+\subsubsection{Character string}
+\label{sec:char-string}
+Character string is expressed in two ways:
+
+\begin{enumerate}
+\item a contiguous set of characters without spaces. For example, \texttt{aaa}
+\item a string quoted by double quotes. For example, \texttt{"aaa bbb"}
+\end{enumerate}
+
+\subsubsection{Special characters}
+
+Some characters are special, as shown in \cref{tab:zone-spec-char}.
+
+\begin{table}
+  \centering
+  \begin{tabularx}{0.8\linewidth}{sX}
+    \texttt{@} &  A free standing \texttt{@} denote the \cola{\texttt{\$ORIGIN}}.\\
+    \verb|\X| &  Char escape, e.g. \verb|\"| to mean \texttt{"}\\ \\
+    \verb|\DDD| &  Octal escape, e.g. \verb|\100| to mean \texttt{@}\\ \\
+  \end{tabularx}
+  \caption{Special characters in zone file}
+  \label{tab:zone-spec-char}
+\end{table}
+
+\subsubsection{Rules}
+\label{sec:zone-file-rules}
+
+In addition to the grammar rules, following rules are also applied:
+
+\begin{enumerate}
+\item \colz{All RRs in the file should have the same \cola{\texttt{<class>}}}
+\item Exactly one \texttt{SOA RR} \colz{should be present at the top of the
+    zone.}
+\item \colz{If delegations are present and glue information is required, it
+    should be present. (??)
+  }
+\item \colz{Info present outside of the authoritative nodes in the zone should
+    be glue information, rather than the result of an origin or similar error.}
+\end{enumerate}

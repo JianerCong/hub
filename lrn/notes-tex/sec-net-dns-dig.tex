@@ -1,0 +1,9 @@
+\section{dig}
+\label{sec:dig}
+
+\newcommand{\d}{\texttt{dig}}
+
+Unless specified otherwise, \d{} tries each of the servers listed in
+\texttt{/etc/resolv.conf}. Finally, it resorts to \texttt{localhost}.
+
+When no serve is specified, \d{} performs the \texttt{NS} query for \texttt{.}.
