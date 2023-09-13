@@ -341,6 +341,18 @@ skin=myThmSkin
 % 🦜 : Remember to specify the mode, because without a \documentclass{}, emacs
 % will consider this as a plain TeX document.
 
+% --------------------------------------------------
+\newcommand{\ans}{
+  % \newline{}
+  \par
+  \hspace{0.1\linewidth}
+  % \phantom{Ans: }
+  % \colz{Ans: }
+  \tikz[baseline=.5em]{\draw[thick,\mycola] (0,0) -- (0.8\linewidth,0pt);}
+  % \rule[-1em]{0.8\linewidth}{1pt}
+}
+\newcommand{\tf}{\Cola{\hfill[T/F]}}
+
 % Local Variables:
 % mode: LaTeX
 % TeX-engine: luatex

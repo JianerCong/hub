@@ -311,6 +311,25 @@ The result is that ~a link-local address will be in the fe80::/64 subnet~.
   #+BEGIN_SRC bash
     resolvectl status               # check current DNS setting
   #+END_SRC
+**** dig
+#+begin_src bash
+  # query the ipv6 address of example.com
+  dig example.com AAAA
+  dig example.com AAAA +short
+
+  # query the ipv4
+  dig example.com A +short
+
+  # query the ipv4 and curl the content
+  curl -4 http://example.com
+  # 🦜 : It seems like our router doesn't support ipv6...
+  curl -6 https://example.com
+
+  # Use secure DNS: (DNS over HTTPS, (DoH))
+  # use Quad 9's DNS server (which seems to be the only one that's not slow.)
+  dig @9.9.9.9 example.com AAAA +https
+#+end_src
+
 *** Transport layer (Transmission Control Pro, User Datagram Pro)
   transport layer bridge between the gap between the raw packets and your app.
 **** TCP

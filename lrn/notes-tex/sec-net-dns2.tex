@@ -141,7 +141,23 @@ values that are not \texttt{TYPE} values are shown in \cref{tab:qtypes}.
 \subsubsection{\texttt{CLASS} values}
 
 You just need to remember one value: \texttt{IN} (value=1) which stands for
-``internet''.
+``internet''. Occasionally you might also see \texttt{CH} (value=3) which stands
+for ``chaos'', it is usually used to determine some versions.
+
+
+\subsubsection{\texttt{A RDATA} format}
+\texttt{A} RDATA is just a normal IPv4 address, such as \texttt{1.2.3.4.}
+
+\subsubsection{\texttt{NS RDATA} format}
+NS record is just a domain name.
+
+NS records cause both
+\begin{itemize}
+\item the usual additional section processing to locate a type \texttt{A} record
+\item and, when used in a referral, a special search of the zone in which they
+  reside for glue information.
+\end{itemize}
+
 
 \subsubsection{\texttt{CNAME RDATA} format}
 
