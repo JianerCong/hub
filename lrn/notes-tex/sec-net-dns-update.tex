@@ -1,0 +1,60 @@
+
+\section{DNS Update}
+\label{sec:dns-update}
+
+\subsection{Definitions}
+\label{sec:dns-update-defs}
+
+\begin{itemize}
+\item Sub \colz{
+    an \cola{authoritative server} that uses \colZt{AXFR} or \colZt{IXFR} to retrieve
+    the zone and is named in the zone's NS records.
+  } 
+\item Main  \colz{
+    an \cola{authoritative server} that is the source of \texttt{AXFR/IXFR} data for
+    one or more sub.
+  }
+\item Primary Main \colz{
+    the main server at the root of the \texttt{AXFR/IXFR} dependency graph. The
+    primary master is named in the zone's \texttt{SOA MNAME} field.
+    \cola{There's only one primary main per zone.}
+  }
+\end{itemize}
+
+\colz{
+  A domain name identifies a node within the \cola{domain name space tree
+    structure}. Each node has a set (possibly empty) of Resource Records (RRs).
+  All RRs having the same \texttt{NAME, CLASS, TYPE} are called a \Cola{Resource
+  Record Set (RRset).}
+}
+
+\subsection{New Assigned Numbers}
+\label{sec:new-assigned-num}
+
+\cSay{
+  \colz{
+    Remember the \texttt{CLASS} field in the DNS header? It's extensible. And here
+    we define a new one: 
+  } \cola{\texttt{CLASS=NONE (254)}}.
+
+  Also some new \texttt{RCODE}:
+  \begin{align*}
+    \mathtt{YXDOMAIN} &= 6\\
+    \mathtt{YXRRSET} &= 7\\
+    \mathtt{NXRRSET} &= 8\\
+    \mathtt{NOTAUTH} &= 9\\
+    \mathtt{NOTZONE} &= 10
+  \end{align*}
+
+  And a new \cola{\texttt{OPCODE}: \texttt{UPDATE (5)}}.
+}
+
+\subsection{quiz for RFC 2136}
+
+\begin{enumerate}
+\item When two RRs are considered equal? \ans{}
+\item Wildcard (\texttt{'*'}) is disabled. \tf{}
+\item All \texttt{UPDATE} operations must use canonical names. \tf{}
+\item Three types of RRs are not allowed to be appended to an RRset, which
+  three?  \ans{}
+\end{enumerate}

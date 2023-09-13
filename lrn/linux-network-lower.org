@@ -283,6 +283,7 @@ The result is that ~a link-local address will be in the fe80::/64 subnet~.
   The router can unpack the frame and re-package the data, and send that to other
   ethernet network, which is exactly what internet does.
 *** DNS
+**** list
   1. app calls a function to look up the ip addr behind an host name. The function
      is usually in sys shared lib.
   2. the func runs according to the rules in /etc/nsswitch.conf. (Check the
