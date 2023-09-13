@@ -4,6 +4,84 @@
 DHCP uses UDP. The client uses a link-local address (obtained from whatever
 means) to send a DHCP message to a \cola{reserved multicast address}. Then the server will answer it.
 
+\subsection{Terminology}
+\label{sec:dhcp-term}
+
+\begin{enumerate}
+\item appropriate to the link: 
+  \colz{
+    An address is \cola{appropriate to the link} if
+    the address is consistent with the DHCP's server's knowledge of the
+    \begin{enumerate}
+    \item network topology
+    \item prefix assignment
+    \item address assignment policies
+    \end{enumerate}
+  }
+\item Identity association (IA) \colz{
+    A collection of addresses assigned to a client.
+
+    Usually, it's one IA per interface.
+
+    Each IA has an associated \texttt{IAID}, which is chosen by the client.
+    IAIDs should be unique within the client.
+  }
+\item IA for temporary addresses (IA-TA) \colz{
+    A type of IA, self-explanatory.
+  }
+\item IA for non-temporary addresses (IA-NA) \colz{
+    Another type of IA.
+  }
+\item \texttt{DUID} \colz{
+    DHCP Unique Identifier. It's unique for both DHCP client and server.
+
+\colZ{So it's not one per interface, but one per client.}
+  }
+\item binding \colz{
+
+    A \cola{binding} is a set of some server data the server knows about the
+    addresses in
+    \begin{enumerate}
+    \item an IA
+    \item configuration explicitly assigned to the client
+    \end{enumerate} .
+    \colZ{
+      So you can bind configuration to an IA, or explicitly to a client.
+    }
+
+    In the first case, binding is indexed by the tuple:
+    \begin{center}
+      \ttfamily
+      (\cola{DUID}, \colb{IA\_Type}, \colc{IAID})
+    \end{center}
+    In the second case, binding is indexed just by \cola{\texttt{DUID}}.
+
+    Some congifuration info do not need a binding. They are sent through a
+    policy, such as info boardcast to all clients on the link.
+  }
+\item configuration parameter \colz{data to kept by server and to be
+    sent to client.}
+\item DHCP client \colz{a host using DHCP to obtain \colZ{configuration
+      parameters}.}
+\item DHCP server \colz{a node that responds to requests from DHCP clients.}
+\item DHCP relay agent \colz{
+    a node that acts as an intermediary to deliver DHCP messages between clients
+    and servers. It's on the same link as the client, but not necessarily same
+    as the server.
+  }
+\item DHCP domain \colz{
+    a set of links managed by DHCP and operated by a single administrative entity.
+  }
+\item DHCP realm \colz{a name used to identify a DHCP domain.}
+\item Reconfigure key \colz{
+    A key supplied to a client by a server used to provide security for
+    Reconfigure messages.
+  }
+\item transaction ID \colz{
+    An opaque value used to match responses with requests.
+  }
+\end{enumerate}
+
 
 % We will want to consider what we need for special purpose devices such as
 % iPhones, \Cola{Wireless Access Points (WAP)}, or even \Cola{Pre Execution
