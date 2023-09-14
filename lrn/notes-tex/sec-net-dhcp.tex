@@ -21,7 +21,7 @@ means) to send a DHCP message to a \cola{reserved multicast address}. Then the s
 \item Identity association (IA) \colz{
     A collection of addresses assigned to a client.
 
-    Usually, it's one IA per interface.
+    An interface can have one or more IAs, but each IA can only bind to one interface.
 
     Each IA has an associated \texttt{IAID}, which is chosen by the client.
     IAIDs should be unique within the client.
@@ -209,8 +209,7 @@ in \cref{tab:dhcp-msg-format-relay-server}.
   \bottomrule
 \end{longtblr}
 
-% We will want to consider what we need for special purpose devices such as
-% iPhones, \Cola{Wireless Access Points (WAP)}, or even \Cola{Pre Execution
-% Environment (PXE)} devices that can load their entire OS from DHCP
-% information.
+\subsection{DUID}
 
+A DUID consists of a two-octet \cola{type field} and a variable-length
+\cola{identifier field}. A DUID can be no more than 128 octets long. 
