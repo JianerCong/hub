@@ -18,8 +18,12 @@
 
 % --------------------------------------------------
 \begin{document}
+
 \maketitle
 
+% 🦜 : It looks like this two must be after the \maketitle
+\newcolumntype{s}{>{\hsize=.2\hsize}X}
+\newcolumntype{c}{>{\hsize=.2\hsize \centering\arraybackslash}X}
 % \input{sec-net-mac-addr}
 % \input{sec-net-ports}
 % \input{sec-net-dns}

@@ -1,30 +1,21 @@
-\documentclass{report}
-
-\usepackage{lipsum}       % for sample text
-\usepackage{changepage}   % for the adjustwidth environment
+\documentclass[12pt]{article}
+\usepackage{tabularray}
+\UseTblrLibrary{booktabs,siunitx}
 
 \begin{document}
-\lipsum[1]
 
-
-\newenvironment{myIndent}[1][2cm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
-
-\begin{adjustwidth}{2cm}{}
-  %                 --- left
-  %                     -- right glue
-  \lipsum[1] % indented 2cm
-  \begin{adjustwidth}{2cm}{}
-    \lipsum[1] % indented 2 + 2cm
-  \end{adjustwidth}
-\end{adjustwidth}
-
-\begin{myIndent}
-  \lipsum[1]
-\end{myIndent}
+\begin{longtblr}[caption = {Planejamento experimental.}
+  ]%
+  {colspec={*{3}{ X[c,si]} },
+    rowhead = {1},
+    rows = {font=\small}
+  }
+  \toprule
+  A & B & C
+  \\
+  \midrule
+  1  & 240   & 40    \\
+  2  & 240   & 45    \\
+  \bottomrule
+\end{longtblr}
 \end{document}
-
-% Local Variables:
-% TeX-engine: luatex
-% TeX-command-extra-options: "-shell-escape"
-% TeX-master: "m.tex"
-% End:

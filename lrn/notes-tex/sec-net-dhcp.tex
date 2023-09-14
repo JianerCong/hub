@@ -82,6 +82,79 @@ means) to send a DHCP message to a \cola{reserved multicast address}. Then the s
   }
 \end{enumerate}
 
+\subsection{DHCP Constant}
+\label{sec:dhcp-const}
+
+Some constants used in DHCP are shown in \cref{tab:dhcp-const}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{\linewidth}{XsX}
+    Name & Value & Description \\[1ex]
+    \hline
+    \verb|All_DHCP_Relay_Agents_and_Servers| & \verb|ff02::1:2| & A link-scoped
+                                                                  multicast
+                                                                  address. \\
+    \verb|All_DHCP_Servers| & \verb|ff05::1:3| & A site-scoped multicast\\
+    client UDP port & 546 & \\
+    server UDP port & 547 & \\
+  \end{tabularx}
+  \caption{DHCP Constant}
+  \label{tab:dhcp-const}
+\end{table}
+
+DHCP also defines some message types, shown in \cref{tab:dhcp-msg-type}.
+
+
+\begin{longtblr}[caption = {DHCP Message Type.},
+  label = {tab:dhcp-msg-type}
+  ]%
+  {colspec={ssX},
+    rowhead = 1, % first row is shown on every page
+  }
+  \toprule
+  % A & B & C \\
+  \mbox{Name} & \mbox{Value} & \mbox{Description} \\
+  \midrule
+    \texttt{Solicit} & 1 & \colz{Sent by client to locate servers.} \\
+    \texttt{Advertise} & 2 & \colz{Sent by server to indicate its presence.Usually as a
+                           response to \texttt{Solicit}.} \\
+
+    \texttt{Request} & 3 & \colz{Sent by client to request configuration parameters
+                         (including addresses) from a server.} \\
+    \texttt{Confirm} & 4 & \colz{Sent by client to say whether the once assigned
+                         addresses are still \cola{appropriate to the link}.} \\
+    \texttt{Renew} & 5 & \colz{
+                       Sent by client to \colZ{the origin server} to extend the lifetimes of addresses and
+                       to update other configuration parameters. 
+                       }\\
+    \texttt{Rebind} & 6 & \colz{
+                        Similar to \texttt{Renew}, but sent to \colZ{any server}.
+                        This is sent when no response to \texttt{Renew} is received.
+                        } \\
+    \texttt{Reply} & 7 & Sent by server to respond to \cola{all kinds of message} sent
+                       by client.
+                       \colz{
+                       This more or less dumps the current configuration parameters that
+                       server knows to the client.
+                       } \\
+    \texttt{Release} & 8 & \colz{
+                         Sent by client to release some addresses assigned to it.
+                         } \\
+    \texttt{Decline} & 9 & \colz{
+                         Sent by client to complain that the addresses assigned
+                         to it are already in use.
+                         } \\
+    \texttt{Reconfigure} & 10 & \colz{
+                              Sent by server to inform clients that the server
+                              has new configuration parameters, so clients
+                              should request them.(i.e. start a new
+                              \texttt{Renew/Reply} transaction).
+                              }\\
+                              \bottomrule
+\end{longtblr}
+
+
 
 % We will want to consider what we need for special purpose devices such as
 % iPhones, \Cola{Wireless Access Points (WAP)}, or even \Cola{Pre Execution

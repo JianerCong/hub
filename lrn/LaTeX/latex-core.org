@@ -1101,6 +1101,109 @@ Column1d & Column2d & Column3d \\
 \end{document}
 
 #+end_src
+*** long tablex
+**** simple way
+#+begin_src latex
+  \documentclass[12pt]{article}
+  \usepackage{tabularray}
+  \UseTblrLibrary{booktabs,siunitx}
+
+  \begin{document}
+
+  \begin{longtblr}[caption = {Planejamento experimental.},
+    label = {tab:dhcp-msg-type}
+    ]%
+    {colspec={ssX},
+      rowhead = 1, % first row is shown on every page
+    }
+
+    \toprule
+    % A & B & C \\
+    \mbox{Name} & \mbox{Value} & \mbox{Description} \\
+    \midrule
+      \texttt{Solicit} & 1 & \colz{Sent by client to locate servers.} \\
+      \texttt{Advertise} & 2 & \colz{Sent by server to indicate its presence.Usually as a
+                             response to \texttt{Solicit}.} \\
+
+      \texttt{Request} & 3 & \colz{Sent by client to request configuration parameters
+                           (including addresses) from a server.} \\
+      \texttt{Confirm} & 4 & \colz{Sent by client to say whether the once assigned
+                           addresses are still \cola{appropriate to the link}.} \\
+                                \bottomrule
+  \end{longtblr}
+  \end{document}
+#+end_src
+
+**** three line (warning: headings must be boxed)
+#+begin_src latex
+\documentclass[12pt]{article}
+\usepackage{tabularray}
+\UseTblrLibrary{booktabs,siunitx}
+
+\begin{document}
+
+\begin{longtblr}[caption = {Planejamento experimental.}
+  ]%
+  {colspec={*{3}{ X[c,si]} },
+    rowhead = {1},
+    rows = {font=\small}
+  }
+  \toprule
+  \mbox{Experimento nº}
+  &  \mbox{Temperatura (\si{\celsius})}
+  &  \mbox{WH{S}V (h$^{-1}$)}
+  \\
+  \midrule
+  1  & 240   & 40    \\
+  2  & 240   & 45    \\
+  3  & 240   & 50    \\
+  4  & 240   & 55    \\
+  5  & 240   & 60    \\
+  6  & 260   & 40    \\
+  7  & 45    & 45    \\
+  8  & 260   & 50    \\
+  9  & 260   & 55    \\
+  10  & 260   & 60    \\
+  11  & 280   & 40    \\
+  12  & 280   & 45    \\
+  13  & 280   & 50    \\
+  14  & 280   & 50    \\
+  15  & 280   & 50    \\
+  16  & 280   & 55    \\
+  17  & 280   & 60    \\
+  18  & 300   &  5    \\
+  19  & 300   & 10    \\
+  20  & 300   & 20    \\
+  21  & 320   &  2.5  \\
+  22  & 320   &  5    \\
+  23  & 320   & 10    \\
+  24  & 320   & 20    \\
+  25  & 340   &  2.5  \\
+  26  & 340   &  5    \\
+  27  & 340   & 10    \\
+  28  & 340   & 20    \\
+  19  & 300   & 10    \\
+  20  & 300   & 20    \\
+  21  & 320   &  2.5  \\
+  22  & 320   &  5    \\
+  23  & 320   & 10    \\
+  24  & 320   & 20    \\
+  25  & 340   &  2.5  \\
+  26  & 340   &  5    \\
+  27  & 340   & 10    \\
+  28  & 340   & 20    \\
+  20  & 300   & 20    \\
+  21  & 320   &  2.5  \\
+  22  & 320   &  5    \\
+  23  & 320   & 10    \\
+  24  & 320   & 20    \\
+  25  & 340   &  2.5  \\
+  26  & 340   &  5    \\
+  27  & 340   & 10    \\
+  \bottomrule
+\end{longtblr}
+\end{document}
+#+end_src
 ** figure
 *** Just a figure
    #+begin_src latex
