@@ -134,8 +134,34 @@ mode for SLAAC. Supported modes are \texttt{prefixstable} and \texttt{static}.
   # IPv6Token=prefixstable:2002:da8:1::
 \end{simplecf}
 
-\subsection{\verb|Address|}
+\subsection{\texttt{Address}}
 
 A static IPv4 or IPv6 address and its prefix length, separated by a slash
 (\texttt{/}). This is a short-hand for an \texttt{[Address]} section only
 containing an Address key.
+
+\dSay{
+  Can I just let the localhost to randomly choose one. 
+}
+
+\cSay{
+  Yes. If the specified address is
+  \begin{enumerate}
+  \item \cola{\texttt{0.0.0.0}} or
+  \item \cola{\texttt{::}}
+  \end{enumerate}
+  \colz{
+    a new address range of the required size if automatically selected from a
+    system-wide pool of unused ranges.
+  }
+  Note that the prefix length must be equal or larger than 8 for IPv4, and 64
+  for IPv6.
+
+  The default pool consists of just the ``private'' address ranges:
+  \begin{enumerate}
+  \item \cola{\texttt{192.168.0.0/16}}
+  \item \cola{\texttt{172.16.0.0/12}}
+  \item \cola{\texttt{10.0.0.0/8}}
+  \item \cola{\texttt{fd00::/8}}
+  \end{enumerate}
+}
