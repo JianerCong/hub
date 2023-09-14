@@ -101,40 +101,70 @@ tile,left=1mm,nobeforeafter,fontupper=\small,#1
 \date{\today}
 \author{作者}
 
-\newtcblisting{simplec}{
-listing engine=minted,
-minted language=c++,
-minted style=vs,
-minted options={fontsize=\small,autogobble,
-% framesep=1cm
-},
-tile,
-listing only,
-% bottom=0cm,
-% nobeforeafter, 
-boxsep=0mm,
-left=1mm,
-opacityback=0.5,
-colback=gray!20
-}
 \tcbuselibrary{breakable}
-\newtcblisting{simplepy}{
-listing engine=minted,
-minted language=python,
-minted style=vs,
-minted options={fontsize=\small,autogobble,
-% framesep=1cm
-},
-tile,
-listing only,
-% bottom=0cm,
-% nobeforeafter,
-boxsep=0mm,
-left=1mm,
-opacityback=0.5,
-colback=gray!20,
-breakable
+\newcommand{\makeSimpleListing}[2]{
+  \newtcblisting{#1}{
+  listing engine=minted,
+  minted language=#2,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+  % framesep=1cm
+  },
+    tile,
+    listing only,
+  %   bottom=0cm,
+  %   nobeforeafter,
+    boxsep=0mm,
+    left=1mm,
+    opacityback=0.5,
+    colback=gray!20,
+    breakable
+  }
 }
+
+\makeSimpleListing{simplec}{c++}
+\makeSimpleListing{simplepy}{python}
+\makeSimpleListing{simplecf}{cfg}
+
+% \newtcblisting{simplec}{
+% listing engine=minted,
+% minted language=c++,
+% minted style=vs,
+% minted options={fontsize=\small,autogobble,
+% % framesep=1cm
+% },
+% tile,
+% listing only,
+% % bottom=0cm,
+% % nobeforeafter, 
+% boxsep=0mm,
+% left=1mm,
+% opacityback=0.5,
+% colback=gray!20
+% }
+
+
+% \newtcblisting{simplepy}{
+% listing engine=minted,
+% minted language=python,
+% minted style=vs,
+% minted options={fontsize=\small,autogobble,
+% % framesep=1cm
+% },
+% tile,
+% listing only,
+% % bottom=0cm,
+% % nobeforeafter,
+% boxsep=0mm,
+% left=1mm,
+% opacityback=0.5,
+% colback=gray!20,
+% breakable
+% }
+
+
+
+
 \newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
 
 % \tikzstyle{myMatrix}=[matrix of nodes,below right,

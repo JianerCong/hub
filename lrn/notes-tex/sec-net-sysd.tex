@@ -1,0 +1,59 @@
+
+\section{systemd}
+\label{sec:sysd-network}
+
+\subsection{Description}
+
+The main network must have the extension \texttt{.network}.
+
+The \texttt{.network} files are read from
+
+\begin{enumerate}
+\item \cola{\texttt{/lib/systemd/network/}} : \colz{persistent}
+\item \cola{\texttt{/usr/local/lib/systemd/network/}} : \colz{persistent}
+\item \colb{\texttt{/run/systemd/network/}} : \colz{transient}
+\item \colc{\texttt{/etc/systemd/network/}} : \colz{local admin}
+\end{enumerate}
+
+All config files are sorted (folders flattened) and read.
+\colz{
+  However, files with same names replace each other. The order is:
+}
+
+\begin{center}
+  \ttfamily
+  \colc{/etc/} > \colb{/run/} > \cola{/usr/} > \cola{/lib/}
+  \rmfamily
+  % \hfill
+  \hspace{0.05\linewidth}
+  (i.e. user's override system's)
+\end{center}
+
+\colz{An exception is that, if a file is empty or a symlink pointing to
+  \texttt{/dev/null}, it will be disabled (masked).
+  
+  Along with the network file \texttt{aaa.network}, a ``drop-in'' directory
+  \texttt{aaa.network.d/} may exist. All \texttt{.conf} files in it will be
+  merged into \texttt{aaa.network}. Each of them must have appropriate section
+  headers.
+}
+
+\subsection{Sections}
+
+\newcommand{\secM}{\cola{\texttt{[Match]}}}
+\newcommand{\secN}{\colb{\texttt{[Network]}}}
+
+Each network file has two sections: \secM{} and \secN{}.
+
+\secM{} tells to whom the network config applies.
+\secN{} tells what to apply.
+
+\colb{The first matching network file is applied, and the rest are ignored.} If
+you just want to apply to all interface, do :
+\begin{simplecf}
+  [Match]
+  Name=*
+\end{simplecf}
+
+\subsubsection{\secM{}}
+
