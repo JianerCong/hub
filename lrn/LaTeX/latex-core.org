@@ -1101,7 +1101,7 @@ Column1d & Column2d & Column3d \\
 \end{document}
 
 #+end_src
-*** long tablex
+*** tabularray: the table in 2023
 **** simple way
 #+begin_src latex
   \documentclass[12pt]{article}
@@ -1110,26 +1110,18 @@ Column1d & Column2d & Column3d \\
 
   \begin{document}
 
-  \begin{longtblr}[caption = {Planejamento experimental.},
+  \begin{longtblr}[caption = {Table AAA.},
     label = {tab:dhcp-msg-type}
     ]%
-    {colspec={ssX},
+    {colspec={XXX},
       rowhead = 1, % first row is shown on every page
     }
 
     \toprule
-    % A & B & C \\
     \mbox{Name} & \mbox{Value} & \mbox{Description} \\
     \midrule
-      \texttt{Solicit} & 1 & \colz{Sent by client to locate servers.} \\
-      \texttt{Advertise} & 2 & \colz{Sent by server to indicate its presence.Usually as a
-                             response to \texttt{Solicit}.} \\
-
-      \texttt{Request} & 3 & \colz{Sent by client to request configuration parameters
-                           (including addresses) from a server.} \\
-      \texttt{Confirm} & 4 & \colz{Sent by client to say whether the once assigned
-                           addresses are still \cola{appropriate to the link}.} \\
-                                \bottomrule
+    A & B & C
+    \bottomrule
   \end{longtblr}
   \end{document}
 #+end_src

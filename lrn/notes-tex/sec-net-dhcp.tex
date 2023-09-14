@@ -105,7 +105,6 @@ Some constants used in DHCP are shown in \cref{tab:dhcp-const}.
 
 DHCP also defines some message types, shown in \cref{tab:dhcp-msg-type}.
 
-
 \begin{longtblr}[caption = {DHCP Message Type.},
   label = {tab:dhcp-msg-type}
   ]%
@@ -150,11 +149,65 @@ DHCP also defines some message types, shown in \cref{tab:dhcp-msg-type}.
                               has new configuration parameters, so clients
                               should request them.(i.e. start a new
                               \texttt{Renew/Reply} transaction).
-                              }\\
+                            }\\
+
+    \texttt{Information-Request} & 11 & \colz{
+                                       Sent by client to request configuration
+                                       parameters without assigning addresses.
+                                     } \\
+    \texttt{Relay-Forward} & 12 & \colz{ Sent by relay agent to forward messages
+      between client, server and probably other relay agents.} \\
+    \texttt{Relay-Reply} & 13 & \colz{ Sent by server to respond to relay agent.} \\
                               \bottomrule
 \end{longtblr}
 
+There're also some constants such as the timeout and max-try, but let's move on.
 
+\subsection{DHCP Message Format}
+
+
+All DHCP messages exchanged between server and client have a fixed format shown
+in \cref{tab:dhcp-msg-format-server-client}.
+
+\begin{longtblr}[caption = {server-client DHCP message format.}, label = {tab:dhcp-msg-format-server-client}]%
+  {colspec={ssX},
+    rowhead = 1, % first row is shown on every page
+  }
+  \toprule
+  \mbox{Name} & \mbox{Size (bytes)} & \mbox{Description} \\
+  \midrule
+  \texttt{msg-type} & 1 & \colz{self-explanatory} \\
+  \texttt{transaction-id} & 3 & \colz{self-explanatory } \\
+  \texttt{options} & \colz{variable} & \colz{payloads} \\ 
+  \bottomrule
+\end{longtblr}
+
+However, the message format between relay agent and server is different, shown
+in \cref{tab:dhcp-msg-format-relay-server}.
+
+\begin{longtblr}[caption = {server-relay DHCP Message Format.}, label = {tab:dhcp-msg-format-relay-client}]%
+  {colspec={ssX},
+    rowhead = 1, % first row is shown on every page
+  }
+  \toprule
+  \mbox{Name} & \mbox{Size (bytes)} & \mbox{Description} \\
+  \midrule
+  \texttt{msg-type} & 1 & \colz{= \texttt{Relay-Forward | Relay-Reply}} \\
+  \texttt{hop-count} & 1 & \colz{number of relay agents that have relayed this
+                           message.} \\
+                         \texttt{link-address} & 16 & \colz{
+                           A global or site-local address that will be used by
+                           the server to identify the \colZ{link on which the client is located.}
+                         } \\
+                         \texttt{peer-address} & 16 & \colz{
+                           The address of the client or relay agent from which
+                           the message was received.
+                         } \\
+                         \texttt{options} & \colz{variable} &
+                         \cola{\texttt{<Relay Message option>} + }
+                         \colz{other options} \\ 
+  \bottomrule
+\end{longtblr}
 
 % We will want to consider what we need for special purpose devices such as
 % iPhones, \Cola{Wireless Access Points (WAP)}, or even \Cola{Pre Execution
