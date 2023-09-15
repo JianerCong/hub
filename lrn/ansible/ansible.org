@@ -145,7 +145,6 @@ group, for orphan nodes).
 #+begin_src bash
   ansible all -i my-first-inventory.yaml -m ping
 #+end_src
-**** control the openstack cloud
 
 ** OpenStack Ansible
 *** all in one [for testing]
