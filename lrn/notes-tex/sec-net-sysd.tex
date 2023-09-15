@@ -165,3 +165,38 @@ containing an Address key.
   \item \cola{\texttt{fd00::/8}}
   \end{enumerate}
 }
+
+
+\subsection{\texttt{IPForward}}
+
+Can be \texttt{yes | no | ipv4 | ipv6}. Defaults to \texttt{no}. If enabled,
+incomming packets on any network interface will be forwarded to any other
+interfaces according to the \cola{routing table}. \colz{This controls the
+  \texttt{net.ipv4.ip\_forward} and \texttt{net.ipv6.conf.all.forwarding}
+  \texttt{sysctl} options.
+
+  This setting controls a \cola{global kernel option}: if a (network that has
+  this setting enabled) is set up, the global setting is turned on. However, it
+  is never turned off again, even if all (networks with this setting enabled)
+  are shut down afterwards.
+
+  To allow IP packet forwarding only between specific network interfaces, use a
+  \cola{firewall}. }
+
+\subsection{\texttt{IPMasquerade}}
+
+Can be \texttt{both | no | ipv4 | ipv6}. Defaults to \texttt{no}. If enabled,
+packets forwarded from the network interface will appear as coming from the
+localhost. If enabled, this sets the \texttt{IPForward} option accordingly.
+
+\subsection{IPv6 RA-related}
+
+Under the network section, there's a \texttt{IPV6AcceptRA= true | false} option.
+\colz{
+  The default \texttt{true}, unless the device is bridge or when IP forwarding is
+  enabled.
+}
+
+When enabled, you might want to configure the \texttt{[IPv6AcceptRA]} section:
+
+
