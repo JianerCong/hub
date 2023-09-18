@@ -709,7 +709,9 @@ And because we have set the forwarders, we can also do:
 #+begin_src bash
   # Use SSL to generate CA
   sudo mkdir /etc/ssl/demoCA
-  sudo mkdir /etc/ssl/demoCA/certs
+  cd /etc/ssl/demoCA
+  # Create the required folders
+  sudo mkdir certs private newcerts
 #+end_src
 
 2. Set the certificate serial number
@@ -720,9 +722,11 @@ And because we have set the forwarders, we can also do:
    #+end_src
 3. Next, we'll edit the existing ~/etc/ssl/openssl.cnf~ config file and navigate
    to the ~[CA_default]~ section. 
+   🦜 : Notice the $dir variable, by default it uses relative path, change that
+   to absolute path.
    #+begin_src conf
      [ CA_default ]
-     dir             = ./demoCA              # Where everything is kept
+     dir             = /etc/ssl/demoCA              # Where everything is kept
      certs           = $dir/certs            # Where the issued certs are kept
      crl_dir         = $dir/crl              # Where the issued crl are kept
      database        = $dir/index.txt        # database index file.
@@ -765,15 +769,15 @@ And because we have set the forwarders, we can also do:
 #+end_src
 5. openssl key gen and create a CSR
 #+begin_src bash
+  cd ~
   # generate a private key using the P-256 curve
   openssl genpkey -algorithm EC -out mykey.pem \
           -pkeyopt ec_paramgen_curve:P-256 \
           -pkeyopt ec_param_enc:named_curve
 
   # generate a CSR using the private key
-  openssl req -newkey ec \
-          -pkeyopt ec_paramgen_curve:P-256 \
-          mykey.pem -out mycsr.pem
+  # man openssl-req
+  openssl req -new -key mykey.pem -out mycsr.pem
 #+end_src
 
 🦜 : What curves are available in openssl?
@@ -783,11 +787,11 @@ the ones supported by most browsers.
 
 6. Sign the CSR
 #+begin_src bash
-    # sign the CSR using the CA private key
-  openssl ca -in mycsr.pem -out mycert.pem -config openssl.cnf
+  # sign the CSR using the CA private key
+  sudo openssl ca -in mycsr.pem -out mycert.pem -config /etc/ssl/openssl.cnf
 
   # see the certificate
-  cat /etc/ssl/certs/mycert.pem
+  cat mycert.pem
 
   # see the incremented serial number
   cat /etc/ssl/demoCA/serial
