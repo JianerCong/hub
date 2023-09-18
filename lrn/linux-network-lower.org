@@ -705,6 +705,7 @@ And because we have set the forwarders, we can also do:
   dig @localhost +short www.google.com
 #+end_src
 *** CA
+**** make CA
 1. create a location for the CA
 #+begin_src bash
   # Use SSL to generate CA
@@ -797,7 +798,35 @@ the ones supported by most browsers.
   cat /etc/ssl/demoCA/serial
   cat /etc/ssl/demoCA/index.txt
 #+end_src
-             
+**** SSL server and client
+
+#+begin_src python
+  import socket
+  import ssl
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  context.load_cert_chain('mycert.pem', 'mykey.pem')
+
+  with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+      sock.bind(('127.0.0.1', 7777))
+      sock.listen(5)
+      with context.wrap_socket(sock, server_side=True) as ssock:
+          conn, addr = ssock.accept()
+#+end_src
+
+#+begin_src python
+  import socket
+  import ssl
+
+  # PROTOCOL_TLS_CLIENT requires valid cert chain and hostname
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+  context.load_verify_locations('/etc/ssl/demoCA/cacert.pem')
+  
+  with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+      with context.wrap_socket(sock, server_hostname='cccccje') as ssock:
+          print(ssock.version())
+#+end_src
+
+
 *** network interface
   Network interfaces usually have names that indicate the kind of hardware
   underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is
