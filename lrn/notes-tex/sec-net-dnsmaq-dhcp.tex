@@ -70,10 +70,13 @@
   \cSay{
     For IPv6, the mode may be some combination of
     \begin{enumerate}
-    \item \texttt{slaac} \colz{stateless address autoconfiguration},
-    \item \texttt{ra-only} \colz{router advertisement only},
+    \item \texttt{slaac} \colz{set the \texttt{A} bit in the RA (addresses
+        available via DHCP).When used with a DHCP range or static DHCP address
+        this results in the client having \cola{both a SLAAC and a
+          DHCP-assigned} address.},
+    \item \texttt{ra-only} \colz{router advertisement only, no DHCP},
     \item \texttt{ra-names} \colz{router advertisement plus names from DNS}.
-    \item \texttt{ra-stateless} \colz{address from SLAAC and others from DHCP}.
+    \item \texttt{ra-stateless} \colz{set \texttt{A,O} bits in RA. address from SLAAC and others from DHCP}.
     \item \texttt{ra-advrouter} \colz{enables a mode where router address(es)rather
         than prefix(es) are included in the advertisements.}
     \item \texttt{off-link} \colz{

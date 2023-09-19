@@ -2,7 +2,7 @@
 % \documentclass[dvipsnames]{ctexart}
 
 
-\title{Ansible}
+\title{Linux Network}
 \input{h}
 \input{h-says}
 
@@ -24,44 +24,20 @@
 % 🦜 : It looks like this two must be after the \maketitle
 \newcolumntype{s}{>{\hsize=.2\hsize}X}
 \newcolumntype{c}{>{\hsize=.2\hsize \centering\arraybackslash}X}
-
-\section{Concepts}
-
-\begin{enumerate}
-\item \cola{Playbooks}: \colz{a list of \cola{Plays}.}
-  \begin{enumerate}
-  \item \cola{Plays}: \colz{They contain \cola{an ordered list of Tasks,Vriables
-        and Roles}. Play maps hosts to tasks.
-    }
-  \item \cola{Roles}: \colz{A limited distribution of reusable Ansible
-      code.(tasks,handlers, variables, plugins, templates and files) for use
-      inside of a Play.
-
-      To use any Role resource, the Role itself must be imported into the Play.
-    }
-  \item \cola{Tasks}: \colz{The definition of an ``action'' to be applied to the
-      managed host. Tasks must always be contained in a Play, directly or
-      indirectly (Role, or imported task list file). You can execute a single task
-      once with an ad hoc command using \texttt{ansible} or
-      \texttt{ansible-console} (both create a virtual Play).
-    }
-  \item \cola{Handlers}: \colz{A special form of a Task, that only executes when
-      notified by a previous task which resulted in a ``changed'' status.}
-  \end{enumerate}
-\item Modules: \colz{The code that Ansible copied to and executes on each
-    managed code (when needed) to accomplish the action defined in each Task.
-    Each module has a particular use, such as:
-    \begin{itemize}
-    \item administering users on a specific type of database 
-    \item managing VLAN interfaces on a specific type of network device.
-    \end{itemize}
-
-    You can invoke a single module with a task, or invoke several different
-    modules in a playbook. Ansible modules are grouped in \cola{collections}.
-    For example, \texttt{command} is a module in the \texttt{ansible.builtin}
-    collection. So you can do something like 
-    }
-\end{enumerate}
+% \input{sec-net-mac-addr}
+% \input{sec-net-ports}
+% \input{sec-net-dns}
+% \input{sec-net-dns2}
+% \input{sec-net-dns-dig}
+% \input{sec-net-dns-update}
+\newcommand{\dmq}{\texttt{dnsmasq}}
+\input{sec-net-dnsmaq}
+\input{sec-net-dnsmaq-dhcp}
+% \input{sec-net-ndp}
+% \input{sec-net-dhcp}
+% \input{sec-net-slaac}
+% \input{sec-net-addr}
+% \input{sec-net-sysd}
 
 \end{document}
 
