@@ -53,6 +53,10 @@ turn off your network proxy
   ping fe80::1d36:67d4:9bdf:5ef5%enx34298f10a60e    # OK
   ping fe80::1d36:67d4:9bdf:5ef5    # No, interface not given
 #+end_src
+
+🦜 : I feels like this is case because link-local addresses are only unique on
+links, so the interface name must be specified. If you are pinging something
+like a site-local address (fec0::123) or a global addreess (2000:)
 **** listening port
 #+begin_src bash
   sudo lsof -i -P -n | grep LISTEN
@@ -262,38 +266,7 @@ in. To enable STP on a bridge, use:
 
 #+end_src
 
-*** ipv6
-  Each host has at least two ipv6 address: 
-       _global unicast address_
-       _the link local address(for local network)_
-
-  Link-local addresses always have an fe80::/10 prefix,followed by an all-zero
-  54-bit network ID, and end with a 64-bit interface ID.
-
-  fe80 = 1111 1110 1000 0000
-  #      f    e    8    0
-  #      ---- ---- -| <- 🦜 : masked to here
-
-  🦜 : Emmm.. Make sense. But what are link-local addresses?
-
-  🐢 : They are addresses that is automatically configured on any interface that
-       uses the link-local prefix FE80:/10 and the interface ID. They are not
-       necessarily bound to the MAC address. (They can also be manually configured).
-       These addresses refer only to a *particular physical link* and are used for
-       addresses on a *single link* for purposes such as *automatic address
-       configuration* and *neighbor discovery*.
-
-       _Routers do not forward datagram with these addresses._ All IPv6 enabled
-       interfaces have a link-local address.
-
-   🦜 : So it's kinda like an address for the interface ?
-
-   🐢 : Not quite. They are just, well, link-local. Each interface usually has a
-   link-local address and a global address.
-
-
-The result is that ~a link-local address will be in the fe80::/64 subnet~.
-
+*** ipv6 global
   Glocal unicast addresses have prefixes 2000::/3. Because the first byte starts
   with 001 with this prefix, that byte can be completed as 0010 or 0011. As a
   result, ~a global unicast address always starts with 2 or 3~.
@@ -361,6 +334,12 @@ Change in ~config.h~
   #      define LEASEFILE "/home/me/tmp/dnsmasq.leases"
   #      define RUNFILE "/home/me/tmp/dnsmasq.pid"
 #+end_src
+
+1. Give your eth interface a "site-local" static ipv6 address, (such as
+   fec0:1::1/64). 🦜 : Because DHCPv6 needs to know the prefix of the network,
+   and it must not come from the link-local address (fe80::).
+
+2. Make and run the following: 
 #+begin_src bash
   make                            # make the executable in src
   ./src/dnsmasq --version         # check the version
@@ -368,17 +347,11 @@ Change in ~config.h~
   # 1. try the simplest
   iface=enx34298f10a60e
   sudo ./src/dnsmasq --no-daemon \
-       --interface $iface \
-       --log-dhcp \
        --port=0 \
-       --dhcp-range=::,constructor:$iface,slaac,64,12h
+       --log-dhcp \
+       --enable-ra \
+       --dhcp-range=::1,::ff,constructor:$iface,slaac
 
-  # 2. run the dhcpv6 service
-  sudo ./src/dnsmasq --no-daemon \
-                --interface $iface \
-                --log-dhcp \
-                --port=0 \
-                --dhcp-range=fe80:1::1,fe80:1::400,slaac,64,12h
   # --no-daemon : run in debug-mode
   # --port : disable DNS
   # --interface : listens only on this interface

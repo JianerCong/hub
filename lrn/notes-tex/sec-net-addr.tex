@@ -124,7 +124,7 @@ in \cref{tab:fp}:
 \begin{table}[h]
   \centering
   \begin{tabularx}{1.0\linewidth}{XXX}
-    Allocation& Prefix & Fraction of Address Space \\
+    \cola{Allocation} & \cola{Prefix} & \cola{Fraction of Address Space} \\
     \hline
     Reserved & \texttt{0000 0000 (00)} & 1/256\\
     Unassigned & \texttt{0000 0001 (01)} & 1/256\\
@@ -133,6 +133,7 @@ in \cref{tab:fp}:
     Link-Local Unicast Addresses & \texttt{1111 1110 10 (FE80)} & 1/1024\\
     Site-Local Unicast Addresses & \texttt{1111 1110 11 (FEC0)} & 1/1024\\
     Multicast Addresses & \texttt{1111 1111 (FF)} & 1/256\\
+    Global-unicast Addresses & \texttt{001 (2)} & 1/8 \\
   \end{tabularx}
   \caption{The Format Prefix}
   \label{tab:fp}
