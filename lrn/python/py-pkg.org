@@ -585,6 +585,40 @@ r.word(starts_with="ru", word_max_length=10, include_parts_of_speech=["verbs"])
   h = b.hex()
   h[:8] # 'cdcd77c0' the first 4 bytes used as function selector
 #+end_src
+
+** jinja2
+pip install Jinja2
+#+begin_src python
+import os # for mkdir
+import shutil # for rmtree
+
+from jinja2 import Environment, select_autoescape, FileSystemLoader
+
+def test_basic_jinja():
+    # make the ./tmp folder to store templates
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
+
+    env = Environment(
+        # load templates from the ./tmp folder
+        loader=FileSystemLoader('tmp'),
+        autoescape=select_autoescape()
+    )
+
+    # write a template hi.txt to the ./tmp folder
+    with open('tmp/hi.txt', 'w') as f:
+        f.write('Hi {{ name }}')
+
+    # load the template
+    template = env.get_template('hi.txt')
+    # render it with variable name=aaa
+
+    assert template.render(name='aaa') == 'Hi aaa'
+
+    # remove the ./tmp folder recursively
+    shutil.rmtree('tmp')
+ 
+#+end_src
 * End
 
 # Local Variables:

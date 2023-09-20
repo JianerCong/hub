@@ -146,6 +146,7 @@ group, for orphan nodes).
   ansible all -i my-first-inventory.yaml -m ping
 #+end_src
 
+
 ** OpenStack Ansible
 *** all in one [for testing]
 🦜 : All the following commands should be run with ~sodo~.
@@ -240,7 +241,7 @@ trusted by the client host. To fix this:
    #+end_src
  
 
-** openstack client
+** Openstack client
 *** install
 #+begin_src bash
   pip install python-openstackclient
