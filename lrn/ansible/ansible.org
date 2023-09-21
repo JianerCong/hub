@@ -166,10 +166,10 @@ index_url = https://pip.example.org/simple
 
 Then in /etc/openstack_deploy/user_variables.yml:
 #+begin_src yaml
-# Copy these files from the host into the containers
-lxc_container_cache_files_from_host:
-  - /etc/pip.conf
-  - /root/.pydistutils.cfg 
+  # Copy these files from the host into the containers
+  lxc_container_cache_files_from_host:
+    - /etc/pip.conf
+    - /root/.pydistutils.cfg 
 #+end_src
 **** lxc
 🦜 : in the ~lxc_hosts~ role, I see
