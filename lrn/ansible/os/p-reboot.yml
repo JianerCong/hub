@@ -4,10 +4,6 @@
    - name: Ping my hosts
      ansible.builtin.ping:
 
-   - name: Print message
-     ansible.builtin.debug:
-       msg: "{{ ansible_host }}"
-
    - name: Reboot
      ansible.builtin.reboot:
        msg: "Rebooting the system"

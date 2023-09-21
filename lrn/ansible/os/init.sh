@@ -2,13 +2,13 @@
 pk='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhyRIycklSutg/Y8XsC6sMipaPXVfl7PpwEwZNA6h5t me@mypc'
 echo $pk >> /home/me/.ssh/authorized_keys
 
-# 2. set the http_proxy in /etc/environment
+# 2. set the http_proxy in /etc/environment --------------------------------------------------
 sudo bash -c "echo 'http_proxy=http://[fec0::1]:7890' >> /etc/environment"
 sudo bash -c "echo 'https_proxy=http://[fec0::1]:7890' >> /etc/environment"
 sudo bash -c "echo 'no_proxy=localhost' >> /etc/environment"
 
-touch ~/.bash_aliases
-echo 'sudo ip -6 addr add fec0::2/64 dev enp4s0' >> ~/.bash_aliases
+# 🦜 : see conf-ipv6.sh
+
 
 # 🦜 : remember to add the
 #     - 'IP-CIDR6,fec1::/10,DIRECT'
