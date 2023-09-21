@@ -148,6 +148,36 @@ group, for orphan nodes).
 
 
 ** OpenStack Ansible
+*** set mirror
+**** pypi
+On all hosts:
+
+/etc/pip.conf 
+#+begin_src conf
+[global]
+index-url = http://pip.example.org/simple
+#+end_src
+
+/root/.pydistutils.cfg 
+#+begin_src conf
+[easy_install]
+index_url = https://pip.example.org/simple   
+#+end_src
+
+Then in /etc/openstack_deploy/user_variables.yml:
+#+begin_src yaml
+# Copy these files from the host into the containers
+lxc_container_cache_files_from_host:
+  - /etc/pip.conf
+  - /root/.pydistutils.cfg 
+#+end_src
+**** lxc
+🦜 : in the ~lxc_hosts~ role, I see
+#+begin_src yaml
+lxc_ubuntu_mirror: "{{ (ansible_facts['architecture'] == 'x86_64') | ternary('http://archive.ubuntu.com/ubuntu', 'http://ports.ubuntu.com/ubuntu-ports') }}"
+lxc_apt_mirror: "{{ (ansible_facts['distribution'] == 'Ubuntu') | ternary(lxc_ubuntu_mirror, 'http://deb.debian.org/debian') }}" 
+#+end_src
+
 *** all in one [for testing]
 🦜 : All the following commands should be run with ~sodo~.
 1. Prepare the host

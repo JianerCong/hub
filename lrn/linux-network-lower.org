@@ -76,7 +76,11 @@ like a site-local address (fec0::123) or a global addreess (2000:)
   # -p process
   # -a all (listening and non-listening)
 #+end_src
-**** see address
+**** set address
+#+begin_src bash
+  # set the ipv6 address on en0 to fec0::2
+  sudo ip -6 addr add fec0::2/64 dev en0
+#+end_src
 **** local host
   lo: ::1 (v6) or 127.0.0.1 is your own machine
 **** see addresses
