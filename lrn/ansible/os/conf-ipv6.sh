@@ -7,8 +7,6 @@ network:
   version: 2
   ethernets:
     $x:
-      dhcp4: false
-      dhcp6: false
       addresses: ['$a1']
 "
 f=/etc/netplan/10-my-ip.yml
