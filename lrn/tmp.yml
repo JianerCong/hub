@@ -1,0 +1,11 @@
+network:
+  ethernets:
+    my-dev0:
+      match:
+        macaddress: 11:22:33:44:55:66
+      address: [10.0.0.3/8, "fec1::2/64"]
+      set-name: en0
+      nameservers:
+        search: [home,lab] # serch domains
+        addresses: [8.8.8.8, "FEDC::1"]
+    

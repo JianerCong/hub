@@ -241,12 +241,10 @@ done
 #+END_SRC
 ** HERE DOC
 #+BEGIN_SRC bash
-D=$(date)
-cat <<EOF
-Today is $D
-
-🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸
-EOF
+  # write 'aaa' to hi.txt
+  cat << EOF > hi.txt
+  aaa
+  EOF
 #+END_SRC
 ** function
 *** arguments

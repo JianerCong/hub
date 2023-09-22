@@ -1,0 +1,46 @@
+** netplan
+*** hi
+#+begin_src bash
+  x='$(cat <<EOF
+  network:
+    ethernets:
+      my-dev0:
+        addresses: ["fec1::2/64"]
+        match:
+            macaddress: 52:54:00:ad:0a:28
+
+  EOF
+   )'
+  f=/etc/netplan/51-netcfg.yaml
+  sudo bash -c "echo \"$x\" > $f"
+
+  sudo netplan apply
+#+end_src
+*** basic: set static ip
+#+begin_src yaml
+  network:
+    ethernets:
+      my-dev0:
+        match:
+          name: en*
+        addresses: [10.0.0.3/8, "fec1::2/64"]
+#+end_src
+*** add nameserver, change iface name
+#+begin_src yaml
+network:
+  ethernets:
+    my-dev0:
+      match:
+        macaddress: 11:22:33:44:55:66
+      addresses: [10.0.0.3/8, "fec1::2/64"]
+      set-name: en0
+      nameservers:
+        search: [home,lab] # serch domains
+        addresses: [8.8.8.8, "FEDC::1"]
+        #+end_src
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "yaml"
+# fill-column: 80
+# End:
