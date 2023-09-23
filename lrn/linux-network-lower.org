@@ -27,7 +27,8 @@
 + 1. Physical :: Cables, Wi-Fi, Media Converters
 
 ** Lower
-*** cable connect two linux
+*** Q/A and How-to
+**** cable connect two linux
 On machine 1:
 
 Wired setting :
@@ -44,6 +45,190 @@ router = ""
 
 Now ping each other
 https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-ethernet-without-a-router?noredirect=1&lq=1
+**** ? My exe can't bound to port?
+turn off your network proxy
+**** ? cannot ping ipv6
+#+begin_src bash
+  ping fe80::1d36:67d4:9bdf:5ef5 -I enx34298f10a60e # OK
+  ping fe80::1d36:67d4:9bdf:5ef5%enx34298f10a60e    # OK
+  ping fe80::1d36:67d4:9bdf:5ef5    # No, interface not given
+#+end_src
+
+🦜 : I feels like this is case because link-local addresses are only unique on
+links, so the interface name must be specified. If you are pinging something
+like a site-local address (fec0::123) or a global addreess (2000:)
+**** listening port
+#+begin_src bash
+  sudo lsof -i -P -n | grep LISTEN
+  sudo ss -tulpn | grep LISTEN
+  sudo ss -tlp
+  # ss: socket analysis
+  # -t: display TCP ,-u: display UDP, -l: only listening sockets
+  # -p: show processes using socket, 
+  # -n: numeric Do not try to resolve service names. Show exact bandwidth values.
+#+end_src
+**** see all connections
+#+begin_src bash
+  sudo netstat -tupn              # to outside world
+  # -t tcp
+  # -u udp
+  # -n numeric (no DNS)
+  # -p process
+  # -a all (listening and non-listening)
+#+end_src
+**** set address
+#+begin_src bash
+  # set the ipv6 address on en0 to fec0::2
+  sudo ip -6 addr add fec0::2/64 dev en0
+
+  # 🦜 : You can also add this to .bashrc
+  touch ~/.bash_aliases
+  echo 'sudo ip -6 addr add fec0::2/64 dev en0' >> ~/.bash_aliases
+
+#+end_src
+**** local host
+  lo: ::1 (v6) or 127.0.0.1 is your own machine
+**** see addresses
+  #+BEGIN_SRC bash
+    ip address show
+    # briefly show the interfaces
+    ip -br a
+    ip -brief a
+    # show in json (pretty)
+    ip -br -j -p a
+  #+END_SRC
+  Among many out-put we see that 192.168.1.12 is our ipv4 address.
+  #+BEGIN_SRC 
+  3: enx000ec6b5dbf8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+      link/ether 00:0e:c6:b5:db:f8 brd ff:ff:ff:ff:ff:ff
+      inet 192.168.1.12/24 brd 192.168.1.255 scope global noprefixroute enx000ec6b5dbf8
+         valid_lft forever preferred_lft forever
+
+  #+END_SRC
+**** ? remove address (When you have two ipv6 link-local address)
+
+🐢 : You usually have many link-local address for an interface. That's fine. *If
+you remove the automatically link-local address, it will generate another
+one....So don't bother removing it....*
+
+🦜 If you manually configure an IPv6 address and then you usually will end up
+with two addresses on the same interface. (an automatically generated one and
+your configured one).
+
+To remove this one of them, do:
+#+begin_src bash
+    a=fe80::5828:6f2b:f6c2:a4e5/64
+    e=enx34298f10a60e
+    sudo ip addr del $a dev $e
+#+end_src
+Removing address should only be done in IPv6.
+
+**** see/set router?
+     #+BEGIN_SRC bash
+       ip route
+       ip r
+     #+END_SRC
+
+     Each line is a _routing rule_. The second line says the directly reachable
+     local subnet(all hosts within 169.254.0.0/16 can be reached dirrectly). 
+
+  The first line, says where we go to if the address is not listed below, in which
+  case, is our router.
+
+  #+BEGIN_SRC bash
+  default via 192.168.1.1 dev enx000ec6b5dbf8 proto dhcp metric 100 
+  169.254.0.0/16 dev enx000ec6b5dbf8 scope link metric 1000 
+  192.168.1.0/24 dev enx000ec6b5dbf8 proto kernel scope link src 192.168.1.12 metric 100
+  #+END_SRC
+
+  🐢 : To set router:
+
+  #+begin_src bash
+    # add router
+    sudo nmcli connection modify "Wired connection 1" +ipv4.routes "10.10.11.0/24 192.168.122.11"
+    # save
+    sudo nmcli connection up "Wired connection 1"
+  #+end_src
+
+  🐢 : You can also use the ip command:
+  #+begin_src bash
+    sudo ip route add 10.10.10.0/24 via 192.168.122.10
+  #+end_src
+
+  but this won't survive a reboot.
+  
+**** see my wifi/eth name, and configure my static address (needed for each server).
+🦜 : We need to do the following for each server.
+
+#+begin_src bash
+  sudo nmcli connection show
+
+  sudo nmcli connection modify "Wired connection 2" ipv4.addresses 10.0.0.1/24
+  sudo nmcli connection modify "Wired connection 2" ipv4.gateway 10.0.0.1
+  sudo nmcli connection modify "Wired connection 1" ipv4.dns "8.8.8.8"
+  # 🦜 : Here we used shorthand :
+  sudo nmcli con mod "Wired connection 1" ipv4.method manual
+
+  # save changes
+  sudo nmcli connection up "Wired connection 1"
+#+end_src
+
+🐢 : In fact, if you prefer to edit the file, you can do so in
+
+1. /etc/resolv.conf:
+
+   #+begin_quote
+   nameserver 8.8.8.8
+   #+end_quote
+   🐢 : ^^ use google's DNS server. But usually you do not want to do this.
+
+**** see my neibour over the network
+#+begin_src bash
+# Who are my known neibor
+ip -4 neigh
+#+end_src
+**** turn interface on and off
+#+begin_src bash
+  i=enx34298f10a60e
+  # turn off
+  sudo ip link set $i down
+  # turn on
+  sudo ip link set $i up
+#+end_src
+
+🐢 : If you are doing this remotely, don't cut off the branch that you are
+sitting on.
+**** Change the frame size.
+
+🐢 : An increasingly popular operation is setting the *Message Transfer
+Unit(MTU)*. This is the size of the largest *Protocol Datagram Unit(PDU, a.k.a.
+frame)* that the interface will send/receive. On the Ethernet, the default is
+1500 bytes.
+
+🦜 : Why do we need to change this?
+
+🐢 : Because when dealing with storage traffic, in particular *iSCSI*, large
+frame sizes are desired so that the packet size can accommodate more data. In
+these cases, the MTU is usually set to 9000 bytes (often called a jumbo packet).
+Usually these are used when the network has a speed of 1 Gbps or faster.
+
+🦜 : Oh, I see...
+
+🐢 : There're other cases. For example, some applications will set the *DF(Don't
+Fragment)* bit in their traffic. In that case, when an application that expect,
+say, 1000-byte packets, receives a 1500-byte packets with DF, it will simply
+fail, and often without useful error messages.
+
+🦜 : Okay. So how do we set that?
+
+🐢 : We need to set a particular variable called "802-3-ethernet.mtu":
+
+#+begin_src bash
+  c="Wired connection 1"
+  sudo nmcli con mod $c 802-3-ethernet.mtu 9000
+  sudo nmcli connection up $c     # save changes
+#+end_src
+
 *** bridge
 **** create and bridge
 #+begin_src bash
@@ -90,185 +275,7 @@ in. To enable STP on a bridge, use:
 
 #+end_src
 
-*** ? My exe can't bound to port?
-turn off your network proxy
-*** listening port
-#+begin_src bash
-  sudo lsof -i -P -n | grep LISTEN
-  sudo ss -tulpn | grep LISTEN
-  sudo ss -tlp
-  # ss: socket analysis
-  # -t: display TCP ,-u: display UDP, -l: only listening sockets
-  # -p: show processes using socket, 
-  # -n: numeric Do not try to resolve service names. Show exact bandwidth values.
-#+end_src
-*** see all connections
-#+begin_src bash
-  sudo netstat -tupn              # to outside world
-  # -t tcp
-  # -u udp
-  # -n numeric (no DNS)
-  # -p process
-  # -a all (listening and non-listening)
-#+end_src
-*** see address
-**** local host
-  lo: ::1 (v6) or 127.0.0.1 is your own machine
-**** see addresses
-  #+BEGIN_SRC bash
-    ip address show
-    # briefly show the interfaces
-    ip -br a
-    ip -brief a
-    # show in json (pretty)
-    ip -br -j -p a
-  #+END_SRC
-  Among many out-put we see that 192.168.1.12 is our ipv4 address.
-  #+BEGIN_SRC 
-  3: enx000ec6b5dbf8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
-      link/ether 00:0e:c6:b5:db:f8 brd ff:ff:ff:ff:ff:ff
-      inet 192.168.1.12/24 brd 192.168.1.255 scope global noprefixroute enx000ec6b5dbf8
-         valid_lft forever preferred_lft forever
-
-  #+END_SRC
-*** see/set router?
-     #+BEGIN_SRC bash
-       ip route
-       ip r
-     #+END_SRC
-
-     Each line is a _routing rule_. The second line says the directly reachable
-     local subnet(all hosts within 169.254.0.0/16 can be reached dirrectly). 
-
-  The first line, says where we go to if the address is not listed below, in which
-  case, is our router.
-
-  #+BEGIN_SRC bash
-  default via 192.168.1.1 dev enx000ec6b5dbf8 proto dhcp metric 100 
-  169.254.0.0/16 dev enx000ec6b5dbf8 scope link metric 1000 
-  192.168.1.0/24 dev enx000ec6b5dbf8 proto kernel scope link src 192.168.1.12 metric 100
-  #+END_SRC
-
-  🐢 : To set router:
-
-  #+begin_src bash
-    # add router
-    sudo nmcli connection modify "Wired connection 1" +ipv4.routes "10.10.11.0/24 192.168.122.11"
-    # save
-    sudo nmcli connection up "Wired connection 1"
-  #+end_src
-
-  🐢 : You can also use the ip command:
-  #+begin_src bash
-    sudo ip route add 10.10.10.0/24 via 192.168.122.10
-  #+end_src
-
-  but this won't survive a reboot.
-  
-*** see my wifi/eth name, and configure my static address (needed for each server).
-🦜 : We need to do the following for each server.
-
-#+begin_src bash
-  sudo nmcli connection show
-
-  sudo nmcli connection modify "Wired connection 2" ipv4.addresses 10.0.0.1/24
-  sudo nmcli connection modify "Wired connection 2" ipv4.gateway 10.0.0.1
-  sudo nmcli connection modify "Wired connection 1" ipv4.dns "8.8.8.8"
-  # 🦜 : Here we used shorthand :
-  sudo nmcli con mod "Wired connection 1" ipv4.method manual
-
-  # save changes
-  sudo nmcli connection up "Wired connection 1"
-#+end_src
-
-🐢 : In fact, if you prefer to edit the file, you can do so in
-
-1. /etc/resolv.conf:
-
-   #+begin_quote
-   nameserver 8.8.8.8
-   #+end_quote
-   🐢 : ^^ use google's DNS server. But usually you do not want to do this.
-
-*** see my neibour over the network
-#+begin_src bash
-# Who are my known neibor
-ip -4 neigh
-#+end_src
-*** turn interface on and off
-#+begin_src bash
-  i=ens33
-  # turn off
-  sudo ip link set $i down
-  # turn on
-  sudo ip link set $i up
-#+end_src
-
-🐢 : If you are doing this remotely, don't cut off the branch that you are
-sitting on.
-*** Change the frame size.
-
-🐢 : An increasingly popular operation is setting the *Message Transfer
-Unit(MTU)*. This is the size of the largest *Protocol Datagram Unit(PDU, a.k.a.
-frame)* that the interface will send/receive. On the Ethernet, the default is
-1500 bytes.
-
-🦜 : Why do we need to change this?
-
-🐢 : Because when dealing with storage traffic, in particular *iSCSI*, large
-frame sizes are desired so that the packet size can accommodate more data. In
-these cases, the MTU is usually set to 9000 bytes (often called a jumbo packet).
-Usually these are used when the network has a speed of 1 Gbps or faster.
-
-🦜 : Oh, I see...
-
-🐢 : There're other cases. For example, some applications will set the *DF(Don't
-Fragment)* bit in their traffic. In that case, when an application that expect,
-say, 1000-byte packets, receives a 1500-byte packets with DF, it will simply
-fail, and often without useful error messages.
-
-🦜 : Okay. So how do we set that?
-
-🐢 : We need to set a particular variable called "802-3-ethernet.mtu":
-
-#+begin_src bash
-  c="Wired connection 1"
-  sudo nmcli con mod $c 802-3-ethernet.mtu 9000
-  sudo nmcli connection up $c     # save changes
-#+end_src
-
-*** ipv6
-  Each host has at least two ipv6 address: 
-       _global unicast address_
-       _the link local address(for local network)_
-
-  Link-local addresses always have an fe80::/10 prefix,followed by an all-zero
-  54-bit network ID, and end with a 64-bit interface ID.
-
-  fe80 = 1111 1110 1000 0000
-  #      f    e    8    0
-  #      ---- ---- -| <- 🦜 : masked to here
-
-  🦜 : Emmm.. Make sense. But what are link-local addresses?
-
-  🐢 : They are addresses that is automatically configured on any interface that
-       uses the link-local prefix FE80:/10 and the interface ID. They are not
-       necessarily bound to the MAC address. (They can also be manually configured).
-       These addresses refer only to a *particular physical link* and are used for
-       addresses on a *single link* for purposes such as *automatic address
-       configuration* and *neighbor discovery*.
-
-       _Routers do not forward datagram with these addresses._ All IPv6 enabled
-       interfaces have a link-local address.
-
-   🦜 : So it's kinda like an address for the interface ?
-
-   🐢 : Not quite. They are just, well, link-local. Each interface usually has a
-   link-local address and a global address.
-
-
-The result is that ~a link-local address will be in the fe80::/64 subnet~.
-
+*** ipv6 global
   Glocal unicast addresses have prefixes 2000::/3. Because the first byte starts
   with 001 with this prefix, that byte can be completed as 0010 or 0011. As a
   result, ~a global unicast address always starts with 2 or 3~.
@@ -330,6 +337,36 @@ The result is that ~a link-local address will be in the fe80::/64 subnet~.
   # use Quad 9's DNS server (which seems to be the only one that's not slow.)
   dig @9.9.9.9 example.com AAAA +https
 #+end_src
+**** dnsmasq
+Change in ~config.h~
+#+begin_src c
+  #      define LEASEFILE "/home/me/tmp/dnsmasq.leases"
+  #      define RUNFILE "/home/me/tmp/dnsmasq.pid"
+#+end_src
+
+1. Give your eth interface a "site-local" static ipv6 address, (such as
+   fec0:1::1/64). 🦜 : Because DHCPv6 needs to know the prefix of the network,
+   and it must not come from the link-local address (fe80::).
+
+2. Make and run the following: 
+#+begin_src bash
+  make                            # make the executable in src
+  ./src/dnsmasq --version         # check the version
+
+  # 1. try the simplest
+  iface=enx34298f10a60e
+  sudo ./src/dnsmasq --no-daemon \
+       --port=0 \
+       --log-dhcp \
+       --enable-ra \
+       --dhcp-range=::1,::ff,constructor:$iface,slaac
+
+  # --no-daemon : run in debug-mode
+  # --port : disable DNS
+  # --interface : listens only on this interface
+  # --dhcp-range : range of IPv6 addresses to be assigned
+
+#+end_src
 
 *** Transport layer (Transmission Control Pro, User Datagram Pro)
   transport layer bridge between the gap between the raw packets and your app.
@@ -380,7 +417,6 @@ The result is that ~a link-local address will be in the fe80::/64 subnet~.
   ipv6 also has DHCP called DHCPv6. But, more often we use ~stateless config~
   which is ~decentralized~ the host ~does not~ need to store any info such as the
   the lease info.
-
 **** How it works
   1. The host self-generate a link-local address: on the fe80::/64. It can
      boardcast this subnet to check that the address is unique in LAN.
@@ -705,11 +741,14 @@ And because we have set the forwarders, we can also do:
   dig @localhost +short www.google.com
 #+end_src
 *** CA
+**** make CA
 1. create a location for the CA
 #+begin_src bash
   # Use SSL to generate CA
   sudo mkdir /etc/ssl/demoCA
-  sudo mkdir /etc/ssl/demoCA/certs
+  cd /etc/ssl/demoCA
+  # Create the required folders
+  sudo mkdir certs private newcerts
 #+end_src
 
 2. Set the certificate serial number
@@ -720,9 +759,11 @@ And because we have set the forwarders, we can also do:
    #+end_src
 3. Next, we'll edit the existing ~/etc/ssl/openssl.cnf~ config file and navigate
    to the ~[CA_default]~ section. 
+   🦜 : Notice the $dir variable, by default it uses relative path, change that
+   to absolute path.
    #+begin_src conf
      [ CA_default ]
-     dir             = ./demoCA              # Where everything is kept
+     dir             = /etc/ssl/demoCA              # Where everything is kept
      certs           = $dir/certs            # Where the issued certs are kept
      crl_dir         = $dir/crl              # Where the issued crl are kept
      database        = $dir/index.txt        # database index file.
@@ -765,15 +806,15 @@ And because we have set the forwarders, we can also do:
 #+end_src
 5. openssl key gen and create a CSR
 #+begin_src bash
+  cd ~
   # generate a private key using the P-256 curve
   openssl genpkey -algorithm EC -out mykey.pem \
           -pkeyopt ec_paramgen_curve:P-256 \
           -pkeyopt ec_param_enc:named_curve
 
   # generate a CSR using the private key
-  openssl req -newkey ec \
-          -pkeyopt ec_paramgen_curve:P-256 \
-          mykey.pem -out mycsr.pem
+  # man openssl-req
+  openssl req -new -key mykey.pem -out mycsr.pem
 #+end_src
 
 🦜 : What curves are available in openssl?
@@ -783,17 +824,45 @@ the ones supported by most browsers.
 
 6. Sign the CSR
 #+begin_src bash
-    # sign the CSR using the CA private key
-  openssl ca -in mycsr.pem -out mycert.pem -config openssl.cnf
+  # sign the CSR using the CA private key
+  sudo openssl ca -in mycsr.pem -out mycert.pem -config /etc/ssl/openssl.cnf
 
   # see the certificate
-  cat /etc/ssl/certs/mycert.pem
+  cat mycert.pem
 
   # see the incremented serial number
   cat /etc/ssl/demoCA/serial
   cat /etc/ssl/demoCA/index.txt
 #+end_src
-             
+**** SSL server and client
+
+#+begin_src python
+  import socket
+  import ssl
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  context.load_cert_chain('mycert.pem', 'mykey.pem')
+
+  with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+      sock.bind(('127.0.0.1', 7777))
+      sock.listen(5)
+      with context.wrap_socket(sock, server_side=True) as ssock:
+          conn, addr = ssock.accept()
+#+end_src
+
+#+begin_src python
+  import socket
+  import ssl
+
+  # PROTOCOL_TLS_CLIENT requires valid cert chain and hostname
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+  context.load_verify_locations('/etc/ssl/demoCA/cacert.pem')
+  
+  with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+      with context.wrap_socket(sock, server_hostname='cccccje') as ssock:
+          print(ssock.version())
+#+end_src
+
+
 *** network interface
   Network interfaces usually have names that indicate the kind of hardware
   underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is

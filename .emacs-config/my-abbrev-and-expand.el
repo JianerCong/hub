@@ -23,7 +23,7 @@
     ;; ("str" "string" )
     ("stru" "struct" )
     ("ifc" "interface")
-    ("ra" "⇒")
+    ("rta" "⇒")
     ;; regex
     ("xaz" "\\([A-Za-z0-9]+\\)" )
     ;; unicode

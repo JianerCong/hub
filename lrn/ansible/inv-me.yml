@@ -1,0 +1,6 @@
+my_vms:
+  hosts:
+    me:
+      ansible_host: localhost
+      ansible_connection: local
+      ansible_user: me

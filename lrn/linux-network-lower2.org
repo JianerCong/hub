@@ -1,0 +1,119 @@
+** netplan
+*** hi
+#+begin_src bash
+  x='$(cat <<EOF
+  network:
+    ethernets:
+      my-dev0:
+        addresses: ["fec1::2/64"]
+        match:
+            macaddress: 52:54:00:ad:0a:28
+
+  EOF
+   )'
+  f=/etc/netplan/51-netcfg.yaml
+  sudo bash -c "echo \"$x\" > $f"
+
+  sudo netplan apply
+#+end_src
+*** basic: set static ip
+#+begin_src yaml
+  network:
+    ethernets:
+      my-dev0:
+        match:
+          name: en*
+        addresses: [10.0.0.3/8, "fec1::2/64"]
+#+end_src
+*** add nameserver, change iface name
+#+begin_src yaml
+network:
+  ethernets:
+    my-dev0:
+      match:
+        macaddress: 11:22:33:44:55:66
+      addresses: [10.0.0.3/8, "fec1::2/64"]
+      set-name: en0
+      nameservers:
+        search: [home,lab] # serch domains
+        addresses: [8.8.8.8, "FEDC::1"]
+        #+end_src
+** nmcli (NetworkManager, alternative to systemd.network)
+nmcli [A] {B} [C] [D]
+
+  + A :: Options
+  + B :: help | general | networking | radio | connection | device | agent | monitor
+  + C :: command
+  + D :: arguments
+
+*** Options
+  + -p,--pretty
+  + -f,field f1,f2,...
+*** connections
+Network configs in nm are stored as 'connections'. 
+*** usage
+#+begin_src yaml
+# see status
+nmcli general status
+
+
+# is nm managing the network ?
+nmcli networking
+# let the nm get off duty
+nmcli networking off
+# let the nm get back to work
+nmcli networking on
+
+
+# --------------------------------------------------
+# see wifi and mobile broadband
+nmcli radio
+# turn on wifi
+nmcli radio wifi on
+# turn on mobile broadband
+nmcli radio wwan on
+
+
+#--------------------------------------------------
+# see the connection profiles
+nmcli connection show
+nmcli con show
+# see a connection
+nmcli con show "jyy"
+# turn a connection on
+nmcli con up "jyy"
+# modify a connection
+# nmcli con modify "jyy" <k1> <v1> <k2> <v2>
+nmcli con modify "jyy" ipv6.method auto
+nmcli con modify "jyy" remove ipv6.method
+
+# add a new profile
+# nmcli con add [save {yes | no}] <k1> <v1>,...
+nmcli con add \
+      save yes \
+      connection.type ethernet \
+      connection.id "my-eth1" \
+        connection.interface-name eth1 \
+        ipv6.addresses fec0::2/64
+
+# --------------------------------------------------
+# see the devices
+nmcli device status
+nmcli device show wlo1
+# turn up a device
+nmcli device set wlo1 managed yes
+# see the surrounding wifi
+nmcli device wifi list
+# connect to a wifi
+ssid="my-wifi"
+nmcli device wifi connect "$ssid" password "my-password"
+nmcli device wifi show-password
+# disconnect from a wifi
+nmcli device disconnect wlo1
+
+#+end_src
+* End
+# Local Variables:
+# org-what-lang-is-for: "yaml"
+# fill-column: 80
+# End:

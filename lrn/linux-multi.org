@@ -148,6 +148,20 @@ sudo /home/me/repo/build-multipass/bin/multipassd -V trace --logger stderr
   # copy files to the instance
   multipass transfer /home/me/hi.txt my-jammy:/home/ubuntu/hi.txt
   multipass transfer my-jammy:/home/ubuntu/hi.txt /home/me/hi.txt
+
+  # shutdown my-jammy
+  multipass delete my-jammy # move to trash
+  multipass recover my-jammy
+  multipass delete my-jammy # move to trash
+  multipass purge           # clear the trash
+
+  # delete permanet
+  multipass delete --purge my-jammy
+
+  # reboot the instance
+  multipass stop my-jammy
+  multipass start my-jammy
+
 #+end_src
 
 *** generate (optional) and add the ssh key
@@ -190,6 +204,42 @@ sudo /home/me/repo/build-multipass/bin/multipassd -V trace --logger stderr
   # 🦜 ssh into the vm
   ssh ubuntu@$vmip
 #+end_src
+*** configure static IPs
+1. new a bridge
+   #+begin_src bash
+     # 1. create a bridge named localbr with IP 10.13.31.1/24
+     n=localbr
+     nmcli connection add type bridge con-name $n ifname $n \
+           ipv4.method manual ipv4.addresses 10.13.31.1/24
+     # see it
+     ip -c -br addr show dev $n
+     # confirm that the bridge is available for multipass
+     multipass networks
+     # 2. launch an instance with a manual network
+     multipass launch --name test1 --network $n,mode=manual,mac="11:22:33:44:55:66"
+
+     # 3. configure the extra interface, note that its on the same subnet as our bridge
+     multipass exec -n test1 -- sudo bash 'cat << EOF > /etc/netplan/10-custom.yaml
+     network:
+         version: 2
+         ethernets:
+             extra0:
+                 dhcp4: no
+                 match:
+                     macaddress: "11::22::33::44::55::66"
+                 addresses: [10.13.31.13/24]
+     EOF'
+
+     # 4. apply the configuration
+     multipass exec --name test1 -- sudo netplan apply
+     # if you want to undo: use:
+     #   multipass exec --name test1 -- sudo netplan try
+
+     # 5. confirm that it works
+     multipass info test1
+     ping 10.13.31.13
+     multipass exec --name test1 -- ping 10.13.31.1
+   #+end_src
 
 *** Q/A
 **** Image hash mismatch ?

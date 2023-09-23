@@ -51,10 +51,205 @@ Selct the shapes
 + [;], S-[;] :: zoom-min/max
 + C-' :: show-hide grid
 + C-S-' :: snap to grid
-
+*** shape tool
+ + To select a vertex, click the vertex with the Selection tool. To add
+   vertices, Shift-click them.
+**** how to stop a path
+1. go back to the first vertex
+2. double-clicking the last vertex
+3. choosing Layer > Mask and Shape Path > Closed
+4. To leave the path open, activate a different tool
+5. [F2] tp deselect the path
+   
 *** mv
 + M-Pgup :: go 10 frames back
 + M-arrow :: move selected key-frames
 + M-S-arrow :: move selected key-frames * 10
 + M-S-PgUp :: move selected layers
 +  :: 
+
+** PS
+*** tutorial
+**** UI
++ Menu bar :: very top.
++ Options bar :: underneath the menu bar. *Options for the current tools*
++ Tools panel  :: left. tools for editing and creating images
++ Panels :: right. Color, Layers,.. find the full list of panels under the
+  Window menu.
++ Document window :: middle.
++ Close image :: File > Close
+**** basic command
++ Zoom :: [Z] 右拉放大左拉放小
++ Pan :: [H] ⇒ hand
++ Undo ::  C-z
+**** Change image size
+***** resize and image
++ Menu > Image > Image Size
++ Change width and height
++ Select _Resample_ to change the number of pixels in the images.
+***** set the resolution
++ Menu > Image > Image Size
++ Change the width and height to inches
++ Deselect _Resample_ to preserve the original number of image pixels
++ _Resolution_, number of _pixels per inch_ (PPI) = 300
++ [OK]
+***** Crop
++ [C] ⇒ crop
++ drag the border to change the boder
++ drag inside the border to *move*
++ drag outside the border to *rotate*
++ [Enter] or click the checker to complete the crop
+***** Expand the canvas
++ Image > Canvas Size
++ Enter the amount in (pixels for web | inches for print)
++ select _Relative_, and then select an anchor point in the canvas diagram. The
+  arrows point to the sides where the canvas will be added.
++ [OK]
+**** Layer
+***** understand layers
++ Layers are in _Layers_ panel, if the panel is not visible, choose *Window >
+  Layers*
++ A layer must be selected in order to make changes to it. In the _Layers_
+  panel, click pnce to the right of a layer name to select that layer. To add
+  more layers to your selection, hold [Ctrl] as you click other layers.
+***** layer basics
++ new layer :: C-S-N
++ Change the layer opacity :: select the layer and change that in the opacity
+  slider.
++ Resize the layer :: select the layer, Edit > Free Transform [C-t]. [Enter] to
+  apply.
+***** Add images to a layered design
++ File > Place Embedded
++ Hold [Shift] to avoid distorting the image, and drag the border to resize
++ Drag the inside to move
++ ✔️ to finish 
+***** Background layer
+Because the _Background layer_ is locked, it can't be moved in the _Document_
+window or rearranged in the _Layers_ panel, and some editing functions won't
+work on it.
++ To unlock it :: click the lock icon right to the layer
++ To lock it :: click the lock icon on top of the panel
+**** Adjust the image quality
+***** dirct adjustment
+Image > Adjustments > Brightness/Contrast
+                    > Vibrance
+                    > Hue, Saturation, or Lightness sliders
+***** adjustment layer
+Adjustment layers give you additional editing flexibility. They allow you to
+re-edit image adjustments you’ve made, and protect your original image from
+direct changes.
+
++ Select an image layer
++ Go to the bottom of the Layers panel > _Create new fill/adjustment layer_ icon
++ select _Black & White_ from the drop-down menu.
++ A new adjustment layer will appear in the Layers panel above the image layer
+  you selected. This adjustment layer will affect only the layers *below* it.
++ The _Properties_ panel opens automatically, displaying the controls for this
+  adjustment. 
+**** Make selections
+***** selection basic
+A selection isolates part of an image so you can work on that area without
+affecting the rest of the image.
++ Tools > Rectangular Marquee [M] ⇒ marquee
++ Drag a rectangular selection onto the image.
++ To select more :: [Shift] + drag.
++ To select less :: [Alt] + drag.
++ Select a layer, then try Image > Adjustment > sth. With a selection active,
+  adjustments affect only the selected area of that layer. The same is true if
+  you were to apply a filter, paint, fill, copy, or make other edits.
++ Deselect :: [C-d]
+***** Quick selection (Automatic object selection)
++ [W]
++ Drag over an object, this tool tries to find image edges and automatically
+  stops the selection there.
++ After your initial selection, this tool automatically switches to its *Add to
+  Selection option*. To select more, drag over other areas.
++ To select less :: [Alt] drag
++ Experiment with adjusting the *size* and *hardness*
+***** Lasso tool (for cleaning up a selection that you started with another tool)
++ [L]
++ add :: [Shift] drag
++ substract :: [Alt]
++ Deselect :: [C-d]
+***** Fine tune a selection with Select and Mask
++ with a selection ready, [Alt-Ctrl-R] ⇒ Open the [Select and Mask workspace].
++ Go the *View* menu on the right to choose one of the view options
+  + overlay (red) :: [V]
+  + black and white :: [K]
++ [B] to use brush. Draw to add, [Alt] draw to minus.
++ Scroll down on the right side of the workspace. Output Settings > Output to =
+  *Selection*
++ [OK]
+**** Retouch
++ 祛痘 :: [J]
++ clone :: [S]
++ Remove a large object :: Select the big object with a little bit of background
+  ⇒ Edit > Fill(Content-Aware = True)
+**** Color
+***** brushes
++ [left/right bracket keys] to change brush size.
+***** background/foreground color
++ switch [X]
+***** pick a color from the picture
++ click the foreground color ⇒ click somewhere on the picture.
+**** add text and shapes
+***** add text
++ [T] and enter some text
++ this create a new layer of editable text
++ save the document in PSD format to retain the editatble type layer.
+***** create graphic shape
++ [U] ⇒ rectangle tool
++ select a fill color and draw
++ [shift] drag the border to resize
++ move :; [V]
++ transform :: [C-t] 
++ change color :: double-click the thumbnail of the layer > use Color Picker
+***** add custom shape
++ right-click the rectangle tool > Custom Shape tool
++ Option Bar > *Shape* picker.
+**** combine images
+***** add texture to an image
++ start with two layers
++ select the layer above, change the blend-mode from the drop-down menu to
+  _overlay_.
+***** Add an object to an image with a layer mask
++ start with two layers
++ In the _Layers_ panel, make sure the top layer is selected.
++ Select the top layer, at the bottom of layer panel > Add layer mask.
++ The layer mask determines what part of the linked layer is visible and what
+  part is hidden. White on the mask represents areas that are visible. Black on
+  the mask represents areas that are hidden.
++ In the Tools panel, select the Brush tool. With the mask selected (by clicking
+  on the mask thumbnail in the Layers panel), paint with black or white to make
+  areas of the linked layer hidden or visible.
+***** Replace a background using layer mask
++ Start with two layers
++ [W] ⇒ Quick Select the object on the top layer
++ At the bottom of the _Layers panel_, click the _Add layer mask_ icon.
++ The mask is hiding everything except what you selected.
+**** Apply filters
+***** using the Filter Gallery
++ Select an layer
++ Filter > Filter Gallery
+***** Blur an image with Smart Filters
++ select a layer
++ Fiter > Convert for Smart Filters ⇒ this converts the layer into a layer that
+  will support re-editable filters.
++ With the same layer selected, choose Filter > Blur > Gaussian Blur.
+*** medium tut
+**** design for mobile and web using artboards
++ Layer > new > artboard
+**** curvature tool
++ [P] ⇒ open curvature pen tool. (underneath the pen tool)
++ Click the Path Options button (gear icon) in the Options bar. Adjust path
+  Thickness and Color.
++ Rubber-Band=True lets you previsualize a path on your cursor's movement.
+
++ click to add control point
++ double click to add corner point point, shift-click to create 45-90 corner.
++ [Esc] to complete an open path
++ click and drag on a point to move it
+
++ switch between control point and corner point :: double-click on the point
+
++ path are under the path tab of the layer panel.
