@@ -1,4 +1,4 @@
-** Keys
+** Keys for windows
 Virtual desktop:
  + win-ctr-Left/Right :: switch between virtual desktop
  + Win + CTRL + D :: Create a new desktop.
@@ -270,3 +270,20 @@ lame .\hi.wav .\fr.mp3
 + rufus
 Or use dd.exe
 Remember in the BIOS setting enable lagacy-compatble mode, not just UEFI-mode.
+** wsl
+#+begin_src powershell
+  # list the installable distro in wsl
+  wsl --list --online
+  # install the distro Ubuntu 22.04
+  wsl --install -d Ubuntu-22.04
+  # set the default distro to Ubuntu 22.04
+  wsl --set-default Ubuntu-22.04
+  # start the default distro
+  wsl
+  # terminate the VM 
+  wsl --shutdown
+  # remove a distro
+  wsl --unregister Ubuntu-22.04
+  # list the distro
+  wsl --list --verbose
+#+end_src
