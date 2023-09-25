@@ -5,6 +5,7 @@ a1=fec0::2/64
 x="
 network:
   version: 2
+  renderer: networkd
   ethernets:
     $x:
       addresses: ['$a1']
@@ -13,3 +14,5 @@ f=/etc/netplan/10-my-ip.yml
 
 # back up and append the file
 sudo bash -c "echo \"$x\" > $f"
+
+sudo netplan --debug apply

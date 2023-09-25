@@ -862,7 +862,6 @@ the ones supported by most browsers.
           print(ssock.version())
 #+end_src
 
-
 *** network interface
   Network interfaces usually have names that indicate the kind of hardware
   underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is
@@ -942,15 +941,6 @@ the ones supported by most browsers.
      In ipv6, ip address configuration is distributed.
   2. Your sys should anwser : If you have multiple network interface (e.g. an
      ethernet and a wifi), how do you decide which one to use? ...
-*** Network Manager
-  A system daemon that runs upon boots.
-**** Network manager command line interface
-  #+BEGIN_SRC bash
-    nmcli                           # see basic conectivity
-    nm-online                       # am I connected?
-    # see config
-    cat /etc/NetworkManager/NetworkManager.conf
-  #+END_SRC
 * End
 # Local Variables:
 # org-what-lang-is-for: "bash"

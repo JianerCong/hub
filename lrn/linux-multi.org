@@ -69,30 +69,18 @@ it?
 
 🐢 : modify the ~src/daemon/daemon_config.cpp~ to change
 #+begin_src c++
-          // 🦜 : Let's try to use a mirror
 
-        const char * src = "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cloud-images/";
-        image_hosts.push_back(std::make_unique<mp::UbuntuVMImageHost>(
-                                                                      std::vector<std::pair<std::string, UbuntuVMImageRemote>>{
-                                                                        {mp::release_remote, UbuntuVMImageRemote{src, "releases/",
-                                                                                                                 std::make_optional<QString>(mp::mirror_key)}},
-                                                                        {mp::daily_remote, UbuntuVMImageRemote{src, "daily/",
-                                                                                                               std::make_optional<QString>(mp::mirror_key)}},
-                                                                        {mp::snapcraft_remote, UbuntuVMImageRemote{src, "buildd/daily/",
+          const char * src = "https://mirrors.tuna.tsinghua.edu.cn/";
+          image_hosts.push_back(std::make_unique<mp::UbuntuVMImageHost>(
+                                                                        std::vector<std::pair<std::string, UbuntuVMImageRemote>>{
+                                                                          {mp::release_remote, UbuntuVMImageRemote{src, "ubuntu-releases/",
                                                                                                                    std::make_optional<QString>(mp::mirror_key)}},
-                                                                        {mp::appliance_remote, UbuntuVMImageRemote{"https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cdimage/", "ubuntu-core/appliances/"}}},
-                                                                      url_downloader.get(), manifest_ttl));
-
-        // image_hosts.push_back(std::make_unique<mp::UbuntuVMImageHost>(
-        //     std::vector<std::pair<std::string, UbuntuVMImageRemote>>{
-        //         {mp::release_remote, UbuntuVMImageRemote{"https://cloud-images.ubuntu.com/", "releases/",
-        //                                                  std::make_optional<QString>(mp::mirror_key)}},
-        //         {mp::daily_remote, UbuntuVMImageRemote{"https://cloud-images.ubuntu.com/", "daily/",
-        //                                                std::make_optional<QString>(mp::mirror_key)}},
-        //         {mp::snapcraft_remote, UbuntuVMImageRemote{"https://cloud-images.ubuntu.com/", "buildd/daily/",
-        //                                                    std::make_optional<QString>(mp::mirror_key)}},
-        //         {mp::appliance_remote, UbuntuVMImageRemote{"https://cdimage.ubuntu.com/", "ubuntu-core/appliances/"}}},
-        //     url_downloader.get(), manifest_ttl));
+                                                                          {mp::daily_remote, UbuntuVMImageRemote{src, "ubuntu-cloud-images/daily/",
+                                                                                                                 std::make_optional<QString>(mp::mirror_key)}},
+                                                                          {mp::snapcraft_remote, UbuntuVMImageRemote{src, "ubuntu-cloud-images/buildd/daily/",
+                                                                                                                     std::make_optional<QString>(mp::mirror_key)}},
+                                                                          {mp::appliance_remote, UbuntuVMImageRemote{"https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cdimage/", "ubuntu-core/appliances/"}}},
+                                                                        url_downloader.get(), manifest_ttl));
 #+end_src
 
 Then build it. And now we should be able to use the mirror :
