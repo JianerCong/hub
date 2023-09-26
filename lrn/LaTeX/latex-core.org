@@ -43,24 +43,48 @@ Double pipes                ,	\|x+y\| ,∥x+y∥
 #+END_SRC
 *** align
 #+BEGIN_SRC latex
-\begin{align*}
-x&=y           &  w &=z              &  a&=b+c\\
-2x&=-y         &  3w&=\frac{1}{2}z   &  a&=b\\
--4 + 5x&=2+y   &  w+2&=-1+w          &  ab&=cb
-\end{align*}
+  \documentclass[12pt]{article}
+  \usepackage{amsmath}
 
-\begin{gather*} 
-2x - 5y =  8 \\ 
-3x^2 + 9y =  3a + c
-\end{gather*}
+  \begin{document}
 
-\begin{equation} \label{eq1}
-\begin{split}
-A & = \frac{\pi r^2}{2} \\
- & = \frac{1}{2} \pi r^2
-\end{split}
-\end{equation}
+  \begin{align*}
+    x&=y           &  w &=z              &  a&=b+c\\
+    2x&=-y         &  3w&=\frac{1}{2}z   &  a&=b\\
+    -4 + 5x&=2+y   &  w+2&=-1+w          &  ab&=cb
+  \end{align*}
 
+  \begin{gather*} 
+    2x - 5y =  8 \\ 
+    3x^2 + 9y =  3a + c
+  \end{gather*}
+
+  \begin{equation} \label{eq1}
+    \begin{split}
+      A & = \frac{\pi r^2}{2} \\
+        & = \frac{1}{2} \pi r^2
+    \end{split}
+  \end{equation}
+
+  Show label only once
+
+  \begin{align}
+    \begin{split}
+      a &= b \\
+        &=c \\
+        &=d \\
+        &=e
+    \end{split}
+  \end{align}
+
+  Another way
+  \begin{align}
+    a & b \nonumber \\ % no number is shown
+    c & d \\ % there is a number
+    e & f \nonumber % no number
+  \end{align}
+
+  \end{document}
 #+END_SRC
 *** ref
 #+BEGIN_SRC latex
