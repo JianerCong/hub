@@ -300,6 +300,8 @@ base <- ggplot(df, aes(x, y)) +
 ** modelr
 *** lm
 #+begin_src R
+  # the linear model
+
   library(tidyverse)
   library(modelr)
   df <- tibble(x = 2 + seq(10), y = x*10 + 2 + rnorm(10))
@@ -310,30 +312,37 @@ base <- ggplot(df, aes(x, y)) +
   cat('a1 = ', mod$coefficients[2], '\n')
   cat('residuals = ', mod$residuals, '\n')
 
-  # 🦜 : higher order （but still linear coefficients）
-  m <- model_matrix(df, y~poly(x,2)) # a0 + a1x + a2x^2
-  ## All same?
-  mod2 <- lm(data=df,y~poly(x,2))
-  mod3 <- lm(data=df,y~I(x^2))
-  mod4 <- lm(data=df,y~poly(x,2,raw=TRUE))
 
-  ## Generate grid and add predictions
-  grid <- df %>% data_grid(x) %>%
-    add_predictions(mod, var = "pred")
+  ## 🦜 : You can also do the matrix algebra yourself
+  ## a = (X'X)^-1 X'Y
+  X <- cbind(1,df$x)
+  a <- solve(t(X) %*% X) %*% t(X) %*% df$y
+  print(a)
 
-  ## Use c + c1x + c2x^2
-  grid2 <- df %>% data_grid(x) %>%
-    spread_predictions(mod2,mod3,mod4)
+    # 🦜 : higher order （but still linear coefficients）
+    m <- model_matrix(df, y~poly(x,2)) # a0 + a1x + a2x^2
+    ## All same?
+    mod2 <- lm(data=df,y~poly(x,2))
+    mod3 <- lm(data=df,y~I(x^2))
+    mod4 <- lm(data=df,y~poly(x,2,raw=TRUE))
 
-  p <- ggplot(df,aes(x))+
-    geom_point(aes(y=y))+
-    geom_line(aes(y=pred),
-              data=grid,
-              colour="green",
-              size=1)+
-    geom_line(aes(y=mod2), data=grid2, colour="blue", size=1)+
-    geom_line(aes(y=mod3), data=grid2, colour="red", size=1)+
-    geom_line(aes(y=mod4), data=grid2, colour="black", size=2)
+    ## Generate grid and add predictions
+    grid <- df %>% data_grid(x) %>%
+      add_predictions(mod, var = "pred")
+
+    ## Use c + c1x + c2x^2
+    grid2 <- df %>% data_grid(x) %>%
+      spread_predictions(mod2,mod3,mod4)
+
+    p <- ggplot(df,aes(x))+
+      geom_point(aes(y=y))+
+      geom_line(aes(y=pred),
+                data=grid,
+                colour="green",
+                size=1)+
+      geom_line(aes(y=mod2), data=grid2, colour="blue", size=1)+
+      geom_line(aes(y=mod3), data=grid2, colour="red", size=1)+
+      geom_line(aes(y=mod4), data=grid2, colour="black", size=2)
 
   #+end_src
 *** loess (polynomial regression fitting)
