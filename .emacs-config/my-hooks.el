@@ -74,6 +74,7 @@
           )
 
 ;; 🦜 : I feel like it's just better to use [SPC]-z-c for folding
+(add-hook 'sclang-mode-hook 'sclang-extensions-mode)
 
 
 
