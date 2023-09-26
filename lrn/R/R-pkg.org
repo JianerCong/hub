@@ -131,6 +131,7 @@ RColorBrewer::display.brewer.all()
 *** Manually set colors
     Using the library munsell and color space
    #+begin_src R
+     # continuous
                                              # munsell example
      erupt + scale_fill_gradient2(
                low = munsell::mnsl("5B 7/8"),
@@ -142,45 +143,52 @@ RColorBrewer::display.brewer.all()
                                              # colorspace examples
      erupt + scale_fill_gradientn(colours = colorspace::heat_hcl(7))
      erupt + scale_fill_gradientn(colours = colorspace::diverge_hcl(7))
+
+     # discrete
+     bars + scale_fill_manual(values = c("d" = "grey", "c" = "grey", "b" = "black", "a" = "grey"))
+
+     bars + scale_fill_grey()
+     bars + scale_fill_grey(start = 0.5, end = 1)
+     bars + scale_fill_grey(start = 0, end = 0.5)
 #+end_src
 *** library(colourspace)
 #+begin_src R
-  library(colorspace)
+   library(colorspace)
 
-  ## See all palette
-  hcl_palettes() #4 types
-  ## Plot the pallates
-  hcl_palettes("sequential (single-hue)", n = 7, plot = TRUE)
-  hcl_palettes("qualitative", plot = TRUE)
+   ## See all palette
+   hcl_palettes() #4 types
+   ## Plot the pallates
+   hcl_palettes("sequential (single-hue)", n = 7, plot = TRUE)
+   hcl_palettes("qualitative", plot = TRUE)
 
-  ## Check a specific palette
-  hcl_palettes(palette = "Dark 2")
-  hcl_palettes(palette = "dark2") #it's case-insensative and ignores space
+   ## Check a specific palette
+   hcl_palettes(palette = "Dark 2")
+   hcl_palettes(palette = "dark2") #it's case-insensative and ignores space
 
-  ## Construct colors
-  ## set up actual colors
-  c1 <- qualitative_hcl(4, h = c(0, 288), c = 50, l = 60) ## by hand
-  c2 <- qualitative_hcl(4, palette = "dark2")             ## by name
-  c3 <- qualitative_hcl(4, palette = "dark2", c = 80)     ## by name plus modification
- c4 <- sequential_hcl(4, palette = "viridis")
+   ## Construct colors
+   ## set up actual colors
+   c1 <- qualitative_hcl(4, h = c(0, 288), c = 50, l = 60) ## by hand
+   c2 <- qualitative_hcl(4, palette = "dark2")             ## by name
+   c3 <- qualitative_hcl(4, palette = "dark2", c = 80)     ## by name plus modification
+  c4 <- sequential_hcl(4, palette = "viridis")
 
-  ## The Hue, Chroma, Luminance plot
-  p <- swatchplot(
-    "Hue"       = sequential_hcl(5, h = c(0, 300), c = 60, l = 65),
-    "Chroma"    = sequential_hcl(5, h = 0, c = c(100, 0), l = 65, rev = TRUE, power = 1),
-    "Luminance" = sequential_hcl(5, h = 260, c = c(25, 25), l = c(25, 90), rev = TRUE, power = 1),
-    off = 0
-  )
+   ## The Hue, Chroma, Luminance plot
+   p <- swatchplot(
+     "Hue"       = sequential_hcl(5, h = c(0, 300), c = 60, l = 65),
+     "Chroma"    = sequential_hcl(5, h = 0, c = c(100, 0), l = 65, rev = TRUE, power = 1),
+     "Luminance" = sequential_hcl(5, h = 260, c = c(25, 25), l = c(25, 90), rev = TRUE, power = 1),
+     off = 0
+   )
 
 
 
-  a <- sequential_hcl(
-    2,
-    h = 260,
-    c = 80,
-    l = c(30, 90))
-  summary(a)
-  print(a)
+   a <- sequential_hcl(
+     2,
+     h = 260,
+     c = 80,
+     l = c(30, 90))
+   summary(a)
+   print(a)
 
 #+end_src
 **** see the color wheels
@@ -292,33 +300,40 @@ base <- ggplot(df, aes(x, y)) +
 ** modelr
 *** lm
 #+begin_src R
-library(tidyverse)
-library(modelr)
-df <- tibble(x = 2 + seq(10), y = x^2)
-m <- model_matrix(df, y~poly(x,2))
-mod <- lm(data=df,y~x)
-## All same?
-mod2 <- lm(data=df,y~poly(x,2))
-mod3 <- lm(data=df,y~I(x^2))
-mod4 <- lm(data=df,y~poly(x,2,raw=TRUE))
+  library(tidyverse)
+  library(modelr)
+  df <- tibble(x = 2 + seq(10), y = x*10 + 2 + rnorm(10))
 
-## Generate grid and add predictions
-grid <- df %>% data_grid(x) %>%
-  add_predictions(mod, var = "pred")
+  ## 🦜 : Perhaps the only model you need:
+  mod <- lm(data=df,y~x)
+  cat('a0 = ', mod$coefficients[1], '\n')
+  cat('a1 = ', mod$coefficients[2], '\n')
+  cat('residuals = ', mod$residuals, '\n')
 
-## Use c + c1x + c2x^2
-grid2 <- df %>% data_grid(x) %>%
-  spread_predictions(mod2,mod3,mod4)
+  # 🦜 : higher order （but still linear coefficients）
+  m <- model_matrix(df, y~poly(x,2)) # a0 + a1x + a2x^2
+  ## All same?
+  mod2 <- lm(data=df,y~poly(x,2))
+  mod3 <- lm(data=df,y~I(x^2))
+  mod4 <- lm(data=df,y~poly(x,2,raw=TRUE))
 
-p <- ggplot(df,aes(x))+
-  geom_point(aes(y=y))+
-  geom_line(aes(y=pred),
-            data=grid,
-            colour="green",
-            size=1)+
-  geom_line(aes(y=mod2), data=grid2, colour="blue", size=1)+
-  geom_line(aes(y=mod3), data=grid2, colour="red", size=1)+
-  geom_line(aes(y=mod4), data=grid2, colour="black", size=2)
+  ## Generate grid and add predictions
+  grid <- df %>% data_grid(x) %>%
+    add_predictions(mod, var = "pred")
+
+  ## Use c + c1x + c2x^2
+  grid2 <- df %>% data_grid(x) %>%
+    spread_predictions(mod2,mod3,mod4)
+
+  p <- ggplot(df,aes(x))+
+    geom_point(aes(y=y))+
+    geom_line(aes(y=pred),
+              data=grid,
+              colour="green",
+              size=1)+
+    geom_line(aes(y=mod2), data=grid2, colour="blue", size=1)+
+    geom_line(aes(y=mod3), data=grid2, colour="red", size=1)+
+    geom_line(aes(y=mod4), data=grid2, colour="black", size=2)
 
   #+end_src
 *** loess (polynomial regression fitting)
