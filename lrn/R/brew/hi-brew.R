@@ -9,8 +9,7 @@ brew(file=fin,
      output=fout)
 
 ## close the files
-close(fin)
-close(fout)
+close(fin);close(fout)
 
 
 ## --------------------------------------------------

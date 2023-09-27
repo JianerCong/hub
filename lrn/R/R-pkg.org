@@ -265,6 +265,19 @@ base <- ggplot(df, aes(x, y)) +
   geom_col(aes(fill = x)) +                    # bar chart
   geom_vline(xintercept = 3.5, colour = "red") # for visual clarity only
 #+end_src
+*** manually crop region
+#+begin_src R
+my_theme <- theme_bw() +
+  theme(
+    ## plot.margin = unit(c(1,1,1,1),"cm"),
+    plot.margin = margin(t=0,r=2.5,b=0,l=0.5, "cm"),
+    ## top, right, bottom, left
+    axis.title.y = element_text(vjust = 4),
+    )
+
+p0 <- p0 + my_theme
+    #+end_src
+
 ** purr
 *** list comprehension
     #+begin_src R

@@ -673,7 +673,13 @@ This function is called at the very end of Spacemacs initialization."
  '(org-confirm-babel-evaluate nil)
  '(package-selected-packages
    '(tern copilot yapfify yaml-mode which-key web-mode web-beautify use-package typescript-mode tide tagedit solidity-mode slim-mode scss-mode sass-mode rainbow-delimiters pyvenv pytest pyenv-mode py-isort pug-mode powershell pip-requirements pcre2el nginx-mode mmm-mode markdown-toc markdown-mode macrostep lua-mode livid-mode skewer-mode simple-httpd live-py-mode json-mode json-snatcher js2-refactor multiple-cursors js2-mode js-doc hydra lv hy-mode hungry-delete helm-themes helm-swoop helm-pydoc helm-projectile projectile helm-mode-manager helm-make helm-flx flx helm-descbinds helm-css-scss helm-company helm-c-yasnippet helm-ag haml-mode go-guru go-eldoc gh-md fuzzy flycheck-pos-tip pos-tip flycheck pkg-info epl exec-path-from-shell evil-visualstar evil-escape evil goto-chg ess-smart-equals ess-R-data-view ctable ess emmet-mode elisp-slime-nav dockerfile-mode docker-tramp docker transient tablist aio compat diminish cython-mode editorconfig monokai-theme company-web company-statistics company-go company-anaconda coffee-mode cdlatex bind-map bind-key auto-yasnippet auto-compile ace-window ace-jump-helm-line ac-ispell))
- '(safe-local-variable-values '((org-what-lang-is-for . "bash"))))
+ '(safe-local-variable-values
+   '((org-what-lang-is-for . "R")
+     (TeX-auto-save . t)
+     (TeX-parse-self . t)
+     (TeX-command-extra-options . "-shell-escape")
+     (org-what-lang-is-for . "latex")
+     (org-what-lang-is-for . "bash"))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

@@ -1144,7 +1144,7 @@ Column1d & Column2d & Column3d \\
     \toprule
     \mbox{Name} & \mbox{Value} & \mbox{Description} \\
     \midrule
-    A & B & C
+    A & B & C \\
     \bottomrule
   \end{longtblr}
   \end{document}
@@ -1219,6 +1219,40 @@ Column1d & Column2d & Column3d \\
   \bottomrule
 \end{longtblr}
 \end{document}
+#+end_src
+
+**** colspec
+🦜 : What are the avaiable colspec ?
+#+begin_src latex
+\NewColumnType{l}{Q[l]}
+\NewColumnType{c}{Q[c]}
+\NewColumnType{r}{Q[r]}
+\NewColumnType{t}[1]{Q[t,wd=#1]}
+\NewColumnType{m}[1]{Q[m,wd=#1]}
+\NewColumnType{b}[1]{Q[b,wd=#1]}
+\NewColumnType{h}[1]{Q[h,wd=#1]}
+\NewColumnType{f}[1]{Q[f,wd=#1]}
+\NewColumnType{X}[1][]{Q[co=1,#1]}
+#+end_src
+
+***** specify width
+#+begin_src latex
+\begin{tblr}{width=0.8\textwidth, colspec={|l|X[2]|X[3]|X[-1]|}}
+ small & long & longer & Shorter than X \\
+ Epsilon & Zeta & Eta & Theta \\
+ Iota & Kappa & Lambda & Mu \\
+\end{tblr}
+#+end_src
+
+***** math column
+#+begin_src latex
+\begin{tblr}{Q[l]Q[r,$]Q[r,$$]}
+\hline
+ Alpha & \frac12 & \frac12 \\
+ Epsilon & \frac34 & \frac34 \\
+ Iota & \frac56 & \frac56 \\
+\hline
+\end{tblr}
 #+end_src
 ** figure
 *** Just a figure
