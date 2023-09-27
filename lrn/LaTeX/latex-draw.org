@@ -286,3 +286,13 @@ Don’t go down the stairs!\hspace{3em}
   \vphantom{aaa}
   \phantom{aaa}
 #+end_src
+
+** colors
+https://en.wikibooks.org/wiki/LaTeX/Colors
+https://latexdraw.com/predefined-latex-colors-dvipsnames/
+| Name          | Hex    |
+|---------------+--------|
+| OliveGreen    | 3C8031 |
+| MidNight blue | 006795 |
+| Mahogany      | A9341F |
+
