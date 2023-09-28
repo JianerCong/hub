@@ -1254,6 +1254,15 @@ Column1d & Column2d & Column3d \\
 \hline
 \end{tblr}
 #+end_src
+
+**** long table
+#+begin_src latex
+  \usepackage{tabularray}
+  \UseTblrLibrary{booktabs,siunitx}
+
+  \DefTblrTemplate{contfoot-text}{default}{（表格在下一页还有）}
+  \DefTblrTemplate{conthead-text}{default}{(从上一页继续)}
+#+end_src
 ** figure
 *** Just a figure
    #+begin_src latex
