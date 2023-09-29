@@ -225,11 +225,24 @@ s1 <prompt s2> s3 _ s4
       (and (char-after) (delete-char 1)))
   )
 
-;; 🦜 : Ask AucTex not to play with indentation in these environments
-(add-to-list 'LaTeX-indent-environment-list '("simplepy"  current-indentation))
-(add-to-list 'LaTeX-indent-environment-list '("simplec"  current-indentation))
-(add-to-list 'LaTeX-indent-environment-list '("numberedc"  current-indentation))
 
+;; ;; 🦜 : Ask AucTex to use verbatim font-fixing in these environments
+;; (add-to-list 'LaTeX-verbatim-environments "simplepy")
+;; (add-to-list 'LaTeX-verbatim-environments "simplec")
+;; (add-to-list 'LaTeX-verbatim-environments "simpler")
+
+;; use to loop to do the above
+(dolist
+    (env '("simplepy" "simplec" "simpler" "numberedc"))
+  (add-to-list 'LaTeX-verbatim-environments env)
+  ;; (add-to-list 'LaTeX-indent-environment-list (cons env 'current-indentation))
+    )
+
+
+
+
+LaTeX-verbatim-environments
+LaTeX-indent-environment-list
 
 ;; 🦜 add our own Font-Inserting command
 LaTeX-font-list
@@ -246,5 +259,16 @@ LaTeX-font-list
 
 ;;This reload the 'LaTeX-font-list
 (TeX-normal-mode)
+
+;; 🦜 : Ask AucTex not to play with indentation in these environments, it looks
+;; like (TeX-normal-mode) will reset this list, so you'd better to it here
+;; (add-to-list 'LaTeX-indent-environment-list '("simplepy"  current-indentation))
+;; (add-to-list 'LaTeX-indent-environment-list '("simplec"  current-indentation))
+;; (add-to-list 'LaTeX-indent-environment-list '("simpler"  current-indentation))
+;; (add-to-list 'LaTeX-indent-environment-list '("numberedc"  current-indentation))
+(dolist
+    (env '("simplepy" "simplec" "simpler" "numberedc"))
+  (add-to-list 'LaTeX-indent-environment-list (cons env 'current-indentation))
+  )
 (rainbow-delimiters-mode)
 (auto-fill-mode)

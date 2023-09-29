@@ -82,6 +82,7 @@ This function should only modify configuration layer settings."
                                       hungry-delete
                                       solidity-mode
                                       editorconfig
+                                      sclang-extensions
                                       (copilot :location (recipe
                                                           :fetcher github
                                                           :repo "zerolfx/copilot.el"
@@ -572,6 +573,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
 
   (add-to-list 'load-path "~/Templates/.emacs-config")
   (add-to-list 'load-path "~/Templates/.emacs-config/wat-mode-master")
+  (require 'package)
   (require 'my-hooks)
 
   ;; --------------------------------------------------
@@ -586,6 +588,9 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
                            ("melpa"  . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
 
   (package-initialize);; you might already have this ine
+
+  (add-to-list 'load-path "/home/me/.local/share/SuperCollider/downloaded-quarks/scel/el")
+  (require 'sclang)
 )
 
 
@@ -667,42 +672,14 @@ This function is called at the very end of Spacemacs initialization."
  '(js-indent-level 2)
  '(org-confirm-babel-evaluate nil)
  '(package-selected-packages
-   '(powershell wfnames bmx-mode editorconfig dockerfile-mode company-lua lua-mode popwin godoctor go-tag go-rename go-impl go-guru go-gen-test go-fill-struct go-eldoc flycheck-golangci-lint dap-mode lsp-docker lsp-treemacs bui yaml spinner company-go go-mode solidity-mode yaml-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode impatient-mode htmlize helm-css-scss haml-mode evil-matchit emmet-mode counsel-css company-web web-completion-data load-env-vars pyvenv markdown-toc epc concurrent deferred gh-md ctable pythonic tablist aio ess-R-data-view ess auctex-latexmk auctex toml-mode ron-mode racer rust-mode helm-gtags ggtags flycheck-rust counsel-gtags counsel swiper ivy cargo typescript-mode smartparens import-js grizzl add-node-modules-path origami lsp-mode markdown-mode flycheck-pos-tip pos-tip vue-mode edit-indirect ssass-mode vue-html-mode mmm-mode helm-ctest cmake-mode evil-tex company-reftex company-math math-symbol-lists company-auctex hungry-delete yasnippet-snippets tern helm-company helm-c-yasnippet fuzzy company-anaconda company auto-yasnippet ac-ispell auto-complete rainbow-delimiters transient cdlatex yapfify which-key use-package treemacs-projectile treemacs-icons-dired treemacs-evil sphinx-doc quickrun pytest pylookup pyenv-mode pydoc py-isort pippel pipenv pip-requirements pcre2el overseer nose nameless monokai-theme macrostep live-py-mode inspector importmagic hybrid-mode holy-mode help-fns+ helm-xref helm-themes helm-swoop helm-pydoc helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag flycheck-package flycheck-elsa evil-evilified-state emr elisp-slime-nav elisp-def dotenv-mode diminish cython-mode code-cells blacken bind-map anaconda-mode ace-jump-helm-line))
+   '(tern copilot yapfify yaml-mode which-key web-mode web-beautify use-package typescript-mode tide tagedit solidity-mode slim-mode scss-mode sass-mode rainbow-delimiters pyvenv pytest pyenv-mode py-isort pug-mode powershell pip-requirements pcre2el nginx-mode mmm-mode markdown-toc markdown-mode macrostep lua-mode livid-mode skewer-mode simple-httpd live-py-mode json-mode json-snatcher js2-refactor multiple-cursors js2-mode js-doc hydra lv hy-mode hungry-delete helm-themes helm-swoop helm-pydoc helm-projectile projectile helm-mode-manager helm-make helm-flx flx helm-descbinds helm-css-scss helm-company helm-c-yasnippet helm-ag haml-mode go-guru go-eldoc gh-md fuzzy flycheck-pos-tip pos-tip flycheck pkg-info epl exec-path-from-shell evil-visualstar evil-escape evil goto-chg ess-smart-equals ess-R-data-view ctable ess emmet-mode elisp-slime-nav dockerfile-mode docker-tramp docker transient tablist aio compat diminish cython-mode editorconfig monokai-theme company-web company-statistics company-go company-anaconda coffee-mode cdlatex bind-map bind-key auto-yasnippet auto-compile ace-window ace-jump-helm-line ac-ispell))
  '(safe-local-variable-values
-   '((org-what-lang-is-for . "yaml")
-     (org-what-lang-is-for . "emacs-lisp")
-     (flycheck-gcc-include-path . "c++20")
-     (eval flycheck-select-checker `c/c++-gcc)
-     (eval setq flycheck-gcc-include-path
-           (list "/home/me/repo/wrack-chain/weak/include/"))
-     (eval setq flycheck-gcc-include-path
-           (list "/home/me/repo/wrack-chain/weak/include"))
-     (eval setq flycheck-gcc-include-path
-           (list ".."))
-     (typescript-backend . tide)
-     (typescript-backend . lsp)
-     (javascript-backend . tide)
-     (javascript-backend . tern)
-     (javascript-backend . lsp)
-     (org-what-lang-is-for . "wat")
-     (org-what-lang-is-for . "shell")
+   '((org-what-lang-is-for . "R")
      (TeX-auto-save . t)
      (TeX-parse-self . t)
      (TeX-command-extra-options . "-shell-escape")
-     (abbrev-file-name . my-abbrev\.el)
-     (org-what-lang-is-for . "markdown")
-     (org-what-lang-is-for . "js")
-     (org-what-lang-is-for . "c")
-     (org-what-lang-is-for . "R")
-     (org-what-lang-is-for . python)
-     (org-what-lang-is-for . "css")
-     (org-what-lang-is-for . "plain-tex")
-     (org-what-lang-is-for . "c++")
-     (org-what-lang-is-for . "cmake")
      (org-what-lang-is-for . "latex")
-     (TeX-master . "auctex")
-     (org-what-lang-is-for . "bash")
-     (org-what-lang-is-for . "python"))))
+     (org-what-lang-is-for . "bash"))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

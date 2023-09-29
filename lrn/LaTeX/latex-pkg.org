@@ -205,7 +205,9 @@ pygmentize -L styles
 #+END_SRC
 *** supported langs
 #+BEGIN_SRC bash
-pygmentize -L lexers
+  pygmentize -L lexers
+
+  pygmentize -L lexers | grep '.*\.py'
 #+END_SRC
 *** math in comments
 #+BEGIN_SRC latex

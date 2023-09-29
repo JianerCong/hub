@@ -43,24 +43,48 @@ Double pipes                ,	\|x+y\| ,∥x+y∥
 #+END_SRC
 *** align
 #+BEGIN_SRC latex
-\begin{align*}
-x&=y           &  w &=z              &  a&=b+c\\
-2x&=-y         &  3w&=\frac{1}{2}z   &  a&=b\\
--4 + 5x&=2+y   &  w+2&=-1+w          &  ab&=cb
-\end{align*}
+  \documentclass[12pt]{article}
+  \usepackage{amsmath}
 
-\begin{gather*} 
-2x - 5y =  8 \\ 
-3x^2 + 9y =  3a + c
-\end{gather*}
+  \begin{document}
 
-\begin{equation} \label{eq1}
-\begin{split}
-A & = \frac{\pi r^2}{2} \\
- & = \frac{1}{2} \pi r^2
-\end{split}
-\end{equation}
+  \begin{align*}
+    x&=y           &  w &=z              &  a&=b+c\\
+    2x&=-y         &  3w&=\frac{1}{2}z   &  a&=b\\
+    -4 + 5x&=2+y   &  w+2&=-1+w          &  ab&=cb
+  \end{align*}
 
+  \begin{gather*} 
+    2x - 5y =  8 \\ 
+    3x^2 + 9y =  3a + c
+  \end{gather*}
+
+  \begin{equation} \label{eq1}
+    \begin{split}
+      A & = \frac{\pi r^2}{2} \\
+        & = \frac{1}{2} \pi r^2
+    \end{split}
+  \end{equation}
+
+  Show label only once
+
+  \begin{align}
+    \begin{split}
+      a &= b \\
+        &=c \\
+        &=d \\
+        &=e
+    \end{split}
+  \end{align}
+
+  Another way
+  \begin{align}
+    a & b \nonumber \\ % no number is shown
+    c & d \\ % there is a number
+    e & f \nonumber % no number
+  \end{align}
+
+  \end{document}
 #+END_SRC
 *** ref
 #+BEGIN_SRC latex
@@ -1120,7 +1144,7 @@ Column1d & Column2d & Column3d \\
     \toprule
     \mbox{Name} & \mbox{Value} & \mbox{Description} \\
     \midrule
-    A & B & C
+    A & B & C \\
     \bottomrule
   \end{longtblr}
   \end{document}
@@ -1195,6 +1219,49 @@ Column1d & Column2d & Column3d \\
   \bottomrule
 \end{longtblr}
 \end{document}
+#+end_src
+
+**** colspec
+🦜 : What are the avaiable colspec ?
+#+begin_src latex
+\NewColumnType{l}{Q[l]}
+\NewColumnType{c}{Q[c]}
+\NewColumnType{r}{Q[r]}
+\NewColumnType{t}[1]{Q[t,wd=#1]}
+\NewColumnType{m}[1]{Q[m,wd=#1]}
+\NewColumnType{b}[1]{Q[b,wd=#1]}
+\NewColumnType{h}[1]{Q[h,wd=#1]}
+\NewColumnType{f}[1]{Q[f,wd=#1]}
+\NewColumnType{X}[1][]{Q[co=1,#1]}
+#+end_src
+
+***** specify width
+#+begin_src latex
+\begin{tblr}{width=0.8\textwidth, colspec={|l|X[2]|X[3]|X[-1]|}}
+ small & long & longer & Shorter than X \\
+ Epsilon & Zeta & Eta & Theta \\
+ Iota & Kappa & Lambda & Mu \\
+\end{tblr}
+#+end_src
+
+***** math column
+#+begin_src latex
+\begin{tblr}{Q[l]Q[r,$]Q[r,$$]}
+\hline
+ Alpha & \frac12 & \frac12 \\
+ Epsilon & \frac34 & \frac34 \\
+ Iota & \frac56 & \frac56 \\
+\hline
+\end{tblr}
+#+end_src
+
+**** long table
+#+begin_src latex
+  \usepackage{tabularray}
+  \UseTblrLibrary{booktabs,siunitx}
+
+  \DefTblrTemplate{contfoot-text}{default}{（表格在下一页还有）}
+  \DefTblrTemplate{conthead-text}{default}{(从上一页继续)}
 #+end_src
 ** figure
 *** Just a figure

@@ -75,6 +75,26 @@
   \draw[very thick,-o] (0,0) |- (1,1); %up then right
   \draw[very thick,-latex] (0,0) |- (1,1); %up then right
 #+end_src
+*** -->--
+#+begin_src latex
+  \usetikzlibrary{decorations.markings}
+
+
+      \makeatletter
+      \tikzset{nomorepostaction/.code=\let\tikz@postactions\pgfutil@empty}
+      \makeatother
+      \begin{scope}[
+        every path/.style={
+          very thick,
+          postaction={nomorepostaction,decorate,
+            decoration={markings,mark=at position 0.5 with {\arrow{latex}}}
+          }}] 
+        \draw (-4,0)--(4,0);
+        \draw (4,0)--(4,2);
+        \draw (4,2)--(-4,2);
+        \draw (-4,2)--(-4,0);
+      \end{scope}
+#+end_src
 ** tcolorbox
 *** why there's a space between my code and my box border when using minted?
 #+begin_src latex
@@ -266,3 +286,13 @@ Don’t go down the stairs!\hspace{3em}
   \vphantom{aaa}
   \phantom{aaa}
 #+end_src
+
+** colors
+https://en.wikibooks.org/wiki/LaTeX/Colors
+https://latexdraw.com/predefined-latex-colors-dvipsnames/
+| Name          | Hex    |
+|---------------+--------|
+| OliveGreen    | 3C8031 |
+| MidNight blue | 006795 |
+| Mahogany      | A9341F |
+

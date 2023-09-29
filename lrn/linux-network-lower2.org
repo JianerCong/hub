@@ -112,6 +112,11 @@ nmcli device wifi show-password
 nmcli device disconnect wlo1
 
 #+end_src
+** MAC table
+#+begin_src bash
+arp -n # no name resolution
+arp 
+#+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "yaml"
