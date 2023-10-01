@@ -53,21 +53,36 @@ const simple_display = ref(true)
                           btn-outline-success"
                     @click="go_click"
             >
-                go
+                <i class="bi bi-upload"></i>
             </button>
         </div>
     </nav>
 
     <div id="" style="height: 70px;"> </div>
 
-    <div class="container">
-        <div class="card mt-1" v-for="file in files" :key="file.name">
-            <div class="card-body">
-                <span v-if="file.is_folder">📁</span>
-                <span v-else>📄</span>
-                {{ file.name }}
+    
+    <div class="container" v-if="simple_display">
+        <div class="card mt-1 flex-row " v-for="file in files" :key="file.name">
+            <div class="d-flex align-items-center w-100 fs-6 m-1">
+                <span v-if="file.is_folder">
+                    <i class="bi bi-folder"></i>
+                </span>
+                <span v-else>
+                    <i class="bi bi-file-earmark"></i>
+                </span>
+                <span class="ms-2">
+                    {{ file.name }}
+                </span>
+            </div>
+            <div class="d-flex align-items-center justify-content">
+                <i class="bi bi-backspace m-1 me-2"></i>
+                <!-- <a href="#" class="btn btn-outline-primary m-1 btn-sm">
+                     </a> -->
             </div>
         </div>
+    </div>
+    <div class="container d-flex" v-else>
+        
     </div>
 
 
