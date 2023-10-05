@@ -4,8 +4,13 @@
 + M-+ :: resize selected lane vertically
 +  :: 
 ** arrangement view
+*** navigation 
 + [+] :: zoom in
 + C-scroll :: zoom to
 + C-al-drag :: pan
 + [H;W;Home] :: zoom to fit horizontally;Widen;Go to begining
 + S-space :: continue playing
++ z,x :: zoom to selection, unzoom
++ home + left :: back to beginning
++ sh-space :: keep playing
++ U,alt-+,alt-- :: unfold track, track taller, shorter

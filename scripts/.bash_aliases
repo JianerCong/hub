@@ -15,7 +15,7 @@ alias g="git log --oneline --decorate --all -n"
 alias ga="git add -A && git status"
 alias got=". ~/Templates/scripts/got.sh"
 alias gpsh=". ~/Templates/scripts/gpsh.sh"
-alias pyenv=". ~/work/lcode/myenv/bin/activate"
+alias pyenv=". /home/me/work/lcode/myenv/bin/activate"
 alias cb=". ~/Templates/scripts/cmakebuild.sh"
 
 
