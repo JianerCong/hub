@@ -1,1 +1,36 @@
+** prepare the host
 🦜 : To prepare a host do the following first:
+1. shell into the host using ~here.sh~
+2. on the host, execute 01,02,03 respectively to configure things (this should
+   configure the appropriate addresses)
+3. 
+
+** openstack
+*** 2. prepare the target host
+1. Install UBuntu 22
+2. Configure at least one network iface to access the internet or suitable local
+  repositories
+3. Remove the 127.0.1.1 loopback in ~/etc/hosts~ if exists
+4. configure:
+  #+begin_src bash
+    sudo apt update
+    sudo apt dist-upgrade
+    sudo apt install bridge-utils debootstrap openssh-server \
+        tcpdump vlan python3
+    sudo apt install linux-modules-extra-$(uname -r)
+    # reboot
+  #+end_src
+5. (for ubuntu) set the passwd of ~root~. This enables the login as ~root~.
+  #+begin_src bash
+    sudo passwd root
+  #+end_src
+6. configure ssh keys in ~/root/.ssh/authorized_keys~ so that ansible can access.
+
+  OpenStack-Ansible deployments require the presence of a
+  ~/root/.ssh/id_rsa.pub~ file on the ~deployment host~. The content of this
+  file is inserted into an ~authorized_keys~ file for the containers, which is a
+  necessary step for the Ansible playbooks.
+
+  🦜 : What if I wanna override this file on the deployment host.
+
+  🐢 : set ~lxc_container_ssh_key=/home/me/.ssh/id_ed25519.pub~

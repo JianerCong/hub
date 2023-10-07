@@ -201,6 +201,31 @@ From the processes' perspective, they _appear to_ fully own the resource.
   p=$(docker inspect --format '{{.State.Pid}}' clash-shadowsocks-1)
   sudo nsenter -t $p -n ip -d link show
 #+end_src
+**** docker0 ?
+
+When a Docker service is first instantiated, it creates a ~docker0~ bridge.
+Whenever new containers are created via the ~docker run~ without specifying
+network options:
+
+  Docker creates a ~veth~ pair, assigns one of them to the container's ~netns~,
+  and attaches the other to the ~docker0~ bridge.
+**** how container access the internet
+
+1. Because the address 192.168.1.2 is outside Container1’s subnet of
+   172.17.0.5/16, it sends the packet to its configured default gateway, which
+   is 172.17.0.1, as part of normal routing.
+
+2. The Linux kernel stack receives this packet, does a route lookup, and decides
+   that the packet is destined to its default gateway, which is 192.168.0.1, an
+   external router.
+
+3. Docker has set up the iptables rules so that any communication from docker0
+   to the outside world undergoes NAT. Therefore the source port and source IP
+   address of the packet are modified before being sent to the external router.
+
+4. The external router routes the packet to the web server.
+**** how to give each container an ip on the LAN
+Use MacVlan
 
 * End
 # Local Variables:
