@@ -117,6 +117,91 @@ nmcli device disconnect wlo1
 arp -n # no name resolution
 arp 
 #+end_src
+** iptables
+#+begin_src bash
+  tab=nat                         # filter | nat | mangle | raw | security
+  sudo iptables --table $tab -L
+  # see the rules in a table (default to filter)
+
+
+  tab=filter
+  # see the rules in detail
+  sudo iptables --table $tab -L -v -n --line-numbers
+  # -v : verbose
+  # -n : numeric
+
+
+#+end_src
+*** Q/A
+**** what's the meaning of each rule?
+Each rule can have the following field:
+
++ prot :: protocal, such as tcp,udp,all
++ source/destination :: the source/destination of the packet, it can be a
+  hostname, ip address or network name.
++ {in|out}-interface :: the interface name through which the packet is
+  received/sent
+** vlan
+*** Q/A
+**** In a packet, there're ip addresses and mac addresses, why?
++ mac addresses are to find the 'next hop'.
++ ip addresses are to find the destinations.
+*** containers Q/A
+**** like VM, what are isolated between containers
+view of network, hostname, domain name, processes, users,
+filesystems,interprocess communication.
+**** like processes, what are shared between containers
+OS
+**** what are the two kernel features that underlies the container?
+Namespace + control groups (cgroup)
+**** what is Namespace
+Namespaces are a Linux virtualization construct akin to network and server
+vertualization. Namespaces virtualize specific resources managed by the kernel,
+thereby allowing multiple isolated instances of a *virtual resources*.
+
+A _process_ is associated with one such virtual instance of the resource. Multiple
+processes can belong to a common virtual instance of the resource.
+
+From the processes' perspective, they _appear to_ fully own the resource.
+
+🦜 : What resources are virtualizable?
+
+🐢 :
++ cgroup :: see /proc/<pid>/cgroup and /proc/<pid>/mountinfo
++ interprocess communication (IPC) :: Virtualize various constructs for IPC,
+  such as POSIX message queues, shared memory, and so on.
++ network :: all networking resources: interface, sockets, routing table, MAC
+  table,...
++ mount :: virtualizes the filesystem mount points. This allows each group of
+  isolated processes to think they own the root fs. ~chroot~ , a very old Unix
+  construct, merely constained the view of the root seen by a *single* process.
++ PID :: virtualize the PID space
++ User :: virtualize users and group IDs.
++ UTS :: virtualize the hostname and domain name.
+**** Network Namespace
+🦜 : I have two processes, both wanna listen to TCP port 80. What should I do?
+
+🐢 : Create a _network namespace_. This virtualize a complete network stack.
+
+#+begin_src bash
+  sudo ip netns add myown
+  sudo nsenter --net=/var/run/netns/myown ip -d link show
+#+end_src
+
+
+🦜 : Now we've got two network namespace. How do they communicate ?
+
+🐢 : Use Virtual Ethernet Interface
+#+begin_src bash
+  sudo ip link add veth1 type veth
+  ip -br link show type veth
+
+  # show the veth in docker
+
+  p=$(docker inspect --format '{{.State.Pid}}' clash-shadowsocks-1)
+  sudo nsenter -t $p -n ip -d link show
+#+end_src
+
 * End
 # Local Variables:
 # org-what-lang-is-for: "yaml"

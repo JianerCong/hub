@@ -252,6 +252,9 @@ fail, and often without useful error messages.
   iface2=tap0
   ip link set $iface1 master $b
   ip link set $iface2 master $b
+
+  # delete the bridge
+  ip link delete $b type bridge
 #+end_src
 
 **** Spanning Tree Protocol
