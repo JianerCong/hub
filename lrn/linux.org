@@ -140,38 +140,6 @@ export HISTCONTROL=ignoredups
 alias  l.='ls -d.* --color=auto'
 
 
-
-* Devices
-** list block devices
-   #+BEGIN_SRC bash  
-     ls -l /sys/block
-     blkid                           # show UUID
-   #+END_SRC
-** ls all disk
-lsscsi
-** ls all partitions
-ls -l /dev/disk/by-id
-# or
-sudo parted -l
-** Shrink existing partition
-1. Download Gparted Live ISO
-2. sudo dd bs=4M if=gparted-live.iso of=/dev/sdX status=progress && sync
-   # Find out your sdX with fdisk -l
-3. boot from gparted, press enter to go on.
-4. Below, you can see the yellow area is the part with the data. It is around 3
-   Gb in my case. The rest is free space. Let’s use this space to create another
-   partition.
-5. Select this partition and click on _Resize_ option.
-6. You can resize it using the numbers or by mowing the arrows. I will free up
-   10 Gb. Enter the number, press enter, and click on _Resize_.
-7. Now, you can create another partition. Click on the unallocated space, then
-   click New to create a new partition.
-8. You can select its size, whether you want it to be primary or extended. An
-   extended partition allows you to create more than 4 partitions. You can
-   choose the file system you need. And you can also give a name to this
-   partition. So, when you have set everything as you want, click Add.
-9. Everything above created only the plan of the changes to do. You can find the
-   detail of the changes you are about to apply at the bottom of Gparted.
 * Misc
 ** sudo
 *** the env for sudo?

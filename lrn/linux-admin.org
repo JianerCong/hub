@@ -9,6 +9,162 @@
 ** make bootable disk
 In ubuntu store, install *Startup Disk Creater*.
 
+* Devices
+** list block devices
+   #+BEGIN_SRC bash  
+     ls -l /sys/block
+     blkid                           # show UUID
+   #+END_SRC
+** ls all disk
+lsscsi
+** ls all partitions
+ls -l /dev/disk/by-id
+# or
+sudo parted -l
+** Shrink existing partition
+1. Download Gparted Live ISO
+2. sudo dd bs=4M if=gparted-live.iso of=/dev/sdX status=progress && sync
+   # Find out your sdX with fdisk -l
+3. boot from gparted, press enter to go on.
+4. Below, you can see the yellow area is the part with the data. It is around 3
+   Gb in my case. The rest is free space. Let’s use this space to create another
+   partition.
+5. Select this partition and click on _Resize_ option.
+6. You can resize it using the numbers or by mowing the arrows. I will free up
+   10 Gb. Enter the number, press enter, and click on _Resize_.
+7. Now, you can create another partition. Click on the unallocated space, then
+   click New to create a new partition.
+8. You can select its size, whether you want it to be primary or extended. An
+   extended partition allows you to create more than 4 partitions. You can
+   choose the file system you need. And you can also give a name to this
+   partition. So, when you have set everything as you want, click Add.
+9. Everything above created only the plan of the changes to do. You can find the
+   detail of the changes you are about to apply at the bottom of Gparted.
+** Logical Volume Manager (LVM)
+*** the three components
+
++ physical volumes :: the what maks logical
+  volumes possible. All tools for this start with
+  ~pv~. e.g. ~pvcreate,pvchange,pvs,pvdisplay~
++ volume groups :: map to real _disks_
++ logical volumes :: map to real _partitions_
+
+
+#+begin_src bash
+  # 🦜 : Do it all in VM
+  # have a look first..
+  lsblk -o name,size,fstype
+#+end_src
+
+**** physical volumes
+🐢 : Let's first see what are the available
+devices:
+
+#+begin_src bash
+  sudo pvscan
+  # No matching physical volumes found
+  sudo pvdisplay
+  sudo pvs
+#+end_src
+
+🦜 : Okay, there's none. So how do we create one?
+
+🐢 : Emm..physical volume "can't" be created, we
+can only do something like "put a physical volume
+under management".
+
+🦜 : Okay
+#+begin_src bash
+  sudo pvcreate /dev/sda14
+#+end_src
+
+🐢 : If you wanna remove (unmanage it):
+#+begin_src bash
+  sudo pvremove /dev/sda14
+  sudo pvs
+#+end_src
+
+**** volume groups
+Volume groups are collections of physical volumes.
+It's the next level. Tools for this start with
+~vg~, e.g. ~vgcreate,vgs,vgrename~.
+
+🐢 : Do create one, do: ~sudo vgcreate
+my_first_group <list of devices>~:
+#+begin_src bash
+      sudo vgcreate my_first_group /dev/sda14
+      sudo vgs
+      sudo vgdisplay -S vg_name=my_first_group  -C -o pv_name,vg_name,vg_size,vg_free
+      # -C: column
+      # -o: output
+      # -S: select
+      # see the physical volumes
+#+end_src
+🐢 : We can also add and remove physical volumes
+from a volume group, but I am gonna skip that. But
+here's how we remove a volume group:
+#+begin_src bash
+  sudo vgremove my_first_group
+#+end_src
+
+**** logical volumes
+
+🐢 : Finally, logical volumes. Tools for this
+start with ~lv~, e.g. ~lvcreate,lvs,lvrename~.
+
+The command to create a logical volume is
+
+   sudo lvcreate -L <size> -n <name> <volume group>
+
+   + size :: 1GB |2MB | 30KB |...
+
+#+begin_src bash
+  sudo lvcreate -L 2MB -n my_first_logical_volume my_first_group
+  sudo lvs
+  sudo lvdisplay -S lv_name=my_first_logical_volume -C -o lv_name,lv_size,lv_path,vg_name
+#+end_src
+
+🐢 : We can also remove a logical volume:
+#+begin_src bash
+  sudo lvremove my_first_group/my_first_logical_volume
+#+end_src
+
+**** common operations
+
+🦜 : Okay, so where is the volume?
+
+🐢 : It's in
+~/dev/my_first_group/my_first_logical_volume~. For
+example, we can format it with ext4 and mount it
+somewhere:
+
+#+begin_src bash
+  sudo mkfs.ext4 /dev/my_first_group/my_first_logical_volume
+  sudo mkdir /mnt/my_first_logical_volume
+  sudo mount /dev/my_first_group/my_first_logical_volume /mnt/my_first_logical_volume
+  df -h
+  # /dev/mapper/my_first_group-my_first_logical_volume  2.0M  1.1M  788K  59% /mnt/my_first_logical_volume
+  sudo umount /mnt/my_first_logical_volume
+#+end_src
+
+🐢 : Here is how to resize a logical volume:
+#+begin_src bash
+  sudo lvresize -L +1MB /dev/my_first_group/my_first_logical_volume
+#+end_src
+
+🦜 : So, is that it? Do we need to let the
+filesystem know about the change?
+
+🐢 : Yes:
+
+#+begin_src bash
+  sudo resize2fs /dev/my_first_group/my_first_logical_volume
+#+end_src
+
+🦜 : Do all filesystems support resizing?
+
+🐢 : No. But Ext4 and XFS do.
+
 * End
 # Local Variables:
 # org-what-lang-is-for: "bash"
