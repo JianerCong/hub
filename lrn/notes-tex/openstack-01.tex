@@ -27,8 +27,20 @@ service catalog, which is a list of all the services.
 
 \subsubsection{Swift - object storage}
 
+\leftSay{\svgOs{swift}}{My name is \Cola{Swift}.
+  I am 
+  the object storage service (an object store). To store an object, it splits the object into chunks and stores them in different containers redundantly.
+}
 
-\cSay{ Swift is the object storage service (an object store). To store an object, it splits the object into chunks and stores them in different containers redundantly.}
+\colz{
+  The \texttt{swift-proxy} service is accessed by clients via the load balancer on the
+  management network (\texttt{br-mgmt}). The \texttt{swift-proxy} service communicates with the
+  Account, Container, and Object services on the Object Storage hosts via the
+  storage network(\texttt{br-storage}). Replication between the Object Storage hosts is
+  done via the replication network (\texttt{br-repl}).¶
+}
+
+
 
 Some of the benefits of this design are:
 
