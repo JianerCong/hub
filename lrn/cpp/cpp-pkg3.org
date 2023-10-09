@@ -1,5 +1,5 @@
 ** openssl
-*** basic
+*** hash it (hi)
 #+begin_src c++
 
 #define BOOST_TEST_MODULE test
@@ -41,127 +41,8 @@ BOOST_AUTO_TEST_CASE(test_hash){
   // BOOST_TEST_MESSAGE(format("hash: %s") % hash);
 }
 
-BOOST_AUTO_TEST_CASE(test_param){
-  const char * s = "v1";
-  const char s2[] = "v2";
-  OSSL_PARAM p{"k1" , OSSL_PARAM_UTF8_PTR, &s ,strlen(s), 0};
-  OSSL_PARAM p2{"k2" , OSSL_PARAM_UTF8_STRING, (void*)&s2 ,sizeof(s2) - 1, 0};
-
-  OSSL_PARAM p_set[] = {
-    p,
-    p2,
-    OSSL_PARAM_END              // 🦜 They require the param array be "null-terminated".
-  };
-
-  // p1: check the key --------------------------------------------------
-  BOOST_CHECK_EQUAL(p.key, string("k1"));
-  // check the value
-  BOOST_CHECK_EQUAL(p.data_type, OSSL_PARAM_UTF8_PTR);
-  BOOST_CHECK_EQUAL(p.data_size, strlen(s));
-  BOOST_CHECK_EQUAL(2, strlen(s));
-  BOOST_CHECK_EQUAL(p.data, &s);
-  // 🦜: here is how you get the value, wo
-  BOOST_CHECK_EQUAL(string_view( *((char **)p.data), p.data_size), "v1");
-
-  // p2: check
-  BOOST_CHECK_EQUAL(p2.key, string("k2"));
-  BOOST_CHECK_EQUAL(sizeof(s2), 3);
-  BOOST_CHECK_EQUAL(p2.data_size, 2);
-
-  // 🦜 : read the key... This seems to be the only way to read the key.
-  // Copilot's suggestion (also our first attempt) gives SEGFAULT.
-  
-  char b[p2.data_size + 1];
-  memcpy(b, p2.data, p2.data_size);
-  // 🦜 : here we use a very technical string_view to save a byte.
-  BOOST_CHECK_EQUAL(string_view(b, p2.data_size), "v2");
-}
-
-string get_uft8_string(OSSL_PARAM p2){
-    char b[p2.data_size];   // transient buffer
-    memcpy(b, p2.data, p2.data_size);
-  return string(b, p2.data_size); // copy
-}
-
-#include <openssl/param_build.h>
-BOOST_AUTO_TEST_CASE(test_param_BLD){
-  // 🦜 : OSSL_PARAM_BLD is a builder for OSSL_PARAM
-  OSSL_PARAM_BLD *bld = OSSL_PARAM_BLD_new();
-  OSSL_PARAM *params = NULL;
-
-  // 🦜 : We build the param by pushing the key and value.
-  BOOST_CHECK(OSSL_PARAM_BLD_push_utf8_string(bld, "k1", "v1", 0));
-  BOOST_CHECK(OSSL_PARAM_BLD_push_utf8_string(bld, "k2", "v2", 0));
-  params = OSSL_PARAM_BLD_to_param(bld);
-
-  // 🦜 : We can check the param
-  BOOST_CHECK_EQUAL(params[0].key, string("k1"));
-  BOOST_CHECK_EQUAL(params[0].data_type, OSSL_PARAM_UTF8_STRING);
-  BOOST_CHECK_EQUAL(get_uft8_string(params[0]), "v1");
-  BOOST_CHECK_EQUAL(params[1].key, string("k2"));
-  BOOST_CHECK_EQUAL(get_uft8_string(params[1]), "v2");
-  }
-
-BOOST_AUTO_TEST_CASE(test_new_key){
-  // 🦜 : No freedom, No flexibility, No need of understanding PKEY generating
-  // context PKEY_CTX, here is the quick way to generate a key.
-  EVP_PKEY * p =
-    // EVP_PKEY_Q_keygen(NULL, NULL, "X25519");
-    EVP_PKEY_Q_keygen(NULL, NULL, "ED25519");
-
-  BOOST_CHECK_NE(p, nullptr);
-  BOOST_CHECK(p);
-  // 🦜 : let's get some info
-
-  // 🦜 : free it
-  EVP_PKEY_free(p);
-}
-
-#include <memory>
-using std::unique_ptr;
-BOOST_AUTO_TEST_CASE(test_smart_new_keys){
-  // 🦜 : unique_ptr can help us free the key
-
-  {
-    unique_ptr<EVP_PKEY,void(*)(EVP_PKEY*)> p(EVP_PKEY_Q_keygen(NULL, NULL, "ED25519")
-                                              , [](EVP_PKEY* pkey){
-                                                BOOST_TEST_MESSAGE("key freed");
-                                                EVP_PKEY_free(pkey);
-                                              });
-
-    BOOST_CHECK(p);
-  }
-}
-
-BOOST_AUTO_TEST_CASE(test_pkey_info){
-  auto f= [](EVP_PKEY* pkey){
-      BOOST_TEST_MESSAGE("key freed");
-      EVP_PKEY_free(pkey);
-  };
-  unique_ptr<EVP_PKEY,void(*)(EVP_PKEY*)> p(EVP_PKEY_Q_keygen(NULL, NULL, "ED25519"),f);
-  BOOST_CHECK(p);
-
-  BOOST_CHECK_EQUAL(EVP_PKEY_id(p.get()), EVP_PKEY_ED25519);
-  BOOST_CHECK_EQUAL(EVP_PKEY_get0_type_name(p.get()),"ED25519");
-
-  // 🦜 : in OpenSSL '0' means 'const'
-  BOOST_TEST_MESSAGE(format("key type: %s") % EVP_PKEY_get0_type_name(p.get()));
-  BOOST_TEST_MESSAGE(format("description: %s") % EVP_PKEY_get0_description(p.get()));
-  // "OpenSSL ED25519 implementation"
-  BOOST_CHECK_EQUAL(EVP_PKEY_can_sign(p.get()), 1);
-  // 🦜 : it can sign, so it contains the public key, but not neccessarily the
-  // private key.
-
-  // 🦜 : In contrast, an uninitialized key cannot sign. (It contains no key)
-  unique_ptr<EVP_PKEY,void(*)(EVP_PKEY*)> p2(EVP_PKEY_new(), f); 
-  BOOST_CHECK_EQUAL(EVP_PKEY_can_sign(p2.get()), 0);
-
-  // 🦜 : We can also print the key info
-  // EVP_PKEY_print_public_fp(stdout, p.get(), 2 /*indent*/ , NULL);
-  EVP_PKEY_print_private_fp(stdout, p.get(), 2, NULL); // print both pub and priv
-}
-
 #+end_src
+*** key gen
 
 *** higher
 #+begin_src c++
