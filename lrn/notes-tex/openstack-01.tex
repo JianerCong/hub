@@ -16,30 +16,48 @@ About this services:
 
 \subsubsection{Keystone - identity management}
 
-\cSay{ Keystone is the identity management service. It's the simplest service in OpenStack.}
+\cSay{ Keystone is the identity management service. It's the simplest service in
+  OpenStack.}
 
 It provides a REST API for authentication and authorization. It also provides a
 service catalog, which is a list of all the services.
 
 \dSay{ Why is it keeping it ?}
 
-\cSay{ I think probably because it needs to know which services are accessible for a user anyway.}
+\cSay{ I think probably because it needs to know which services are accessible
+  for a user anyway.}
+
 
 \subsubsection{Swift - object storage}
 
 \leftSay{\svgOs{swift}}{My name is \Cola{Swift}.
+
   I am 
-  the object storage service (an object store). To store an object, it splits the object into chunks and stores them in different containers redundantly.
+  the object storage service (an object store).
+
+  To store an object, I split the object into chunks and stores them in different containers redundantly.
+
+  I implement a distributed, eventually consistent object/blob store that is accessible via HTTP/HTTPS.
 }
+
+The connection of swift is shown in the \cref{fig:production-storage-swift}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{/home/me/Pictures/opstk/production-storage-swift.png}
+  \caption{swift storage overview (Courtesy: \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/architecture/storage-arch.html}))}
+  \label{fig:production-storage-swift}
+\end{figure}
 
 \colz{
-  The \texttt{swift-proxy} service is accessed by clients via the load balancer on the
-  management network (\texttt{br-mgmt}). The \texttt{swift-proxy} service communicates with the
-  Account, Container, and Object services on the Object Storage hosts via the
-  storage network(\texttt{br-storage}). Replication between the Object Storage hosts is
-  done via the replication network (\texttt{br-repl}).¶
+  The \colZt{swift-proxy} service is accessed by \cola{clients} via the load balancer on the
+  management network (\colZt{br-mgmt}). The \colZt{swift-proxy} service communicates with the
+  \cola{
+    Account, Container, and Object services on the Object Storage hosts via the
+    storage network(\texttt{br-storage}).
+  }
+  Replication between the Object Storage hosts is
+  done via the replication network (\colZt{br-repl}).
 }
-
 
 
 Some of the benefits of this design are:
@@ -52,11 +70,84 @@ Some of the benefits of this design are:
 
 \dSay{ Wow, \cola{auto-recovey} is cool.}
 
+\FloatBarrier
+
 \subsubsection{Cinder - block storage}
 
 \dSay{ What if I just want a block of bytes ? For example, for the volume of a VM.}
 
-\cSay{ Then you can use Cinder. It provides raw volumes that can be used as hand disks in VMs.}
+\cSay{ Then you can use Cinder. It provides raw volumes that can be used as hand
+  disks in VMs.
+}
+
+\colz{
+  The Block Storage (cinder) service manages volumes on storage devices in an
+  environment. In a production environment, the device presents storage via a
+  storage protocol (for example, \colZ{NFS, iSCSI, or Ceph RBD}) to a storage network
+  (\colZt{br-storage}) and a storage management API to the management network (\colZ{br-mgmt}).
+  Instances are connected to the volumes via the storage network by the
+  hypervisor on the Compute host.
+}
+
+The connection of cinder is shown in the \cref{fig:production-storage-cinder}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{/home/me/Pictures/opstk/production-storage-cinder.png}
+  \caption{cinder storage overview (Courtesy: \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/architecture/storage-arch.html}))}
+  \label{fig:production-storage-cinder}
+\end{figure}
+
+\cref{fig:production-storage-cinder} shows the following steps:
+\colz{
+  \begin{enumerate}
+  \item A volume is created by the assigned \colZ{\texttt{cinder-volume} service} using the
+    appropriate \Cola{cinder driver}. The volume is created by using an API that is
+    presented to the \colZ{management network}.
+  \item After the volume is created, the \colZ{nova-compute service} connects the
+    Compute host hypervisor to the volume via the \colZ{storage network}.
+  \item After the hypervisor is connected to the volume, it presents the volume
+    as a local hardware device to the instance.
+  \end{enumerate}
+}
+
+\dSay{Oh, so the ``cloud storage'' technology needed is something like NFS or iSCSI ?}
+
+\cSay{Yes}
+
+\dSay{
+  Okay, so what are the available \cola{cinder drivers} ?
+}
+
+\cSay{
+  The \Cola{LVMVolumeDriver} is designed as a reference driver implementation.
+  But it's recommended for production use by the official documentation. Because
+  once the host is down, all the managed volumes become unavailable.
+
+  Also, Upgrading the operating system packages (e.g. kernel or iSCSI) on the
+  server causes storage connectivity outages because the iSCSI service restarts.
+}
+
+\dSay{
+  Okay so what are the other drivers ?
+}
+
+\cSay{
+  It seems like the doc recommands commercial drivers... Also, these services
+  can not be containerized.
+
+}
+
+\colz{
+  When
+  \colZ{
+    the cinder-volume service is configured to manage volumes
+    on the same back end from multiple hosts or containers
+  }, \cola{one service} is
+  scheduled to manage the life cycle of the volume until an alternative service
+  is assigned to do so. This assignment can be made through the \Cola{cinder-manage
+  CLI tool}.
+}
+
 
 Some of the features of Cinder are:
 
@@ -75,6 +166,57 @@ as from IBM, NetApp, Nexenta, and VMware.
 \begin{tcolorbox}
 \cSay{ Cinder replaces the old \Cola{Nova Volume service}. }
 \end{tcolorbox}
+
+
+
+\subsubsection{Glance - image storage}
+\label{sec:glance}
+
+\leftSay{\svgOs[0.2\linewidth]{glance}}{My name is \Cola{Glance}.
+
+  I am the image storage service.
+
+  I can store images on a variety of storage back ends supported by the \cola{\texttt{glance\_store\_drivers}}.
+}
+
+\cSay{
+  \colz{
+
+    When the \cola{File System store} is used, the Image service has \colz{no mechanism of
+      its own to replicate the image between Image service hosts}. We recommend
+    using a \colZ{shared storage back end} (via a file system mount) to ensure that all
+    glance-api services have access to all images. Doing so prevents losing
+    access to images when an infrastructure (control plane) host is lost.
+
+  }
+}
+
+The connection of glance is shown in the \cref{fig:production-storage-glance}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{/home/me/Pictures/opstk/production-storage-glance.png}
+  \caption{glance storage overview (Courtesy: \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/architecture/storage-arch.html}))}
+  \label{fig:production-storage-glance}
+\end{figure}
+\FloatBarrier
+
+In \cref{fig:production-storage-glance}, the \cola{glance-api} service has the
+following steps:
+\colz{
+  \begin{enumerate}
+  \item When a \colZ{client requests an image}, the glance-api service accesses the
+    appropriate store on the storage device over the \colZ{storage network (\texttt{br-storage})}
+    and pulls it into its \colZ{cache}. When the same image is requested again, it is
+    given to the client directly from the cache.
+  \item When an \colZ{instance is scheduled} for creation on a Compute host, the
+    \colZ{nova-compute service } requests the image from the \colZt{glance-api} service
+    over the \colZ{management network (\texttt{br-mgmt})}.
+  \item After the image is retrieved, the nova-compute service stores the image
+    in its \colZ{own image cache}. When another instance is created with the same
+    image, the image is retrieved from the local base image cache.
+  \end{enumerate}
+}
+
 
 \subsubsection{Manila - file share (since \cola{Juno})}
 
@@ -140,6 +282,37 @@ Let's decompose it into its components:
   for security. If some nodes are compromised, we can't just let them access the
   database however they want).
 \end{description}
+
+\cSay{
+
+  Compute host also needs some RAM (Ephemeral storage). Usually it's on the
+  compute host itself, but it can also (recommended) to use a \Cola{shared
+    storage subsystem} instead.
+
+}
+
+\colz{
+
+  Using a shared storage subsystem also allows the recovery of instances
+  when a Compute host goes offline. \Cola{The administrator is able to evacuate the
+  instance to another Compute host and boot it up again}. The following diagram
+  illustrates the interactions between the storage device, the Compute host, the
+  hypervisor, and the instance.
+}
+
+
+The connection of nova RAM is shown in the \cref{fig:production-storage-nova}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{/home/me/Pictures/opstk/production-storage-nova.png}
+  \caption{glance storage overview (Courtesy: \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/architecture/storage-arch.html}))}
+  \label{fig:production-storage-glance}
+\end{figure}
+\FloatBarrier
+
+In \cref{fig:production-storage-glance}, the \cola{glance-api} service has the
+
+
 
 \subsubsection{Neutron - networking services}
 
