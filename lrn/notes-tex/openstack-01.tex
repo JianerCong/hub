@@ -254,6 +254,15 @@ the share services.
   \end{tabularx}
 \end{table}
 
+An overview of Manila is shown in the \cref{fig:manila-overview}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{/home/me/Pictures/opstk/manila-overview.png}
+  \caption{manila storage overview (Courtesy: \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/architecture/storage-arch.html}))}
+  \label{fig:manila-overview}
+\end{figure}
+\FloatBarrier
+
 \subsubsection{Nova - compute service}
 \leftSay{\svgOs{nova}}{My name is \Cola{Nova}. I am the compute service, the most complex service in OpenStack.}
 
@@ -305,14 +314,23 @@ The connection of nova RAM is shown in the \cref{fig:production-storage-nova}.
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.5\textwidth]{/home/me/Pictures/opstk/production-storage-nova.png}
-  \caption{glance storage overview (Courtesy: \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/architecture/storage-arch.html}))}
-  \label{fig:production-storage-glance}
+  \caption{nova ephemeral storage overview (Courtesy:
+    \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/architecture/storage-arch.html}))}
+  \label{fig:production-storage-nova}
 \end{figure}
 \FloatBarrier
 
-In \cref{fig:production-storage-glance}, the \cola{glance-api} service has the
-
-
+\Cref{fig:production-storage-nova} shows the following steps:
+\colz{
+  \begin{enumerate}
+  \item The Compute host is configured with access to the storage device. The
+    Compute host accesses the storage space via the \colZ{storage network (\texttt{br-storage})}
+    by using a storage protocol (for example, NFS, iSCSI, or Ceph RBD).
+  \item The nova-compute service configures the hypervisor to present the
+    allocated instance disk as a device to the instance.
+  \item The hypervisor presents the disk as a device to the instance.
+  \end{enumerate}
+}
 
 \subsubsection{Neutron - networking services}
 

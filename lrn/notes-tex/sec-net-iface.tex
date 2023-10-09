@@ -1,0 +1,148 @@
+
+\section{bond}
+\label{sec:bond}
+
+Network bonding is a method to combine or aggregate network interfaces to
+provide a logical interface with higher throughput or redundancy.
+
+\subsection{bonding modes}
+
+There are several bonding modes. The most common modes are:
+\begin{longtblr}[caption={Common bonding modes}, label={tab:bonding-modes}]
+  {
+    colspec=XXX[4],
+    width = {0.9\linewidth}
+  }
+  \toprule
+  Mode number & Mode name & Description \\
+  \midrule
+  0 & \texttt{balance-rr} &
+  Round-robin policy.
+  \colz{
+    Transmits packets in
+    sequential order from the first available slave through the last. This
+    mode provides load balancing and fault tolerance.
+  }\\
+
+  1 & \texttt{active-backup} & \colz{ Establishes that only one slave in the
+    bond is active. A different slave becomes \colZ{active} if, and \colZ{only if}, the
+    active slave fails. The bond's MAC address is externally visible on only
+    one port (network adapter) to avoid confusing the switch. This mode
+    provides fault tolerance. The primary option affects the behavior of this
+    mode. } \\
+
+  2 & \texttt{balance-xor} & \colz{ Transmits based on the selected transmit
+    hash policy, which can be altered via the \texttt{xmit\_hash\_policy}
+    option. This mode provides load balancing and fault tolerance.
+  }\\
+
+  3 & \texttt{broadcast} & \colz{ Transmits everything on all slave
+    interfaces. This mode provides fault tolerance. }\\
+
+  4 & \texttt{802.3ad} & \colz{ 
+    IEEE 802.3ad Dynamic link aggregation policy. Creates aggregation groups
+    that share the same speed and duplex settings. Utilizes all slaves in the
+    active aggregator according to the 802.3ad specification.}\\
+
+  5 & \texttt{balance-tlb} & \colz{
+    Adaptive transmit load balancing. Establishes channel bonding that does
+    \cola{not require any special switch support}.
+
+    The outgoing traffic is distributed according to the current load
+    (computed relative to the speed) on each slave. Incoming traffic is
+    received by the current slave. If the receiving slave fails, another slave
+    takes over the MAC address of the failed receiving slave. }\\
+  6 & \texttt{balance-alb} &
+  Adaptive transmit load balancing.
+
+  \colz{ Establishes channel bonding that does \cola{not require any special switch
+    support}. The outgoing traffic is distributed according to the current load
+    (computed relative to the speed) on each slave. Incoming traffic is
+    received by the current slave. If the receiving slave fails, another slave
+    takes over the MAC address of the failed receiving slave.
+
+  }\\
+  
+  \bottomrule
+\end{longtblr}
+
+\subsection{Create a bond}
+
+Here's how to create a bond named \texttt{mybond} with \texttt{active-backup}.
+\begin{simplesh}
+n=mybond
+sudo nmcli connection add type bond con-name $n ifname $n bond.options "mode=active-backup"
+\end{simplesh}
+
+\subsection{Bind the devices}
+
+Now we display the interfaces:
+\begin{simplesh}
+sudo nmcli device status
+# DEVICE   TYPE      STATE         CONNECTION
+# enp7s0   ethernet  disconnected  --
+# enp8s0   ethernet  disconnected  --
+# bridge0  bridge    connected     bridge0
+# bridge1  bridge    connected     bridge1
+\end{simplesh}
+These are the interfaces that we are going to bind together. In this example:
+
+\begin{itemize}
+\item \texttt{enp7s0} and \texttt{enp8s0} are not configured. To use these as
+  ports(=slaves), we need to create a connection for each of them.
+\item \texttt{bridge0} and \texttt{bridge1} are already configured. To use
+  these as ports, we modify their profiles.
+\end{itemize}
+
+To assigns this to the bond:
+\begin{simplesh}
+sudo nmcli connection add type ethernet slave-type bond con-name my-bond-port1 ifname enp7s0 master $n
+sudo nmcli connection add type ethernet slave-type bond con-name my-bond-port2 ifname enp8s0 master $n
+\end{simplesh}
+This create profiles for \texttt{enp7s0} and \texttt{enp8s0} and assign them to
+the bond \texttt{mybond}.
+
+Next, we bind the bridges:
+\begin{simplesh}
+sudo nmcli connection modify bridge0 master $n #bind the bridge to the bond
+sudo nmcli connection modify bridge1 master $n
+sudo nmcli connection up bridge0 # reactive the connections
+sudo nmcli connection up bridge1
+\end{simplesh}
+
+\subsection{Configure the bond}
+
+For IPv4, we can either:
+\begin{itemize}
+\item assign a static IP address to the bond interface:
+\begin{simplesh}
+sudo nmcli connection modify bond0 ipv4.addresses '192.0.2.1/24' \
+     ipv4.gateway '192.0.2.254' ipv4.dns '192.0.2.253' \
+     ipv4.dns-search 'example.com' ipv4.method manual
+\end{simplesh}
+\item use DHCP: then do nothing
+\item make this bond a port of another bond....
+\begin{simplesh}
+sudo nmcli connection modify bond0 ipv4.method disabled
+\end{simplesh}
+  \end{itemize}
+  
+
+
+
+
+% \begin{enumerate}
+% \item \texttt{active-backup}: Only one slave in the bond is active. If this
+%   slave fails, another slave takes over the MAC address and IP address of the
+%   failed slave.
+% \item \texttt{balance-tlb}
+% \item \texttt{balance-alb}
+% \end{enumerate}
+% These do not require any special configuration of the switch.
+
+\colz{ However, other bonding modes require configuring the switch to aggregate
+  the links. For example, \cola{Cisco} switches requires \texttt{EtherChannel}
+  for modes 0, 2, and 3, but for mode 4, the \Cola{Link Aggregation Control
+    Protocol (LACP)} and \texttt{EtherChannel} are required. For further
+  details, see the documentation of your switch.
+}

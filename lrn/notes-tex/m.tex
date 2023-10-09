@@ -1,17 +1,45 @@
 \documentclass[dvipsnames]{article}
 % \documentclass[dvipsnames]{ctexart}
 
-\title{Openstack}
+
+\title{Linux Network}
 \input{h}
 \input{h-says}
 
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=magenta,      
+  urlcolor=cyan,
+  pdftitle={Linux Network},
+  pdfpagemode=FullScreen,
+}
+\urlstyle{same}
 
 % --------------------------------------------------
 \begin{document}
+
 \maketitle
-\input{openstack-01}
-% \input{openstack-setup}
-% \input{openstack-arch}
+
+% 🦜 : It looks like this two must be after the \maketitle
+\newcolumntype{s}{>{\hsize=.2\hsize}X}
+\newcolumntype{c}{>{\hsize=.2\hsize \centering\arraybackslash}X}
+% \input{sec-net-mac-addr}
+% \input{sec-net-ports}
+% \input{sec-net-dns}
+% \input{sec-net-dns2}
+% \input{sec-net-dns-dig}
+% \input{sec-net-dns-update}
+% \newcommand{\dmq}{\texttt{dnsmasq}}
+% \input{sec-net-dnsmaq}
+% \input{sec-net-dnsmaq-dhcp}
+% \input{sec-net-ndp}
+% \input{sec-net-dhcp}
+% \input{sec-net-slaac}
+% \input{sec-net-addr}
+% \input{sec-net-sysd}
+% \input{sec-net-vnet}
+\input{sec-net-iface}
 
 \end{document}
 
@@ -19,4 +47,6 @@
 % TeX-engine: luatex
 % TeX-command-extra-options: "-shell-escape"
 % TeX-master: "m.tex"
+% TeX-parse-self: t
+% TeX-auto-save: t
 % End:

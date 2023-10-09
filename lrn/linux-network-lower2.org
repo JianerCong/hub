@@ -226,6 +226,9 @@ network options:
 4. The external router routes the packet to the web server.
 **** how to give each container an ip on the LAN
 Use MacVlan
+** bond
+
+🐢 : Create a bond named bond0 that uses the active-backup mode.
 
 * End
 # Local Variables:
