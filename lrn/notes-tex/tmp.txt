@@ -1,0 +1,4 @@
+[IPV6ACCEPTRA]
+
+# use the DNS servers received in RA
+UseDNS=true

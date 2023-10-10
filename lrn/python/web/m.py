@@ -1,5 +1,6 @@
 import web
 import json
+import sys
 
 urls = (
     '/', 'hi',
@@ -33,5 +34,6 @@ class query:
 
 
 if __name__ == '__main__':
+    print(f'Args: {sys.argv}')
     app = web.application(urls, globals())
     app.run()

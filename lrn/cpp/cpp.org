@@ -1,4 +1,38 @@
 ** Cpp
+*** c++ 11 literal
+#+begin_src c++
+    #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <string>
+  using std::string;
+
+  struct A{const char* x;};
+
+  A operator ""_a(const char* x){return A(x);};
+  A operator ""_a(const char* x,size_t){return A(x);};
+
+
+  BOOST_AUTO_TEST_CASE(test_literal) {
+    A a = 123_a;                  // call (1)
+    A b = "abc"_a;                // call (2)
+    BOOST_CHECK_EQUAL(a.x,string("123"));
+    BOOST_CHECK_EQUAL(b.x,string("abc"));
+  }
+  
+#+end_src
+*** cast
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  int x = 2;
+  uint64_t y = static_cast<uint64_t>(x);
+  BOOST_CHECK_EQUAL(x,y);
+}
+
+#+end_src
 *** string
 **** length
 #+begin_src c++
@@ -35,7 +69,6 @@ int main ()
   return 0;
 }
 #+end_src
-**** erase
 **** char in string
 #+begin_src c++
 // CPP program to demonstrate working of strchr()
@@ -109,6 +142,42 @@ z is not present in string
     std::regex long_word_regex("(\\w{7,})");
     std::string new_s = std::regex_replace(s, long_word_regex, "[$&]");
     std::cout << new_s << '\n';
+  }
+#+end_src
+**** wchar_t
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_wide_char) {
+  wchar_t w = L'A';
+  char c = 'A';
+
+  BOOST_CHECK_EQUAL(w,65);
+  BOOST_CHECK_EQUAL(sizeof(w),4);
+  BOOST_CHECK_EQUAL(sizeof(c),1);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(test_wide_char_string) {
+  wchar_t w[] = L"ABC";
+
+  BOOST_CHECK_EQUAL(sizeof(w),4*4);
+  BOOST_CHECK_EQUAL(w[0],L'A');
+  // NULL-ended
+
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+#+end_src
+*** assert
+#+begin_src c++
+  #include <cstdio>
+  #include <cassert>
+
+
+  int main(int argc, char *argv[]){
+    assert(2==1);
+
+    return 0;
   }
 #+end_src
 *** Move
@@ -224,48 +293,53 @@ non-template > explicit specialization > template
 *** File
 **** simple
 #+BEGIN_SRC c++
-/**
- * @file file.cpp
- * @author Jianer Cong
- * @brief Simple file input and output
- */
-#include <iostream>
-#include <fstream>
-#include <string>
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  #include <boost/log/trivial.hpp>
 
-using std::string;
-using std::cout;
-using std::cin;
-using std::ofstream;
-using std::ifstream;
+  // colors
+  #define S_RED     "\x1b[31m"
+  #define S_GREEN   "\x1b[32m"
+  #define S_YELLOW  "\x1b[33m"
+  #define S_BLUE    "\x1b[34m"
+  #define S_MAGENTA "\x1b[35m"
+  #define S_CYAN    "\x1b[36m"
+  #define S_NOR "\x1b[0m"
+  using boost::format;
 
-int main(int argc, char *argv[]){
-  string filename;
+  #include <filesystem>
+  #include <string>
+  #include <string_view>
+  using std::string_view;
+  using std::string;
+  using std::filesystem::path;
+  using std::filesystem::current_path;
+  namespace filesystem = std::filesystem;
 
-  cout << "Enter the name of new file: ";
-  cin >> filename;
+  #include <fstream>
 
-  filename = filename + ".txt";
-  // The output stream
-  ofstream fout(filename.c_str());
+  BOOST_AUTO_TEST_CASE(test_write_and_read_basic){
+    path p = current_path() / "hi.txt";
+    if (filesystem::exists(p))
+      filesystem::remove_all(p);
 
-  fout << "Your secret number is : ";
-  cout << "Enter your secret number :";
-  float x;
-  cin >> x;
-  fout << x;
-  fout.close();
+    // write --------------------------------------------------
+    std::ofstream o(p);
+    BOOST_CHECK(o.is_open());
+    o << "abc\n";
+    o.close();
 
-  // Create input
-  ifstream fin(filename.c_str());
-  cout << "The content of " << filename << " is :\n";
-  char ch;
-  while(fin.get(ch))
-    cout << ch;
-  cout << "\nDone";
-  fin.close();
+    // read --------------------------------------------------
+    std::ifstream i(p);
+    BOOST_CHECK(i.is_open());
+    string s;
+    char c;
+    while (i.get(c))
+      s+=c;
+    i.close();
+    BOOST_CHECK_EQUAL(s,"abc\n");
   }
-
 #+END_SRC
 **** readline
 #+BEGIN_SRC c++
@@ -442,301 +516,6 @@ void report_bad_file(string s){
 
 
 #+END_SRC
-*** Vector
-**** init
-#+begin_src c++
-// CPP program to initialize a vector like
-// an array.
-#include <iostream>
-#include <vector>
-using namespace std;
-
-int main()
-{
-	vector<int> vect{ 10, 20, 30 };
-
-	for (int x : vect)
-		cout << x << " ";
-
-	return 0;
-}
-
-#+end_src
-**** erase
-#+BEGIN_SRC c++
-// erasing from vector
-
-#include <iostream>
-#include <vector>
-using std::cout;
-
-#define SHOW std::cout << "myvector contains:"; \
-  for (unsigned i=0; i<myvector.size(); ++i)    \
-    std::cout << ' ' << myvector[i];            \
-  std::cout << '\n'
-
-int main ()
-{
-  std::vector<int> myvector;
-
-  // set some values (from 1 to 10)
-  for (int i=1; i<=10; i++) myvector.push_back(i);
-  SHOW;
-
-  cout << "erase the 6th element: \n";
-  myvector.erase (myvector.begin()+5);
-  SHOW;
-
-  cout << "erase the first 3 elements: \n";
-  myvector.erase (myvector.begin(),myvector.begin()+3);
-  SHOW;
-
-
-  return 0;
-}
-
-#+END_SRC
-**** lcode
-#+begin_src c++
-
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
-
-#include <cstdio>
-#include <iostream>
-#include <string>
-#include <stack>
-#include <vector>
-
-using std::string;
-using std::vector;
-using std::cout;
-
-
-// convert to vector to string
-#include <sstream>
-string v2s(vector<int> vec){
-  // the vector-to-string
-  std::stringstream ss;
-  for(int i =0;i<vec.size();i++)
-    { if(i != 0)
-        { ss<<", ";
-        }
-      ss<< vec[i];
-    }
-  return ss.str();
-}
-
-#include <algorithm>            // for std::reverse
-using std::reverse;
-class Solution {
-public:
-  void nextPermutation(vector<int>& nums) {
-    int L = nums.size();
-    for (int i=L-2;i>-1;i--){
-      if (nums[i] < nums[i+1]){
-        int j = i + 1;
-
-        while (j < (L - 1) && (nums[j+1] > nums[i])){
-          j++;
-        }
-
-        int temp = nums[i];
-        nums[i] = nums[j];
-        nums[j] = temp;
-
-
-        // Reverse the tail-values
-        // j = 1;
-        // while((L - j) - (i+j) > 0){
-        //   temp = nums[i+j];
-        //   nums[i+j] = nums[L-j];
-        //   nums[L-j] = temp;
-        //   j++;
-        // }
-        reverse(nums.begin()+i+1, nums.end());
-
-        return;
-      }
-    }
-
-    reverse(nums.begin(),nums.end());
-  }
-};
-
-int main(int argc, char *argv[]){
-  Solution S;
-
-  vector<int> nums{3,2,1};
-  vector<int> nums2{1,2,3};
-
-  S.nextPermutation(nums);
-  printf("Should be %s \n it's %s \n", v2s(nums).c_str(), v2s(nums2).c_str());
-
-
-  return 0;
-}
-
-#+end_src
-**** iterator and distance
-#+begin_src c++
-  #include <cstdio>
-  #include <vector>
-
-  using std::vector;
-
-  int main(){
-    vector<int> v({1,2,3});
-
-    auto p1 = v.begin();
-    auto p2 = v.end();
-    printf("*p1 is %d\n",*p1);//1
-    printf("*(p2 - 1) is %d\n",*(p2 - 1)); // 3
-    // Note: long int
-    printf("*(p2 - p1) is %ld\n",p2 - p1); // 3
-  }
-
-#+end_src
-**** find
-#+begin_src c++
-// CPP program to illustrate
-// std::find
-// CPP program to illustrate
-// std::find
-#include<bits/stdc++.h>
-
-int main ()
-{
-	std::vector<int> vec { 10, 20, 30, 40 };
-	// Element to be searched
-	int ser = 30;
-
-	// std::find function call
-	std::vector<int>::iterator it =  std::find (vec.begin(), vec.end(), ser);
-	if (it != vec.end())
-    {
-      std::cout << "Element " << ser <<" found at position : " ;
-      std::cout << it - vec.begin() << " (counting from zero) \n" ;
-    }
-	else
-		std::cout << "Element not found.\n\n";
-
-	return 0;
-}
-// Output: 
-// Original vector : 10 20 30 40
-// Element 30 found at position : 2 (counting from zero)
-
-#+end_src
-*** List
-**** basic
-#+begin_src c++
-#include <algorithm>
-#include <iostream>
-#include <list>
- 
-int main()
-{
-  // Create a list containing integers
-  std::list<int> l = { 7, 5, 16, 8 };
- 
-  // Add an integer to the front of the list
-  l.push_front(25);
-  // Add an integer to the back of the list
-  l.push_back(13);
- 
-  // Insert an integer before 16 by searching
-  auto it = std::find(l.begin(), l.end(), 16);
-  if (it != l.end()) {
-    l.insert(it, 42);
-  }
- 
-  // Print out the list
-  std::cout << "l = { ";
-  for (int n : l) {
-    std::cout << n << ", ";
-  }
-  std::cout << "};\n";
-}
-
-#+end_src
-**** random access
-#+BEGIN_SRC c++
-// list::begin
-#include <iostream>
-#include <list>
-
-int main ()
-{
-  int myints[] = {75,23,65,42,13};
-  std::list<int> mylist (myints,myints+5);
-
-  std::cout << "mylist contains:";
-  for (std::list<int>::iterator it=mylist.begin(); it != mylist.end(); ++it)
-    std::cout << ' ' << *it;
-
-  std::cout << '\n';
-
-  return 0;
-}
-#+END_SRC
-*** map
-   #+begin_src c++
-/**
- * @file umap.cpp
- * @author Jianer Cong
- * @brief unordered map basic
- */
-
-#include <unordered_map>
-#include <iostream>
-
-using std::cout;
-using std::unordered_map;
-using std::endl;
-
-
-typedef unordered_map<int,const char*> umap;
-
-int main(int argc, char *argv[]){
-  umap m = {
-            { 1 , "one"},
-            {2, "two"}
-  };
-
-  cout << "Map contents are\n";
-  for (const auto& [k, v] : m){
-    cout << "Key " << k << " Value " << v << endl;
-  }
-
-  // Insert some value
-  m.insert({3,"three"});
-  m.insert({
-            {4,"four"}, {5,"five"}
-    });
-
-  m.emplace(4,"NO");
-  // Will not insert, since already exits/
-  m.emplace(6,"six");
-
-  cout << "Now the contents are:\n";
-  for (const auto& p : m){
-    cout << "\t"<< p.first << " : " << p.second << endl;
-  }
-
-  cout << "After erase one:\n";
-  m.erase(1);
-
-  for (const auto& p : m){
-    cout << "\t"<< p.first << " : " << p.second << endl;
-  }
-  return 0;
-  }
-
-   #+end_src
 *** iomanip
  #+begin_src c++
 #include <iostream>
@@ -1016,6 +795,148 @@ int main(int argc, char *argv[]){
   }
 
   #+end_src
+**** friend
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <string>
+
+using bytes = std::basic_string<uint8_t>;
+using std::string;
+
+
+namespace n1{
+  class A{
+  public:
+    friend class B;
+  private:
+    // private constant
+    const static int y{123};
+  };
+
+  class B{
+  public:
+    int y;
+    // Access friend's private const
+    B(): y(A::y){}
+  };
+}
+
+BOOST_AUTO_TEST_CASE(access_private_const) {
+  n1::B b;
+  n1::A a;
+  BOOST_CHECK_EQUAL(b.y,123);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+
+
+namespace n2{
+  class A{
+  public: friend class B;
+  private: int y;
+  };
+
+  class B{
+    A a;
+  public:
+    B(A _a): a(_a){}
+    // get set member friend's
+    int get(){return a.y;};
+    void set(int y){a.y=y;};
+  };
+}
+BOOST_AUTO_TEST_CASE(member_friend){
+  n2::B b{n2::A()};
+  b.set(123);
+  BOOST_CHECK_EQUAL(b.get(),123);
+}
+
+namespace n3{
+  class A{
+  public: friend class B;
+  private: int y;
+  };
+
+  class B{
+  public:
+    // get set passed-in friend's
+    int get(A&a){return a.y;};
+    void set(A&a,int y){a.y=y;};
+  };
+}
+BOOST_AUTO_TEST_CASE(passed_in_friend){
+  n3::B b;
+  n3::A a;
+  b.set(a,123);
+  BOOST_CHECK_EQUAL(b.get(a),123);
+}
+
+namespace n4{
+  class A;// forward def: neccesarry for friend function
+  // now compiler knows A--------------------------------------------------
+  class B{
+  public:
+    int get(A&a);
+    // Has to be implemented later
+  };
+  // now compiler knows B::get--------------------------------------------------
+  class A{
+  public:
+    friend int B::get(A& a);
+  private: int y = 123;
+  };
+  // now compiler knows everything -----------------------------------------
+  int B::get(A&a){return a.y;};
+}
+BOOST_AUTO_TEST_CASE(friend_func){
+  n4::B b;
+  n4::A a;
+  BOOST_CHECK_EQUAL(b.get(a),123);
+}
+
+#+end_src
+**** upcast
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <memory>
+
+using std::shared_ptr;
+
+class A {public: int x{1};};
+class A1 : public A{int y{2};};
+
+int f(const A & a){return a.x + 1;}
+int f(const A1 & a){return a.x + 2;}
+
+BOOST_AUTO_TEST_CASE(test_upcast_always_succeed){
+  A1 a1;
+
+  A* a = dynamic_cast<A*>(&a1); // you have to take it out
+
+  int r = f(*a);
+  BOOST_CHECK_EQUAL(r,2);
+}
+
+BOOST_AUTO_TEST_CASE(test_upcast_always_succeed_reference){
+  A1 a1;
+  A& a = dynamic_cast<A&>(a1); // you have to take it out
+  int r = f(a);
+  BOOST_CHECK_EQUAL(r,2);
+}
+
+// 🦜 : The following won't work.
+
+// BOOST_AUTO_TEST_CASE(test_upcast_always_succeed_shared_ptr){
+//   A1 a1;
+
+//   shared_ptr<A> a{dynamic_cast<A*>(&a1)};
+
+//   int r = f(*a);
+//   BOOST_CHECK_EQUAL(r,2);
+// }
+
+#+end_src
 *** Exception
 1. domain_error
 2. invalid_argument
@@ -1071,50 +992,60 @@ bool isGood(){return ::isGood(a);}
 #+end_src
 *** Time
 #+begin_src c++
-#include <ctime>
-#include <iostream>
-using namespace std;
+  #include <ctime>
+  #include <iostream>
+  using namespace std;
 
-int main()
-{
-	time_t curr_time;
-	tm * curr_tm;
-	char date_string[100];
-	char time_string[100];
-	
-	time(&curr_time);
-	curr_tm = localtime(&curr_time);
-	
-	strftime(date_string, 50, "Today is %B %d, %Y", curr_tm);
-	strftime(time_string, 50, "Current time is %T", curr_tm);
-	
-	cout << date_string << endl;
-	cout << time_string << endl;
-	
-	return 0;
+  int main()
+  {
+    char date_string[100];
+    char time_string[100];
+
+    time_t curr_time;
+    tm* curr_tm;
+    time(&curr_time);
+    // std::time_t ms = std::time(nullptr); ms since Epoch
+    curr_tm = localtime(&curr_time);
+
+    strftime(date_string, 50, "Today is %B %d, %Y", curr_tm);
+    strftime(time_string, 50, "Current time is %T", curr_tm);
+
+    cout << date_string << endl;
+    cout << time_string << endl;
+
+    return 0;
+  }
+
+#+end_src
+*** this pointer
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+class A{
+protected:
+  int a;
+public:
+  int f(){return this->a;}
+  int g(){return this->f();}
+  explicit A(int _a): a(_a){}
+};
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  A a{1};
+  BOOST_CHECK_EQUAL(a.f(),1);
+  BOOST_CHECK_EQUAL(a.g(),1);
 }
 
 #+end_src
-*** sleep
+*** WIN or *Nix?
 #+begin_src c++
-  #ifdef _WIN32
-  #include <Windows.h>
-  #else
-  #include <unistd.h>
-  #endif
-  // unsigned sleep(unsigned seconds);
-
-
+#if defined(OS_WIN)
+std::string kDBPath = "C:\\Windows\\TEMP\\rocksdb_compact_files_example";
+#else
+std::string kDBPath = "/tmp/rocksdb_compact_files_example";
+#endif
 #+end_src
-** rocksdb
-#+begin_src bash
-  sudo apt update
-  sudo apt upgrade
-  sudo apt search librocksdb
-  sudo apt install librocksdb-dev
-  ls /usr/include/rocksdb/
-#+end_src
-
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

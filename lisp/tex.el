@@ -5,7 +5,7 @@ s1 is inserted at the front, s2 is the prompt string, s3 is
 inserted after the prompt, s4 will be placed at the end. So it's
 s1 <prompt s2> s3 _ s4
 "
-  (lexical-let ((s1 s1)
+  (let ((s1 s1)
                 (s2 s2)
                 (s3 s3)
                 (s4 s4)
@@ -30,6 +30,26 @@ s1 <prompt s2> s3 _ s4
 
 (fset 'tex-tikz-inputpage (my-make-skeleton "\\inpage[" "page dimension:" "]{" "}"))
 
+(define-skeleton luatex-boiler-plate
+  "Insert the boiler plate"
+  nil
+  "\\documentclass[12pt, a4paper, oneside]{ctexart}" \n
+  "\\title{" (skeleton-read "Title ?") "}" \n
+  "\\usepackage{geometry}"
+  "\\geometry{" \n
+  "a4paper," \n
+  "total={170mm,257mm}," \n
+  "left=20mm," \n
+  "top=20mm," \n
+  "}" \n
+  > "\\author{Me}" \n
+  > "\\date{\\today}" \n
+  > "\\begin{document}" \n
+  > "\\maketitle" \n
+  >  _ \n
+  >"\\end{document}"
+  )
+
 (define-skeleton tex-boiler-plate
   "Insert the boiler plate"
   nil
@@ -42,12 +62,21 @@ s1 <prompt s2> s3 _ s4
   "left=20mm," \n
   "top=20mm," \n
   "}" \n
-  > "\\author{Jianer Cong}" \n
+  > "\\author{Me}" \n
   > "\\date{\\today}" \n
   > "\\begin{document}" \n
   > "\\maketitle" \n
   >  _ \n
   >"\\end{document}"
+  )
+
+(define-skeleton tex-mymatrix
+  "Insert a matrix boilerplate"
+  nil
+  "\\matrix (M-" (setq s (skeleton-read "Parent ?")) ") [myMatrix, text width=8cm]"
+  " at ([shift={(1cm,-2cm)}]  " s ".south){" \n
+  _ \n
+  "\\\\};"
   )
 
 (define-skeleton tex-exam-boiler-plate
@@ -80,7 +109,6 @@ s1 <prompt s2> s3 _ s4
   "\\end{document}")
 
 
-
 (defun quoted-parentheses (arg)
   (interactive "P")
   ;; if the text before point is \
@@ -96,17 +124,24 @@ s1 <prompt s2> s3 _ s4
 (define-key LaTeX-mode-map (kbd "\C-c t") 'tex-tikz-boiler-plate)
 (define-key LaTeX-mode-map (kbd "\C-c e") 'tex-exam-boiler-plate)
 
+
 ;; LaTeX-mode uses latex-mode-abbrev-table
 (when (boundp 'latex-mode-abbrev-table)
   (clear-abbrev-table latex-mode-abbrev-table)
   (define-abbrev-table 'latex-mode-abbrev-table
     '(
-      ("nd" "\\node")
+      ("nd" "" (lambda () (skeleton-insert
+                           '(nil "\\node (" (setq x (skeleton-read "Name: "))
+                                 ") [text width=8cm] " \n
+                                 "{\\begin{ifaceBox}[title=\\texttt{" x "}]" \n
+                                 _ \n
+                                 "\\end{ifaceBox}};"))))
+      ("tw" "text width=")
       ("nt" "\\notag\\\\")
       ("nte" "\\notag")
       ("dr" "\\draw")
       ("tm" "\\times")
-      ("ip" "" tex-tikz-inputpage)
+      ;; ("ip" "" tex-tikz-inputpage)
       ("gt" "\\MyGet" )
       ("mb" "\\mbox")
       ("mwhr" " \\\\[-1cm]               %remove the extra spacing
@@ -114,7 +149,18 @@ s1 <prompt s2> s3 _ s4
   \\\\[-1cm]               %remove the extra spacing")
       ("whr" "\\intertext{Where}")
       ("tx" "\\text")
+      ("Ep" "\\emoji{parrot}")
+      ("Et" "\\emoji{turtle}")
+      ("Eh" "\\emoji{pinching-hand}")   ;pick
+      ("Ec" "\\emoji{cross-mark}")      ;error
+      ("EnoSee" "\\emoji{see-no-evil-monkey}")
+      ("EnoHear" "\\emoji{hear-no-evil-monkey}")
+      ("EnoSpeak" "\\emoji{speak-no-evil-monkey")
+      ("Eno" "\\emoji{see-no-evil-monkey} \\emoji{hear-no-evil-monkey} \\emoji{speak-no-evil-monkey}")      ;
       ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
+      ("Ca" "" (lambda () (skeleton-insert '(nil "\\Cola{" _ "}"))))
+      ("ttt" "" (lambda () (skeleton-insert '(nil "[title=\\texttt{" _ "}]"))))
+      ;; ("vb" "" (lambda () (skeleton-insert '(nil "\\verb|" _ "|"))))
       )
     )
   )
@@ -135,6 +181,7 @@ s1 <prompt s2> s3 _ s4
       ("qd" "\\quad")
       ("ni" "\\noindent")
       ("ddd" "\\cdots")
+      
       ))                                  ;nil
   )
 
@@ -181,3 +228,44 @@ s1 <prompt s2> s3 _ s4
       ;; if the char-after == l[char-before]
       (and (char-after) (delete-char 1)))
   )
+
+
+;; ;; 🦜 : Ask AucTex to use verbatim font-fixing in these environments
+;; (add-to-list 'LaTeX-verbatim-environments "simplepy")
+;; (add-to-list 'LaTeX-verbatim-environments "simplec")
+;; (add-to-list 'LaTeX-verbatim-environments "simpler")
+
+;; use to loop to do the above
+(dolist
+    (env '("simplepy" "simplec" "simpler" "numberedc" "simplesh"))
+  (add-to-list 'LaTeX-verbatim-environments env)
+  ;; (add-to-list 'LaTeX-indent-environment-list (cons env 'current-indentation))
+    )
+
+;; LaTeX-verbatim-environments
+;; LaTeX-indent-environment-list
+
+;; 🦜 add our own Font-Inserting command
+LaTeX-font-list
+
+;; (setq-default TeX-master "m") ; All master files by default called "m".
+
+(add-to-list 'LaTeX-font-list '(?a "\\cola{" "}"))                       ;C-c C-f a
+(add-to-list 'LaTeX-font-list '(?A "\\Cola{" "}"))                       ;C-c C-f a
+(add-to-list 'LaTeX-font-list '(?b "\\colb{" "}"))                       ;C-c C-f b
+(add-to-list 'LaTeX-font-list '(?c "\\colc{" "}"))                       ;C-c C-f c
+(add-to-list 'LaTeX-font-list '(?z "\\colz{" "}"))                       ;C-c C-f z
+(add-to-list 'LaTeX-font-list '(?Z "\\colZ{" "}"))                       ;C-c C-f Z
+(add-to-list 'LaTeX-font-list '(?t "\\text{" "}"))                       ;C-c C-f t
+
+;;This reload the 'LaTeX-font-list
+(TeX-normal-mode)
+
+;; 🦜 : Ask AucTex not to play with indentation in these environments, it looks
+;; like (TeX-normal-mode) will reset this list, so you'd better to it here
+(dolist
+    (env '("simplepy" "simplec" "simpler" "numberedc" "simplesh"))
+  (add-to-list 'LaTeX-indent-environment-list (cons env 'current-indentation))
+  )
+(rainbow-delimiters-mode)
+(auto-fill-mode)

@@ -1166,12 +1166,22 @@ npm install three three-sky
 + material not shown under the sea :: set ~material.depthFunc~
 *** nvm
 #+begin_src bash
+  nvm version                     # see version
+  nvm ls                          # what are installed
+  nvm current                     # see the current
   nvm use 16
   node -v
   nvm use 14
   node -v
   nvm install 12
+  nvm uninstall 12
   node -v
+
+  nvm install node                      #Install the latest available version
+  nvm use node                          #Use the latest version
+  nvm install --lts                     #Install the latest LTS version
+  nvm use --lts                         #Use the latest LTS version
+
 #+end_src
 *** vite
 npm create vite@latest

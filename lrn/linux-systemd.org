@@ -88,7 +88,7 @@ man systemd.unit
  -p : show application name
 ** Add my service
 in /etc/systemd/system/myserver.service (should not by symlink)
-#+begin_src systemd
+#+begin_src conf
 [Unit]
 Description=My Http Service
 

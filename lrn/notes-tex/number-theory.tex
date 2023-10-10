@@ -1,0 +1,424 @@
+\documentclass[dvipsnames]{article}
+% \documentclass[dvipsnames]{ctexart}
+
+\title{number theory}
+\usepackage{geometry}\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm,
+}
+
+
+\usepackage{svg}
+
+\usepackage[skip=5pt plus1pt, indent=0pt]{parskip}
+% Color
+\newcommand{\mycola}{MidnightBlue}
+\newcommand{\mycolb}{Mahogany}
+\newcommand{\mycolc}{OliveGreen}
+
+\newcommand{\cola}[1]{\textcolor{\mycola}{#1}}
+\newcommand{\colb}[1]{\textcolor{\mycolb}{#1}}
+\newcommand{\colc}[1]{\textcolor{\mycolc}{#1}}
+\newcommand{\Cola}[1]{\textcolor{\mycola}{\textbf{#1}}}
+
+% \let\emph\relax % there's no \RedeclareTextFontCommand
+% \DeclareTextFontCommand{\emph}{\bfseries}
+\renewcommand{\emph}[1]{\texbf{#1}}
+\usepackage{amssymb}            %\mathbb
+
+\usepackage{fontspec}
+
+\setmonofont{Cascadia}[
+Path=/usr/share/fonts/truetype/Cascadia_Code/,
+Scale=0.85,
+Extension = .ttf,
+UprightFont=*Code,              %find CascadiaCode.ttf
+BoldFont=*CodePL,               %find CascadiaCodePL.ttf ...
+ItalicFont=*CodeItalic,
+BoldItalicFont=*CodePLItalic
+]
+% --------------------------------------------------
+% Windows
+% \setmonofont{Cascadia}[
+% Path=C:/Windows/Fonts/,
+% Extension = .ttf,
+% UprightFont=*Mono,              %find CascadiaMono.ttf
+% BoldFont=*Code,               %find CascadiaCodePL.ttf ...
+% ItalicFont=*Code,
+% BoldItalicFont=*Code
+% ]
+
+
+\usepackage{minted}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usepackage{tikz}
+\usetikzlibrary{shapes} % ellipse node shape
+\usetikzlibrary{shapes.multipart} % for line breaks in node text
+\usetikzlibrary{arrows.meta}    %-o arrow head
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+\usetikzlibrary{snakes}
+
+\usepackage{amsmath}
+% ??? still xelatex?
+% \usepackage{xeCJK}
+\usepackage{emoji}
+% \setemojifont{NotoColorEmoji.ttf}[Path=C:/Users/congj/repo/myFonts/]
+% \setemojifont{TwitterColorEmoji-SVGinOT.ttf}[Path=C:/Users/congj/repo/myFonts/]
+
+
+\newtcolorbox[auto counter]{myBox}[2][]{
+  fonttitle=\bfseries,title={共识~\thetcbcounter: #2},#1
+}
+\newtcolorbox[]{noteBox}[1][]{
+  tile,left=1mm,nobeforeafter,fontupper=\small,#1
+}
+
+\tikzstyle{myNode}=[inner sep=2pt,circle,text=white]
+\date{\today}
+\author{作者}
+
+\newtcblisting{simplec}{
+  listing engine=minted,
+  minted language=c++,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter, 
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20
+}
+\tcbuselibrary{breakable}
+\newtcblisting{simplepy}{
+  listing engine=minted,
+  minted language=python,
+  minted style=vs,
+  minted options={fontsize=\small,autogobble,
+    % framesep=1cm
+  },
+  tile,
+  listing only,
+  % bottom=0cm,
+  % nobeforeafter,
+  boxsep=0mm,
+  left=1mm,
+  opacityback=0.5,
+  colback=gray!20,
+  breakable
+}
+\newtcolorbox{blackbox}{tile,colback=black,colupper=white,nobeforeafter,halign=flush center}
+
+\tikzstyle{myMatrix}=[matrix of nodes,below right,
+nodes={above,text centered},                  %apply to all nodes
+row sep=1cm,column sep=2cm]
+\tikzstyle{every node}=[inner sep=0pt]
+
+\newcommand\uptoleft[3][-o]{\draw[very thick,#1](#2.south) |- (#3.west);}
+\newcommand\uptodown[3][-o]{\draw[very thick,#1](#2.south) to [out=270,in=90] (#3.north);}
+\newcommand\downtoup[3][-latex]{\draw[very thick,#1](#2.north) to [out=90,in=270] (#3.south);}
+
+\newcommand\lefttoright[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=180] (#3.west);}
+\newcommand\lefttodown[3][-latex]{\draw[very thick,#1](#2.east) to[out=0,in=90] (#3.north);}
+
+
+\newtcolorbox{leftDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.east) --
+      +(0,2mm) --
+      +(3mm,0) --
+      +(0,-2mm)
+      ;
+    \end{scope}
+  }}
+
+
+\newtcolorbox{rightDialogBox}{
+  tile, nobeforeafter, boxsep=0pt,
+  % show bounding box,
+  colback=\mycola!10,
+  overlay={
+    \begin{scope}
+      % \fill[gray!10] (frame.east) circle (2pt);
+      \fill[\mycola!10] (frame.west) --
+      +(0,2mm) --
+      +(-3mm,0) --
+      +(0,-2mm);
+    \end{scope}
+  }}
+
+\newcommand{\mycolaa}{\mycola!20}
+
+
+\usepackage{changepage}   % for the adjustwidth environment
+\newenvironment{myIndent}[1][7mm]{\begin{adjustwidth}{#1}{}}{\end{adjustwidth}}
+
+\newcounter{myDefCounter}
+\newcounter{myTheoCounter}
+
+\tcbuselibrary{theorems}
+\newtcbtheorem[use counter=myDefCounter,number within=section]{myDef}{Definition}%
+{
+  % colback=green!5,colframe=green!35!black,
+  fonttitle=\bfseries}{def}
+
+\newcommand{\myThmBeforeProof}{
+  \texttt{Proof: }\par
+  \begin{myIndent}
+}
+
+\newcommand{\myThmAfterProof}{
+\end{myIndent}
+\qed
+}
+
+\tcbuselibrary{skins}
+\tcbsubskin{myThmSkin}{enhanced}{
+  parbox=false,
+  % colback=green!5,
+  colframe=\mycola,
+  fonttitle=\bfseries,
+  breakable,
+  before lower={\myThmBeforeProof{}},
+  after lower={\myThmAfterProof{}}
+}
+
+\newtcbtheorem[
+use counter=myTheoCounter,number within=section
+]{myTheo}{Theorem}%
+{
+  skin=myThmSkin
+}{thm}
+
+
+\newtcbtheorem[use counter=myTheoCounter,number within=section]{myCor}{Corollary}%
+{
+  % colback=green!5,
+  skin=myThmSkin
+}{cor}
+
+\newtcbtheorem[use counter=myTheoCounter,number within=section]{myLem}{Lemma}%
+{% colback=green!5,
+  skin=myThmSkin
+}{lem}
+
+\newcommand{\refCorollary}[1]{Corollary~\ref{cor:#1}}
+\newcommand{\refLemma}[1]{Lemma~\ref{lem:#1}}
+
+\usepackage{cleveref}
+\crefname{myDefCounter}{definition}{definitions}
+                                   % ^^^ plural
+\Crefname{myDefCounter}{Definition}{Definitions}
+         % ^^^^^^ type = counter name
+
+\crefname{myTheoCounter}{theorem}{theorems}
+\Crefname{myTheoCounter}{Theorem}{Theorems}
+
+\usepackage{amsthm}             %for {proof}
+
+
+% --------------------------------------------------
+\begin{document}
+\maketitle
+
+\section{The series of primes}
+
+\subsection{Divisibility of intergers}
+
+The numbers
+% dots for commas
+\[ \dotsc,-3,-2,-1,0,1,2, \dotsc\]
+are the \Cola{intergers}, denoted by $\mathbb{Z}$. The number
+\[ 0,1,2,3,\dotsc\] are the \Cola{non-negative integers} or \Cola{natural
+  numbers}, denoted by $\mathbb{N}$, and the numbers \[1,2,3,\dotsc\] are the
+\Cola{positive integers}, denoted by $\mathbb{N^{\times}}$. We also denote
+\Cola{non-zero intergers} by $\mathbb{Z^{\times}}$
+
+Let $a,\in \mathbb{Z}, b \in \mathbb{Z^{\times}}$, $a$ is saied to be
+\Cola{devisible} by $b$ if there exists $c \in \mathbb{Z}$ such that
+\[ a = bc.\] If $a,c, > 0$, so does $c$. If $a$ is divisable by $b$, we say $b$
+is a \Cola{divisor} of $a$ and write \[ b \mid a.\] Thus
+\[ 1 \mid n, \quad n \mid n, \quad \forall n \in \mathbb{Z}.\] If $b$ doesn't
+divide $a$, we write $b \nmid a$.
+
+It's plain that
+\begin{align*}
+  b \mid a \;,\; c \mid b &\Rightarrow   c \mid a\\
+  b \mid a  &\Rightarrow   bc \mid ac\\
+  c \mid a \;,\; c \mid b &\Rightarrow   c \mid ma + nb \quad \forall a,b,m,n
+                            \in \mathbb{Z} \quad c \in \mathbb{Z^{\times}}
+\end{align*}
+
+\subsection{Prime numbers}
+
+\begin{myDef}{Prime number}{prime-number}
+  A number $p \in \mathbb{N}$ is said to be \Cola{prime}, if
+  \begin{itemize}
+  \item $p > 1$
+  \item $p$ has no positive divisors except 1 and $p$
+  \end{itemize}
+\end{myDef}
+
+% The \cref{def:prime-number}.
+A number greater than 1 and not prime is called \Cola{composite}.
+Our first theorem is
+\begin{myTheo}{Product of primes}{product-of-primes}
+  Every positive integer $n$ > 1, is a product of primes.
+  \tcblower
+    \cola{If} $n$ \cola{is prime}:
+    \begin{myIndent}
+      There's nothing to prove.
+    \end{myIndent}
+    \cola{Else:}
+    \begin{myIndent}
+      $n$ has \colc{divisors} between 1 and $n$.\\
+      \emoji{pinching-hand} $m := \cola{\min{}} \{\colc{\text{these divisor of }n}\}$
+      \begin{myIndent}
+        \cola{If} $m$ \cola{is not prime}:
+            \begin{align*}
+              \exists l \in (1,m) \subset \mathbb{N}, l \mid m &\Rightarrow l \mid n \\
+              & \Rightarrow m \text{ is not the smallest as defined \emoji{cross-mark}}
+            \end{align*}
+        So, $m$ \cola{is prime}, say $m = p_1$, then we can draw a prime out of n:
+        \[
+          n = p_1n_1, \quad n_1 \in [p_1,n)
+        \]
+        \cola{If} $n_1$ is a prime:
+        \begin{myIndent}
+          Done.
+        \end{myIndent}
+        \cola{Else}:
+        \begin{myIndent}
+          We use the same process again to draw out another prime divisor of $n_1$
+          \begin{align*}
+            \text{\emoji{pinching-hand} } p_2 \in (1,n_1), p_2 \mid n_1 & \Rightarrow n_1 = p_2n_2 \\
+            & \Rightarrow n = p_1p_2n_2
+          \end{align*}
+          Sooner, or later we must meet a prime $n_i$, because \cola{we can't
+            keep factoring out numbers greater than one from a finite number.}
+        \end{myIndent}
+      \end{myIndent}
+    \end{myIndent}
+  \end{myTheo}
+
+  These prime factors are not necessarily distinct.
+
+  If we arrange them in increasing order, we obtain
+  \[
+    n = p_1^{a_1}p_2^{a_2}\dotsc{}p_n^{a_n}, \quad a_i \in \mathbb{N^{\times}},
+    p_1 < p_2 < \dotsm{} < p_n
+  \]
+  In this case, we say that $n$ is in \Cola{standard form}.
+  
+\subsection{The fundamental theorem of arithmetic}
+\label{sec:fund-theo-arth}
+
+We defer the proof for now but present a lemma:
+\begin{myLem}{Euclid's first theorem}{p-cut-ab} 
+  Let $p$ be prime, $a,b \in \mathbb{N^{\times}}$, then $
+  p \mid ab \Rightarrow p \mid a \text{ or } p \mid b$
+\end{myLem}
+
+We take \refLemma{p-cut-ab} for granted for the moment and use that to prove
+\cref{thm:fund-theo-arth}
+
+\begin{myTheo}{Fundamental theorem of arithmetic}{fund-theo-arth}
+  The standard form of $n$ is unique, $\forall n \in \mathbb{N}^{\times}$.
+  \tcblower{}
+  From \refLemma{p-cut-ab}, we have:
+  \[ p\mid n_1n_2\dotsm{}n_k \Rightarrow p \mid n_i \text{ for some }i\] In
+  particular, if $n_i$ are primes, then $p$ is one of $n_i$. In other words,
+  \cola{if a prime divides a product of primes, it must be one of them}.
+
+  Now suppose \cola{if} $n$ has two standard forms:
+  \begin{myIndent}
+    \newcommand{\myP}[3]{\ensuremath{{#1}_{#3}^{{#2}_{#3}}}}
+    We have
+    \[
+      n =
+      \colc{
+        \myP{p}{a}{1}
+        \myP{p}{a}{2}
+        \dotsm
+        \myP{p}{a}{k}
+      }
+      =
+      \colb{
+        \myP{q}{b}{1}
+        \myP{q}{b}{2}
+        \dotsm
+        \myP{q}{b}{j}
+      }
+    \]
+    So
+    $\forall i, \colc{p_i} \mid \colb{ \myP{q}{b}{1} \myP{q}{b}{2} \dotsm
+      \myP{q}{b}{j} } $. This means \cola{every \colc{$p$} is a \colb{$q$}}.
+    Symmetrically \cola{every \colb{$q$} is a \colc{$p$}}. Hence $k=j$ and,
+    since both sides are arranged in increasing order, $p_i = q_i$ for all $i$.
+
+    So now only the exponents may be different.
+
+    \cola{If} $a_i > b_i$ for some $i$:
+    \begin{myIndent}
+      Dividing both side by $\myP{p}{b}{i}$ gives:
+      \[
+        \colc{
+          \myP{p}{a}{1}
+          \dotsm{}
+          p_i^{a_i - b_i}
+          \dotsm{}
+          \myP{p}{a}{k}
+        }
+        = 
+        \colb{
+          \myP{p}{b}{1}
+          \dotsm{}
+          \myP{p}{b}{i-1}
+          \myP{p}{b}{i+1}
+          \dotsm{}
+          \myP{p}{a}{k}
+        }
+      \]
+      The left hand side is divisable by $p_i$ while the right hand side is not.
+      \emoji{cross-mark} a contradiction.
+    \end{myIndent}
+    Symmetrically $a_i$ can't be less than $b_i$.
+  \end{myIndent}
+  As as result, $n$ can't have two different normal forms.
+\end{myTheo}
+
+\emoji{parrot} : Oh, that's why 1 is not a prime. If it is, then
+\cref{thm:fund-theo-arth} would no longer hold.
+
+\subsection{The sequence of primes}
+
+The first primes are:
+
+\[2, 3, 5, 7, 11, 13, 17, 19, 23, \dotsc{}\]
+
+It is easy to construct a table of primes, up to a moderate limit $N$ by a
+procedure known as the \Cola{sieve of Eratosthenes}.
+
+
+\end{document}
+
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
+% End:

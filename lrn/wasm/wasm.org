@@ -1,0 +1,112 @@
+** Get te WebAssembly Binary Toolkit
+#+begin_src bash
+  wget https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-ubuntu.tar.gz
+  tar zxf wabt-1.0.33-ubuntu.tar.gz
+  ls wabt-1.0.33/bin
+  mv wabt-1.0.33 ~/.local/
+  # after adding that to path
+
+  wasm2wat --version
+#+end_src
+*** compile it
+#+begin_src bash
+  # t2b
+  wat2wasm t.wat -o t.wasm
+  # b2t
+  wasm2wat t.wasm -o t-again.wat
+
+  # view the output
+  wat2wasm t.wat -v
+#+end_src
+*** the smallest wat
+#+begin_src wat
+(module)
+#+end_src
+
+#+begin_src wat
+0000000: 0061 736d                                 ; WASM_BINARY_MAGIC
+0000004: 0100 0000                                 ; WASM_BINARY_VERSION
+#+end_src
+🐢 : The encoding of a *module* starts with a _preamble containing_
+*** function
+
+#+begin_src wat
+(module
+ (func (param $lhs i32) (param $rhs i32) (result i32)
+       local.get $lhs
+       local.get $rhs
+       i32.add)
+ )
+#+end_src
+
+Compiled
+#+begin_src wat
+
+0000000: 0061 736d                                 ; WASM_BINARY_MAGIC
+0000004: 0100 0000                                 ; WASM_BINARY_VERSION
+; section "Type" (1)
+0000008: 01                                        ; section code
+0000009: 00                                        ; section size (guess)
+000000a: 01                                        ; num types
+; func type 0
+000000b: 60                                        ; func
+000000c: 02                                        ; num params
+000000d: 7f                                        ; i32
+000000e: 7f                                        ; i32
+000000f: 01                                        ; num results
+0000010: 7f                                        ; i32
+0000009: 07                                        ; FIXUP section size
+; section "Function" (3)
+0000011: 03                                        ; section code
+0000012: 00                                        ; section size (guess)
+0000013: 01                                        ; num functions
+0000014: 00                                        ; function 0 signature index
+0000012: 02                                        ; FIXUP section size
+; section "Code" (10)
+0000015: 0a                                        ; section code
+0000016: 00                                        ; section size (guess)
+0000017: 01                                        ; num functions
+; function body 0
+0000018: 00                                        ; func body size (guess)
+0000019: 00                                        ; local decl count
+000001a: 20                                        ; local.get
+000001b: 00                                        ; local index
+000001c: 20                                        ; local.get
+000001d: 01                                        ; local index
+000001e: 6a                                        ; i32.add
+000001f: 0b                                        ; end
+0000018: 07                                        ; FIXUP func body size
+0000016: 09                                        ; FIXUP section size
+#+end_src
+
+
+# Local Variables:
+# org-what-lang-is-for: "wat"
+# End:
+*** export it 
+#+begin_src wat
+(module
+ (func $add (param $lhs i32) (param $rhs i32) (result i32)
+       local.get $lhs
+       local.get $rhs
+       i32.add)
+ (export "add" (func $add))
+ )
+
+#+end_src
+
+*** Run the module
+#+begin_src wat
+(module
+  (func (export "swap") (param i32 i32) (result i32 i32)
+    (get_local 1)
+    (get_local 0)
+  )
+)
+#+end_src
+
+#+begin_src bash
+~/repo/build-wasm3/wasm3 --repl m.wasm
+wasm3> :invoke swap 123 456
+Result: 456:i32, 123:i32
+#+end_src

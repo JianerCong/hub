@@ -1,268 +1,370 @@
-** Boost
-*** start on linux
+** ethash
+*** install and hi
 **** install
 #+begin_src bash
-  sudo apt search libboost
-  sudo apt install libboost-all-dev
+  cmake -S ethash-1.0.1 -B build-ethash
+  cmake --build build-ethash/
+  cmake --install build-ethash/ --prefix installed-ethash
+
+  # cmake --install build-ethash/ --prefix installed-ethash
+  # -- Install configuration: ""
+  # -- Installing: /home/me/repo/installed-ethash/lib/libkeccak.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash.a
+  # -- Installing: /home/me/repo/installed-ethash/lib/libethash-global-context.a
+  # -- Installing: /home/me/repo/installed-ethash/include
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/keccak.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/hash_types.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/version.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.hpp
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/global_context.h
+  # -- Installing: /home/me/repo/installed-ethash/include/ethash/ethash.h
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets-noconfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfig.cmake
+  # -- Installing: /home/me/repo/installed-ethash/lib/cmake/ethash/ethashConfigVersion.cmake
+
+  # Check the targets
+  cat /home/me/repo/installed-ethash/lib/cmake/ethash/ethashTargets.cmake | grep add_library
+
 #+end_src
-**** cpp
-#+begin_src c++
-  #include <iostream>
-  #include <boost/array.hpp>
-  using std::cout;
-
-  int main ()
-  {
-    boost::array<int,4> a = {{10, 20, 30, 30}};
-    cout << "a[0]=" << a[0];
-
-    return 0;
-  }
-  // Output:
-  // a[0]=10
-  #+end_src
-**** CMakeLists.txt
+**** cmake
 #+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-# set the project name and version
-project(Hi VERSION 1.0)
+cmake_minimum_required(VERSION 3.21)
 
-# find_package(Boost CONFIG REQUIRED)
+# include("cmake/HunterGate.cmake")
+# HunterGate(
+#   URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+#   SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+# )
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 # add the executable
 
-add_executable(myexe test.cpp)
+set(ethash_DIR "/home/me/repo/installed-ethash/lib/cmake/ethash/")
+find_package(ethash REQUIRED)     #do not explicitly specify the components
 
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
-#+end_src
-*** smart pointer
-**** sole ownership
-***** unique pointer
-#+begin_src c++
-#include <iostream>
-#include <boost/scoped_ptr.hpp>
-using std::cout;
-
-int main ()
-{
-  boost::scoped_ptr<int> p{new int{1}}; // cannot be copied or moved.
-  cout << *p << '\n';
-
-  p.reset(new int{2});          // release the old, point to new addr
-  cout << *p.get() << '\n';
-
-  p.reset();                    // release the allocated obj
-
-  // cast to false if point to nothing.
-  cout << std::boolalpha << static_cast<bool>(p) << '\n';
-
-  return 0;
-}
-
-// Output:
-// 1
-// 2
-// false
-
-#+end_src
-The destructor of this call ~delete~. To call ~delete[]~ use ~scoped_array~
-****** what if we try to copy the addr
-#+begin_src c++
-#include <cstdio>
-#include <boost/scoped_ptr.hpp>
-
-int main ()
-{
-  boost::scoped_ptr<int> p{new int{1}}; // cannot be copied or moved.
-  boost::scoped_ptr<int> p2{p};
-  return 0;
-}
-
-// Output:
-// error: ‘boost::scoped_ptr<T>::scoped_ptr(const boost::scoped_ptr<T>&) [with T = int]’ is private within this context
-
-#+end_src
-***** unique array
-#+begin_src c++
-#include <iostream>
-#include <boost/scoped_array.hpp>
-using std::cout;
-
-int main ()
-{
-  boost::scoped_array<int> p{new int[2]};
-  *p.get() = 10;
-  p[1] = 20;
-  cout << *p.get() << '\n';
-  cout << p[1] << '\n';
-
-  p.reset();                    // release the allocated obj
-  // cast to false if point to nothing.
-  cout << std::boolalpha << static_cast<bool>(p) << '\n';
-
-  return 0;
-}
-
-// Output:
-// 10
-// 20
-// false
-
-#+end_src
-**** shared ownership
-#+begin_src c++
-#include <boost/shared_ptr.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
-
-
-int main ()
-{
-  boost::shared_ptr<int> p1{new int{1}};
-  boost::shared_ptr<int> p2{p1};
-
-  P("*p1=%d, *p2=%d\nAfter reseting p1, p2 got ",*p1,*p2);
-  p1.reset();                    // release the allocated obj
-  // cast to false if point to nothing.
-  cout << std::boolalpha << static_cast<bool>(p2) << '\n';
-
-  return 0;
-}
-// Output
-// *p1=1, *p2=1
-//  After reseting p1, p2 got true
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework ethash::ethash)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
 
 
 #+end_src
-***** custom deleter
+**** test
 #+begin_src c++
-#include <boost/shared_ptr.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
-
-void my_delete(int *p){
-  P("Calling my own delete.\n");
-  delete p;
-}
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <ethash/keccak.hpp>
+  #include <string>
+  using std::string;
+  #include <string_view>
+  using std::string_view;
 
 
-int main ()
-{
-  boost::shared_ptr<int> p1(new int{1},my_delete);
-  P("*p1 = %d\n",*p1);
-  return 0;
-}
-// Output
-// *p1 = 1
-// Calling my own delete.
+  BOOST_AUTO_TEST_CASE(test_ethash){
+    string s = "baz(uint32,bool)";
+    ethash::hash256 h = ethash::keccak256(reinterpret_cast<uint8_t*>(s.data()),
+                                          s.size());
 
-#+end_src
-***** make_shared
-more efficient than calling ~new~ to create a dynamically allocated obj and
-calling ~new~ again in the constructor of ~boost::shared_ptr~ to allocate memory
-for the reference counter.
-#+begin_src c++
-#include <boost/make_shared.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
+    string_view v{reinterpret_cast<const char*>(h.bytes),4};
+    BOOST_CHECK_EQUAL(v,"\xcd\xcd\x77\xc0");
 
-using boost::make_shared;
-
-int main ()
-{
-  auto p1 = make_shared<int>(1);
-  auto p2 = make_shared<int[]>(10);
-  P("p1 has type %s, p2 has type %s\n",
-    typeid(p1).name(),
-    typeid(p2).name()
-    );
-}
-// Output
-// p1 has type N5boost10shared_ptrIiEE, p2 has type N5boost10shared_ptrIA_iEE
-
-
-#+end_src
-***** shared array
-#+begin_src c++
-#include <boost/shared_array.hpp>
-#include <cstdio>
-#include <iostream>
-using std::cout;
-#define P(...) printf(__VA_ARGS__)
-
-using boost::shared_array;
-
-int main ()
-{
-  shared_array<int> p1{new int[1]};
-  {
-    shared_array<int> p2{p1};
-    p2[0] = 1;
+    // Got from --------------------------------------------------
+    // from eth_hash.auto import keccak
+    // s='baz(uint32,bool)'
+    // b1 = bytes(s,'utf-8')
+    // b = keccak(b1)
+    // h = b.hex()
+    // h[:8] # 'cdcd77c0' the first 4 bytes used as function selector
   }
 
-  P("p2 is gone, p1[0]=%d\n",p1[0]);
-}
-// Output
-// p2 is gone, p1[0]=1
+  BOOST_AUTO_TEST_CASE(test_xor){
+    uint8_t x{0xff};
+    uint8_t y{0x0f};
 
-
+    BOOST_CHECK_EQUAL(x^y,uint8_t{0xf0});
+  }
+#+end_src
+** jsoncpp
+*** install and hi
+**** install
+#+begin_src bash
+  cmake -S jsoncpp-1.9.5/ -B build-jsoncpp \
+        -DJSONCPP_WITH_TESTS=0 -DBUILD_SHARED_LIBS=0 \
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_OBJECT_LIBS=0
+  cmake --build build-jsoncpp
+  cmake --install build-jsoncpp --prefix installed-jsoncpp
 
 #+end_src
-***** How to time it 
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+# include("cmake/HunterGate.cmake")
+# HunterGate(
+#   URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+#   SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+# )
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# add the executable
+
+set(jsoncpp_DIR "/home/me/repo/installed-jsoncpp/lib/cmake/jsoncpp")
+# hunter_add_package(jsoncpp)
+find_package(jsoncpp CONFIG REQUIRED)
+
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework JsonCpp::JsonCpp)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** use
 #+begin_src c++
-// #define BOOST_SP_USE_QUICK_ALLOCATOR
-#include <boost/shared_ptr.hpp>
-#include <ctime>
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <json/json.h>
+#include <json/reader.h>
+#include <json/writer.h>
+using Json::Value;
+using Json::CharReader;
 
-#include <cstdio>
-#include <iostream>
-using std::cout;
+#include <memory>
+using std::unique_ptr;
 
-using std::time_t;
-using std::time;
+#include <string_view>
+using std::string_view;
+#include <string>
+using std::string;
 
-#define P(...) printf(__VA_ARGS__)
 
+BOOST_AUTO_TEST_CASE(trivial_parse) {
+  string_view s = "{\"x\" : true}";
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
 
-#define N 20000000
-int main ()
-{
-  boost::shared_ptr<int> p;
-  std::time_t then = time(nullptr);
+  Json::Value v;
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  bool x = v["x"].asBool();
 
-  for (int i = 0;i < (N); ++i)
-    p.reset(new int{i});
-
-  std::time_t now = time(nullptr);
-  P("time taken %ld\n", now - then);
-  // --------------------------------------------------
-  int* p1;
-  then = time(nullptr);
-
-  for (int i = 0;i < (N); ++i){
-    delete p1;
-    p1 = new int{i};
-  }
-  delete p1;
-
-  now = time(nullptr);
-  P("time taken for built-in pointer %ld\n", now - then);
-
+  BOOST_CHECK(ok);
+  BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
+  BOOST_CHECK_EQUAL(x,true);
 }
-// Output? 不define更快？
-// while defining QUICK
-// time taken 2
-// time taken for built-in pointer 0
 
-// while not defining QUICK
-// time taken 1
-// time taken for built-in pointer 0
+BOOST_AUTO_TEST_CASE(parse_int_string_array) {
+  string_view s = "{"
+    "\"w\" : \"abc\","
+    "\"x\" : true,"
+    "\"y\" : [1,2,3],"
+    "}";
+  // CharReader* r = Json::CharReaderBuilder().newCharReader();
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+  Value v;
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  BOOST_REQUIRE(ok);
+
+  string w = v["w"].asString();
+  Value y = v["y"];
+  BOOST_REQUIRE_EQUAL(y.size(),3);
+  uint64_t i = y[1].asUInt64();
+
+  BOOST_CHECK_EQUAL(v.type(),Json::ValueType::objectValue);
+  BOOST_CHECK_EQUAL(w,"abc");
+  BOOST_CHECK_EQUAL(i,2);
+}
+
+BOOST_AUTO_TEST_CASE(parse_with_helper_func) {
+  // I feel like r->parse() is alright
+  string s = "{"
+    "\"w\" : \"abc\","
+    "}";
+  auto b = Json::CharReaderBuilder();
+  Value v; string err;
+  auto s1 = std::istringstream(s);
+  bool ok = Json::parseFromStream(b,s1,&v,&err);
+  BOOST_REQUIRE(ok);
+
+  string w = v["w"].asString();
+  BOOST_CHECK_EQUAL(w,"abc");
+}
+BOOST_AUTO_TEST_CASE(parse_obj) {
+  string_view s = "{"
+    "\"x\" : true,"
+    "\"y\" : {\"w\": 123},"
+    "}";
+  // CharReader* r = Json::CharReaderBuilder().newCharReader();
+  unique_ptr<CharReader> r{Json::CharReaderBuilder().newCharReader()};
+  Value v;
+
+  string err;
+  bool ok = r->parse(s.data(),s.data() + s.size(),&v,&err);
+  BOOST_REQUIRE(ok);
+
+  Value y = v["y"];
+  BOOST_REQUIRE_EQUAL(y.type(),Json::ValueType::objectValue);
+
+  BOOST_CHECK_EQUAL(y["w"].asUInt64(),123);
+}
+
+BOOST_AUTO_TEST_CASE(marshel_obj) {
+  // For convenience, use `writeString()` with a specialized builder.
+  Json::StreamWriterBuilder w;
+  Value v;                      // default to empty object
+  v["x"] = 1;
+  std::string d = Json::writeString(w,v);
+  BOOST_CHECK_EQUAL(d,"{\n"
+                    "\t\"x\" : 1\n"
+                    "}");
+}
+
+BOOST_AUTO_TEST_CASE(marshel_array) {
+  // For convenience, use `writeString()` with a specialized builder.
+  Json::StreamWriterBuilder w;
+  w.settings_["indentation"] = "";
+  Value v;                      // default to empty object
+  v["x"].append(1);
+  v["x"].append(2);
+  v["x"].append(3);
+  std::string d = Json::writeString(w,v);
+  BOOST_CHECK_EQUAL(d,"{\"x\":[1,2,3]}");
+}
+
+BOOST_AUTO_TEST_CASE(marshel_obj_with_options) {
+  Json::StreamWriterBuilder w;
+  w.settings_["indentation"] = "";
+  // empty indentation also omit newlines, so effectively makes it compact
+  w.settings_["emitUTF8"] = true;
+  Value v;                      // default to empty object
+  v["x"] = 1;
+  std::string d = Json::writeString(w,v);
+  // StreamWriter* w = Json::StreamWriterBuilder().newStreamWriter();
+  BOOST_CHECK_EQUAL(d,"{\"x\":1}");
+}
+
+BOOST_AUTO_TEST_CASE(iterate){
+  Json::Value v(Json::objectValue);
+  // Json::Value null_value; // null
+  // Json::Value arr_value(Json::arrayValue); // []
+  // Json::Value obj_value(Json::objectValue); // {}
+  v["x"] = 1;
+  v["y"] = "aaa";
+
+  Json::Value::Members ks = v.getMemberNames();
+  // ^^^^^^^^^^^^^^^^^^^^ Currently vector<string>
+  BOOST_CHECK_EQUAL(ks.size(),2);
+
+  BOOST_CHECK_EQUAL(ks[0],"x");
+  BOOST_CHECK_EQUAL(ks[1],"y");
+  BOOST_CHECK_EQUAL(v[ks[0]].asUInt64(),1);
+  BOOST_CHECK_EQUAL(v[ks[1]].asString(),"aaa");
+
+  BOOST_CHECK_EQUAL(v.size(),2);
+  }
+#+end_src
+** EVMONE
+*** Q/A
+**** Why there're opt code PUSH32, PUSH3,...
+Lower push will still push a 32-long value but with 0-zero padding.
+
+*** install
+#+begin_src bash
+  # cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DEVMC_TESTING=1 # TESTING builds everything
+  # c
+  tar zxf evmone-0.9.1-linux-x86_64.tar.gz --directory=evmone-0.9.1/
+
+  git clone --recursive https://github.com/ethereum/evmone
+  cmake -S evmone -B build-evmone -DEVMC_INSTALL=1 -DBUILD_SHARED_LIBS=0 # TESTING builds everything
+  cmake --build build-evmone
+
+  rm installed-evmone/ -rf
+  cmake --install build-evmone --prefix installed-evmone
+  # ./build-evmone/bin/evmc-unittests --gtest_list_tests
+  # ./build-evmone/bin/evmc-unittests
+  # ./build-evmone/bin/evmc-unittests --gtest_filter=example_vm.*
+
+#+end_src
+*** helloworld with headers
+**** cpp
+#+begin_src c++
+#include <evmc/evmc.hpp>
+#include <cstdio>
+
+#define DEBUG
+#ifdef DEBUG
+#define P(...) printf(__VA_ARGS__)
+#endif
+
+int main(int argc, char *argv[]){
+  // using namespace evmc;
+  // uint8_t i = 0xff;
+  // P("got value %x\n",i);
+
+  evmc::bytes32 v1;
+  for (int i = 0;i<32;i++){P("%x,",v1.bytes[i]);}
+  P("Before ^\n");
+
+  for (int i = 0;i<32;i++){v1.bytes[i] = 0xff;}
+
+  for (int i = 0;i<32;i++){P("%x,",v1.bytes[i]);}
+  P("After ^\n");
+  return 0;
+}
+
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+project(hi VERSION 1.1)
+
+add_executable(main test.cpp)
+# target_include_directories(main PUBLIC /home/me/repo/evmone/evmc/include/)
+target_include_directories(main PUBLIC ../evmone/evmc/include/)
+add_custom_target(run ALL main 1 COMMENT "Runing App 🐸")
+
+include(CMakePrintHelpers)
+cmake_print_properties(TARGETS main PROPERTIES INCLUDE_DIRECTORIES)
+
+#+end_src
+*** StorageValue
+#+begin_src c++
+#include <evmc/evmc.hpp>
+#include <evmc/mocked_host.hpp>
+#include <cstdio>
+
+#define DEBUG
+#ifdef DEBUG
+#define P(...) printf(__VA_ARGS__)
+#endif
+
+int main(int argc, char *argv[]){
+  using namespace evmc;
+  bytes32 v1, v2;
+  for (int i = 0;i<32;i++){v1.bytes[i] = 0xff;}
+
+  StorageValue s{v1,v2,EVMC_ACCESS_COLD};
+  P("Curent : ");
+  for (int i = 0;i<32;i++) P("%x ",s.current.bytes[i]); puts("");
+  P("Original : ");
+  for (int i = 0;i<32;i++) P("%x ",s.original.bytes[i]); puts("");
+  return 0;
+}
+// Curent : ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+// Original : 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+
 
 #+end_src
 
@@ -301,183 +403,27 @@ g++ m.cpp -lboost_unit_test_framework
 #+end_src
 **** hi
 ***** cmdline options
+*** opcode
++ 比较重要的就是 f3 : RETURN
+***** 例子
 #+begin_src c++
-The program 'myexe' is a Boost.Test module containing unit tests.
+  7f #push32 val
+  d0d1d2d3d4d5d6d7d8d9dadbdcdddedf
+  e0e1e2e3e4e5e6e7e8e9eaebecedeeef
 
-  Usage
-    myexe [Boost.Test argument]... [-- [custom test module argument]...]
+  60 #push1 0
+  00
 
-  Use
-      myexe --help
-  or  myexe --help=<parameter name>
-  for detailed help on Boost.Test parameters.
+  52 #memstore(0,val)
+
+  60 #push1 20
+  20
+
+  60 #push1 0
+  00
 
 
-  Command line flags:
-   The command line flags of Boost.Test are listed below. All parameters are
-   optional. You can specify parameter value either as a command line argument or
-   as a value of its corresponding environment variable. If a flag is specified as
-   a command line argument and an environment variable at the same time, the
-   command line takes precedence. The command line argument support name guessing,
-   and works with shorter names as long as those are not ambiguous.
-
-   All the arguments after the '--' are ignored by Boost.Test.
-
-  Environment variables:
-   Every argument listed below may also be set by a corresponding
-   environmentvariable. For an argument '--argument_x=<value>', the corresponding
-   environment variable is 'BOOST_TEST_ARGUMENT_X=value
-
-  The following parameters are supported:
-
-  auto_start_dbg
-    Automatically attaches debugger in case of system level failure (signal).
-    --auto_start_dbg[=<boolean value>]
-    -d[ <boolean value>]
-
-  break_exec_path
-    For the exception safety testing allows to break at specific execution path.
-    --break_exec_path=<value>
-
-  build_info
-    Displays library build information.
-    --build_info[=<boolean value>]
-    -i[ <boolean value>]
-
-  catch_system_errors
-    Allows to switch between catching and ignoring system errors (signals).
-    --[no_]catch_system_errors[=<boolean value>]
-    -s[ <boolean value>]
-
-  color_output
-    Enables color output of the framework log and report messages.
-    --[no_]color_output[=<boolean value>]
-    -x[ <boolean value>]
-
-  detect_fp_exceptions
-    Enables/disables floating point exceptions traps.
-    --[no_]detect_fp_exceptions[=<boolean value>]
-
-  detect_memory_leaks
-    Turns on/off memory leaks detection (optionally breaking on specified alloc
-    order number).
-    --detect_memory_leaks[=<alloc order number>]
-
-  help
-    Help for framework parameters.
-    --help[=<parameter name>]
-
-  list_content
-    Lists the content of test tree - names of all test suites and test cases.
-    --list_content[=<HRF|DOT>]
-
-  list_labels
-    Lists all available labels.
-    --list_labels[=<boolean value>]
-
-  log_format
-    Specifies log format.
-    --log_format=<HRF|CLF|XML|JUNIT>
-    -f <HRF|CLF|XML|JUNIT>
-
-  log_level
-    Specifies the logging level of the test execution.
-    --log_level=<all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
-    -l <all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
-
-  log_sink
-    Specifies log sink: stdout (default), stderr or file name.
-    --log_sink=<stderr|stdout|file name>
-    -k <stderr|stdout|file name>
-
-  logger
-    Specifies log level and sink for one or several log format
-    --logger=log_format,log_level,log_sink[:log_format,log_level,log_sink]
-
-  output_format
-    Specifies output format (both log and report).
-    --output_format=<HRF|CLF|XML>
-    -o <HRF|CLF|XML>
-
-  random
-    Allows to switch between sequential and random order of test units execution.
-    Optionally allows to specify concrete seed for random number generator.
-    --random[=<seed>]
-
-  report_format
-    Specifies the test report format.
-    --report_format=<HRF|CLF|XML>
-    -m <HRF|CLF|XML>
-
-  report_level
-    Specifies test report level.
-    --report_level=<confirm|short|detailed|no>
-    -r <confirm|short|detailed|no>
-
-  report_memory_leaks_to
-    File where to report memory leaks to.
-    --report_memory_leaks_to=<file name>
-
-  report_sink
-    Specifies report sink: stderr(default), stdout or file name.
-    --report_sink=<stderr|stdout|file name>
-    -e <stderr|stdout|file name>
-
-  result_code
-    Disables test modules's result code generation.
-    --[no_]result_code[=<boolean value>]
-    -c[ <boolean value>]
-
-  run_test
-    Filters which tests to execute.
-    --run_test=<test unit filter>
-    -t <test unit filter>
-
-  save_pattern
-    Allows to switch between saving or matching test pattern file.
-    --save_pattern[=<boolean value>]
-
-  show_progress
-    Turns on progress display.
-    --show_progress[=<boolean value>]
-    -p[ <boolean value>]
-
-  usage
-    Short message explaining usage of Boost.Test parameters.
-    -?[ <boolean value>]
-
-  use_alt_stack
-    Turns on/off usage of an alternative stack for signal handling.
-    --[no_]use_alt_stack[=<boolean value>]
-
-  version
-    Prints Boost.Test version and exits.
-    --version[ <boolean value>]
-
-  wait_for_debugger
-    Forces test module to wait for button to be pressed before starting test run.
-    --wait_for_debugger[=<boolean value>]
-    -w[ <boolean value>]
-
-    #+end_src
-***** CMake
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-
-# set the project name and version
-project(Hi VERSION 1.0)
-
-find_package(Boost CONFIG REQUIRED
-  unit_test_framework)
-# add the executable
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC
-  Boost::unit_test_framework)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
-
+  f3 #return Memory[00:00+20] ⇒ Mem里的0到32bytes = val
 #+end_src
 ***** cpp
 #+begin_src c++
@@ -495,60 +441,69 @@ add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App �
   }
 
 
-#+end_src
-**** test-not-equal
-***** cmake
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-
-# set the project name and version
-project(Hi VERSION 1.0)
-
-find_package(Boost CONFIG REQUIRED
-  unit_test_framework)
-# add the executable
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC
-  Boost::unit_test_framework)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
-
-#+end_src
-***** cpp
-#+begin_src c++
-// #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE MyTest
+*** full hello with evmone
+**** cpp
+#+begin_src cpp
+#define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
-#include <stdexcept>
+#include <evmc/evmc.hpp>        // for evmc::VM
+#include <evmone/evmone.h>      // for evmc_create_evmone
 
-
-BOOST_AUTO_TEST_CASE(test_1) {
-  BOOST_CHECK_NE(2,1);          // 2 != 1
-} // BOOST_AUTO_TEST_CASE(test_no_1)
-
-void f(){
-  throw std::runtime_error("hi");
+BOOST_AUTO_TEST_CASE(t1) {
+  evmc::VM vm{evmc_create_evmone()};
+  BOOST_CHECK_EQUAL(vm.name(),"evmone");
+  BOOST_CHECK_NE(vm.name(),"evmtwo");
 }
+#+end_src
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
 
-BOOST_AUTO_TEST_CASE(test_2) {
-  BOOST_CHECK_THROW(f(), std::runtime_error);
-}
+# initially
+# > mkdir cmake
+# > wget https://raw.githubusercontent.com/cpp-pm/gate/master/cmake/HunterGate.cmake -O cmake/HunterGate.cmake
+include("cmake/HunterGate.cmake")
+HunterGate(
+  URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+  SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+)
+
+project(hi VERSION 1.1)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
+set(evmc_DIR "/home/me/repo/installed-evmone/lib/cmake/evmc/")
+find_package(evmc REQUIRED)     #do not explicitly specify the components
+                                #because the authors are lazy,they didin't set
+                                #<pkg>_<compnent>_FOUND=1 for found components
+
+## Now we have evmc::evmc , evmc_cpp
+set(evmone_DIR "/home/me/repo/installed-evmone/lib/cmake/evmone/")
+find_package(evmone REQUIRED)     #do not explicitly specify the components
+## Now we have evmone::evmone
 
 
-BOOST_AUTO_TEST_CASE(test_equal) {
-  BOOST_CHECK_EQUAL(1, 1);
-}
+hunter_add_package(intx)
+find_package(intx REQUIRED)     #do not explicitly specify the components
+hunter_add_package(ethash)
+find_package(ethash REQUIRED)     #do not explicitly specify the components
 
-BOOST_AUTO_TEST_CASE(test_error) {
-  BOOST_ERROR("this should give error ❄");
-}
+add_executable(main test.cpp)
+target_link_libraries(main
+  evmc::evmc_cpp
+  evmone::evmone
+  Boost::unit_test_framework
+  intx::intx
+  ethash::keccak
+)
+#  因为有INTERFACE_LINK_LIBRARIES "evmc::evmc;intx::intx;\$<LINK_ONLY:ethash::keccak>",
+# 所以EVMONE要求intx,evmc,ethash::keccak
 
 
-BOOST_AUTO_TEST_CASE(test_fail) {
-  BOOST_FAIL("this should give fatal error ❄");
-}
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+
+# cmake -S. -B build -DHUNTER_STATUS_DEBUG=ON -DCMAKE_BUILD_TYPE=Release
+# cmake --build build --config Release
 
 #+end_src
 **** require
@@ -599,576 +554,228 @@ need a simple tool for logging, here you go:
 
       return 0;
   }
+** Hunter
+#+begin_src bash
+  mkdir cmake
+  wget https://raw.githubusercontent.com/cpp-pm/gate/master/cmake/HunterGate.cmake -O cmake/HunterGate.cmake
+  
 #+end_src
-**** a test for log
+*** cmake
 #+begin_src cmake
-cmake_minimum_required(VERSION 3.10)
-# set the project name and version
-project(Hi VERSION 1.0)
+    cmake_minimum_required(VERSION 3.2)
 
-find_package(Boost CONFIG REQUIRED log)
-# boost library by their canonical name:: "date_time" for "libboost_date_time"
-# ls /lib/x86_64-linux-gnu/libboost_*.a
+  include("cmake/HunterGate.cmake")
+  HunterGate(
+      URL "https://github.com/cpp-pm/hunter/archive/v0.23.297.tar.gz"
+      SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+  )
+
+  project(Foo)
+
+  hunter_add_package(Boost COMPONENTS regex system filesystem)
+  find_package(Boost CONFIG REQUIRED regex system filesystem)
+
+  add_executable(foo foo.cpp)
+  target_link_libraries(foo PUBLIC Boost::regex Boost::system Boost::filesystem)
+#+end_src
+*** build
+#+begin_src bash
+cmake -S. -B_builds -DHUNTER_STATUS_DEBUG=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build _builds --config Release
+#+end_src
+** TBB
+*** install
+#+begin_src bash
+  git clone https://github.com/oneapi-src/oneTBB.git
+  cmake -S oneTBB-2021.9.0 -B build-oneTBB -DCMAKE_INSTALL_PREFIX=installed-oneTBB -DTBB_TEST=OFF
+  cmake --build build-oneTBB
+  # Install
+  cmake --install build-oneTBB
+  #-- Installing: /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBTargets.cmake
+  # -- Installing: /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBConfig.cmake
+
+  # what targets are installed?
+  cat /home/me/repo/installed-oneTBB/lib/cmake/TBB/TBBTargets.cmake | grep add_library
+#+end_src
+*** hello world
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+set(TBB_DIR "/home/me/repo/installed-oneTBB/lib/cmake/TBB/")
+
+find_package(TBB CONFIG REQUIRED)
+
 # add the executable
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC Boost::log)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework TBB::tbb)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
 
 #+end_src
-
+**** c++
 #+begin_src c++
-  #include <boost/log/common.hpp>
-#include <boost/log/sinks.hpp>
-#include <boost/log/sources/logger.hpp>
-// #include <boost/utility/empty_deleter.hpp>
-#include <boost/shared_ptr.hpp>
-#include <iostream>
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
 
-using namespace boost::log;
-int main(){
-  typedef sinks::asynchronous_sink<sinks::text_ostream_backend>
-    text_sink;
-  boost::shared_ptr<text_sink> sink =
-    boost::make_shared<text_sink>();
+using tbb::parallel_for;
+using tbb::blocked_range;
 
-  boost::shared_ptr<std::ostream> stream {
-    &std::clog                 // standard output stream for logging
-    ,boost::null_deleter()
-    // ,boost::empty_deleter
+BOOST_AUTO_TEST_CASE(test_1) {
+  int o{0};
+  auto f = [&](blocked_range<int> &r){
+    for (int i = r.begin();i<r.end();++i)
+      o+=i;
   };
+  parallel_for(blocked_range<int>(1,4),f);
 
-  // access the backend through locked_backend()
-  sink->locked_backend()->add_stream(stream);
+  BOOST_CHECK_EQUAL(o,1+2+3);
+}
 
-  core::get()->add_sink(sink);
-  // default log connects it self to core.
-  sources::logger lg;
-  BOOST_LOG(lg) << "aaa";
-
-  sink->flush();
+BOOST_AUTO_TEST_CASE(test_with_short_hand) {
+  int o{0};
+  parallel_for(size_t(0),size_t(4),size_t(1),[&](size_t i) {o+=i;});
+  // for (i=0;i<3;i+=1;) o+=i
+  BOOST_CHECK_EQUAL(o,1+2+3);
 }
 
 #+end_src
-**** set up sinks
-You can add sinks to core at the beginning.
-**** sinks that rotate the file
+*** concurrent_map
 #+begin_src c++
-  void init()
-  {
-    logging::add_file_log
-      (
-       keywords::file_name = "sample_%N.log",                                        /*< file name pattern >*/
-       keywords::rotation_size = 10 * 1024 * 1024,                                   /*< rotate files every 10 MiB... >*/
-       keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0), /*< ...or at midnight >*/
-       keywords::format = "[%TimeStamp%]: %Message%"                                 /*< log record format >*/
-       );
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <functional>
+#include <tbb/parallel_for.h>
+#include <tbb/concurrent_hash_map.h>
 
-    logging::core::get()->set_filter
-      (
-       logging::trivial::severity >= logging::trivial::info
-       );
+using tbb::concurrent_hash_map;
+using tbb::parallel_for;
+struct C {
+  static size_t hash(const int& i){
+    std::hash<int> h;
+    return h(i);
   }
-#+end_src
-**** ~add_file_log~ Bedind The Scene
-之前的init大概可以翻译成如下：
-#+begin_src c++
-void init()
-{
-    // Construct the sink
-    typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
-    boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+  static bool equal(const int& x,const int& y){
+    return x==y;
+  }
+};
 
-    // Add a stream to write log to
-    sink->locked_backend()->add_stream(
-        boost::make_shared< std::ofstream >("sample.log"));
+BOOST_AUTO_TEST_CASE(test_1) {
+  // accessor locks the key
+  using M = concurrent_hash_map<int,int,C>;
+  using S = size_t;
+  M m;
 
-    // Register the sink in the logging core
-    logging::core::get()->add_sink(sink);
-}
-#+end_src
-每个sink有一个frontend和一个backend.在以上种类为:
-+ frontend :: synchronous_sink （for multithreading,filtering, formatting）
-+ backend :: text_ostream_backend (specific task for this sink)
-以上的backend也可以加一个往console写的。
-#+begin_src c++
-#include <boost/core/null_deleter.hpp>
+  parallel_for(S(0),S(4),S(1),[&](S i){
+    M::accessor a;              // a "write"lock for key a
+    m.insert(a,(int) i);
+    a->second = i*10;           // k=i,v=i*10
+  });
 
-// We have to provide an empty deleter to avoid destroying the global stream object
-boost::shared_ptr< std::ostream > stream(&std::clog, boost::null_deleter());
-sink->locked_backend()->add_stream(stream);
-#+end_src
-你可以给 ~text_ostream_backend~ 加很多 ~stream~ ，比如说文件又或是到console。这
-样的话filter只用一次，但我们可以同时往文件和console两个地方写。
-**** logger
-***** sink 和 source的区别？
-sink 需要被register到core。source不用。
-***** non-thread-safe logger 有啥用？
-如果你每个线程都用不同的logger的话，那就没必要thread-safe.
-***** thread-safe logger 有啥不一样
-有 _mt 后缀，会慢。
-***** Global logger
-Define a global logger
-#+begin_src c++
-BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
-
-#+end_src
-Get the global logger
-#+begin_src c++
-src::logger_mt& lg = my_logger::get();
-
-#+end_src
-***** write to logger
-#+begin_src c++
-  BOOST_LOG(lg) << "Hello, World!";
-#+end_src
-背后原理：
-#+begin_src c++
-  logging::record rec = lg.open_record(); // 给我个record对象如果有sink在接着的
-                                          // 话,filter用上在这。
-  if (rec)                                // 如果有record，开写
-  {
-      logging::record_ostream strm(rec); // 在record上开个stream
-      strm << "Hello, World!";
-      strm.flush();               // stream到record
-      lg.push_record(boost::move(rec)); // record到logger
-   }
-#+end_src
-***** Full example
-Need Boost::log, Boost::log_setup
-#+begin_src c++
-#include <boost/move/utility_core.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/sources/global_logger_storage.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-
-namespace logging = boost::log;
-namespace src = boost::log::sources;
-namespace keywords = boost::log::keywords;
-
-BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
-
-void logging_function1()
-{
-    src::logger lg;
-    logging::record rec = lg.open_record();
-    if (rec)
-    {
-        logging::record_ostream strm(rec);
-        strm << "AAA from local logger";
-        strm.flush();
-        lg.push_record(boost::move(rec));
-    }
+  M::const_accessor a;              // read-only pointer
+  bool found = m.find(a,2);         // read kv
+  BOOST_CHECK(found);
+  BOOST_CHECK_EQUAL(a->second,20);
+  BOOST_CHECK_EQUAL(a->first,2);
 }
 
-void logging_function2()
-{
-    src::logger_mt& lg = my_logger::get();
-    BOOST_LOG(lg) << "AAA from global logger";
+
+#+end_src
+
+** intx
+*** bash [dirty way: copy the header]
+#+begin_src bash
+sudo mkdir  /usr/local/include/intx
+sudo cp intx.hpp /usr/local/include/intx/ -v
+#+end_src
+*** install [polite way: follow the instrution]
+#+begin_src bash
+  mv ~/Downloads/intx-0.10.0.tar.gz .
+  tar zxf intx-0.10.0.tar.gz
+  cmake -S intx-0.10.0 -B build-intx -DINTX_TESTING=0
+  cmake --build build-intx
+  cmake --install build-intx --prefix installed-intx
+#+end_src
+*** tests
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <intx/intx.hpp>        // the whole package is header-only
+#include <algorithm>
+
+
+BOOST_AUTO_TEST_CASE(array_to_native_int){
+  uint8_t a[3] = {0,0,1};
+  // std::fill_n(a.bytes,20,0x0);
+  uint64_t x = intx::be::load<uint64_t,3>(a);
+  BOOST_CHECK_EQUAL(x,1);
 }
 
-int main(int, char*[])
-{
-    logging::add_file_log("sample.log");
-    logging::add_common_attributes();
+BOOST_AUTO_TEST_CASE(struct_to_int){
+  struct A {uint8_t bytes[8];};
+  A a;
+  std::fill_n(a.bytes,8,0x0);
+  a.bytes[7] = 0x12;
 
-    logging_function1();
-    logging_function2();
-
-    return 0;
+  // a should have a .bytes field
+  uint64_t x = intx::be::load<uint64_t,A>(a);
+  // 8-byte int
+  BOOST_CHECK_EQUAL(x,0x12);
 }
 
-#+end_src
-*** Install on Windows
-**** install location
-Usually C:\Program Files\boost\boost_1_82_0,
-(But by default, the install prefix for ~b2.exe~ is set to C:\Boost.)
-After build I got the message
 
-#+begin_src comment
-  The following directory should be added to compiler include paths:
+BOOST_AUTO_TEST_CASE(array_to_int){
+  uint8_t a[32];
 
-    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0
+  std::fill_n(a   ,30,0x0);
+  std::fill_n(a+30,2,0xff);
 
-The following directory should be added to linker library paths:
-
-    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0\stage\lib
-#+end_src
-So after doing a
-#+begin_src powershell
-  mv .\boost_1_82_0\ -Destination 'C:\Program Files\' 
-#+end_src
-I should includes those dir respectively.
-**** HelloWorld
-***** CMakeLists.txt
-#+begin_src cmake
-  cmake_minimum_required(VERSION 3.20)
-  # set the project name and version
-  project(Hi VERSION 1.0)
-
-
-  # Version 1.82 is too high for findBoost
-  # set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
-
-  # So we must use the shipped BoostConfig.cmake
-  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
-  # The above dir contains the BoostConfig.cmake
-  find_package(Boost CONFIG REQUIRED COMPONENTS log)
-
-  add_executable(myexe test.cpp)
-  target_link_libraries(myexe PUBLIC Boost::log)
-
-  # cmake .. && cmake --build .
-  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
-
-#+end_src
-***** test.cpp
-#+begin_src c++
-  #include <boost/log/trivial.hpp>
-
-int main(int, char*[])
-{
-  BOOST_LOG_TRIVIAL(trace) << "A trace severity message";
-  BOOST_LOG_TRIVIAL(debug) << "A debug severity message";
-  BOOST_LOG_TRIVIAL(info) << "An informational severity message";
-  BOOST_LOG_TRIVIAL(warning) << "A warning severity message";
-  BOOST_LOG_TRIVIAL(error) << "An error severity message";
-  BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message";
-
-  return 0;
-}
-#+end_src
-
-*** TroubleShoot
-**** LINK : fatal error LNK1104: cannot open file 'libboost_log_setup-vc143-mt-gd-x64-1_82.lib'
-Original CMake and C++:
-
-Here we add a sink to the Boost::log core. This will link to the
-~libboost_log_setsup~, which should be compiled seperately, and it's another
-target.
-#+begin_src cmake
-  cmake_minimum_required(VERSION 3.20)
-  # set the project name and version
-  project(Hi VERSION 1.0)
-
-
-  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
-  # The above dir contains the BoostConfig.cmake
-  find_package(Boost REQUIRED COMPONENTS log)
-  # find_package(Boost CONFIG REQUIRED COMPONENTS log)
-
-  add_executable(myexe test.cpp)
-  target_link_libraries(myexe PUBLIC Boost::log)
-
-  # cmake .. && cmake --build .
-  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
-
-#+end_src
-#+begin_src c++
-/*
- *          Copyright Andrey Semashev 2007 - 2015.
- * Distributed under the Boost Software License, Version 1.0.
- *    (See accompanying file LICENSE_1_0.txt or copy at
- *          http://www.boost.org/LICENSE_1_0.txt)
- */
-
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-
-namespace logging = boost::log;
-namespace src = boost::log::sources;
-namespace sinks = boost::log::sinks;
-namespace keywords = boost::log::keywords;
-
-void init()
-{
-    logging::add_file_log("sample.log");
-    logging::core::get()->set_filter
-    (
-        logging::trivial::severity >= logging::trivial::info
-    );
+  intx::uint256 x = intx::be::load<intx::uint256,32>(a);
+  // 8-byte int
+  BOOST_CHECK_EQUAL(int(x),0xffff);
 }
 
-int main(int, char*[])
-{
-    init();
-    logging::add_common_attributes();
+#include <string_view>
+BOOST_AUTO_TEST_CASE(int_to_array){    // int to array
+  using namespace intx;
 
-    using namespace logging::trivial;
-    src::severity_logger< severity_level > lg;
+  constexpr auto size = sizeof(uint64_t);
+  uint8_t data[size]{};
+  std::string_view view{reinterpret_cast<const char*>(data), std::size(data)};
 
-    BOOST_LOG_SEV(lg, trace) << "A trace severity message";
-    BOOST_LOG_SEV(lg, debug) << "A debug severity message";
-    BOOST_LOG_SEV(lg, info) << "An informational severity message";
-    BOOST_LOG_SEV(lg, warning) << "A warning severity message";
-    BOOST_LOG_SEV(lg, error) << "An error severity message";
-    BOOST_LOG_SEV(lg, fatal) << "A fatal severity message";
-
-    return 0;
+  be::store(data, uint64_t{0x0102030405060708});
+  BOOST_CHECK_EQUAL(view,"\x01\x02\x03\x04\x05\x06\x07\x08");
 }
 
+BOOST_AUTO_TEST_CASE(int_to_small_array){
+  intx::uint256 x{0xabcd};
+  uint8_t a[2];
+  std::string_view v{reinterpret_cast<const char*>(a), std::size(a)};
+  intx::be::trunc<2,256>(a,x);
+
+  BOOST_CHECK_EQUAL(v,"\xab\xcd"); // hex escape
+  BOOST_CHECK_EQUAL(a[0],0xab);
+  BOOST_CHECK_EQUAL(a[1],0xcd);
+}
+
+BOOST_AUTO_TEST_CASE(int_to_small_struct){
+  struct A {uint8_t bytes[2];};
+  intx::uint256 x{0xabcd};
+
+  A a = intx::be::trunc<A,256>(x);
+  std::string_view v{reinterpret_cast<const char*>(a.bytes), std::size(a.bytes)};
+
+  BOOST_CHECK_EQUAL(v,"\xab\xcd"); // hex escape
+  BOOST_CHECK_EQUAL(a.bytes[0],0xab);
+  BOOST_CHECK_EQUAL(a.bytes[1],0xcd);
+}
 #+end_src
-Solution: should add the component ~Boost::log_setup~ in addition to
-~Boost::log~. (This target should be built)
-#+begin_src cmake
-cmake_minimum_required(VERSION 3.20)
-# set the project name and version
-project(Hi VERSION 1.0)
-
-
-# Version 1.82 is too high for findBoost
-# set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
-
-set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
-# The above dir contains the BoostConfig.cmake
-find_package(Boost REQUIRED COMPONENTS log log_setup)
-# find_package(Boost CONFIG REQUIRED COMPONENTS log)
-
-add_executable(myexe test.cpp)
-target_link_libraries(myexe PUBLIC Boost::log Boost::log_setup)
-
-# cmake .. && cmake --build .
-add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
-
-#+end_src
-** RocksDB
-*** concept
-+ 每个db对应一个文件夹，文件都在那里面。
-*** Basic
-**** Status？
-RocksDB容易出错的都会返回 ~rocksdb::Status~ 类型。
-#+begin_src c++
-rocksdb::Status s = ...;
-if (!s.ok()) cerr << s.ToString() << endl;
-#+end_src
-**** open db
-#+begin_src c++
-  #include <assert>
-  #include "rocksdb/db.h"
-
-  rocksdb::DB* db;
-  rocksdb::Options options;
-  options.create_if_missing = true;
-  // options.error_if_exists = true;
-  rocksdb::Status status =
-    rocksdb::DB::Open(options, "/tmp/testdb", &db);
-  assert(status.ok());
-  ...
-#+end_src
-**** closing db
-#+begin_src c++
-/* open the db as described above */
-/* do something with db */
-delete db;
-#+end_src
-**** CRUD: create/read/update/delete
-#+begin_src c++
-std::string value;
-rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &value);
-if (s.ok()) s = db->Put(rocksdb::WriteOptions(), key2, value);
-if (s.ok()) s = db->Delete(rocksdb::WriteOptions(), key1);
-#+end_src
-*** Deeper
-**** options
-你可以用方法来set，也可以用str-str Map来set。
-有些可以在跑的时候改
-#+begin_src c++
-rocksdb::Status s;
-s = db->SetOptions({{"write_buffer_size", "131072"}});
-assert(s.ok());
-s = db->SetDBOptions({{"max_background_flushes", "2"}});
-assert(s.ok());
-#+end_src
-这些会被储存在 OPTIONS-xxxx 文件之中。
-具体option见：https://github.com/facebook/rocksdb/wiki/Basic-Operations
-几个可能会用的有
-#+begin_src c++
-  std::unordered_map<std::string, std::string> cf_options_map = {
-      {"write_buffer_size", "1"},
-      {"max_write_buffer_number", "2"},
-      {"compression", "kSnappyCompression"},
-      {"compression_per_level",
-       "kNoCompression:"
-       "kSnappyCompression:"
-       "kZlibCompression:"
-       "kBZip2Compression:"
-       "kLZ4Compression:"
-       "kLZ4HCCompression:"
-       "kXpressCompression:"
-       "kZSTD:"
-       "kZSTDNotFinalCompression"},
-      {"bottommost_compression", "kLZ4Compression"},
-  };
-  #+end_src
-**** Closing the db
-你可以直接delete,或者用Close(). Close()可以查错，比如说看logger有没有被关掉的。
-#+begin_src c++
-  ... open the db as described above ...
-  ... do something with db ...
-  Status s = db->Close();
-  ... log status ...
-  delete db;
-  #+end_src
-**** get
-***** PinnableSlice
-当有的value会常常往返DB的时候用 ~PinnableSlice~ 可以省一些 ~memcopy~。
-#+begin_src c++
-  PinnableSlice pinnable_val;
-  rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &pinnable_val);
-  #+end_src
-The source will be released once pinnable_val is destructed or ::Reset is invoked on it.
-***** MultiGet
-#+begin_src c++
-  std::vector<Slice> keys;
-  std::vector<PinnableSlice> values;
-  std::vector<Status> statuses;
-
-  for ... {
-    keys.emplace_back(key);
-  }
-  values.resize(keys.size());
-  statuses.resize(keys.size());
-
-  db->MultiGet(ReadOptions(), cf, keys.size(), keys.data(), values.data(), statuses.data());
-#+end_src
-你可以用 ~std::array~ or any contiguous storage type.
-#+begin_src c++
-  std::vector<ColumnFamilyHandle*> column_families;
-  std::vector<Slice> keys;
-  std::vector<std::string> values;
-
-  for ... {
-    keys.emplace_back(key);
-    column_families.emplace_back(column_family);
-  }
-  values.resize(keys.size());
-
-  std::vector<Status> statuses = db->MultiGet(ReadOptions(), column_families, keys, &values);
-  #+end_src
-**** Column Family FAQ
-等下，ColumnFamily是啥？
-
-+ Q: What are column families used for?
-+ A: The most common reasons of using column families:
-  + Use different compaction setting, comparators, compression types, merge
-    operators, or compaction filters in different parts of data.
-  + Drop a column family to delete its data One column family to store metadata
-    and another one to store the data.
-
-+ Q: What's the difference between storing data in multiple column family and in
-multiple rocksdb database?
-+ A: The main differences will be backup, atomic writes and performance of writes.
-  + The advantage of using multiple databases: database is the unit of backup or
-    checkpoint. It's easier to copy a database to another host than a column
-    family.
-  + Advantages of using multiple column families:
-    + write batches are atomic across multiple column families on one database.
-      You can't achieve this using multiple RocksDB databases
-    + If you issue sync writes to WAL, too many databases may hurt the performance.
-
-+ Q: If I have multiple column families and call the DB functions without a
-  column family handle, what the result will be?
-+ A: It will operate only the default column family.
-
-所以column family 其实就像subtable一样。
-怎么获得？ 
-**** Batch Write 一个不过全部rollback
-#+begin_src c++
-  #include "rocksdb/write_batch.h"
-  ...
-  std::string value;
-  rocksdb::Status s = db->Get(rocksdb::ReadOptions(), key1, &value);
-  if (s.ok()) {
-    rocksdb::WriteBatch batch;
-    batch.Delete(key1);
-    batch.Put(key2, value);
-    s = db->Write(rocksdb::WriteOptions(), &batch);
-  }
-  #+end_src
-**** sync/async write
-默认async write。（先回归，后台慢慢写）
-
-如下打开sync
-#+begin_src c++
-  rocksdb::WriteOptions write_options;
-  write_options.sync = true;
-  db->Put(write_options, ...);
-#+end_src
-**** Iteration
-***** db[:] :: print all kv
-#+begin_src c++
-  rocksdb::Iterator* it = db->NewIterator(rocksdb::ReadOptions());
-  for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    cout << it->key().ToString() << ": " << it->value().ToString() << endl;
-  }
-  assert(it->status().ok()); // Check for any errors found during the scan
-  delete it;
-  #+end_src
-***** db[start:limit]
-#+begin_src c++
-  for (it->Seek(start);
-       it->Valid() && it->key().ToString() < limit;
-       it->Next()) {
-    ...
-  }
-  assert(it->status().ok()); // Check for any errors found during the scan
-  #+end_src
-***** db.reverse()[:]
-#+begin_src c++
-  for (it->SeekToLast(); it->Valid(); it->Prev()) {
-    ...
-  }
-  assert(it->status().ok()); // Check for any errors found during the scan
-  #+end_src
-***** db[limit:start-1:-1]
-#+begin_src c++
-  for (it->SeekForPrev(start);
-       it->Valid() && it->key().ToString() > limit;
-       it->Prev()) {
-    ...
-  }
-  assert(it->status().ok()); // Check for any errors found during the scan
-  #+end_src
-**** Slice ? 就是string
-The return value of the ~it->key()~ and ~it->value()~ calls above are instances of
-the ~rocksdb::Slice~ type. Slice is a simple structure that contains a length and
-a pointer to an external byte array. Returning a Slice is a cheaper alternative
-to returning a std::string since we do not need to copy potentially large keys
-and values.
-
-C-string 和 string 都可以到slice
-#+begin_src c++
-   rocksdb::Slice s1 = "hello";
-
-   std::string str("world");
-   rocksdb::Slice s2 = str;
-   #+end_src
-and back
-#+begin_src c++
-   std::string str = s1.ToString();
-   assert(str == std::string("hello"));
-   #+end_src
-***** caveat
-你要保证slice所指的东西一直在。slice就是个指针。
-不要用如下：
-#+begin_src c++
-   rocksdb::Slice slice;
-   if (...) {
-     std::string str = ...;
-     slice = str;
-   }
-   Use(slice);
-   #+end_src
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

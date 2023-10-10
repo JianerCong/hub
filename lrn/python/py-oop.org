@@ -445,6 +445,146 @@ assert asdict(p) == {'x': 10, 'y': 20}
 c = C([Point(0, 0), Point(10, 4)])
 assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
 #+end_src
+** the descripter (attach properties to a class)
+#+begin_src python
+class Ten:
+    def __get__(self, obj, objtype=None):
+        return 10
+class A:
+    x = 5                       # regular class attr
+    y = Ten()                   # a Descriptor
+
+def test_one():
+    a = A()
+    assert a.y == 10            # look up the descriptor and call __get__
+    assert a.x == 5             # look up the obj class dict
+
+
+class XPlusOne:
+    def __get__(self, obj, objtype=None):
+        # objtype is the attached type
+        return obj.x + 1
+
+class B:
+    y = XPlusOne()
+    def __init__(self,x):
+        self.x = x
+
+# It's like C# descriptor
+def test_computed():
+    b = B(1)
+    assert b.y == 2
+
+    b = B(2)
+    assert b.y == 3
+import logging
+
+logging.basicConfig(level=logging.INFO)
+class LoggedAgeAccess:
+
+    def __get__(self, obj, objtype=None):
+        value = obj._age
+        logging.info('Accessing %r giving %r', 'age', value)
+        return value
+
+    def __set__(self, obj, value):
+        logging.info('Updating %r to %r', 'age', value)
+        obj._age = value
+
+class Person:
+    age = LoggedAgeAccess()             # Descriptor instance
+    def __init__(self, name, age):
+        self.name = name                # Regular instance attribute
+        self.age = age                  # Calls __set__()
+
+    def birthday(self):
+        self.age += 1                   # Calls both __get__() and __set__()
+
+def test_accessor():
+    mary = Person('Mary M', 30)         # The initial age update is logged
+    assert mary.age == 30
+    mary.birthday()
+    assert mary.age == 31
+
+## 🦜 : Each descriptor can use a custom accessor
+import logging
+logging.basicConfig(level=logging.INFO)
+
+class LoggedAccess:
+    def __set_name__(self, owner, name):
+        self.public_name = name
+        self.private_name = '_' + name
+    def __get__(self, obj, objtype=None):
+        value = getattr(obj, self.private_name)
+        logging.info('Accessing %r giving %r', self.public_name, value)
+        return value
+    def __set__(self, obj, value):
+        logging.info('Updating %r to %r', self.public_name, value)
+        setattr(obj, self.private_name, value)
+
+class Person:
+    name = LoggedAccess()                # First descriptor instance
+    age = LoggedAccess()                 # Second descriptor instance
+    def __init__(self, name, age):
+        self.name = name                 # Calls the first descriptor
+        self.age = age                   # Calls the second descriptor
+    def birthday(self):
+        self.age += 1
+def test_vars():
+    assert vars(vars(Person)['name']) == {'public_name': 'name',
+                                          'private_name' : '_name'}
+
+    assert vars(vars(Person)['age']) == {'public_name': 'age',
+                                          'private_name' : '_age'}
+
+#+end_src
+** bind class method: (natural)
+#+begin_src python
+o = []
+
+class D:
+    def __init__(self,x):
+        self.x = x
+        o.append(self.f)
+    def f(self):
+        return self.x
+    
+d = D(2)
+
+o[0]() == 2
+#+end_src
+** static method
+#+begin_src python
+# Python program to
+# demonstrate static methods
+
+class Maths():
+
+@staticmethod
+def addNum(num1, num2):
+return num1 + num2
+
+# Driver's code
+if __name__ == "__main__":
+
+# Calling method of class
+# without creating instance
+res = Maths.addNum(1, 2)
+print("The result is", res)
+#+end_src
+** attr
+#+begin_src python
+  class X:
+      def __init__(self):
+          self.x = 1
+        
+  x = X()
+  x.x
+  getattr(x,'x')                  # 1
+  setattr(x,'x',2)
+  x.x                             # 2
+#+end_src
+
 * End
 
 # Local Variables:

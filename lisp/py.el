@@ -16,6 +16,11 @@
     ("rais" "" (lambda () nil (interactive)
                 (skeleton-insert '(nil "raise Exception(" _ ")"))
                 ))
+
+    ("hdl" ""
+     (lambda () nil (interactive)
+       (skeleton-insert '(nil "def" _ "(self, endpoint: str, data: str) -> str:"))
+                 ))
     ("mf" ""
      (lambda () nil (interactive)
        (skeleton-insert '(nil "if " _ " in metafunc.fixturenames:" \n "metafunc.parametrize"))

@@ -23,6 +23,13 @@
   ptw
 
 #+end_src
+**** run a subset of tests
++ single test method :: pytest path/test_module.py::TestClass::test_method
++ All tests in a class :: pytest path/test_module.py::TestClass
++ Single test function :: pytest path/test_module.py::test_function
++ All tests in a module :: pytest path/test_module.py
++ All tests in a directory :: pytest path
++ Tests matching a name pattern :: pytest -k pattern
 
 *** sympy
 **** install on ubuntu
@@ -515,6 +522,102 @@ async def run():
 
 asyncio.run(run())
 
+#+end_src
+*** random
+#+begin_src python
+  import random
+  random.seed(123)
+  # --------------------------------------------------
+  # int
+  random.randrange(0,10) # draw from 0,9
+  random.randrange(0,10,2) #[0,2,...,8]
+  random.randint(0,10) # = randrange(0,11)
+  random.choice([1,2,3]) # pick one
+  random.choices([1,2,3],k=5) # pick five
+  l = [1,2,3]
+  random.shuffle(l)
+  l
+  random.sample(['red', 'blue'], counts=[4, 2], k=5)
+  # sample(['red', 'red', 'red', 'red', 'blue', 'blue'], k=5).
+
+  # --------------------------------------------------
+  # real
+  random.uniform(1,10) #uniform between 1 ~ 10
+  random.gauss(mu=0,sigma=1) #normal
+#+end_src
+*** random word
+#+begin_src python
+#pip install wonderwords
+from wonderwords import RandomWord
+
+r = RandomWord()
+
+# generate a random word
+r.word()
+
+# random word that starts with a and ends with en
+r.word(starts_with="a", ends_with="en")
+
+# generate a random noun or adjective, by default all parts of speech are included
+r.word(include_parts_of_speech=["nouns", "adjectives"])
+
+# generate a random word between the length of 3 and 8 characters
+r.word(word_min_length=3, word_max_length=8)
+
+# generate a random word with a custom regular expression
+r.word(regex=".*a")
+
+# you can combine multiple filtering options
+r.word(starts_with="ru", word_max_length=10, include_parts_of_speech=["verbs"])
+#+end_src
+
+** eth-hash
+#+begin_src bash
+  pyenv
+  pip install eth-hash[pycryptodome]
+#+end_src
+#+begin_src python
+  from eth_hash.auto import keccak
+
+  s='baz(uint32,bool)'
+  b1 = bytes(s,'utf-8')
+  b = keccak(b1)
+  h = b.hex()
+  h[:8] # 'cdcd77c0' the first 4 bytes used as function selector
+#+end_src
+
+** jinja2
+pip install Jinja2
+#+begin_src python
+import os # for mkdir
+import shutil # for rmtree
+
+from jinja2 import Environment, select_autoescape, FileSystemLoader
+
+def test_basic_jinja():
+    # make the ./tmp folder to store templates
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
+
+    env = Environment(
+        # load templates from the ./tmp folder
+        loader=FileSystemLoader('tmp'),
+        autoescape=select_autoescape()
+    )
+
+    # write a template hi.txt to the ./tmp folder
+    with open('tmp/hi.txt', 'w') as f:
+        f.write('Hi {{ name }}')
+
+    # load the template
+    template = env.get_template('hi.txt')
+    # render it with variable name=aaa
+
+    assert template.render(name='aaa') == 'Hi aaa'
+
+    # remove the ./tmp folder recursively
+    shutil.rmtree('tmp')
+ 
 #+end_src
 * End
 

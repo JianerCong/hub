@@ -82,13 +82,44 @@ attributes(df2)
 #> 
 #> $class
 #> [1] "tbl_df"     "tbl"        "data.frame"
-#+end_src
+#+
 *** transpose a dataframe
 #+begin_src R
   l <- data.frame(x=1:2, y=3:4)
   a <- t(l)
   colnames(a) <- c("a","b")
   tibble::as_tibble(a)
+#+end_src
+*** common functions
+#+begin_src R
+  sample(10) + 100 #>  [1] 107 104 103 109 102 101 106 110 105 108
+  runif(10) > 0.5 #>  [1] FALSE  TRUE FALSE FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+  1:10 + 1:2 #>  [1]  2  4  4  6  6  8  8 10 10 12
+  x <- sample(20, 100, replace = TRUE)
+  y <- x > 10
+  sum(y)  # how many are greater than 10? #> [1] 38
+  mean(y) # what proportion are greater than 10? #> [1] 0.38
+
+  x <- "This is a reasonably long string."
+  pryr::object_size(x)
+                                          #> 152 B
+
+  y <- rep(x, 1000)
+  pryr::object_size(y) #> 8.14 kB
+#+end_src
+*** stats
+#+begin_src R
+  dpois(c(1,2,3),5) #poisson values for mean=5
+  dnorm(c(1,2,3),mean=0,sd=1)
+  dgeom(c(0,1,2,3), prob=0.5) #prob of 1,2,3 heads?
+  dexp(c(1,2,3), rate = 1,)
+
+  
+  rpois(n=5,5) #poisson values for mean=5
+  rnorm(n=5,mean=0,sd=1)
+  rgeom(n=5, prob=0.5) #throw
+  nexp(n=5, rate = 1,)
+
 #+end_src
 ** 4. subsettings
 *** 4.2 selecting multiple elements

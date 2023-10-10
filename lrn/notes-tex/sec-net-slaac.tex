@@ -1,0 +1,112 @@
+
+\section{SLAAC}
+\label{sec:slaac}
+
+\Cola{Stateless Address Autoconfiguration (SLAAC)} is designed with the
+following goals:
+
+\colz{
+  \begin{enumerate}
+  \item \colZ{Manual configuration} of individual machines before connecting them to the
+    network should \colZ{not be required}.
+  \item Small sites consisting of a set of machines attached to a single link
+    should \colZ{not require }the presence of a \colZ{DHCPv6 server or router}.
+    \colZ{Plug-and-play} should is achieved through the use of link-local
+    addresses.
+  \item global address -  an address with unlimited scope.
+
+
+    % Link-local addresses have a \colZ{``well-known'' prefixes} that identifies
+    % the (single) shared link to which a set of nodes attach.
+  \item A large site with multiple networks and routers should not require the
+    presence of a \colZ{DHCPv6 server} for address configuration. In order to
+    generate \colZ{global addresses}, hosts must determine the prefixes that
+    identify the the subnets to which they attach. \colZ{Routers generate
+      periodic Router Advertisements
+    } that include options listing the set of active prefixes on a link.
+  \item Address configuration should facilitate the graceful renumbering of a
+    site's machines.
+  \end{enumerate}
+}
+
+
+\subsection{jargons}
+
+\begin{enumerate}
+\item link layer address \colz{
+
+    a link-layer identifier for an interface. For example, IEEE 802 addresses
+    for Ethernet links.
+  }
+\item tentative address \colz{
+
+    an address whose uniqueness on a link is being verified. It's not
+    \colZ{assigned to an interface yet}.
+
+    An interface discards packets sent to a tentative address, but accepts
+    Neighbor Discovery packets related to Duplicate Address Detection (DAD) for
+    the tentative address.
+  }
+\item preferred address \colz{
+    a "normal" address assigned to an interface.
+  }
+\item deprecated address \colz{
+    an address that is assigned to an interface whose use is discouraged. It can
+    be \colZ{source}, but \colZ{not destination}. However, sometimes, there are
+    exceptions. For example, when there's an active TCP connection.
+  }
+\item valid address \colz{
+    preferred or deprecated address.
+  }
+\item invalid address \colz{
+    an address that is not assigned to any interface.
+  }
+\item interface identifier
+  a link-dependent identifier for an interface that is unique per link.
+  \cola{SLACC combines an interface identifier with a prefix to form an address.}
+  \colz{
+    From address autoconfiguration's perspective, an interface identifier is a
+    bit string of known length. 
+  }
+\end{enumerate}
+
+\subsection{Quiz}
+
+
+\begin{enumerate}
+\item When to use SLAAC and when to use DHCPv6 ? Are they mutually exclusive? \ans{}
+\item What are the two states associated to an address that enable graceful
+  expiration? \ans{}
+\item ``Deprecated''  addresses are not routable. \tf{}
+\item The node check for duplication before it assigns an address to its
+  interface. \tf{}
+\item SLAAC duplicate address detection(DAD) also works for DHCPv6-assigned
+  addresses. \tf{}
+\item A router is not needed in order to use DHCPv6. \tf{}
+\item What type of ICMP message is used when checking the uniqueness of a tentative
+  address? \ans{}
+\item What happens when a tentative address is found to be duplicated? \ans{}
+\item SLAAC only works on multicast-enabled links. \tf{}
+\item The tentative address randomly guessed. \tf{}
+\item In what ICMP message is a host be able to obtain information necessary to generate
+  its global addresses? \ans{}
+\item DAD can be disabled. \tf{}
+\item Upper layer protocols like TCP and UDP break when the lower layer address
+  becomes expired. To mitigate this, higher layer should use a ``preferred''
+  address \tf{}
+\item Describe the autoconfiguration-related variable
+  \texttt{DupAddrDetectTransmits} and \texttt{ReransTimer}. What are their
+  units? What type of ICMP message do they control? \ans{}
+\item You can force an interface to re-form its link-local address by disabling
+  and re-enabling the interface. \tf{}
+\item A link-local address is always preferred and it's never timed out. \tf{}
+\item Current implementations checks the duplication of link-local addresses and
+  use that result to possibly skip the check for global addresses. This is not
+  recommended. \tf{}
+\item \texttt{Neighbor Solicitations} and \texttt{Advertisement} can be invalid. \tf{}
+\item Which two of the multicast address the interface must join before sending
+  a \texttt{Neighbor Solicitation}? \ans{}
+\item \texttt{Router Advertisement (RA)} allows auto-configuration of the router
+  of a host, but it can also be set manually. \tf{}
+\item What's the length (in bits) of the advertised prefix in \texttt{RA}? \ans{} 
+\end{enumerate}

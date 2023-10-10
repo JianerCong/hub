@@ -1,0 +1,478 @@
+\section{DNS}
+
+\subsection{Public DNS}
+
+DNS has a large and complex infrastructure on the internet. This is made up of
+\begin{itemize}
+\item 13 \cola{root name servers}(which are each a reliable cluster
+  of servers)
+\item a group of commonly used name servers (for instance, the servers at Google or Cloudflare)
+\item a series of registrars who will, for a fee, register a DNS domain name for
+  you -- for instance, your organization's domain name.
+\end{itemize}
+
+\dSay{So Route 53 service in AWS is one of the third kind}
+
+\cSay{I guess so.}
+
+\dSay{Who are the 13 clusters?}
+
+\cSay{
+  They answer you questions liks : ``Where is the \texttt{.com} server?''
+  \colz{(These servers are called \Cola{top-level domain (TLD)} authoritative name
+    server.)
+    In face, all 13 root (clusters of) servers  are same for redundancy.
+    They are listed in \url{https://www.iana.org/domains/root/servers}. For example,
+    Verisign,Inc, Department of Defence, NASA,...
+  }
+}
+
+\dSay{
+  Oh, do they need a consensus mechanism then ?
+}
+
+\cSay{
+  I think say do. But let's stop.
+}
+
+\subsection{Internal DNS}
+\cSay{
+
+  \colz{
+    However, for the most part, most administrators are working with the needs of
+    their organization -- working with their \Cola{internal DNS} name servers that
+    face their internal folks, or with their \colb{external DNS} name servers that
+    face the internet. 
+  }
+
+}
+
+The internal DNS server has a \Cola{zone file} populated with DNS records for internal
+DNS resolution. This file can either be populated
+\begin{itemize}
+\item manually by editing it
+\item automatically by the clients
+\item automatically by \Cola{Dynamic Host Configuration Protocol (DHCP) leases}.
+\end{itemize}
+
+\cSay{Often, all three methods are combined.}
+
+\subsubsection{basic request flow}
+
+
+The basic request flow is simple. A client makes a DNS request. \cola{If that
+  request is for a host that's internal to the organization and the request is
+  to an internal DNS server,} the DNS response is supplied immediately since
+it's on that local DNS server.
+
+If it's for an external host, then things are bit more complex -- for instance,
+let's query for \texttt{www.example.com}.
+
+\begin{tikzpicture}
+  % \draw[step=1cm,help lines,] (0,0) grid +(15cm,10cm);
+  
+  \tikzstyle{dnsStyle}=[inner sep=7pt,fill=\mycola!20,rounded corners,
+  text width=2.5cm,text centered]
+
+  % the wall
+  \draw[fill=gray]
+  (6cm , 0) node[text centered] {Organization's Firewall}
+  ++(-0.5cm,1cm) rectangle ++(1cm,9cm);
+
+  \newcounter{req}
+  \setcounter{req}{1}
+  \newcommand{\dns}{\textbf{DNS}}
+
+  % internal dns
+  \node at (9cm, 3cm)[dnsStyle, name=internal-dns, text width=2cm] {Internal \dns};
+
+  % us
+  \node at ([xshift=3cm]internal-dns) [name=we,dnsStyle,fill=\mycolb!20, text width=1cm] {we};
+
+  \newcommand{\refPlusPlus}{
+    \arabic{req}
+    \stepcounter{req}
+  }
+
+  
+
+  % \uptodown[-latex]{we}{internal-dns}
+  \draw[-latex] (we) --
+  node [midway,above] {\refPlusPlus{}}
+  (internal-dns);
+  
+  \matrix (M1) [matrix of nodes, nodes={style=dnsStyle},
+  row sep=1.5cm,matrix anchor=south]{
+    Public \dns{} Server (forwarder) \\
+    \dns{} Root Name Servers \\
+    \dns{} Authoritative server for \texttt{.com}\\
+    \dns{} Authoritative server for \texttt{example.com}\\};
+
+  % \draw[->] (M1-1-1.west) .. controls +(left:5mm) and +(left:10mm) ..  (M1-2-1.west);
+  % 🦜 : another way 
+
+  \newcommand{\comeAndGo}[2]{
+    \draw[-latex] (#1) to[out = 180, in=180] node[auto,swap] {
+      \refPlusPlus{}
+    } (#2);
+
+    \draw[-latex] (#2) to[out = 0, in=0] node[auto,swap] {
+      \refPlusPlus{}
+    } (#1);
+  }
+
+  
+  % over the wall
+  \draw[-latex] (internal-dns) to[out=180,in=0]
+  node [midway, left] {\refPlusPlus{}}
+  (M1-1-1);
+
+
+  % pass around
+  \comeAndGo{M1-1-1}{M1-2-1}{2}{3}
+  \comeAndGo{M1-1-1}{M1-3-1}{4}{5}
+  \comeAndGo{M1-1-1}{M1-4-1}{6}{7}
+
+  % go back  in wall
+  \draw[-latex] (M1-1-1) to[out=90,in=90]
+  node [midway, left] {\refPlusPlus{}}
+  (internal-dns);
+
+  % back to us
+  \draw[-latex] (internal-dns) to[out=90,in=90]
+  node [midway, left] {\refPlusPlus{}}
+  (we);
+  
+\end{tikzpicture}
+
+The worst-case process is as follows:
+
+\newcommand{\goTo}[1]{$\Rightarrow $ Step #1}
+\begin{enumerate}
+\item If the entry is in the \cola{DNS cache} of the \cola{internal DNS server},
+  and the \Cola{time to live (TTL)} of that entry has not expired, then the
+  response is supplied \cola{immediately }to the client.
+
+  Similarly, if the client is requesting an entry that's hosted on the server in
+  a \Cola{zone file}, the answer is supplied immediately to the client.
+\colz{  (\emoji{parrot} : So it feels like the zone file holds the ``defined DNS
+  entries'', and the cache holds entries of ``somebody else's zone file's
+  entry''?, \emoji{turtle} : Seem so....)}
+\item If the entry is not in the cache of the internal DNS server, or if it's
+  expired, then the server \cola{forwards the request} to its \Cola{upstream
+    providers} (often called \Cola{forwarders}) to refresh the entry.
+
+  If the query is in the \cola{cache} of the forwarder, it will simply return the
+  answer. If not found, \goTo{3}.
+
+  If this server has the \cola{authoritative name server} for the domain, it
+  will simply query that host (\goTo{5}).
+\item Forwarder request upstream. In this case, though, it will likely query the
+  \Cola{root name servers}.
+\colz{  The goal in this is to find the ``authoritative name
+  server'' that has the actual entries (in a zone file) for that domain. In this
+  case, the query is made to the root name servers for \texttt{.com}.}
+  % \goTo{4}
+\item The \Cola{root name server} will not return the actual answer, but will
+  instead return the authoritative name server for the \Cola{top-level domain
+    (TLD)} -- in this case, for \texttt{.com}. 
+  \colz{(
+    \emoji{parrot} : Oh, so this is
+    the server that you can ask ``Who should I ask for \texttt{.com} name''.
+    \emoji{turtle} : Yeah.)}
+\item After the forwarder gets this response, it updates its \cola{cache} with
+  that \cola{name server entry}, then makes the actual query against that
+  server. \colz{(\emoji{parrot} : Oh, so there's a cache entry just for the \texttt{.com} name
+  server. \emoji{turtle} : If you can cache \texttt{www.example.com}, why not
+  \texttt{.com}? \emoji{parrot} : Oh...)}
+\item The authoritative server for \texttt{.com} returns the authoritative DNS
+  server for \texttt{example.com}.
+\item
+\colz{\colZ{The forwarder server} then makes a request against this \colZ{final authoritative name server}.}
+\item
+\colz{The \colZ{authoritative name server} for \colZ{\texttt{example.com}} returns the actual query
+  ``answer'' to the \colZ{forwarder server}.}
+\item \colz{The \colZ{forwarder name server} caches that answer, then sends a reply back to
+  your \colZ{internal name server}.}
+\item \colz{Your \colZ{internal DNS server }also caches that answer, then
+    forwards it back to the client. The \colZ{client} caches the request in its
+    local cache, then passes the requested information (the DNS response) to the
+    application that requested it (perhaps your web browser)}. (\emoji{parrot} :
+  This is like ``backward propagation?'' \emoji{turtle} : No, not at all. They
+  just return the previously asked requests....)
+\end{enumerate}
+
+\cSay{ \colz{
+    Again, this process shows the \colZ{worst-case}. In practice, once the
+    servers have been up for even a short period of time, caching shortens this
+    \colZ{considerably}. Once in a steady state, the \colZ{internal DNS server}
+    for most organizations will have most requests cached.
+  }
+}
+
+\dSay{So usually just two steps. Right?}
+
+\cSay{Yeah.
+  \colz{
+    In addition, your \colZ{forwarding DNS server} will cache -- in particular,
+    it will almost never query the root name servers; usually, it will have \colZ{the
+    TLD servers (in this case, the server for \texttt{.com} cached as well.)}
+  }
+}
+
+
+
+\subsubsection{Needed features}
+\label[subsubsection]{sec:needed-features}
+\dSay{
+  \colz{
+    Which key features fo we need to enable on our \colZ{internal DNS server} to make
+    all this work?
+  }
+}
+
+\cSay{We need:}
+
+\begin{enumerate}
+  \item DNS recursion: \colz{This model relies on DNS recursion -- the
+      ability for each server in turn to make the client's DNS request ``up the
+      line''. }
+  \item Forwarder entries: \colz{If the requested DNS entry is not hosted on the
+    internal server, \Cola{internal DNS service (iDNS)} requests are forwarded
+    to these configured IP addresses -- these should be two or more reliable
+    upstream DNS servers.
+
+    These upstream servers will in turn cache DNS entries.
+
+    In days past, people would use their \colZ{internet service provider's (ISP)
+      (e.g. \texttt{OO Telecom})} DNS servers for forwarders. In more modern
+    times, the larger DNS providers are both more reliable and provide more
+    features. Some are shown in \cref{tab:dns-prov}
+  }
+\item Caching: \colz{Just cache what it knows.}
+\item Dynamic registration: \colz{While server usually have static IP addresses
+    and static DNS entries, it's common for client hosts to have addresses
+    assigned by DHCP, and having those hosts in DNS would be nice.
+
+    DNS is often configured to allow dynamic registration of these hosts, either
+    by populating DNS from DHCP addresses as they are assigned or by permitting
+    the hosts to register themselves in DNS.
+
+    Microsoft implements an authentication mechanism into their dynamic update
+    process, and this is where it is most commonly seen. It is, however, an
+    option in Linux DNS \colZ{(Berkeley Internet Name Domain, or BIND)} as well.
+  }
+\item Host redundancy: \colz{Please get a backup.}
+\end{enumerate}
+
+\begin{table}
+  \centering
+
+  \begin{tabularx}{0.8\textwidth} {X|X}
+    \hline
+    \textbf{Provider} & \textbf{Addresses}\\
+    \hline
+    Google & \texttt{8.8.(8.8|4.4),\newline
+      2001:4860:4860::(8888 | 8844)
+    }\\
+    \hline
+    Cloudflare & \texttt{1.(1.1 | 0.0).1,\newline
+      2606:4700:4700::(1111 | 1001)
+    }\\
+    \hline
+    Quad9 & \texttt{9.9.9.9,\newline
+      149.112.112.112,\newline
+      2620:fe::(fe|9),
+    }\\
+    \hline
+    OpenDNS (now Cisco Umbrella) &
+    \texttt{
+      208.67.(222 | 220).(220 | 222),
+      2620:119:(35::35 | 53::53)
+    }
+  \end{tabularx}
+
+  \caption{Common DNS providers}
+  \label{tab:dns-prov}
+\end{table}
+
+\subsection{internet-facing DNS server}
+
+\dSay{
+  \colz{
+    So how to make a DNS server to serve a public zone ? For example, if I already
+    have \texttt{aaa.com} as our domain, how can we serve \texttt{bbb.aaa.com}?
+  }
+}
+
+\cSay{
+  \colz{
+    For a public-facing DNS server, \colZ{security} matters more than
+    \colZ{efficiency.}
+  }
+  In particular, we might implement:
+}
+
+\begin{enumerate}
+\item Restrict recursion: \colz{This server should \colZ{answer the request
+      directly}. It doesn't forward it. }
+\item Cache is less important : \colz{Similar reason. This server is about
+    \colZ{answering}, not \colZ{asking}.}
+\item Host redundancy: \colz{Please get a back up...}
+\item Restricting zone transfers:
+\colz{  You might want to answer individual DNS
+  queries as they arrive. There isn't a good reason for a DNS client on the
+  internet to request all entries for an organization. (\emoji{parrot} : What
+  does it mean..? \emoji{turtle} : I didn't get that either.)
+
+  \colZ{Zone transfers} are meant to maintain your zone between redundant
+  servers so that as a zone is edited, the changes are replicated to the other
+  servers in the cluster. (\emoji{parrot} : Oh...so zone transfer is like a
+  mirroring process? \emoji{turtle} : Yeah, more or less.)
+}
+\item Rate limiting : \colz{anti-DoS}
+\item Restricting dynamic registration: \colz{
+    This is usually disabled for most cases.}
+\end{enumerate}
+
+\subsection{common DNS implementations}
+
+\Cola{BIND} (see \cref{sec:needed-features}). also called \Cola{\texttt{named} (name
+  daemon)}, is the DNS tool most often implemented in Linux.
+
+\colz{
+
+  It's and is arguably both the most flexible and complete, as well as the most
+  difficult to configure and troubleshoot. For better or worse, though, it's the
+  service you are most likely to see and to implement in most organizations.
+}
+
+\cSay{
+  \colz{
+    \colZ{DNS masquerade (\texttt{dnsmasq})} is a competing DNS server
+    implementation. It's commonly seen on network appliances because of its
+    \colZ{small footprint}, but also makes a fine DNS server for a smaller
+    organization. The key advantages to \texttt{dnsmasq} would be:
+    \begin{enumerate}
+    \item it has a \colZ{built-in GUI}
+    \item it has \colZ{integration with DHCP}, allowing DNS registration
+      directly from the DHCP database.
+    \end{enumerate}
+
+    In addition, \texttt{dnsmasq} implements a friendly way to implement
+    \colZ{DNS blocklists}, which are very nicely packaged up in the Pi-hole
+    application.  If your home network has a DNS server on its perimeter
+    firewall or \colZ{Wireless Access Point (WAP)}, that DNS server is most
+    likely \texttt{dnsmasq}.
+
+    However, here, we will only talk about \colZ{BIND} in \cref{sec:install-bind}.
+  }
+}
+
+\subsection{Basic installation: BIND for internal use}
+\label[subsection]{sec:install-bind}
+
+Detailed installation process sees \texttt{linux-network-lower.org}.
+
+\subsubsection{SOA record}
+
+\colz{
+
+  A \Cola{start of authority record (SOA record)} is a type of \colZ{resource
+    record} in the Domain Name System (DNS) containing administrative
+  information about the zone, espacially regarding \colZ{zone transfers}. The
+  SOA record format is specified in RFC 1025. (\emoji{parrot} : Oh, so it's not
+  a BIND thing. \emoji{turtle} : It's not.)
+
+  Normally DNS name servers are set up in clusters. The database within each
+  cluster is synchronized through \colZ{zone transder}. \colZ{The SOA record for
+    a zone contains data to control the zone transfer.} This is the serial
+  number and different timespans.
+
+  It also contains the \colZ{email address} of the responsible person for this
+  zone, as well as the name of the \colZ{primary master name server.} Usually
+  the SOA record is located at the top of the zone. A zone without a SOA record
+  does not conform to the standard required by RFC 1035. 
+}
+
+\dSay{
+  So what's the structure of a record?
+}
+
+\cSay{
+  It's usually
+  \begin{enumerate}
+  \item \texttt{NAME}: \texttt{@} \colz{is a shortcut to match previous record
+      in BIND}.
+  \item \texttt{CLASS}: \texttt{IN} \colz{for internet}
+  \item \texttt{TYPE (= SOA)}
+  \item \texttt{MNAME}: Primary master name for this zone.
+  \item \texttt{RNAME}: Email address of the admin respinsible for this zone.
+    \colz{(As usual (\emoji{turtle} : Is it?), the email address is encoded as a
+      name. The part of the email address before the \texttt{@} becomes the
+      \colZ{first label} of the name; the domain name after the \texttt{@}
+      becomes the \colZ{rest of the name}.
+
+      In zone-file format, dots in labels are escaped with blackslashes; thus
+      the email address \texttt{aaa.doe@example.com} would be represented in a
+      zone file as
+      \texttt{aaa\textbackslash{}.doe.example.com}
+      )
+    }
+  \item \texttt{SERIAL}: Serial number for this zone.
+  \item \texttt{REFRESH}: \colz{Number of seconds after which secondary name
+      servers should \colZ{query the master} for the SOA record, to detect zone
+      changes.} \colz{(recommanded = 86 400 = 24 hrs)}
+
+  \item \texttt{RETRY}: \colz{Number of seconds after which secondary name
+      servers should \colZ{retry to request} the serial number from the master.
+      recommanded = 7 200 = 2hr.}
+
+  \item \texttt{EXPIRE}: = 1000hrs
+  \item \texttt{MINIMUM}: = 2 days.
+
+  \end{enumerate}
+}
+
+\subsubsection{Fully qualified domain name (FQDN)}
+
+\colz{Fully qualified domain name is a \colZ{domain name} that specifies its
+  exact location in the tree hierarchy of the DNS. It specifies all domain
+  levels, including the \colZ{top level domain} and the \colZ{root zone}.
+
+  Example : \texttt{en.wikipedia.org.} (note the last dot.)
+
+  What's not : \texttt{localhost}
+}
+
+\subsubsection{The important zone file}
+\label{sec:zone-file}
+
+\colz{The \colZ{zone files} are where the DNS records are all stored. They are
+  in the \colZ{\texttt{/var/cache/bind/}}
+  folder. For example,
+  \texttt{/var/cache/bind/aaa.net.zone}.
+}
+
+Usually you will need to do the following:
+
+\colz{
+  \begin{enumerate}
+  \item Add records as needed.
+  \item Update the \colZ{SOA} line with your zone and name server's \colZ{FQDN}.
+  \item If needed, update the \colZ{TTL} calue in the last line in the
+    \colZ{SOA} record -- the default is \colZ{24 hours} (86400 seconds). This is
+    usually a good compromise as it favors caching of records across multiple
+    servers
+
+    If you are doing any DNS maintenance, though, you might want to
+    edit the file the day before (that is, 24 hours or more prior to maintenance
+   ) and shorten this to 5 or 10 minutes so that your changes aren't delayed due
+   to caching.
+ \item Update the \colZ{ns} record, which identidies the DNS server(s) for your
+   domain.
+ \item Add \Cola{A record} as needed -- these identify the IP addresses for each
+   host. Note that for \Cola{A records,} we're only using the 
+  \end{enumerate}
+}
+

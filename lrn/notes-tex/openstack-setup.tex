@@ -1,0 +1,138 @@
+
+\section{Deploy it}
+\label{sec:deploy}
+
+\subsection{prepare the target host}
+\label{sec:prepare-target-host}
+
+\subsubsection{Install OS}
+
+\begin{enumerate}
+\item Install Ubuntu Server 22.04 LTS.
+\item Configure at least one network iface to access the internet or suitable
+  local repositories
+\item Remove the \texttt{127.0.1.1} loopback in \texttt{/etc/hosts} if exists
+\end{enumerate}
+
+\subsubsection{Configure OS }
+\label{sec:config-os}
+
+\begin{simplesh}
+    sudo apt update
+    sudo apt dist-upgrade
+    sudo apt install bridge-utils debootstrap openssh-server \
+        tcpdump vlan python3
+    sudo apt install linux-modules-extra-$(uname -r)
+    # reboot$
+\end{simplesh}
+
+Set the password of \texttt{root} (Ubuntu disables login as root by default.).
+This enables Ansible to login as \texttt{root}.
+\begin{simplesh}
+    sudo passwd root
+\end{simplesh}
+
+Add the SSH keys in \verb|/root/.ssh/authorized_keys| so that ansible can access.
+
+OpenStack-Ansible deployments require the presence of a
+\verb|/root/.ssh/id_rsa.pub| file on the \cola{deployment host}. The content of this
+file is inserted into an \verb|authorized_keys| file for the containers, which is a
+necessary step for the Ansible playbooks.
+
+\dSay{
+  What if I wanna override this file on the deployment host.
+}
+
+\cSay{
+  set the variable \texttt{
+    lxc\_container\_ssh\_key=/home/me/.ssh/id\_ed25519.pub
+  }
+  % 🦜 : It looks like verb|| doesn't work well in a group?
+}
+
+\subsubsection{Configure the storage}
+\label{sec:conf-storage}
+
+\dSay{
+  Okay, let's talk about storage....
+}
+
+\cSay{
+  \colz{
+    The magic that os uses is \cola{Logical Volume Manager (LVM)}. The Block
+    Storage(\cola{cinder}), and \cola{LXC containers} that optionally run the OpenStack
+    infrastructure, can \colZ{optionally} use LVM for their data storage.
+  }
+}
+
+\colz{
+  OpenStack-Ansible \cola{automatically configures LVM} on the nodes, and \colZ{overrides} any
+  existing LVM configuration. If you had a customized LVM
+  configuration,(\emoji{parrot}: We don't.) edit the generated configuration
+  file as needed.
+}
+
+\dSay{
+  Do we have to configure this?
+}
+
+\cSay{
+  \colz{
+    It looks like we don't.
+
+    It looks like it's only for the Block Storage service \cola{Cinder} and the \texttt{lxc}
+    containers. Cinder is itself optional, and \texttt{lxc} can optionally be
+    installed on a different filesystem than the main filesystem.
+  }
+}
+
+\dSay{
+  Okay. So how to enable Cinder ?
+}
+
+\cSay{
+  \colz{
+    Create an LVM \cola{volume group} named \colZ{\texttt{cinder-volumes}} on the storage
+    host. Specify a \colZ{metadata size} of 2048 when creating the \cola{physical volumes}:
+  }
+}
+
+\begin{simplesh}
+ pvcreate --metadatasize 2048 /dev/sda1
+ vgcreate cinder-volumes /dev/sda1
+\end{simplesh}
+
+\dSay{
+  Wait, do we have to do this on every nodes that provides Cinder ? How do we
+  know which node should provide the Cinder Service ?
+}
+
+\cSay{
+  Em... It looks like the document didn't mention this....
+}
+
+\dSay{
+  Okay...So how does it work with the \texttt{lxc} ?
+}
+
+\cSay{
+  If you want to use LXC with LVM.
+  \begin{enumerate}
+  \item Set \texttt{lxc\_storage\_backing\_store: lvm} in
+    \texttt{user\_variable.yml}.
+  \item Create an LVM volume group named \texttt{lxc} on the storage host.
+  \end{enumerate}
+
+  If you set the variable but don't create the volume group, the containers are
+  automatically installed in \texttt{/var/lib/lxc} by default.
+}
+
+\begin{simplesh}
+pvcreate --metadatasize 2048 /dev/sda1
+vgcreate lxc /dev/sda1
+\end{simplesh}
+
+\subsubsection{Configure the network}
+\label{sec:conf-network}
+
+

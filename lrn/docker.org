@@ -363,6 +363,33 @@ services:
   - 8001:80
 
     #+end_src
+** misc cmds
+*** the address of the host machine?
+https://stackoverflow.com/questions/24319662/from-inside-of-a-docker-container-how-do-i-connect-to-the-localhost-of-the-mach
+Docker automatically create a network-bridge by default named "docker0".
+
+On host:
+#+begin_src bash
+sudo ip addr show docker0
+#+end_src
+
+Then
+#+begin_src bash
+  docker run --rm -it ubuntu:trusty bash
+  docker run --rm -it alpine sh
+#+end_src
+
+On container
+#+begin_src bash
+  ip addr show eth0
+#+end_src
+** docker desktop
+Stop:
+
+systemctl --user stop docker-desktop
+
+systemctl stop snap.multipass.multipassd.service
+systemctl start snap.multipass.multipassd.service
 
 * End
 

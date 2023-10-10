@@ -1,0 +1,54 @@
+\section{Media Access Control (MAC) Address}
+
+\subsection{What does it look like}
+
+MAC address has format something like: \texttt{00-0c-29-3b-73-cb}
+
+\cSay{
+  In practice, these addresses are used to communicate between hosts in the
+  same VLAN or subnet. If you look at a packet capture, at the start of a TCP
+  conversation you'll see the sending host send a broadcast \Cola{ARP request} saying
+  \begin{center}
+    ``Who has IP address x.x.x.x ?''
+  \end{center}
+  The \Cola{ARP reply} from some host will be
+  \begin{center}
+    ``That's me, and my MAC address is aaaa.bbbb.cccc ?''
+  \end{center}
+}
+
+\dSay{
+  What if the target IP is on a different subnet ?
+}
+
+\cSay{
+  Then the sender will \Cola{ARP for} the gateway for that subnet.
+
+  Switch is much faster than router, because hosts can use MAC to communicate.
+}
+
+\dSay{So why router ?}
+
+\cSay{
+  Because switches only work in LAN.
+}
+
+\subsection{Organizationally Unique Identifier (OUI)}
+
+\cSay{The leading (usually 3 ) bytes of a MAC address usually points to its
+  manufacturer, like \texttt{OOtronics Ltd. Kibbutz Yizrael, IL} or \texttt{OOel Corporate Kedah,
+    MY} see \url{https://standards-oui.ieee.org/oui/oui.txt}
+}
+
+\subsection{Address Resolution Protocol (ARP)}
+
+\Cola{ARP} is used to find the MAC address of a network neighbour for a given IPv4 Address.
+
+\cSay{
+  When a host wants to \cola{talk} to another host \cola{in the same subnet} using its IP address, it will
+  \begin{enumerate}
+  \item check its \Cola{ARP cache} to see whether there's a MAC address that matches that IP.
+  \item If there isn't, it will send an ARP request to the local broadcast address.
+  \item When the corresponding MAC is found, it will \colb{establish port-to-port communications (Next)}.
+  \end{enumerate}
+}

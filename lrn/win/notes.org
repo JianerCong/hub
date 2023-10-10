@@ -3,3 +3,8 @@
 Error when accessing COM/...{6E87CFAD-6C05-4adf-9CD7-3B7943875B7C
 
 A: In register editor, search the the key ^^^^^ and delete that key.
+*** Make VS Dev shell use pwsh.exe instead of powershell.exe?
+Edit the starting command in the Windows Terminal, change ~powershell.exe~ to
+~pwsh.exe~.
+
+This will load the ~$PROFILE~ for pwsh which contains all the macro we defined.

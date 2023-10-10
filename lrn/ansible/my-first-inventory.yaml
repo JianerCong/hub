@@ -1,0 +1,8 @@
+my_vms:
+  hosts:
+    vm01:
+      ansible_host: 10.65.108.129
+    vm02:
+      ansible_host: 10.65.108.246
+  vars:
+    ansible_user: ubuntu

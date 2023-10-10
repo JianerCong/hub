@@ -1,0 +1,12 @@
+my_vms:
+  hosts:
+    vm01:
+      ansible_host: 10.65.108.129
+      ansible_user: ubuntu
+    vm02:
+      ansible_host: 10.65.108.246
+      ansible_user: ubuntu
+    me:
+      ansible_host: localhost
+      ansible_connection: local
+      ansible_user: me

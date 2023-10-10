@@ -1,0 +1,14 @@
+
+\section{Port to Port : TCP and UDP}
+
+\cSay{There're two types of ports:
+  \begin{description}
+  \item[fixed server ports:] $0 <= p <= 1023$ usually for \cola{server}
+  \item[ephemeral (short-lived) ports:] $1024 <= p <= 65535$ usually for
+    \cola{client}. Among them, we have
+    \begin{itemize}
+    \item $1024 <= p <= 49151$ user ports
+    \item $49152  <= p <= 65535$ dynamic or private ports
+    \end{itemize}
+  \end{description}
+}

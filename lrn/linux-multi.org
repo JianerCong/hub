@@ -1,0 +1,248 @@
+** multipass [failed -> fixed]
+🦜 : I feels like multipass doesn't work well when http proxy is enabled. So I
+am gonna try uvtool.
+*** build
+#+begin_src bash
+  m=multipass
+
+  # clone the multipass repo
+  git clone https://github.com/canonical/multipass.git
+  # check out the release v1.12.2
+  cd $m
+  git checkout v1.12.2
+
+  # 🦜 : It seems like we have to clone the repo manually instead of using the
+  # provided release file. Because we need the .git folder to add the submodules.
+
+  # build dependencies
+  cd $m
+  sudo apt install devscripts equivs
+  mk-build-deps -s sudo -i
+
+  # build
+  git submodule update --init --recursive
+  # 🦜 : 
+  cd ..
+  mkdir build-multipass
+
+  # 🦜 : configure the project but disable the testing
+  cmake -S $m -B build-multipass -DMULTIPASS_ENABLE_TESTS=OFF 
+  cmake --build build-multipass
+
+  # running the multipass daemon and client
+  # --------------------------------------------------
+
+  # install the runtime dependencies
+  sudo apt update
+  sudo apt install libgl1 libpng16-16 libqt6core6 libqt6gui6 \
+       libqt6network6 libqt6widgets6 libxml2 libvirt0 dnsmasq-base \
+       dnsmasq-utils qemu-system-x86 qemu-utils libslang2 iproute2 \
+       iptables iputils-ping libatm1 libxtables12 xterm
+
+  # run the daemon
+
+  export MULTIPASS_STORAGE=/tmp/multipass
+  # 🦜 : path won't know your PATH, so you have to specify the full path to the binary
+  sudo --preserve-env=HTTP_PROXY /home/me/repo/build-multipass/bin/multipassd -V trace --logger stderr
+  # 🦜 : It looks like for some reason, you have to turn on the http proxy to let
+  # the multipass fetch the image from ubuntu's cloud-image server.
+
+
+  # copy the desktop file multipass clients expect to find in your home
+  mkdir -p ~/.local/share/multipass/
+  cp $m/data/multipass.gui.autostart.desktop ~/.local/share/multipass/
+
+  # enable auto-complete
+  . $m/completion/bash/multipass
+
+  # run the client
+  build-multipass/bin/multipass launch --name test
+
+  # cleanup
+
+  sudo rm /root/.local/share/multipass/ -rf
+#+end_src
+*** try use tuna mirror 
+
+🦜 : Every time we start multipass, we need a proxy. Is it possible to change
+it?
+
+🐢 : modify the ~src/daemon/daemon_config.cpp~ to change
+#+begin_src c++
+
+          const char * src = "https://mirrors.tuna.tsinghua.edu.cn/";
+          image_hosts.push_back(std::make_unique<mp::UbuntuVMImageHost>(
+                                                                        std::vector<std::pair<std::string, UbuntuVMImageRemote>>{
+                                                                          {mp::release_remote, UbuntuVMImageRemote{src, "ubuntu-releases/",
+                                                                                                                   std::make_optional<QString>(mp::mirror_key)}},
+                                                                          {mp::daily_remote, UbuntuVMImageRemote{src, "ubuntu-cloud-images/daily/",
+                                                                                                                 std::make_optional<QString>(mp::mirror_key)}},
+                                                                          {mp::snapcraft_remote, UbuntuVMImageRemote{src, "ubuntu-cloud-images/buildd/daily/",
+                                                                                                                     std::make_optional<QString>(mp::mirror_key)}},
+                                                                          {mp::appliance_remote, UbuntuVMImageRemote{"https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cdimage/", "ubuntu-core/appliances/"}}},
+                                                                        url_downloader.get(), manifest_ttl));
+#+end_src
+
+Then build it. And now we should be able to use the mirror :
+
+#+begin_src bash
+sudo /home/me/repo/build-multipass/bin/multipassd -V trace --logger stderr
+#+end_src
+
+🦜 : But then when we enter shell:
+#+begin_src bash
+  sudo mv /etc/apt/sources.list /etc/apt/sources.list.bak
+  echo "# 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse
+  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse
+  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse
+  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse
+
+  # deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse
+  # # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse
+
+  deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+  # deb-src http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+
+  # 预发布软件源，不建议启用
+  # deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-proposed main restricted universe multiverse
+  # # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-proposed main restricted universe multiverse" > hi.txt
+  sudo mv hi.txt /etc/apt/sources.list
+#+end_src
+
+*** basic
+#+begin_src bash
+  # list all multipass instances
+  multipass list
+
+  # list all multipass instances and delete them
+  multipass list | grep -v State | awk '{print $1}' | xargs -n1 multipass delete --purge
+
+  # start a new jammy instance
+  multipass launch lts --name my-jammy
+  multipass launch lts --name my-jammy --cpus 2 --memory 2G --disk 10G
+
+  # get the info about the instance
+  multipass info my-jammy
+
+  # get the IP address of the instance
+  multipass info my-jammy | grep IPv4 | awk '{print $2}'
+
+  # attach to the instance
+  multipass shell my-jammy
+
+  # copy files to the instance
+  multipass transfer /home/me/hi.txt my-jammy:/home/ubuntu/hi.txt
+  multipass transfer my-jammy:/home/ubuntu/hi.txt /home/me/hi.txt
+
+  # shutdown my-jammy
+  multipass delete my-jammy # move to trash
+  multipass recover my-jammy
+  multipass delete my-jammy # move to trash
+  multipass purge           # clear the trash
+
+  # delete permanet
+  multipass delete --purge my-jammy
+
+  # reboot the instance
+  multipass stop my-jammy
+  multipass start my-jammy
+
+#+end_src
+
+*** generate (optional) and add the ssh key
+#+begin_src bash
+
+  # remove the ~/.ssh folder if already exists
+  rm -rf ~/.ssh
+  ssh-keygen -t ed25519
+  # see the public key
+  ls -l ~/.ssh
+  myvm=my-jammy
+  multipass shell $myvm
+
+  # 🦜 append the content of ~/.ssh/id_rsa.pub to the file /home/ubuntu/.ssh/authorized_keys
+  content=$(cat ~/.ssh/id_ed25519.pub)
+  multipass exec $myvm -- bash -c "echo $content >> /home/ubuntu/.ssh/authorized_keys"
+
+  # [optional] see the content of the file /home/ubuntu/.ssh/authorized_keys
+  multipass exec $myvm -- bash -c "cat /home/ubuntu/.ssh/authorized_keys"
+
+  # 🦜 get the ip address of the vm
+  vmip=$(multipass info $myvm | grep IPv4 | awk '{print $2}')
+
+  # 🦜 ssh into the vm
+  ssh ubuntu@$vmip
+
+#+end_src
+*** set up a new VM and add script
+#+begin_src bash
+  myvm="my-jammy2"
+  multipass launch lts --name $myvm
+  vmip=$(multipass info $myvm | grep IPv4 | awk '{print $2}')
+
+  # 🦜 append the content of ~/.ssh/id_rsa.pub to the file /home/ubuntu/.ssh/authorized_keys
+  content=$(cat ~/.ssh/id_ed25519.pub)
+  multipass exec $myvm -- bash -c "echo $content >> /home/ubuntu/.ssh/authorized_keys"
+
+  # 🦜 get the ip address of the vm
+  vmip=$(multipass info $myvm | grep IPv4 | awk '{print $2}')
+  # 🦜 ssh into the vm
+  ssh ubuntu@$vmip
+#+end_src
+*** configure static IPs
+1. new a bridge
+   #+begin_src bash
+     # 1. create a bridge named localbr with IP 10.13.31.1/24
+     n=localbr
+     nmcli connection add type bridge con-name $n ifname $n \
+           ipv4.method manual ipv4.addresses 10.13.31.1/24
+     # see it
+     ip -c -br addr show dev $n
+     # confirm that the bridge is available for multipass
+     multipass networks
+     # 2. launch an instance with a manual network
+     multipass launch --name test1 --network $n,mode=manual,mac="11:22:33:44:55:66"
+
+     # 3. configure the extra interface, note that its on the same subnet as our bridge
+     multipass exec -n test1 -- sudo bash 'cat << EOF > /etc/netplan/10-custom.yaml
+     network:
+         version: 2
+         ethernets:
+             extra0:
+                 dhcp4: no
+                 match:
+                     macaddress: "11::22::33::44::55::66"
+                 addresses: [10.13.31.13/24]
+     EOF'
+
+     # 4. apply the configuration
+     multipass exec --name test1 -- sudo netplan apply
+     # if you want to undo: use:
+     #   multipass exec --name test1 -- sudo netplan try
+
+     # 5. confirm that it works
+     multipass info test1
+     ping 10.13.31.13
+     multipass exec --name test1 -- ping 10.13.31.1
+   #+end_src
+
+*** Q/A
+**** Image hash mismatch ?
+🦜 : It looks like when multipass failed to verify the image hash, it will not
+download the image again. So we need to remove the image and try again.
+
+#+begin_src bash
+  # reinstall the multipass
+  sudo snap remove multipass
+  sudo snap install multipass
+#+end_src
+
+
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# End:

@@ -18,10 +18,12 @@
   '(
     ;; programing
     ("rt" "return" )
+    ("sth" "something" )
+
     ;; ("str" "string" )
     ("stru" "struct" )
     ("ifc" "interface")
-    ("ra" "⇒")
+    ("rta" "⇒")
     ;; regex
     ("xaz" "\\([A-Za-z0-9]+\\)" )
     ;; unicode
@@ -31,13 +33,26 @@
     ("ethk" "🤔")
     ("ehan" "😓")
     ("efrog" "🐸")
+    ("eparrot" "🦜")
+    ("eturtle" "🐢")
+    ("eno" "🙊🙈🙊")
     ("enice" "👍")
+    ("ebye" "👋")
     ("edrip" "💧")
     ("eheart" "💙")
     ("esnow" "❄")
-    ("echeck" "✔️")
+    ("echeck" "✅️")
+    ("eseedling" "🌱")
+    ("eclock" "🕒")
+    ("ecross" "❌️")
+    ("etrash" "🚮️")
+    ("egear" "⚙️")
+    ("eearth" "🌍️")
+    ("eglobe" "🌐️")
+    ("ebook" "📗️")
+    ("ewarn" "⚠️")
+    ("eevil" "🙉🙈🙊")
     ))
-
 
 
 (set-default 'abbrev-mode t)

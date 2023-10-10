@@ -1,0 +1,58 @@
+
+% svgs
+\newcommand{\svgOs}[2][0.3\linewidth]{\includesvg[width=#1]{../../mysvgs/#2.svg}}
+% \newcommand{\svgNeutron}[1][1.5cm]{\includesvg[width=#1]{/home/me/Pictures/opstk/neutron.svg}}
+\newcommand{\svgD}[1][8mm]{\includesvg[width=#1]{/home/me/Pictures/d1.svg}}
+\newcommand{\svgC}[1][8mm]{\includesvg[width=#1]{/home/me/Pictures/c1.svg}}
+
+% params:
+% 1: width of dialog box
+% 2: the speaker
+% 3: the text
+\newcommand{\leftSay}[3][0.7\linewidth]{
+  \begin{tikzpicture}
+    \node (N1) {
+      #2
+    };
+    \leftDialogBox[#1]{N1}{
+      #3
+    }
+  \end{tikzpicture}
+}
+
+\newcommand{\rightSay}[3][0.7\linewidth]{
+  \begin{tikzpicture}
+    \node (N1) {
+      #2
+    };
+    \rightDialogBox[#1]{N1}{
+      #3
+    }
+  \end{tikzpicture}
+}
+
+% 🦜 : Let d1 and c1 say and ask .
+\newcommand{\dSay}[1]{
+  \begin{tikzpicture}
+    \node (D1) {
+      \svgD
+    };
+    \rightDialogBox[0.7\linewidth]{D1}{
+      #1
+    }
+  \end{tikzpicture}
+}
+
+
+\newcommand{\cSay}[1]{
+  \begin{flushright}
+    \begin{tikzpicture}
+      \node (C1) {
+        \svgC
+      };
+      \leftDialogBox[0.7\linewidth]{C1}{
+        #1
+      }
+    \end{tikzpicture}
+  \end{flushright}
+}

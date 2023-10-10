@@ -1,0 +1,237 @@
+** netplan
+*** hi
+#+begin_src bash
+  x='$(cat <<EOF
+  network:
+    ethernets:
+      my-dev0:
+        addresses: ["fec1::2/64"]
+        match:
+            macaddress: 52:54:00:ad:0a:28
+
+  EOF
+   )'
+  f=/etc/netplan/51-netcfg.yaml
+  sudo bash -c "echo \"$x\" > $f"
+
+  sudo netplan apply
+#+end_src
+*** basic: set static ip
+#+begin_src yaml
+  network:
+    ethernets:
+      my-dev0:
+        match:
+          name: en*
+        addresses: [10.0.0.3/8, "fec1::2/64"]
+#+end_src
+*** add nameserver, change iface name
+#+begin_src yaml
+network:
+  ethernets:
+    my-dev0:
+      match:
+        macaddress: 11:22:33:44:55:66
+      addresses: [10.0.0.3/8, "fec1::2/64"]
+      set-name: en0
+      nameservers:
+        search: [home,lab] # serch domains
+        addresses: [8.8.8.8, "FEDC::1"]
+        #+end_src
+** nmcli (NetworkManager, alternative to systemd.network)
+nmcli [A] {B} [C] [D]
+
+  + A :: Options
+  + B :: help | general | networking | radio | connection | device | agent | monitor
+  + C :: command
+  + D :: arguments
+
+*** Options
+  + -p,--pretty
+  + -f,field f1,f2,...
+*** connections
+Network configs in nm are stored as 'connections'. 
+*** usage
+#+begin_src yaml
+# see status
+nmcli general status
+
+
+# is nm managing the network ?
+nmcli networking
+# let the nm get off duty
+nmcli networking off
+# let the nm get back to work
+nmcli networking on
+
+
+# --------------------------------------------------
+# see wifi and mobile broadband
+nmcli radio
+# turn on wifi
+nmcli radio wifi on
+# turn on mobile broadband
+nmcli radio wwan on
+
+
+#--------------------------------------------------
+# see the connection profiles
+nmcli connection show
+nmcli con show
+# see a connection
+nmcli con show "jyy"
+# turn a connection on
+nmcli con up "jyy"
+# modify a connection
+# nmcli con modify "jyy" <k1> <v1> <k2> <v2>
+nmcli con modify "jyy" ipv6.method auto
+nmcli con modify "jyy" remove ipv6.method
+
+# add a new profile
+# nmcli con add [save {yes | no}] <k1> <v1>,...
+nmcli con add \
+      save yes \
+      connection.type ethernet \
+      connection.id "my-eth1" \
+        connection.interface-name eth1 \
+        ipv6.addresses fec0::2/64
+
+# --------------------------------------------------
+# see the devices
+nmcli device status
+nmcli device show wlo1
+# turn up a device
+nmcli device set wlo1 managed yes
+# see the surrounding wifi
+nmcli device wifi list
+# connect to a wifi
+ssid="my-wifi"
+nmcli device wifi connect "$ssid" password "my-password"
+nmcli device wifi show-password
+# disconnect from a wifi
+nmcli device disconnect wlo1
+
+#+end_src
+** MAC table
+#+begin_src bash
+arp -n # no name resolution
+arp 
+#+end_src
+** iptables
+#+begin_src bash
+  tab=nat                         # filter | nat | mangle | raw | security
+  sudo iptables --table $tab -L
+  # see the rules in a table (default to filter)
+
+
+  tab=filter
+  # see the rules in detail
+  sudo iptables --table $tab -L -v -n --line-numbers
+  # -v : verbose
+  # -n : numeric
+
+
+#+end_src
+*** Q/A
+**** what's the meaning of each rule?
+Each rule can have the following field:
+
++ prot :: protocal, such as tcp,udp,all
++ source/destination :: the source/destination of the packet, it can be a
+  hostname, ip address or network name.
++ {in|out}-interface :: the interface name through which the packet is
+  received/sent
+** vlan
+*** Q/A
+**** In a packet, there're ip addresses and mac addresses, why?
++ mac addresses are to find the 'next hop'.
++ ip addresses are to find the destinations.
+*** containers Q/A
+**** like VM, what are isolated between containers
+view of network, hostname, domain name, processes, users,
+filesystems,interprocess communication.
+**** like processes, what are shared between containers
+OS
+**** what are the two kernel features that underlies the container?
+Namespace + control groups (cgroup)
+**** what is Namespace
+Namespaces are a Linux virtualization construct akin to network and server
+vertualization. Namespaces virtualize specific resources managed by the kernel,
+thereby allowing multiple isolated instances of a *virtual resources*.
+
+A _process_ is associated with one such virtual instance of the resource. Multiple
+processes can belong to a common virtual instance of the resource.
+
+From the processes' perspective, they _appear to_ fully own the resource.
+
+🦜 : What resources are virtualizable?
+
+🐢 :
++ cgroup :: see /proc/<pid>/cgroup and /proc/<pid>/mountinfo
++ interprocess communication (IPC) :: Virtualize various constructs for IPC,
+  such as POSIX message queues, shared memory, and so on.
++ network :: all networking resources: interface, sockets, routing table, MAC
+  table,...
++ mount :: virtualizes the filesystem mount points. This allows each group of
+  isolated processes to think they own the root fs. ~chroot~ , a very old Unix
+  construct, merely constained the view of the root seen by a *single* process.
++ PID :: virtualize the PID space
++ User :: virtualize users and group IDs.
++ UTS :: virtualize the hostname and domain name.
+**** Network Namespace
+🦜 : I have two processes, both wanna listen to TCP port 80. What should I do?
+
+🐢 : Create a _network namespace_. This virtualize a complete network stack.
+
+#+begin_src bash
+  sudo ip netns add myown
+  sudo nsenter --net=/var/run/netns/myown ip -d link show
+#+end_src
+
+
+🦜 : Now we've got two network namespace. How do they communicate ?
+
+🐢 : Use Virtual Ethernet Interface
+#+begin_src bash
+  sudo ip link add veth1 type veth
+  ip -br link show type veth
+
+  # show the veth in docker
+
+  p=$(docker inspect --format '{{.State.Pid}}' clash-shadowsocks-1)
+  sudo nsenter -t $p -n ip -d link show
+#+end_src
+**** docker0 ?
+
+When a Docker service is first instantiated, it creates a ~docker0~ bridge.
+Whenever new containers are created via the ~docker run~ without specifying
+network options:
+
+  Docker creates a ~veth~ pair, assigns one of them to the container's ~netns~,
+  and attaches the other to the ~docker0~ bridge.
+**** how container access the internet
+
+1. Because the address 192.168.1.2 is outside Container1’s subnet of
+   172.17.0.5/16, it sends the packet to its configured default gateway, which
+   is 172.17.0.1, as part of normal routing.
+
+2. The Linux kernel stack receives this packet, does a route lookup, and decides
+   that the packet is destined to its default gateway, which is 192.168.0.1, an
+   external router.
+
+3. Docker has set up the iptables rules so that any communication from docker0
+   to the outside world undergoes NAT. Therefore the source port and source IP
+   address of the packet are modified before being sent to the external router.
+
+4. The external router routes the packet to the web server.
+**** how to give each container an ip on the LAN
+Use MacVlan
+** bond
+
+🐢 : Create a bond named bond0 that uses the active-backup mode.
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "yaml"
+# fill-column: 80
+# End:

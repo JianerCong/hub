@@ -1,0 +1,1073 @@
+** Boost
+*** program_option
+**** parse config
+***** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+IF (WIN32)
+  # set stuff for windows
+  set(Boost_DIR "C:\\Users\\congj\\repo\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+ENDIF()
+
+find_package(Boost CONFIG REQUIRED
+  unit_test_framework program_options)
+# add the executable
+
+add_executable(myexe m.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework
+  Boost::program_options)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸 ")
+
+
+#+end_src
+***** c++
+#+begin_src c++
+  // #define BOOST_TEST_MODULE test_module_name
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/program_options.hpp>
+
+  #include <iostream>
+  #include <sstream>
+  using std::stringstream;
+  namespace program_options = boost::program_options;
+
+  using std::vector;
+  using std::string;
+  using std::cout;
+  using std::endl;
+
+
+  BOOST_AUTO_TEST_CASE(test_1) {
+    BOOST_CHECK(1 == 1);
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
+
+  vector<string> parse_file(stringstream &file,
+                            program_options::options_description &opts,
+                            program_options::variables_map &vm)
+  {
+    const bool ALLOW_UNREGISTERED = true;
+    cout << file.str() << endl;
+
+    program_options::parsed_options parsed =
+      program_options::parse_config_file(file, opts, ALLOW_UNREGISTERED);
+    program_options::store(parsed, vm);
+    vector<string> unregistered =
+      program_options::collect_unrecognized(parsed.options,
+                                            program_options::exclude_positional);
+    program_options::notify(vm);
+
+    return unregistered;
+  }
+
+  BOOST_AUTO_TEST_CASE(test_config_file_unregistered){
+    // The file
+    stringstream f;
+    f << "# comment aaa\n"
+      << "global_string = aaa\n"
+      << "unregistered_entry = bbb\n";
+    f.seekp(std::ios_base::beg);
+
+    // The option
+    program_options::options_description opts;
+    opts.add_options()
+      ("global_string", program_options::value<string>());
+
+
+    program_options::variables_map vars;
+    auto unregistered = parse_file(f, opts, vars);
+
+    BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
+    string expected_unreg_option = "unregistered_entry";
+    BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
+    BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
+  }
+
+  BOOST_AUTO_TEST_CASE(test_config_file_subsection){
+    // The file
+    stringstream f;
+    f << "# comment aaa\n"
+      << "global_string = aaa\n"
+      << "unregistered_entry = bbb\n"
+      << "\n[sub1]\n"
+      << "x = 1\n"
+      << "y=-1\n"
+      ;
+    f.seekp(std::ios_base::beg);
+
+    // The option
+    program_options::options_description opts;
+    opts.add_options()
+      ("global_string", program_options::value<string>())
+      ("sub1.x", program_options::value<int>())
+      ("sub1.y", program_options::value<int>())
+      ;
+
+    program_options::variables_map vars;
+    auto unregistered = parse_file(f, opts, vars);
+
+    BOOST_CHECK_EQUAL(vars["global_string"].as<string>(),"aaa");
+    string expected_unreg_option = "unregistered_entry";
+    BOOST_CHECK_EQUAL(unregistered[0] ,expected_unreg_option);
+    BOOST_CHECK_EQUAL(unregistered[1] , "bbb");
+    BOOST_CHECK_EQUAL(vars["sub1.x"].as<int>(),1);
+
+    BOOST_CHECK_EQUAL(vars["sub1.y"].as<int>(),-1);
+  }
+
+#+end_src
+**** cmdline
+#+begin_src c++
+// #define BOOST_TEST_MODULE test_module_name
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/program_options.hpp>
+
+// #include <iostream>
+#include <sstream>
+using std::stringstream;
+namespace program_options = boost::program_options;
+
+using std::vector;
+using std::string;
+using std::cout;
+using std::endl;
+
+using program_options::options_description;
+BOOST_AUTO_TEST_CASE(test_parse_help){
+  options_description o1("Generic options");
+  string s;
+  o1.add_options()
+    ("help,h", "help")
+    ("config,c", program_options::value<string>(&s)->default_value("m.cfg"),
+     "name of a file of a configuration.");
+
+  int argc = 4;
+  const char* argv[] = {"m","--help","--config","b.cfg"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("config"),1);
+  BOOST_CHECK_EQUAL(s,"b.cfg");
+  BOOST_CHECK_EQUAL(s,m["config"].as<string>());
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_default){
+  options_description o1("Generic options");
+  string s;
+  o1.add_options()
+    ("help,h", "help")
+    ("config,c", program_options::value<string>(&s)->default_value("m.cfg"),
+     "name of a file of a configuration.");
+
+  int argc = 1;
+  const char* argv[] = {"m"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("config"),1);
+  BOOST_CHECK_EQUAL(s,"m.cfg");
+  BOOST_CHECK_EQUAL(s,m["config"].as<string>());
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_shorthand){
+  options_description o1("Generic options");
+  string s;
+  o1.add_options()
+    ("help,h", "help")
+    ("config,c", program_options::value<string>(&s)->default_value("m.cfg"),
+     "name of a file of a configuration.");
+
+  int argc = 4;
+  const char* argv[] = {"m","--help","-c","b.cfg"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("config"),1);
+  BOOST_CHECK_EQUAL(s,"b.cfg");
+  BOOST_CHECK_EQUAL(s,m["config"].as<string>());
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_vectpr){
+  using program_options::value;
+  options_description o1("Generic options");
+  o1.add_options()
+    ("compression", value<string>(), "compression level")
+    ("verbose", value<string>()->implicit_value("0"), "verbosity level")
+    ("email", value<vector<string>>()->multitoken(), "email to send to")
+    ;
+
+  int argc = 7;
+  const char* argv[] = {"m","--compression","10","--verbose","--email","aaa","bbb"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).run(), m);
+  program_options::notify(m);
+  BOOST_CHECK_EQUAL(m.count("compression"),1);
+  BOOST_CHECK_EQUAL(m["compression"].as<string>(),"10");
+  BOOST_CHECK_EQUAL(m["verbose"].as<string>(),"0");
+  vector<string> v = m["email"].as<vector<string>>();
+  BOOST_CHECK_EQUAL(v.size(),2);
+  BOOST_CHECK_EQUAL(v[0],"aaa");
+  BOOST_CHECK_EQUAL(v[1],"bbb");
+}
+
+BOOST_AUTO_TEST_CASE(test_parse_positional){
+  using program_options::value;
+  options_description o1("Generic options");
+  o1.add_options()
+    ("compression", value<string>(), "compression level")
+    ("verbose", value<string>()->implicit_value("0"), "verbosity level")
+    ("email", value<vector<string>>()->multitoken(), "email to send to")
+    ;
+
+  program_options::positional_options_description p;
+  p.add("email",-1);            // map arg[-1] to email
+
+  int argc = 7;
+  const char* argv[] = {"m","--compression","10","--verbose","DEBUG","aaa","bbb"};
+  program_options::variables_map m;
+  program_options::store(program_options::command_line_parser(argc, argv).
+                         options(o1).positional(p).run(), m);
+  program_options::notify(m);
+
+  BOOST_CHECK_EQUAL(m.count("compression"),1);
+  BOOST_CHECK_EQUAL(m["compression"].as<string>(),"10");
+  BOOST_CHECK_EQUAL(m["verbose"].as<string>(),"DEBUG");
+  vector<string> v = m["email"].as<vector<string>>();
+  BOOST_CHECK_EQUAL(v.size(),2);
+  BOOST_CHECK_EQUAL(v[0],"aaa");
+  BOOST_CHECK_EQUAL(v[1],"bbb");
+}
+
+#+end_src
+*** beast
+**** header fields
+***** c++
+#+begin_src c++
+// #define BOOST_TEST_MODULE test_module_name
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
+using boost::format;
+
+#include <string>
+using std::string;
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+
+/*
+  🦜 : The inheritance is like
+  Fields < Header < Message < Requests/Response
+*/
+using boost::beast::http::fields;
+// using fields = basic_fields< std::allocator< char > >;
+BOOST_AUTO_TEST_CASE(test_fields){
+  fields f;
+  f.set("k1","v1");
+
+  BOOST_CHECK_EQUAL(f["k1"],"v1");
+}
+
+BOOST_AUTO_TEST_CASE(insert_fields){
+  fields f;
+
+  // you can have more than one field with the same name
+  f.insert("k1","v1");
+  f.insert("k1","v2");
+
+  BOOST_CHECK_EQUAL(f["k1"],"v1");
+  BOOST_CHECK_EQUAL(f.count("k1"),2);
+}
+
+BOOST_AUTO_TEST_CASE(test_set_field){
+  // set_fields remove all existing fields
+  fields f;
+
+  // you can have more than one field with the same name
+  f.set("k1","v1");
+  f.set("k1","v2");
+
+  BOOST_CHECK_EQUAL(f["k1"],"v2");
+  BOOST_CHECK_EQUAL(f.count("k1"),1);
+}
+
+using boost::beast::http::field;
+BOOST_AUTO_TEST_CASE(test_built_in_fields){
+  fields f;
+  f.set(field::content_type,"application/json");
+  BOOST_CHECK_EQUAL(f[field::content_type],"application/json");
+}
+
+BOOST_AUTO_TEST_CASE(test_non_existing_fields){
+  fields f;
+  f.set("k1","v1");
+
+  BOOST_CHECK_EQUAL(f.count("k2"),0);
+  BOOST_CHECK_EQUAL(f["k2"],"");
+}
+
+BOOST_AUTO_TEST_CASE(test_iteration){
+  fields f;
+  f.set("k1","v1");
+  f.set("k2","v2");
+  for (auto it = f.cbegin(); it != f.cend(); it++ ){
+    // fields.hpp ln100
+    BOOST_LOG_TRIVIAL(debug) << format("k: [%s]\tv: [%s]")
+      % it->name_string() %it->value();
+    // k1,v1; k2,v2
+}
+}
+
+#+end_src
+***** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+IF (WIN32)
+  # set stuff for windows
+  set(Boost_DIR "C:\\Users\\congj\\repo\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+ENDIF()
+
+find_package(Boost CONFIG REQUIRED
+  unit_test_framework log)
+# add the executable
+
+add_executable(myexe m.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework
+  Boost::log)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸 ")
+
+
+#+end_src
+*** json (>1.75)
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+IF (WIN32)
+  # set stuff for windows
+  set(Boost_DIR "C:\\Users\\congj\\repo\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+  else()
+    set(Boost_DIR "/home/me/.local/boost_1_82_0/stage/lib/cmake/Boost-1.82.0")
+    message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+ENDIF()
+
+find_package(Boost 1.75...<1.82 CONFIG REQUIRED
+  unit_test_framework json)
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework
+  Boost::json
+  )
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --log_level=all COMMENT "Runing App 🐸 ")
+
+
+
+#+end_src
+**** cpp
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <iostream>
+  #include <sstream>
+  using std::stringstream;
+
+  using std::vector;
+  using std::string;
+  using std::cout;
+  using std::endl;
+
+  #include <boost/format.hpp>
+  using boost::format;
+
+  #include <boost/json.hpp>
+  namespace json = boost::json;
+
+  BOOST_AUTO_TEST_CASE(test_basic_parse) {
+    string s = "{\"x\" : true}";
+    json::error_code ec;
+    json::value jv = json::parse(s, ec );
+
+    BOOST_CHECK(not ec);
+    BOOST_CHECK(jv.is_object());
+    BOOST_CHECK(not jv.is_null());
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
+
+  BOOST_AUTO_TEST_CASE(test_serialize){
+    json::value jv = { 1, 2, 3 };
+    string s = json::serialize( jv );                // produces "[1,2,3]"
+    BOOST_CHECK_EQUAL(s,"[1,2,3]");
+  }
+
+  BOOST_AUTO_TEST_SUITE(test_user_defined_type);
+  namespace my_app {
+    struct A{
+      int x;
+      bool y;
+    };
+    // 🦜 : Defining this method allows us to use json::serialize(value_from(a))
+    void tag_invoke(json::value_from_tag, json::value& jv, A const& c ){
+      jv = {
+        {"x", c.x},
+        {"y", c.y}
+      };
+    }
+
+    using json::value_to;
+    // 🦜 : Defining this allows us to use json::value_to<A>
+    A tag_invoke( json::value_to_tag<A>, json::value const& jv )
+    {
+      json::object const& obj = jv.as_object();
+      return A{
+        value_to<int>(obj.at("x")),
+        value_to<bool>(obj.at("y"))
+      };
+    }
+
+  } // namespace my_app
+  BOOST_AUTO_TEST_CASE(test_value_from){
+    my_app::A a{ 123, true };
+    string s = json::serialize( json::value_from( a ) );
+    BOOST_CHECK_EQUAL(s,"{\"x\":123,\"y\":true}");
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_vector_value_from){
+    // 🦜 : serialize knows vector ⇒ array
+    vector<my_app::A> v{
+      {123,true},
+      {123,false},
+      {223,false}
+    };
+
+    string s = json::serialize( json::value_from(v) );
+    BOOST_CHECK_EQUAL(s,
+                      "["
+                      "{\"x\":123,\"y\":true},"
+                      "{\"x\":123,\"y\":false},"
+                      "{\"x\":223,\"y\":false}"
+                      "]"
+                      );
+  }
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj){
+    json::value v = {
+      {"x", 123}, {"y",true}
+    };
+
+    my_app::A a = json::value_to<my_app::A>(v);
+    BOOST_CHECK_EQUAL(a.x,123);
+  };
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj_arr){
+    json::value v = {
+      {{"x", 123}, {"y",true}},
+      {{"x", 123}, {"y",false}},
+      {{"x", 223}, {"y",true}},
+    };
+
+    BOOST_REQUIRE(v.is_array());
+    vector<my_app::A> a = json::value_to<vector<my_app::A>>(v);
+    BOOST_CHECK_EQUAL(a.size(),3);
+  };
+
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj_exception){
+    json::value v = {
+      {"x", 123}, {"error",true}
+    };
+    BOOST_CHECK_THROW(json::value_to<my_app::A>(v),
+                      std::exception
+                      );
+  };
+
+  BOOST_AUTO_TEST_CASE(test_json_to_obj_catch_exception){
+    json::value v = {
+      {"x", 123}, {"error",true}
+    };
+    BOOST_CHECK_THROW(json::value_to<my_app::A>(v),
+                      std::exception
+                      );
+    string s;
+    try{
+      my_app::A a = json::value_to<my_app::A>(v);
+    }catch (std::exception &e){
+      // BOOST_TEST_MESSAGE(e.what());
+      s = e.what();
+    }
+
+    BOOST_CHECK_EQUAL(s,"out of range");
+  };
+
+  BOOST_AUTO_TEST_SUITE_END();
+
+  BOOST_AUTO_TEST_SUITE(test_working_with_value);
+  BOOST_AUTO_TEST_CASE(test_object){
+    json::object o;                                                     // construct an empty object
+
+    o[ "a" ] = 3.141;                                            // insert a double
+    o[ "b" ] = true;                                          // insert a bool
+    o[ "c" ] = "aaa";                                        // insert a string
+    o[ "d" ] = nullptr;                                     // insert a null
+    o[ "e" ].emplace_object()["x"] = 42;            // insert an object with 1 element
+    o[ "f" ] = { 1, 0, 2 };                                    // insert an array with 3 elements
+    o[ "g" ] = { {"x", "X-value"}, {"y", 42.99} };    // insert an object with 2 elements
+
+    BOOST_CHECK_EQUAL(o.size(),7);
+    BOOST_CHECK(o["a"].is_number());
+    BOOST_CHECK(o["b"].is_bool());
+    BOOST_CHECK(o["c"].is_string());
+    BOOST_CHECK(o["d"].is_null());
+    BOOST_CHECK(o["e"].is_object());
+    BOOST_CHECK(o["f"].is_array());
+    BOOST_CHECK(o["g"].is_object());
+
+    // access the internal member
+    BOOST_CHECK(o["g"].as_object()["x"].is_string());
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_build_obj){
+    json::value jv = {
+      {"x", 1.1},
+      {"y", "aaa"},
+      {"z", {1,2,3}},
+      {"a", {
+          {"x", 1},
+          {"y", 2}
+        }
+      }
+    };
+
+    BOOST_REQUIRE(jv.is_object());
+    json::object o = jv.as_object();
+    BOOST_REQUIRE(o["x"].is_number());
+    BOOST_REQUIRE(o["z"].is_array());
+    BOOST_REQUIRE(o["a"].is_object());
+  }
+
+  BOOST_AUTO_TEST_CASE(test_emplace){
+    // 🦜 : Emplace means "change to ..."
+    json::value v;
+    v.emplace_string() = "aaa";
+    BOOST_REQUIRE(v.is_string());
+    v.emplace_int64() = 1;
+    BOOST_REQUIRE(v.is_int64());
+  }
+
+  // unchecked access
+  BOOST_AUTO_TEST_CASE(test_as){
+    json::value v(true);
+    // Note: this is different from v{true} ⇒ [true]
+
+    BOOST_REQUIRE(v.is_bool());
+    BOOST_CHECK_EQUAL(v.as_bool(),true);
+    v.as_bool() = false;
+    BOOST_CHECK_EQUAL(v.as_bool(),false);
+
+    // as_**() will not check
+    BOOST_CHECK_THROW(v.as_string(),std::exception);
+  }
+
+  // checked access
+  BOOST_AUTO_TEST_CASE(test_if){
+    json::value v(true);
+    json::value v1(json::string_kind);
+
+    // check value
+    if( json::string* str = v1.if_string() )
+      ,*str = "aaa";
+    BOOST_CHECK_EQUAL(v1.as_string(),"aaa");
+  }
+
+  BOOST_AUTO_TEST_CASE(test_array){
+    json::array a;
+    a.emplace_back("aaa");
+    a.emplace_back(123);
+    a.emplace_back(true);
+
+    BOOST_CHECK_EQUAL(a.size(),3);
+    BOOST_CHECK_EQUAL(a[0].as_string(),"aaa");
+
+    BOOST_CHECK_THROW(a.at(3) = nullptr ,std::exception);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_array2){
+    json::array a({"aaa", 123, true});
+
+    BOOST_CHECK_EQUAL(a.size(),3);
+    BOOST_CHECK_EQUAL(a[0].as_string(),"aaa");
+    BOOST_CHECK_THROW(a.at(3) = nullptr ,std::exception);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_object_creation){
+    json::object o( {{"k1", "v1" }, { "k2", 123 }, { "k3", false }} );
+    BOOST_CHECK_EQUAL(o.size(),3);
+    }
+
+  BOOST_AUTO_TEST_CASE(test_object_creation2){
+    json::object o;
+    o.emplace("k1","v1");
+    o.emplace("k2",123);
+    o.emplace("k3",false);
+    BOOST_CHECK_EQUAL(o.size(),3);
+  }
+
+  BOOST_AUTO_TEST_CASE(test_object_creation3){
+    json::object o;
+    o["k1"] = "v1";
+    o["k2"] = 123;
+    BOOST_CHECK_EQUAL(o.size(),2);
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_object_at){
+    json::object o;
+    o["k1"] = "v1";
+
+    BOOST_CHECK_THROW(o.at("k2"),std::out_of_range);
+    o.at("k1") = "v11";           // ok
+    BOOST_CHECK_EQUAL(o["k1"].as_string(),"v11");
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_object_iter){
+    json::object o;
+    o["k1"] = "v1";
+    o["k2"] = 123 ;
+
+    // for (json::key_value_pair* i = o.begin(); i != o.end(); i++){
+    //   BOOST_TEST_MESSAGE(format("k: %s, v: %s")
+    //                      % i->key() % i->value()
+    //                      );
+    //   // boost::json defined operator<< for these types
+    // }
+
+    vector<string> v={"k2","k1"};
+    for (const json::key_value_pair & kv : o){
+      BOOST_TEST_MESSAGE(format("k: %s, v: %s")
+                         % kv.key() % kv.value()
+                         );
+      // boost::json defined operator<< for these types
+      BOOST_CHECK_EQUAL(v.back(),kv.key());
+      v.pop_back();
+    }
+
+
+  }
+
+  BOOST_AUTO_TEST_SUITE_END();
+#+end_src
+*** pheonix
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+#include <boost/phoenix/phoenix.hpp>
+
+#include <vector>
+using std::vector;
+#include <algorithm>
+
+BOOST_AUTO_TEST_CASE(basic_phonix){
+  using boost::phoenix::placeholders::arg1;
+  vector<int> v{1,2,3,4,5};
+  BOOST_CHECK_EQUAL(std::count_if(v.begin(),v.end(), arg1 % 2 == 1), 3);
+}
+
+#include <boost/phoenix/core.hpp>
+BOOST_AUTO_TEST_CASE(const_val){
+  using boost::phoenix::val;
+  BOOST_CHECK_EQUAL(val(3)(),3); // return value
+  BOOST_CHECK_EQUAL(val("abc")(),"abc");
+}
+
+BOOST_AUTO_TEST_CASE(const_ref){
+  using boost::phoenix::ref;
+  int i = 3;
+  char const * s = "abc";
+  BOOST_CHECK_EQUAL(ref(i)(),3); // return reference
+  BOOST_CHECK_EQUAL(ref(s)(),"abc");
+}
+
+using boost::phoenix::arg_names::arg1;
+using boost::phoenix::arg_names::arg2;
+BOOST_AUTO_TEST_CASE(args_are_functions){
+  int i = 3;
+  char const* s = "abc";
+  BOOST_CHECK_EQUAL(arg1(i,s),i);
+  BOOST_CHECK_EQUAL(arg2(i,s),s);
+}
+
+BOOST_AUTO_TEST_CASE(lazy_if){
+  using boost::phoenix::if_;
+  using boost::phoenix::ref;
+
+  vector<int> v{1,2,3,4,5};
+
+  int c{0};
+  std::for_each(v.begin(),v.end(),
+                if_(arg1 > 3)[ref(c) += arg1]);
+  BOOST_CHECK_EQUAL(c,4 + 5);
+}
+
+#include <string>
+using std::string;
+
+namespace ranges = std::ranges;
+#include <boost/phoenix/object/construct.hpp>
+BOOST_AUTO_TEST_CASE(lazy_construct){
+  using boost::phoenix::construct;
+  vector<int> v = {1,2,3};
+  vector<string> v1;// we use back_inserter
+
+  ranges::transform(v,std::back_inserter(v1),
+                    // [](int c) -> string {return (format("%d") % c).str();}
+                    construct<string>(arg1,'a')
+                    );
+  BOOST_CHECK_EQUAL(v1[0],"a");
+  BOOST_CHECK_EQUAL(v1[1],"aa");
+  BOOST_CHECK_EQUAL(v1[2],"aaa");
+}
+
+#include <boost/phoenix/function.hpp>
+using boost::phoenix::function;
+struct is_odd_{
+  typedef bool result_type;     // Used by boost::result_of
+  // 🦜 : This is a protocol, do it.
+  template <typename Arg>
+  bool operator()(Arg arg1) const{
+    return arg1 % 2 == 1;
+  }
+};
+BOOST_AUTO_TEST_CASE(makes_existing_functor_a_phoenix){
+  function<is_odd_> is_odd;
+
+  using boost::phoenix::placeholders::arg1;
+  vector<int> v{1,2,3,4,5};
+  BOOST_CHECK_EQUAL(std::count_if(v.begin(),v.end(), is_odd(arg1)), 3);
+}
+
+#+end_src
+*** multi_indexed
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+using boost::format;
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
+
+#include <string>
+using std::string;
+#include <vector>
+using std::vector;
+
+
+struct A{
+  int x;
+  string y;
+
+  bool operator<(const A& e)const{return x<e.x;} // x is index
+};
+
+// define a multiply indexed set with indices by id and name
+
+
+// using namespace ::boost;
+// using namespace ::boost::multi_index;
+namespace multi_index = boost::multi_index;
+using multi_index::ordered_unique;
+using multi_index::identity;
+// using boost::multi_index::identity;
+using multi_index::member;
+using multi_index::ordered_non_unique;
+using multi_index::multi_index_container;
+using multi_index::indexed_by;
+
+typedef multi_index_container<
+  A,
+  indexed_by<
+    // sort by A::operator<
+    ordered_unique<identity<A>>,
+    // sort by less<string> on name
+    ordered_non_unique<member<A,std::string,&A::y> >
+    >
+  > A_set;
+
+BOOST_AUTO_TEST_CASE(test_basic_multi_indexed){
+  vector<A> o;
+  A_set as = {
+    {1, "c"}, {2,"b"} , {3,"a"}
+  };
+  // get a view to index #1 (name)
+  const A_set::nth_index<1>::type& y_index=as.get<1>();
+
+  // use y_index as a regular std::set
+  std::copy(y_index.begin(),y_index.end(), std::back_inserter(o));
+
+  BOOST_CHECK_EQUAL(o[0].y,"a");
+  BOOST_CHECK_EQUAL(o[1].y,"b");
+  BOOST_CHECK_EQUAL(o[2].y,"c");
+}
+
+BOOST_AUTO_TEST_CASE(test_basic_multi_indexed_default_index){
+  vector<A> o;
+  A_set as = {
+    {1, "c"}, {2,"b"} , {3,"a"}
+  };
+
+  // use y_index as a regular std::set
+  std::copy(as.begin(),as.end(), std::back_inserter(o));
+
+  BOOST_CHECK_EQUAL(o[0].y,"c");
+  BOOST_CHECK_EQUAL(o[1].y,"b");
+  BOOST_CHECK_EQUAL(o[2].y,"a");
+}
+
+#+end_src
+*** Q/A
+**** cannot find link library?
+By default, the linker ld dosen't known the non-standard locations of shared
+libraries.
+
+Solution: before ~find_package~ set
+
+set(Boost_USE_STATIC_LIBS ON)
+*** lock_free: ringbuffer
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+#include <thread>
+
+
+
+using boost::format;
+#include <string>
+using std::string;
+
+#include <boost/lockfree/spsc_queue.hpp>
+
+using boost::lockfree::spsc_queue;
+
+BOOST_AUTO_TEST_CASE(test_ctor_spec_queue){
+  spsc_queue<int, boost::lockfree::capacity<32> > q;
+  BOOST_CHECK(q.is_lock_free());
+}
+#include <boost/atomic.hpp>
+
+BOOST_AUTO_TEST_CASE(test_consumer_producer){
+  int producer_count = 0;
+  boost::atomic_int consumer_count (0);
+  boost::atomic<bool> done (false);
+  spsc_queue<int, boost::lockfree::capacity<1024> > q;
+
+  const int iterations = 1000;
+  auto producer = [&producer_count,iterations,&q](){
+    for (int i = 0; i != iterations; ++i) {
+      int value = ++producer_count;
+      while (not q.push(value)) ;
+    }
+  };
+
+  auto consumer = [&consumer_count,iterations,&q,&done](){
+    int value;
+    while (!done) {
+      while (q.pop(value)) ++consumer_count;
+    } // producer ends here
+
+    while (q.pop(value)) ++consumer_count;
+  };
+
+  {std::jthread consumer_thread(consumer);
+    {std::jthread producer_thread(producer);
+    } // producer ends here
+    done = true;
+  } // consumer ends here
+
+  BOOST_CHECK_EQUAL(producer_count,iterations);
+  BOOST_CHECK_EQUAL(consumer_count,iterations);
+}
+
+#+end_src
+*** string algorithm
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+#include <thread>
+
+
+
+using boost::format;
+#include <string>
+using std::string;
+
+#include <boost/algorithm/string.hpp>
+using boost::split;
+
+BOOST_AUTO_TEST_CASE(test_trim){
+  string s1,s2;
+  s1 = "   aaa   ";
+  s2 = boost::trim_left_copy(s1);
+  BOOST_CHECK_EQUAL(s1, "   aaa   ");
+  BOOST_CHECK_EQUAL(s2,"aaa   ");
+  boost::trim(s1);
+  BOOST_CHECK_EQUAL(s1,"aaa");
+}
+
+using boost::is_any_of;
+#include <vector>
+using std::vector;
+
+template<typename T>
+void veq(vector<T> v, vector<T> v2){
+  for (int i=0;i<v.size();i++) \
+    BOOST_CHECK_EQUAL(v[i],v2[i]);
+}
+
+BOOST_AUTO_TEST_CASE(test_split){
+  string s1 = "aa,bb,cc";
+  vector<string> v;
+  boost::split(v,s1,is_any_of(","));
+  BOOST_CHECK_EQUAL(v.size(),3);
+  veq(v,{"aa","bb","cc"});
+}
+
+
+BOOST_AUTO_TEST_CASE(test_substr){
+  string s = "/aaa?a=A&b=b";
+  string::size_type i = s.find_first_of('?');
+  BOOST_CHECK_EQUAL(i,4);       // s[4] = '?'
+  BOOST_CHECK_EQUAL(s[i],'?');
+
+  i = s.find_first_of('z');     // not found
+  BOOST_CHECK_EQUAL(i,string::npos);
+}
+
+BOOST_AUTO_TEST_CASE(test_join){
+  vector<string> v{"aa","bb","cc"};
+  string s = boost::algorithm::join(v,":");
+  BOOST_CHECK_EQUAL(s,"aa:bb:cc");
+  }
+
+#+end_src
+*** cast
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <boost/lexical_cast.hpp>
+  #include <boost/format.hpp>
+  #include <boost/log/trivial.hpp>
+  using boost::format;
+
+  #include <string>
+  using std::string;
+
+
+  using boost::lexical_cast;
+  BOOST_AUTO_TEST_CASE(test_str_to_int){
+    string s = lexical_cast<string>(123);
+    int i = lexical_cast<int>("123");
+    BOOST_CHECK_EQUAL(s,"123");
+    BOOST_CHECK_EQUAL(i,123);
+    BOOST_CHECK_THROW({
+        int i = lexical_cast<int>("abc");
+      },boost::bad_lexical_cast);
+
+    uint16_t j = lexical_cast<uint16_t>("-1");
+    BOOST_CHECK_EQUAL(j,65535);   // ⚠️ careful, lexical_cast doesn't check sign
+                                  // for you.
+    // BOOST_CHECK_THROW({
+    //   },boost::bad_lexical_cast);
+  }
+#+end_src
+*** assert custom
+#+begin_src c++
+    #define BOOST_TEST_MAIN
+    #include <boost/test/unit_test.hpp>
+    #include <boost/format.hpp>
+    using boost::format;
+
+    // define this to enable custom handler
+    #define BOOST_ENABLE_ASSERT_HANDLER
+    #include <boost/assert.hpp>
+
+    // Called when BOOST_ASSERT failed
+    void boost::assertion_failed(char const * expr, char const * function,
+                                 char const * file, long line){
+      BOOST_TEST_MESSAGE((format("assertion_failed() is called with:\n"
+                                 "function=%s\n"
+                                 "expr=%s\n"
+                                 "file=%s\n"
+                                 "line=%ld"
+                                 ) % function % expr % file % line).str());
+    }
+
+    // Called when BOOST_ASSERT_MSG failed
+    void boost::assertion_failed_msg(char const * expr, char const * function,
+                                     char const * msg, char const * file, long line){
+      BOOST_TEST_MESSAGE((format("assertion_failed_msg() is called with:\n"
+                                 "function=%s\n"
+                                 "expr=%s\n"
+                                 "msg=%s\n"
+                                 "file=%s\n"
+                                 "line=%ld"
+                                 ) % function % expr
+                          % msg
+                          % file % line).str());
+    }
+
+    BOOST_AUTO_TEST_CASE(test_1){
+      BOOST_ASSERT(false);
+      BOOST_TEST_MESSAGE("--------------------------------------------------");
+      BOOST_ASSERT_MSG(false,"my msg");
+      BOOST_TEST_MESSAGE("--------------------------------------------------");
+      BOOST_VERIFY(false);
+  // 🦜 ： this will always be evaluated. So use this for something like BOOST_VERIFY(s.fromString())
+      BOOST_CHECK_EQUAL(1,1);
+    }
+#+end_src
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

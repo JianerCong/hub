@@ -1,0 +1,62 @@
+\section{Architecture}
+
+\subsection{scope}
+
+\dSay{
+  Okay. If we wanna deploy a cloud, what do we need to do? And what does OpenStack-Ansible provide?
+}
+
+\cSay{
+  We need to:
+  \begin{enumerate}
+  \item prepare the OS
+  \item create the bridge for networking
+  \end{enumerate}
+}
+
+\subsection{Ansible and Roles}
+
+\colz{
+  All roles are \cola{independent} and can be used separately.
+
+  All roles are built as \Cola{Galaxy comptible roles} even if some of them are not
+  intended to work independently.
+}
+
+\dSay{
+  What's Galaxy?
+}
+
+\cSay{
+  ``Docker Hub ''
+  for Ansible roles. \url{https://galaxy.ansible.com/}.
+}
+
+\subsection{Containers}
+
+Many OpenStack services are deployed in containers. But some services are not, such as
+\begin{enumerate}
+\item Nova Compute
+\item Swift Storage
+\end{enumerate}
+
+\subsection{Security and Service availability}
+
+Some services are available to all users, for example:
+
+\begin{enumerate}
+\item Nova Compute
+\item Swift Object Storage
+\item Neutron Networking
+\item Glance Image Service
+\end{enumerate}
+
+while some services are only available
+to the admin:
+
+\begin{enumerate}
+\item Keystone Identity Service
+\item MariaDB
+\item Memcached
+\item RabbitMQ
+\end{enumerate}

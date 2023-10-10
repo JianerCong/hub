@@ -1,0 +1,951 @@
+** Tools
+  ICMP: Internet Control Message Protoco -- the debugging protoco that dosen't
+  carry any user info. A transport layer protoco that dosn;t have application
+  layers build on it.
+
+  _DNS_: the Domain Name System -- Application layer protoco that maps names to
+  ip-address.
+*** ping
+  Send an ICMP echo request packets to a host.
+*** Trace the route
+#+begin_src bash
+  tracepath -b  39.156.66.10
+#+end_src
+*** host
+  #+BEGIN_SRC bash
+  host www.example.com
+  host -6 www.example.com
+  host -4 www.example.com
+  #+END_SRC
+** the OSI 7-layers
++ 7. Application :: HTTP, FTP, DNS, SSH, SMTP,  
++ 6. Presentation :: ASCII, Unicode, SSL, TLS
++ 5. Session :: APIs, Tunneling(GRE, MPLS,PPTP) ...
++ 4. Transport :: TCP, UDP
++ 3. Network :: Routers, Layer 3 Switches, ICMP, Routing Protocols
++ 2. Data Link :: Switches, Wireless Access Points
++ 1. Physical :: Cables, Wi-Fi, Media Converters
+
+** Lower
+*** Q/A and How-to
+**** cable connect two linux
+On machine 1:
+
+Wired setting :
+ipv4 address = 10.0.0.1
+mask = 255.255.255.0
+router = ""
+
+On machine 2:
+
+Wired setting :
+ipv4 address = 10.0.0.2
+mask = 255.255.255.0
+router = ""
+
+Now ping each other
+https://askubuntu.com/questions/22835/how-to-network-two-ubuntu-computers-using-ethernet-without-a-router?noredirect=1&lq=1
+**** ? My exe can't bound to port?
+turn off your network proxy
+**** ? cannot ping ipv6
+#+begin_src bash
+  ping fe80::1d36:67d4:9bdf:5ef5 -I enx34298f10a60e # OK
+  ping fe80::1d36:67d4:9bdf:5ef5%enx34298f10a60e    # OK
+  ping fe80::1d36:67d4:9bdf:5ef5    # No, interface not given
+#+end_src
+
+🦜 : I feels like this is case because link-local addresses are only unique on
+links, so the interface name must be specified. If you are pinging something
+like a site-local address (fec0::123) or a global addreess (2000:)
+**** listening port
+#+begin_src bash
+  sudo lsof -i -P -n | grep LISTEN
+  sudo ss -tulpn | grep LISTEN
+  sudo ss -tlp
+  # ss: socket analysis
+  # -t: display TCP ,-u: display UDP, -l: only listening sockets
+  # -p: show processes using socket, 
+  # -n: numeric Do not try to resolve service names. Show exact bandwidth values.
+#+end_src
+**** see all connections
+#+begin_src bash
+  sudo netstat -tupn              # to outside world
+  # -t tcp
+  # -u udp
+  # -n numeric (no DNS)
+  # -p process
+  # -a all (listening and non-listening)
+#+end_src
+**** set address
+#+begin_src bash
+  # set the ipv6 address on en0 to fec0::2
+  sudo ip -6 addr add fec0::2/64 dev en0
+
+  # 🦜 : You can also add this to .bashrc
+  touch ~/.bash_aliases
+  echo 'sudo ip -6 addr add fec0::2/64 dev en0' >> ~/.bash_aliases
+
+#+end_src
+**** local host
+  lo: ::1 (v6) or 127.0.0.1 is your own machine
+**** see addresses
+  #+BEGIN_SRC bash
+    ip address show
+    # briefly show the interfaces
+    ip -br a
+    ip -brief a
+    # show in json (pretty)
+    ip -br -j -p a
+  #+END_SRC
+  Among many out-put we see that 192.168.1.12 is our ipv4 address.
+  #+BEGIN_SRC 
+  3: enx000ec6b5dbf8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+      link/ether 00:0e:c6:b5:db:f8 brd ff:ff:ff:ff:ff:ff
+      inet 192.168.1.12/24 brd 192.168.1.255 scope global noprefixroute enx000ec6b5dbf8
+         valid_lft forever preferred_lft forever
+
+  #+END_SRC
+**** ? remove address (When you have two ipv6 link-local address)
+
+🐢 : You usually have many link-local address for an interface. That's fine. *If
+you remove the automatically link-local address, it will generate another
+one....So don't bother removing it....*
+
+🦜 If you manually configure an IPv6 address and then you usually will end up
+with two addresses on the same interface. (an automatically generated one and
+your configured one).
+
+To remove this one of them, do:
+#+begin_src bash
+    a=fe80::5828:6f2b:f6c2:a4e5/64
+    e=enx34298f10a60e
+    sudo ip addr del $a dev $e
+#+end_src
+Removing address should only be done in IPv6.
+
+**** see/set router?
+     #+BEGIN_SRC bash
+       ip route
+       ip r
+     #+END_SRC
+
+     Each line is a _routing rule_. The second line says the directly reachable
+     local subnet(all hosts within 169.254.0.0/16 can be reached dirrectly). 
+
+  The first line, says where we go to if the address is not listed below, in which
+  case, is our router.
+
+  #+BEGIN_SRC bash
+  default via 192.168.1.1 dev enx000ec6b5dbf8 proto dhcp metric 100 
+  169.254.0.0/16 dev enx000ec6b5dbf8 scope link metric 1000 
+  192.168.1.0/24 dev enx000ec6b5dbf8 proto kernel scope link src 192.168.1.12 metric 100
+  #+END_SRC
+
+  🐢 : To set router:
+
+  #+begin_src bash
+    # add router
+    sudo nmcli connection modify "Wired connection 1" +ipv4.routes "10.10.11.0/24 192.168.122.11"
+    # save
+    sudo nmcli connection up "Wired connection 1"
+  #+end_src
+
+  🐢 : You can also use the ip command:
+  #+begin_src bash
+    sudo ip route add 10.10.10.0/24 via 192.168.122.10
+  #+end_src
+
+  but this won't survive a reboot.
+  
+**** see my wifi/eth name, and configure my static address (needed for each server).
+🦜 : We need to do the following for each server.
+
+#+begin_src bash
+  sudo nmcli connection show
+
+  sudo nmcli connection modify "Wired connection 2" ipv4.addresses 10.0.0.1/24
+  sudo nmcli connection modify "Wired connection 2" ipv4.gateway 10.0.0.1
+  sudo nmcli connection modify "Wired connection 1" ipv4.dns "8.8.8.8"
+  # 🦜 : Here we used shorthand :
+  sudo nmcli con mod "Wired connection 1" ipv4.method manual
+
+  # save changes
+  sudo nmcli connection up "Wired connection 1"
+#+end_src
+
+🐢 : In fact, if you prefer to edit the file, you can do so in
+
+1. /etc/resolv.conf:
+
+   #+begin_quote
+   nameserver 8.8.8.8
+   #+end_quote
+   🐢 : ^^ use google's DNS server. But usually you do not want to do this.
+
+**** see my neibour over the network
+#+begin_src bash
+# Who are my known neibor
+ip -4 neigh
+#+end_src
+**** turn interface on and off
+#+begin_src bash
+  i=enx34298f10a60e
+  # turn off
+  sudo ip link set $i down
+  # turn on
+  sudo ip link set $i up
+#+end_src
+
+🐢 : If you are doing this remotely, don't cut off the branch that you are
+sitting on.
+**** Change the frame size.
+
+🐢 : An increasingly popular operation is setting the *Message Transfer
+Unit(MTU)*. This is the size of the largest *Protocol Datagram Unit(PDU, a.k.a.
+frame)* that the interface will send/receive. On the Ethernet, the default is
+1500 bytes.
+
+🦜 : Why do we need to change this?
+
+🐢 : Because when dealing with storage traffic, in particular *iSCSI*, large
+frame sizes are desired so that the packet size can accommodate more data. In
+these cases, the MTU is usually set to 9000 bytes (often called a jumbo packet).
+Usually these are used when the network has a speed of 1 Gbps or faster.
+
+🦜 : Oh, I see...
+
+🐢 : There're other cases. For example, some applications will set the *DF(Don't
+Fragment)* bit in their traffic. In that case, when an application that expect,
+say, 1000-byte packets, receives a 1500-byte packets with DF, it will simply
+fail, and often without useful error messages.
+
+🦜 : Okay. So how do we set that?
+
+🐢 : We need to set a particular variable called "802-3-ethernet.mtu":
+
+#+begin_src bash
+  c="Wired connection 1"
+  sudo nmcli con mod $c 802-3-ethernet.mtu 9000
+  sudo nmcli connection up $c     # save changes
+#+end_src
+
+*** bridge
+**** create and bridge
+#+begin_src bash
+
+  # create a bridge named my_bridge
+  b=my_bridge
+  ip link add $b type bridge
+
+  # show the bridge
+  ip -d link show $b
+  ip -j -p -d link show $b        # see the bridge in JSON
+  # -j, -json
+  # -p, -pretty
+  # -d, -details
+
+  #  🦜 : The above will now just show a bunch of info about the newly created
+  #  bridge. But a bridge is useless if it can't "bridge" anything. So let's
+  #  actually bridge two interfaces together.
+
+  iface1=veth0
+  iface2=tap0
+  ip link set $iface1 master $b
+  ip link set $iface2 master $b
+
+  # delete the bridge
+  ip link delete $b type bridge
+#+end_src
+
+**** Spanning Tree Protocol
+
+🐢 : When a network interface receives a packet
+that is not on its subnet, it pass the packet to
+all the neighbors (the interfaces that are bridged
+to it). And its neighbors will do the same...
+
+🦜 : Wait, then how do we ensure that there's no
+loop?
+
+🐢 : That's when Spanning Tree Protocol STP comes
+in. To enable STP on a bridge, use:
+
+#+begin_src bash
+  ip link set $b type bridge stp_state 1
+
+  # show the blocking state
+  ip -j -p -d link show $b | grep root_port
+
+#+end_src
+
+*** ipv6 global
+  Glocal unicast addresses have prefixes 2000::/3. Because the first byte starts
+  with 001 with this prefix, that byte can be completed as 0010 or 0011. As a
+  result, ~a global unicast address always starts with 2 or 3~.
+**** view address, route
+  ip -6 address show
+  ip -6 route show
+  ping ::1                      # ping localhost
+*** Ethernet network
+  Each host in an ethernet network has a _Media Access Control(MAC)_ address. The
+  frame sent over an ethernet network contains the From- and To- MAC address.
+
+  The router can unpack the frame and re-package the data, and send that to other
+  ethernet network, which is exactly what internet does.
+*** DNS
+**** list
+  1. app calls a function to look up the ip addr behind an host name. The function
+     is usually in sys shared lib.
+  2. the func runs according to the rules in /etc/nsswitch.conf. (Check the
+     overrides in /etc/hosts)
+  3. Otherwise, send DNS request to a DNS server
+**** How to add DNS entries manually 
+      Change
+  ~Usually LAN hosts are in /etc/hosts~
+ or ~C:\Windows\System32\drivers\etc\hosts~
+  #+BEGIN_SRC bash
+    cat /etc/resolv.conf            # straight-forward name lookup
+    cat /etc/nsswitch.conf         
+  #+END_SRC
+  In /etc/nsswitch.conf, we see that after hosts: there are "files" before DNS.
+  This means we look up /etc/hosts before we call the dns. 
+  ~Usually LAN hosts are in /etc/hosts~
+
+**** DNS cache
+  I am runing DNS cache if I can find 127.0.0.53 or 127.0.0.1 in /etc/resolv.conf
+**** zero-configuration name service
+  The main idea of 0-conf (e.g. Link-Local Multicast Name Resolution(LLMNR)  & Multi-cast
+  DNS (mDNS)) : seperate DNS for LAN name look-up. 
+
+  When ask for a host on LAN, we usually boardcast the request instead of resort
+  to the DNS server.
+  #+BEGIN_SRC bash
+    resolvectl status               # check current DNS setting
+  #+END_SRC
+**** dig
+#+begin_src bash
+  # query the ipv6 address of example.com
+  dig example.com AAAA
+  dig example.com AAAA +short
+
+  # query the ipv4
+  dig example.com A +short
+
+  # query the ipv4 and curl the content
+  curl -4 http://example.com
+  # 🦜 : It seems like our router doesn't support ipv6...
+  curl -6 https://example.com
+
+  # Use secure DNS: (DNS over HTTPS, (DoH))
+  # use Quad 9's DNS server (which seems to be the only one that's not slow.)
+  dig @9.9.9.9 example.com AAAA +https
+#+end_src
+**** dnsmasq
+Change in ~config.h~
+#+begin_src c
+  #      define LEASEFILE "/home/me/tmp/dnsmasq.leases"
+  #      define RUNFILE "/home/me/tmp/dnsmasq.pid"
+#+end_src
+
+1. Give your eth interface a "site-local" static ipv6 address, (such as
+   fec0:1::1/64). 🦜 : Because DHCPv6 needs to know the prefix of the network,
+   and it must not come from the link-local address (fe80::).
+
+2. Make and run the following: 
+#+begin_src bash
+  make                            # make the executable in src
+  ./src/dnsmasq --version         # check the version
+
+  # 1. try the simplest
+  iface=enx34298f10a60e
+  sudo ./src/dnsmasq --no-daemon \
+       --port=0 \
+       --log-dhcp \
+       --enable-ra \
+       --dhcp-range=::1,::ff,constructor:$iface,slaac
+
+  # --no-daemon : run in debug-mode
+  # --port : disable DNS
+  # --interface : listens only on this interface
+  # --dhcp-range : range of IPv6 addresses to be assigned
+
+#+end_src
+
+*** Transport layer (Transmission Control Pro, User Datagram Pro)
+  transport layer bridge between the gap between the raw packets and your app.
+**** TCP
+  TCP allows for multiple apps by means of _ports_. (like a mailbox number of a
+  building).
+
+  TCP opens a ~connection~. E.g. a browser opens a conn between port
+  localhost:36404 and the remote-host:80
+  #+BEGIN_SRC bash
+    netstat -nt                      # watch tcp conn(without DNS)
+    netstat -nt6
+    cat /etc/services               # see well-known services
+  #+END_SRC
+
+  Dynamically assigned ports <=> ephemeral port. Local well-done ports are usually
+  initiated by remote host. This means you have listening server on your host.
+  #+BEGIN_SRC bash
+    netstat -ntl                    # show listening ports
+  #+END_SRC
+
+  Only super-user can listen to ports 0 to 1024.
+**** UDP
+  1. No datastream, just single messages.
+  2. No auto-reordering and auto-correction(but it does have checksum).
+   
+  TCP is like telephone, while UDP is like messages.
+***** Example of UDP
+  1. Network Time Protocol (NTP) : Send quick messages to get time
+  2. Video chat.
+
+*** Dynamically Host Configuration Protocol (DHCP)
+  The default way to get:
+  1. ip addr (ask for a ~lease~, which can be renewed)
+  2. subnet mask
+  3. default gateway
+  4. DNS server
+  Each local network has a DHCP server, which usually is the router.
+
+  How to manually boardcast to find dhcp server.(Note: you should remove the
+  default route before doing so.) This command let your computer to shout to the
+  physical network: "Is there a DHCP server? please configure me 🐸"
+  #+BEGIN_SRC bash
+  sudo dhclient enp0s31f6
+  #+END_SRC
+
+*** Auto-v6 config
+  ipv6 also has DHCP called DHCPv6. But, more often we use ~stateless config~
+  which is ~decentralized~ the host ~does not~ need to store any info such as the
+  the lease info.
+**** How it works
+  1. The host self-generate a link-local address: on the fe80::/64. It can
+     boardcast this subnet to check that the address is unique in LAN.
+  2. Next, it start listening for a Router Advertising (RA) messages, which the
+     router will send to LAN occasionally.
+     This message contains: the global network prefix + the router's address +
+     additional info.
+  3. Finally, the host can fill-out the interface-part of the address.
+
+*** Linux as a router [enable network formarding]
+ #+begin_src bash
+ #! /bin/bash
+ ip route show
+ # Enable simple routing
+ sudo sysctl -w net.ipv4.ip_forward=1
+ # Check
+ sysctl net.ipv4.ip_forward
+
+ # How to enable these upon boot
+ cat /etc/sysctl.conf
+ cat /etc/sysctl.d
+
+ #+end_src
+
+*** The ipv4 private address space
+ + 10.0.0.0/8 = 10.x.x.x
+ + 192.168.0.0/16 = 192.168.x.x
+ + 172.16.0.0/12 = 172.16.x.x - 172.31.x.x
+
+*** The link-local and global-unicast ipv6
+ + link-local: fe80::/10
+ + global-unicast: 2000::/3
+*** Wireless
+**** SSID
+Service Set ID = Network Name
+**** Scan for wifi
+#+begin_src bash
+  sudo apt install net-tools
+  # enable the network interface
+  sudo ifconfig  wlo1 up
+  # scan for wifi
+  sudo iw dev wlo1 scan | less
+  # View the current wifi
+  iw dev wlo1 link
+
+  # more
+  cat /etc/wpa_supplicant.conf
+
+ #+end_src
+*** port scan
+**** test one port
+#+begin_src bash
+  nc -zv 192.168.122.241 80
+#+end_src
+**** scan ports
+#+begin_src bash
+  sudo apt update
+  sudo apt install nmap
+
+  n=192.168.1.93/24
+  # 🐢 : Who can I ping to in this network
+  nmap -sn $n
+
+  # 🦜 : But I feels like sometimes the following is what we need ?
+  ip neighbor
+
+  # 🐢 : Who is running HTTPS?
+  n=192.168.1.93/24
+  nmap -p 443 --open $n           # who can send SYN
+  nmap -p 443 -sT --open $n       # who can establish connection
+
+  # 🐢 : Who is running SSH?
+  n=192.168.1.93/24
+  nmap -p 22 --open $n           # who can send SYN
+
+  # 🐢 : Who's listening UDP 53
+  n=192.168.1.93/24
+  sudo nmap -sU -p 53 --open $n           # who can send SYN
+#+end_src
+*** DHCP
+**** ubuntu DUID
+🦜 : So what's the default DUID on systemd ?
+
+🐢 : By default, the DUID value will be generated using "43793" as
+the vendor identifier (systemd) and hashed contents of ~etc/machine-id~.
+This is the default if DUIDType= is not specified in ~/etc/systemd/networkd.conf~.
+
+#+begin_src bash
+  cat /etc/machine-id
+
+  # see https://askubuntu.com/questions/1198955/how-can-i-change-my-ubuntus-ipv6-duid
+
+  cat /etc/systemd/networkd.conf
+  man 5 systemd.network
+  man 5 networkd.conf
+#+end_src
+
+** Kernal
+*** MAC
+refers to ~linux-network.tex~
+
+**** view arp
+See the Mac to IP map:
+#+begin_src bash
+  arp -a
+  # ip [L3] -> mac [L2] -> network interface card (NIC) [L1]
+
+  # these k:v will timeout the interval is
+
+  cat /proc/sys/net/ipv4/neigh/default/gc_stale_time
+  ls /proc/sys/net/ipv4/neigh/    # show the network adapter
+#+end_src
+🐢 : These are usually called the *matching MAC address table* (commonly called
+the CAM table). The one on switch usually has a timeout of 5min. Router 4hrs. 
+
+🦜 : Why router's is so long ?
+
+🐢 : Historical remains. So sometimes a ~clear arp~ will magically fix the
+migration issue on router.
+
+**** /proc
+🐢 : This is a virtual dir that contains various settings on the host.
+
+#+begin_src bash
+  # 🐢 See the network throughput on iface:
+  cat /proc/net/dev
+  # 🐢 See the memory stats
+  cat /proc/meminfo | grep Mem
+  # 🐢 But you can also just use
+  lsmem
+#+end_src
+
+**** change arp
+🐢 : You can add or delete arp entry.
+
+🦜 : Why ?
+
+🐢 : For example, when you bought a new router, you need to delete those entries
+on the hosts. Adding new ARP entry manually is usually for debugging(not
+necessary).
+
+#+begin_src bash
+  # add
+  sudo arp -s 192.168.122.200 00:11:22:22:33:33
+  # see it . Note the PERM flag means ‘Permanent’
+  arp -a | grep 192.168.122.200
+  # delete
+  sudo arp –i ens33 -d 192.168.122.200
+#+end_src
+
+**** fake an ip
+🐢 : You can even masquerade as a given IP address - for instance to answer ARP
+requests for IP 10.0.0.1 (say that you are 10.0.0.1):
+#+begin_src bash
+
+  # This will answer ARP requests for 10.0.0.2 on eth0 with the MAC address for eth1
+  sudo arp -i eth0 -Ds 10.0.0.2 eth1 pub
+  # -i : IF, select an interface. This must be different from the interface to
+  # which the IP datagrams will be routed.
+  # -D : Instead of a hw_addr, the given argument is the name of an interface.
+  # -s : setup a new table entry.
+
+#+end_src
+
+**** change your MAC
+🐢 : Each of your network interface card (NIC) has a Burned-In Address (BIA) MAC
+address value. But you can actually lie about it.
+
+To do it temporarily:
+#+begin_src bash
+  i=enx34298f10a60e
+  sudo ip link set dev $i down
+  sudo ip link set dev $i address 00:88:77:66:55:44
+  sudo ip link set dev $i  up
+#+end_src
+
+To do it permanently:
+
+1. backup the config file
+#+begin_src bash
+  sudo cp /etc/netplan/ /etc/netplan.old -rv
+#+end_src
+
+2. edit the config file
+🐢 : What you need is a ~match~ statement for the hardware *Burned-In Address*
+(BIA) MAC address value, then the line after sets the new MAC:
+#+begin_src yaml
+  network:
+      version: 2
+      ethernets:
+          ens33:
+              dhcp4: true
+              match:
+                  macaddress: b6:22:eb:7b:92:44
+              macaddress: xx:xx:xx:xx:xx:xx
+#+end_src
+
+3. test and apply the config
+   #+begin_src bash
+     sudo netplan try
+     sudo netplan apply
+   #+end_src
+
+*** DNS
+**** BIND for internal use
+1. install 
+#+begin_src bash
+  sudo apt install bind9
+  # Adding system user `bind' (UID 113) ...
+  # Adding new user `bind' (UID 113) with group `bind' ...
+  # Not creating home directory `/var/cache/bind'.
+  # wrote key file "/etc/bind/rndc.key"
+  # named-resolvconf.service is a disabled or a static unit, not starting it.
+  # Created symlink /etc/systemd/system/bind9.service → /lib/systemd/system/named.service.
+  # Created symlink /etc/systemd/system/multi-user.target.wants/named.service → /lib/systemd/system/named.service.
+
+  # 🦜 : Now :
+  cat /etc/bind/named.conf
+  cat /etc/bind/named.conf.options
+#+end_src
+2. Modify the ~/etc/bind/named.conf.options~ to
+#+begin_src c
+  options {
+
+      directory "/var/cache/bind";
+      listen-on port 53 { localhost; };
+      allow-query { localhost; 192.168.0.0/16; 10.0.0.0/8; 172.16.0.0/12; };
+    // use google's and cloudflare's public dns servers as forwarders
+      forwarders { 8.8.8.8; 8.8.4.4; 1.1.1.1; };
+      recursion yes;
+  }
+#+end_src
+3. Edit ~/etc/bind/named.conf.local~, and add the server type, zone, and zone
+   filename. Also permit hosts on the specified subnets to register their DNS
+   recprds with the DNS server using the ~allow-update~
+#+begin_src js
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "aaa.net" IN {
+  type master;
+  file "aaa.net.zone";
+  allow-update { 192.168.0.0/16; 10.0.0.0/8;172.16.0.0/12 };
+};
+#+end_src
+
+4. Make the zone file ~aaa.net.zone~:
+#+begin_src js
+  // An example BIND zone file:
+
+  $TTL 86400
+
+  @   IN SOA  ns1.aaa.net. admin.aaa.net. (
+      2006030701  ; Serial
+      28800       ; Refresh
+      7200        ; Retry
+      604800      ; Expire
+      86400       ; Minimum TTL
+  )
+
+  @       IN  NS  ns1.aaa.net.
+  ns1     IN  A  10.0.0.1         // IP address of ns1.aaa.net
+  ns2     IN  A  10.0.0.2         // IP address of ns2.aaa.net
+#+end_src
+
+5. Edit the ~named.conf~ file to allow clients to register themselves in DNS.
+
+🐢 : Note that this requires us to add *access control lists (ACLs)* to permit
+ranges of IP addresses to update their DNS entries.
+
+In the applicable zone, add the following line:
+#+begin_src bash
+acl dhcp-clients { 192.168.122.128/25; };
+
+acl static-clients { 192.168.122.64/26; };
+
+zone "aaa.net" {
+    allow-update { dhcp-clients; static-clients; };
+
+};
+#+end_src
+
+6. check the config
+#+begin_src bash
+  sudo named-checkconf
+  sudo named-checkzone aaa.net /etc/bind/aaa.net.zone
+#+end_src
+
+7. restart or start the service
+#+begin_src bash
+  # start
+
+  sudo systemctl enable bind9
+  sudo systemctl start bind9
+
+  # or pushing an update
+  sudo systemctl restart bind9
+
+  # check status
+  sudo systemctl status bind9
+#+end_src
+
+
+8. test with dig
+
+ 🐢 : dig is a DNS lookup utility.Unless it is told to query a specific name
+   server, dig tries each of the servers listed in /etc/resolv.conf. If no
+   usable server addresses are found, dig sends the query to the local host.
+
+   #+begin_src bash
+      dig @localhost +short ns1.aaa.net
+      dig @localhost +short ns2.aaa.net
+   #+end_src
+
+And because we have set the forwarders, we can also do:
+#+begin_src bash
+  dig @localhost +short www.google.com
+#+end_src
+*** CA
+**** make CA
+1. create a location for the CA
+#+begin_src bash
+  # Use SSL to generate CA
+  sudo mkdir /etc/ssl/demoCA
+  cd /etc/ssl/demoCA
+  # Create the required folders
+  sudo mkdir certs private newcerts
+#+end_src
+
+2. Set the certificate serial number
+   #+begin_src bash
+     sudo sh -c "echo '01' > /etc/ssl/demoCA/serial"
+     # -c : run as root and exit.
+     sudo touch /etc/ssl/demoCA/index.txt
+   #+end_src
+3. Next, we'll edit the existing ~/etc/ssl/openssl.cnf~ config file and navigate
+   to the ~[CA_default]~ section. 
+   🦜 : Notice the $dir variable, by default it uses relative path, change that
+   to absolute path.
+   #+begin_src conf
+     [ CA_default ]
+     dir             = /etc/ssl/demoCA              # Where everything is kept
+     certs           = $dir/certs            # Where the issued certs are kept
+     crl_dir         = $dir/crl              # Where the issued crl are kept
+     database        = $dir/index.txt        # database index file.
+     #unique_subject = no                    # Set to 'no' to allow creation of
+     # several certs with same subject.
+     new_certs_dir   = $dir/newcerts         # default place for new certs.
+     certificate     = $dir/cacert.pem       # The CA certificate
+     serial          = $dir/serial           # The current serial number
+     crlnumber       = $dir/crlnumber        # the current crl number
+     # must be commented out to leave a V1 CRL
+     crl             = $dir/crl.pem          # The current CRL
+     private_key     = $dir/private/cakey.pem# The private key
+     x509_extensions = usr_cert              # The extensions to add to the cert    
+   #+end_src
+
+🦜 : Wait.. I am just gonna make the default CA work..
+
+4. Create the CA certificate
+#+begin_src bash
+  sudo openssl req \
+       -newkey ec \
+       -pkeyopt ec_paramgen_curve:P-256 \
+       -x509 \
+       -extensions v3_ca \
+       -keyout /etc/ssl/demoCA/private/cakey.pem \
+       -out /etc/ssl/demoCA/cacert.pem \
+       -days 3650
+
+  # -newkey : generate a new certificate request and a new private key
+  # -x509 : generate a self-signed certificate instead of a certificate request
+  # -extensions v3_ca : the extensions to add to a certificate request
+  # -keyout : the file to write the private key to
+  # -out : the file to write the certificate to
+  # -days : the number of days to certify the certificate for
+
+  # 🐢 : Then you will be asked to enter the information that will be incorporated
+  # into your certificate request.
+
+  # pswd = 516826
+#+end_src
+5. openssl key gen and create a CSR
+#+begin_src bash
+  cd ~
+  # generate a private key using the P-256 curve
+  openssl genpkey -algorithm EC -out mykey.pem \
+          -pkeyopt ec_paramgen_curve:P-256 \
+          -pkeyopt ec_param_enc:named_curve
+
+  # generate a CSR using the private key
+  # man openssl-req
+  openssl req -new -key mykey.pem -out mycsr.pem
+#+end_src
+
+🦜 : What curves are available in openssl?
+🐢 : Use ~openssl ecparam -list_curves~. But usually you wanna stick to P-256 or
+P-384, which are named "prime256v1" and "secp384r1" in openssl, because they are
+the ones supported by most browsers.
+
+6. Sign the CSR
+#+begin_src bash
+  # sign the CSR using the CA private key
+  sudo openssl ca -in mycsr.pem -out mycert.pem -config /etc/ssl/openssl.cnf
+
+  # see the certificate
+  cat mycert.pem
+
+  # see the incremented serial number
+  cat /etc/ssl/demoCA/serial
+  cat /etc/ssl/demoCA/index.txt
+#+end_src
+**** SSL server and client
+
+#+begin_src python
+  import socket
+  import ssl
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  context.load_cert_chain('mycert.pem', 'mykey.pem')
+
+  with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+      sock.bind(('127.0.0.1', 7777))
+      sock.listen(5)
+      with context.wrap_socket(sock, server_side=True) as ssock:
+          conn, addr = ssock.accept()
+#+end_src
+
+#+begin_src python
+  import socket
+  import ssl
+
+  # PROTOCOL_TLS_CLIENT requires valid cert chain and hostname
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+  context.load_verify_locations('/etc/ssl/demoCA/cacert.pem')
+  
+  with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+      with context.wrap_socket(sock, server_hostname='cccccje') as ssock:
+          print(ssock.version())
+#+end_src
+
+*** network interface
+  Network interfaces usually have names that indicate the kind of hardware
+  underneath, such as enp0s31f6 (an interface in a PCI slot). A name like this is
+  called a predictable network interface device name, because it remains the same
+  after a reboot. At boot time, interfaces have traditional names such as eth0
+  (the first Ethernet card in the computer) and wlan0 (a wireless interface), but
+  on most machines running systemd, they are quickly renamed
+
+  After running _ip address show_,we get in our example, three network interface:
+  #+BEGIN_SRC 
+  1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+  ...
+  2: wlo1: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+  ...
+  3: enx000ec6b5dbf8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+      link/ether 00:0e:c6:b5:db:f8 brd ff:ff:ff:ff:ff:ff
+  ...
+  #+END_SRC
+
+  🐢 : Each interface gets a number. Interface 1
+  is almost always loopback. The flag ~UP~ means
+  it's working.
+
+  🦜 : Oh. So an interface can be turned off ?
+
+  🐢 : Yes. For example, the ~docker0~ interface
+  is turned down when docker is not running.
+
+  The number after _link/ether_ is the mac address(00:0E:C6:B5:DB:F8).
+*** 4 steps to make a linux connected 
+  1. Connect the network hardware and ensure that the kernel has a driver for it.
+  If the driver is present, ip address show includes an entry for the device,
+  even if it hasn’t been configured(kernel dose this for you)
+
+  2. Perform any additional physical layer setup, such as choosing a network
+  name or password.(Usually not needed)
+
+  3. Assign IP address(es) and subnets to the kernel network interface so that
+  the kernel’s device drivers (physical layer) and internet subsystems 
+  internet layer) can talk to each other. (🐢 :
+  you can do this in the Network > Wired Setting on
+  the Ubuntu Desktop to configure this)
+
+  4. Add any additional necessary routes, including the default gateway.
+
+*** Add ip address manually
+  🐢  : the following is usually dangerous and the
+  recommended way is to use a tool like Netplan to
+  build the configuration file. 
+  #+BEGIN_SRC bash
+  ip address add 102.233.222/24 dev enp0s31f6
+  man ip-address
+  #+END_SRC
+*** Add default routes
+      Add the host at <gw-addr> as a default gateway. the <gw-addr> must be in a
+      locally connected subnet.
+
+  #+BEGIN_SRC bash
+  ip route add default via <gw-addr> dev <interface>
+  ip route del default
+  #+END_SRC
+
+**** Example
+  Connect to subnet 192.168.45.0/24 through the reachable host at 10.23.2.14
+  #+BEGIN_SRC bash
+  ip route add 192.168.45.0/24 via 10.23.2.14
+  ip route del 192.168.45.0 #when you are done.
+  #+END_SRC
+*** Boot-time setup
+  Different distro manages network differently. 
+
+  See /etc/netplan folder which
+  contains the yaml files that configures the network.
+*** Challenges 
+  1. Most machines do not have static ip address. In ipv4, it's Dynamic Host
+     Configuration Protocol(DHCP) who does the basic Network layer configuration.
+     In ipv6, ip address configuration is distributed.
+  2. Your sys should anwser : If you have multiple network interface (e.g. an
+     ethernet and a wifi), how do you decide which one to use? ...
+* End
+# Local Variables:
+# org-what-lang-is-for: "bash"
+# fill-column: 80
+# End:

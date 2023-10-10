@@ -24,6 +24,31 @@
 (define-key evil-normal-state-map (kbd "m") 'bookmark-set)
 (define-key evil-normal-state-map (kbd "`") 'bookmark-jump)
 
+
+(when (member "Segoe UI Emoji" (font-family-list))
+  (set-fontset-font
+   t 'symbol (font-spec :family "Segoe UI Emoji") nil 'prepend))
+
+(defun start-my-emacs-server (tcp port host)
+  """Start the emacs server using tcp port 1234"""
+  (interactive
+    (list
+      (y-or-n-p "Use TCP:[yes]? ")
+      (read-number "Port:[1234] " 1234)
+      (read-string "Host:[localhost] " "localhost")
+      )
+   )
+
+  (setq server-use-tcp tcp)
+  (setq server-port port)
+  (setq server-host host)
+
+  ;; 🦜: Following is the default
+
+  ;; (setq server-auth-dir "~/.emacs.d/server/")
+  (server-start)
+  )
+
 (require 'myy-code-folding)
 (require 'myy-code-outline-modes)
 (provide 'my-default)

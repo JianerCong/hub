@@ -66,6 +66,70 @@ sudo apt install gnome-book
   doxygen -g                      # Generate the Doxyfile
   doxygen Doxyfile                # Generate the docs
 #+END_SRC
+** special comment
+#+begin_src c
+  class Javadoc_Test
+{
+  public:
+ 
+    /** 
+     * An enum.
+     * More detailed enum description.
+     */
+ 
+    enum TEnum { 
+          TVal1, /**< enum value TVal1. */  
+          TVal2, /**< enum value TVal2. */  
+          TVal3  /**< enum value TVal3. */  
+         } 
+       *enumPtr, /**< enum pointer. Details. */
+       enumVar;  /**< enum variable. Details. */
+       
+      /**
+       * A constructor.
+       * A more elaborate description of the constructor.
+       */
+      Javadoc_Test();
+ 
+      /**
+       * A destructor.
+       * A more elaborate description of the destructor.
+       */
+     ~Javadoc_Test();
+    
+      /**
+       * a normal member taking two arguments and returning an integer value.
+       * @param a an integer argument.
+       * @param s a constant character pointer.
+       * @see Javadoc_Test()
+       * @see ~Javadoc_Test()
+       * @see testMeToo()
+       * @see publicVar()
+       * @return The test results
+       */
+       int testMe(int a,const char *s);
+       
+      /**
+       * A pure virtual member.
+       * @see testMe()
+       * @param c1 the first argument.
+       * @param c2 the second argument.
+       */
+       virtual void testMeToo(char c1,char c2) = 0;
+   
+      /** 
+       * a public variable.
+       * Details.
+       */
+       int publicVar;
+       
+      /**
+       * a function variable.
+       * Details.
+       */
+       int (*handler)(int a,int b);
+};
+#+end_src
 * Env
 printenv | less
 printenv USER
@@ -74,43 +138,29 @@ echo $HOME
 alias
 export HISTCONTROL=ignoredups
 alias  l.='ls -d.* --color=auto'
-* Devices
-** list block devices
-   #+BEGIN_SRC bash  
-     ls -l /sys/block
-     blkid                           # show UUID
-   #+END_SRC
-** ls all disk
-lsscsi
-** ls all partitions
-ls -l /dev/disk/by-id
-# or
-sudo parted -l
-** Shrink existing partition
-1. Download Gparted Live ISO
-2. sudo dd bs=4M if=gparted-live.iso of=/dev/sdX status=progress && sync
-   # Find out your sdX with fdisk -l
-3. boot from gparted, press enter to go on.
-4. Below, you can see the yellow area is the part with the data. It is around 3
-   Gb in my case. The rest is free space. Let’s use this space to create another
-   partition.
-5. Select this partition and click on _Resize_ option.
-6. You can resize it using the numbers or by mowing the arrows. I will free up
-   10 Gb. Enter the number, press enter, and click on _Resize_.
-7. Now, you can create another partition. Click on the unallocated space, then
-   click New to create a new partition.
-8. You can select its size, whether you want it to be primary or extended. An
-   extended partition allows you to create more than 4 partitions. You can
-   choose the file system you need. And you can also give a name to this
-   partition. So, when you have set everything as you want, click Add.
-9. Everything above created only the plan of the changes to do. You can find the
-   detail of the changes you are about to apply at the bottom of Gparted.
+
+
 * Misc
 ** sudo
 *** the env for sudo?
 sudo visudo
 *** Cannot find path
 Add the link in /usr/bin
+** bzip2
+#+begin_src bash
+  tar -xvf archive.tar.bz2
+
+  # --------------------------------------------------
+  # another way
+  sudo apt install bzip2
+  bzip2 file-to-compress.txt
+  bzip2 -zk file-to-compress.txt
+  # z: zip the file , k: keep the original file
+
+  # decompress
+  bzip2 -d hi.bz2
+  bzip2 -vfd hi.bz2
+#+end_src
 * System
 ** users
 #+begin_src bash

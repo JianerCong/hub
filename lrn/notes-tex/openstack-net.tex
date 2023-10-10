@@ -1,0 +1,53 @@
+
+\section{Networking}
+\label{sec:network}
+
+\colz{
+  OpenStack-Ansible deploys \cola{Linux containers (LXC)} and uses Linux or Open
+  vSwitch-based bridging between the container and the host interfaces to ensure
+  that all traffic from containers flows over multiple host interface.
+
+  All services in this deployment model use \cola{unique IP address}.
+}
+
+\dSay{
+  Okay...So how to configure network for our environment ?
+}
+
+\cSay{
+  \url{https://docs.openstack.org/openstack-ansible/2023.1/reference/inventory/openstack-user-config-reference.html#openstack-user-config-reference}
+}
+
+\dSay{
+  What about Neutron ? How does it work?
+
+}
+
+\cSay{
+  \url{https://docs.openstack.org/neutron/latest/admin/index.html}
+}
+
+\subsection{Physical host interfaces}
+\label{sec:physical-host-interfaces}
+
+In a typical production environment, physical network interfaces are combined in
+bonded pairs for better rundundancy and performance.
+
+\dSay{
+  Wait...What do you mean by ``bonding'' ?
+}
+
+\cSay{
+  bond is a Linux kernel driver that allows you to ``bind'' multiple physical or
+  virtual interfaces together into a single aggregated interface. (Yes, two
+  cables bond into one)
+}
+
+
+\dSay{
+  Okay...But does it means the other ends of the cables should be bonded as well?
+}
+
+\cSay{
+  Yes. But most of the time, the other ends are plugged into a switch.
+}

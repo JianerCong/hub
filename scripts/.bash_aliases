@@ -13,18 +13,28 @@ alias cpmail="echo congjianer@xinhuaxia.com | xclip -i -selection clipboard"
 
 alias g="git log --oneline --decorate --all -n"
 alias ga="git add -A && git status"
-alias jpp=". ~/Templates/lrn/cpp/ygo/json/comp.sh"
-alias jcc=". ~/Templates/lrn/c/comp.sh"
 alias got=". ~/Templates/scripts/got.sh"
-alias tses=". /home/me/Templates/scripts/ses.sh"
 alias gpsh=". ~/Templates/scripts/gpsh.sh"
-alias pyenv=". ~/work/lcode/myenv/bin/activate"
+alias pyenv=". /home/me/work/lcode/myenv/bin/activate"
 alias cb=". ~/Templates/scripts/cmakebuild.sh"
 
-. ~/Templates/scripts/my-prompt.sh
 
-export PATH="/usr/local/blender-3.5.0-linux-x64/:/usr/local/texlive/2022/bin/x86_64-linux:$PATH"
-export MANPATH="/usr/local/texlive/2022/texmf-dist/doc/man:$MANPATH"
+# --------------------------------------------------
+export PS1="[\$http_proxy]$PS1"
+
+# a function to unset proxy
+proxy_off() {
+    unset http_proxy
+    unset https_proxy
+    unset no_proxy
+    echo -e "Proxy environment variable removed."
+}
+
+# . ~/Templates/scripts/my-prompt.sh
+
+export PATH="$HOME/local/emacs/bin:/usr/local/blender-3.5.0-linux-x64/:/usr/local/texlive/2023/bin/x86_64-linux:$PATH"
+export MANPATH="/usr/local/texlive/2023/texmf-dist/doc/man:$MANPATH"
+INFOPATH=/usr/local/texlive/2023/texmf-dist/doc/info:$INFOPATH; export INFOPATH
 #  Local Variables:
 #  mode: shell-script
 #  End:

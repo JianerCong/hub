@@ -1,0 +1,145 @@
+** buildin commands
+#+begin_src bash
+cd                              # go home
+pwd
+#   ~/src/zsh-3.0.8/Src
+cd 0.8 1.9                      # go from 0.8 to 1.9
+~/src/zsh-3.1.9/Src
+
+
+builtin cd                      # make sure we are using the builtin cd
+command python3                  # make sure we are using the command python
+
+# useless command:
+: # just return zero exis status
+false #return 1
+bye # = exit
+
+
+# globe
+ls a*                           # starts with a
+ls a?t*                         # a[some char]t *
+ls *python*                     # contains python
+ls python[[:alpha:]0-9]         # start with python and end in an char or a
+                                # number
+
+# Replace the current shell with command rather than forking. If command is a
+# shell builtin command or a shell function, the shell executes it, and exits
+# when the command is complete.
+
+exec -cl -a "my shell" zsh
+# -c: clear the env
+# -l: prepend - to the argv[0]
+# -a: set the argv[0] to "my shell"
+
+
+print -o 1 3 4 2                # 1 2 3 4
+print -O 1 3 4 2                # 4 3 2 1
+
+print -n -f "hello %s" world
+
+# print array
+a=(xx yy)
+print $a
+# xx yy
+print -l $a
+# xx
+# yy
+
+#+end_src
+
+** forloop
+#+begin_src shell
+  for n in a b c; do
+      echo $n
+  done
+#+end_src
+** theme
+#+begin_src shell
+  sudo apt-get install fonts-powerline
+  omz theme use agnoster
+#+end_src
+** show the proxy
+in ~/.oh-my-zsh/themes/
+
+Add in the middle
+#+begin_src bash
+# 🦜 : Let's show the current http proxy
+prompt_proxy(){
+    if [[ -n "$HTTP_PROXY" ]]; then
+        s1=${HTTP_PROXY#http://} # localhost:7890/
+        s2=${s1%/} # localhost:7890
+        prompt_segment green black "${s2}"
+    fi
+}
+
+#+end_src
+
+Add to the end
+#+begin_src bash
+  ## Main prompt
+  build_prompt() {
+    RETVAL=$?
+    ...
+    prompt_proxy
+    ...
+  }
+
+#+end_src
+** plugins
+*** emoji
+#+begin_src bash
+  echo $emoji[mouse_face]
+
+  random_emoji fruits
+  random_emoji animals
+  random_emoji vehicles
+  random_emoji faces
+
+  display_emoji
+  display_emoji faces
+  display_emoji people
+#+end_src
+*** web-search
+$ web_search google oh-my-zsh
+$ google oh-my-zsh
+```
+
+Available search contexts are:
+
+| Context               | URL                                      |
+| --------------------- | ---------------------------------------- |
+| `bing`                | `https://www.bing.com/search?q=`         |
+| `google`              | `https://www.google.com/search?q=`       |
+| `brs` or `brave`      | `https://search.brave.com/search?q=`     |
+| `yahoo`               | `https://search.yahoo.com/search?p=`     |
+| `ddg` or `duckduckgo` | `https://www.duckduckgo.com/?q=`         |
+| `sp` or `startpage`   | `https://www.startpage.com/do/search?q=` |
+| `yandex`              | `https://yandex.ru/yandsearch?text=`     |
+| `github`              | `https://github.com/search?q=`           |
+| `baidu`               | `https://www.baidu.com/s?wd=`            |
+| `ecosia`              | `https://www.ecosia.org/search?q=`       |
+| `goodreads`           | `https://www.goodreads.com/search?q=`    |
+| `qwant`               | `https://www.qwant.com/?q=`              |
+| `givero`              | `https://www.givero.com/search?q=`       |
+| `stackoverflow`       | `https://stackoverflow.com/search?q=`    |
+| `wolframalpha`        | `https://wolframalpha.com/input?i=`      |
+| `archive`             | `https://web.archive.org/web/*/`         |
+| `scholar`             | `https://scholar.google.com/scholar?q=`  |
+| `ask`                 | `https://www.ask.com/web?q=`             |
+
+Also there are aliases for bang-searching DuckDuckGo:
+
+| Context   | Bang  |
+|-----------|-------|
+| `wiki`    | `!w`  |
+| `news`    | `!n`  |
+| `youtube` | `!yt` |
+| `map`     | `!m`  |
+| `image`   | `!i`  |
+| `ducky`   | `!`   |
+* End
+# Local Variables:
+# org-what-lang-is-for: "shell"
+# fill-column: 50
+# End:

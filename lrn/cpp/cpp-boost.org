@@ -1,0 +1,1716 @@
+** Boost
+*** exception
+https://en.cppreference.com/w/cpp/error/exception
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+
+  #include <boost/throw_exception.hpp>
+  #include <boost/exception/diagnostic_information.hpp>
+
+  #include <stdexcept>
+  #include <iostream>
+  #include <string>
+  using std::string;
+
+  #include <boost/format.hpp>
+  #include <boost/log/trivial.hpp>
+  using boost::format;
+
+
+
+  void f(){
+    BOOST_THROW_EXCEPTION(std::runtime_error( "aaa" ));
+  }
+
+  BOOST_AUTO_TEST_CASE(throw1){
+    BOOST_CHECK_THROW(f(),std::runtime_error);
+
+    try{f();}
+    catch( std::exception const & x ){
+      string s = boost::diagnostic_information(x);
+      BOOST_CHECK(s.find("aaa") != string::npos
+                  // std::string , contains "aaa"
+                  );
+      BOOST_LOG_TRIVIAL(info) << format("[%s]") % s;
+    }
+  }
+
+#+end_src
+*** check Boost version
+#+begin_src bash
+  cat /usr/include/boost/version.hpp  | grep BOOST_LIB_VERSION 
+#+end_src
+*** asio
+**** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+# set(CMAKE_CXX_COMPILER "g++")
+project(hi VERSION 1.1)
+
+# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+IF (WIN32)
+  # set stuff for windows
+  set(Boost_DIR "C:\\Users\\congj\\repo\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  message("🐸 Setting Boost_DIR: ${Boost_DIR}")
+ELSE()
+  # set stuff for other systems
+ENDIF()
+find_package(Boost REQUIRED COMPONENTS unit_test_framework log
+  program_options
+)
+
+add_executable(myexe m.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::log)
+# Although beast and axio are all header-only, we need to link to at least one
+# Boost-target in order to bring in the include dirs
+
+# add_custom_target(run ALL
+#   weak-server 0.0.0.0 7777
+#   COMMENT "Runing App 🐸")
+
+#+end_src
+**** hi
+***** hi
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/asio.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+#include <boost/format.hpp>
+#include <string>
+
+using std::string;
+using boost::format;
+using std::cout;
+
+
+boost::asio::io_service io_svc;
+int a = 0;
+void WorkerThread() {
+  // std::cout << "thread " << ++a << ".\n";
+  int b = ++a;
+  cout << format("thread %d \n") % b;
+  io_svc.run();
+  cout << format("thread %d is done 🐸\n") % b;
+}
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  boost::shared_ptr<boost::asio::io_service::work>
+    worker(new boost::asio::io_service::work(io_svc));
+
+  std::cout << "Press ENTER key to exit!" << std::endl;
+  boost::thread_group threads;
+  for(int i=0; i<5; i++)
+    threads.create_thread(WorkerThread);
+
+  std::cin.get();
+  io_svc.stop();
+  threads.join_all();
+}
+// thread 1 
+// thread 2 
+// thread 3 
+// thread 4 
+// thread 5 
+
+// thread 4 is done 🐸
+// thread 5 is done 🐸
+// thread 3 is done 🐸
+// thread 1 is done 🐸
+// thread 2 is done 🐸
+
+#+end_src
+***** cmake
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework system thread)
+# add the executable
+add_executable(main e.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework Boost::thread Boost::system)
+add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+# add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+**** bind
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
+using boost::bind;
+int f(int a){return a;}
+BOOST_AUTO_TEST_CASE(test_2) {
+  BOOST_CHECK_EQUAL(f(2),bind(&f,2)());
+}
+
+#+end_src
+**** post vs dispath
+#+begin_src c++
+  /* dispatch.cpp */
+#include <boost/asio.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <iostream>
+
+boost::mutex global_stream_lock;
+using std::cout;
+
+
+void WorkerThread(boost::shared_ptr<boost::asio::io_service> iosvc) {
+  global_stream_lock.lock();
+  std::cout << "Thread Start.\n";
+  global_stream_lock.unlock();
+
+  iosvc->run();
+
+  global_stream_lock.lock();
+  std::cout << "Thread Finish.\n";
+  global_stream_lock.unlock();
+}
+
+void Dispatch(int i) {
+  global_stream_lock.lock();
+  std::cout << "dispath() Function for i = " << i <<  std::endl;
+  global_stream_lock.unlock();
+}
+
+void Post(int i) {
+  global_stream_lock.lock();
+  std::cout << "post() Function for i = " << i <<  std::endl;
+  global_stream_lock.unlock();
+}
+
+void Running(boost::shared_ptr<boost::asio::io_service> iosvc) {
+  for( int x = 0; x < 5; ++x ) {
+    iosvc->dispatch(boost::bind(&Dispatch, x));
+    iosvc->post(boost::bind(&Post, x));
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+  }
+  cout << "Running finished\n";
+}
+
+int main(void) {
+  boost::shared_ptr<boost::asio::io_service> io_svc(
+    new boost::asio::io_service
+  );
+
+  boost::shared_ptr<boost::asio::io_service::work> worker(
+    new boost::asio::io_service::work(*io_svc)
+  );
+
+  global_stream_lock.lock();
+  std::cout << "The program will exit automatically once all work has finished." << std::endl;
+  global_stream_lock.unlock();
+
+  boost::thread_group threads;
+
+  threads.create_thread(boost::bind(&WorkerThread, io_svc));
+
+  io_svc->post(boost::bind(&Running, io_svc));
+  std::cout << "Run all the posts:--------------------------------------------------\n";
+  worker.reset();
+
+  std::cout << "join_all\n";
+  threads.join_all();
+
+  return 0;
+}
+// The program will exit automatically once all work has finished.
+// Run all the posts:--------------------------------------------------
+// join_all:--------------------------------------------------
+// Thread Start.
+// dispath() Function for i = 0
+//   dispath() Function for i = 1
+//   dispath() Function for i = 2
+//   dispath() Function for i = 3
+//   dispath() Function for i = 4
+//   Running finished
+//   post() Function for i = 0
+//   post() Function for i = 1
+//   post() Function for i = 2
+//   post() Function for i = 3
+//   post() Function for i = 4
+//   Thread Finish.
+
+#+end_src
+**** tcp minimal server
+#+begin_src c++
+  #include <boost/asio.hpp>
+  using boost::asio::io_service;
+  using boost::asio::ip::tcp;
+  using boost::system::error_code;
+  using boost::asio::buffer;
+  #include <cstdio>
+
+  #include <string>
+  using std::string;
+
+  io_service iosrv;
+  // string a{argv,argc};
+  tcp::endpoint endp{tcp::v4(),8888};
+  tcp::acceptor accp{iosrv,endp};
+  tcp::socket skt{iosrv};
+
+  void acceptHandler(const error_code &ec);
+  void writeHandler(const error_code &ec, size_t n);
+  int main(int argc, char *argv[]){
+    accp.listen();
+    printf("Start listening 🐸\n");
+    accp.async_accept(skt,acceptHandler);
+    iosrv.run();
+    return 0;
+  }
+
+  void acceptHandler(const error_code &ec){
+    if (ec) return;
+    printf("acceptHandler() called");
+    async_write(skt,buffer("🐸aaa\n"),writeHandler);
+  }
+
+  void writeHandler(const error_code &ec, size_t n){
+    printf("writeHandler() called");
+    if (ec) return;
+    skt.shutdown(tcp::socket::shutdown_send);
+  }
+
+  // telnet localhost 8888
+
+#+end_src
+**** http minimal server： get/only
+***** cmake
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED)
+add_executable(weak-server weak-server.cpp)
+add_custom_target(run ALL
+  weak-server 0.0.0.0 7777
+  COMMENT "Runing App 🐸")
+
+#+end_src
+***** c++
+#+begin_src c++
+  #include <boost/asio.hpp>
+using boost::asio::io_service;
+using boost::asio::ip::tcp;
+using boost::system::error_code;
+using boost::asio::buffer;
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
+using boost::format;
+
+#include <string>
+using std::string;
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/config.hpp>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <thread>
+#include <cstdio>
+
+namespace beast = boost::beast;         // from <boost/beast.hpp>
+namespace http = beast::http;           // from <boost/beast/http.hpp>
+namespace asio = boost::asio;            // from <boost/asio.hpp>
+using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+using std::cout;
+
+using http::request;
+using http::response;
+
+
+// Handles an HTTP server connection
+void do_session(tcp::socket& socket);
+int main(int argc, char* argv[]){
+    try{
+        // Check command line arguments.
+        if (argc != 3)
+        {
+            std::cerr <<
+                "Usage: weak-server <address> <port>\n" <<
+                "Example:\n" <<
+                "    weak-server 0.0.0.0 8080 .\n";
+            return EXIT_FAILURE;}
+
+        asio::ip::address const address = asio::ip::make_address(argv[1]);
+        auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
+
+        // The io_context is required for all I/O
+        asio::io_context ioc{1};
+
+        // The acceptor receives incoming connections
+        tcp::acceptor acceptor{ioc, {address, port}};
+        for(;;){
+          printf("🐸 Waiting for requests\n");
+          // This will receive the new connection
+          tcp::socket socket{ioc};
+          // Block until we get a connection
+          acceptor.accept(socket);
+          // Launch the session, transferring ownership of the socket
+          std::thread{std::bind(&do_session, std::move(socket))}.detach();
+        }
+    }
+    catch (const std::exception& e){
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+}
+
+
+response<http::string_body>
+handle_request(request<http::string_body>&& req);
+void fail(beast::error_code ec, char const* what);
+void do_session(tcp::socket& socket){
+  beast::error_code ec;
+  // This buffer is required to persist across reads
+  beast::flat_buffer buffer;
+  for(;;){
+      // Read a request
+      request<http::string_body> req;
+      http::read(socket, buffer, req, ec);
+      if(ec == http::error::end_of_stream) break;
+      if(ec) return fail(ec, "read");
+
+      // Handle request
+        response<http::string_body> res =
+          handle_request(std::move(req));
+
+      // Determine if we should close the connection
+      bool keep_alive = res.keep_alive();
+
+      // Send the response
+      beast::http::write(socket, std::move(res), ec);
+      if(ec) return fail(ec, "write");
+      if(! keep_alive){
+        printf("We should not keep alive\n");
+          // This means we should close the connection, usually because
+          // the response indicated the "Connection: close" semantic.
+          break;
+        }
+    }
+  // Send a TCP shutdown
+  socket.shutdown(tcp::socket::shutdown_send, ec);
+  // At this point the connection is closed gracefully
+}
+// Report a failure
+void fail(beast::error_code ec, char const* what){
+  std::cerr << what << ": " << ec.message() << "\n";
+}
+
+
+/**
+ * @brief Here we actually dispatch the appropriate functions and handle the
+ * request.
+ */
+response<http::string_body>
+handle_request(request<http::string_body>&& req){
+      // Returns a bad request response
+    auto const bad_request =
+    [&req](beast::string_view why){
+        response<http::string_body> res{http::status::bad_request, req.version()};
+        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+        res.set(http::field::content_type, "text/html");
+        res.keep_alive(req.keep_alive());
+        res.body() = std::string(why);
+        res.prepare_payload();
+        return res;
+    };
+
+    // Returns a server error response
+    // auto const server_error =
+    // [&req](beast::string_view what){
+    //     response<http::string_body> res{http::status::internal_server_error, req.version()};
+    //     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    //     res.set(http::field::content_type, "text/html");
+    //     res.keep_alive(req.keep_alive());
+    //     res.body() = "An error occurred: '" + std::string(what) + "'";
+    //     res.prepare_payload();
+    //     return res;
+    // };
+
+    // Make sure we can handle the method
+    if( req.method() != http::verb::get &&
+        req.method() != http::verb::post)
+      return bad_request("Unknown HTTP-method");
+
+    printf("🐸 Handling request from %s\n",req.target().data());
+    // cout << format("🐸 Got request [%1]\n") % req.target().;
+
+
+    // Respond to GET request
+    // response<http::string_body> res{
+    //   std::piecewise_construct,
+    //   std::make_tuple(std::move(body)),
+    //   std::make_tuple(http::status::ok, req.version())};
+    response<http::string_body> res;
+    res.body() =  "🐸 hi from server\n";
+
+    res.version(11);   // HTTP/1.1
+    res.set(http::field::server, "Beast");
+    res.result(http::status::ok);
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "application/text");
+    res.keep_alive(req.keep_alive());
+
+    res.prepare_payload();
+    return res;
+}
+
+
+#+end_src
+**** some survey about handlers
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/asio.hpp>
+
+// colors
+#define S_RED     "\x1b[31m"
+#define S_GREEN   "\x1b[32m"
+#define S_YELLOW  "\x1b[33m"
+#define S_BLUE    "\x1b[34m"
+#define S_MAGENTA "\x1b[35m"
+#define S_CYAN    "\x1b[36m"
+#define S_NOR "\x1b[0m"
+
+using boost::format;
+#include <string>
+using std::string;
+
+
+using namespace std::chrono;
+#include <chrono>
+
+#include <functional>
+using std::function;
+void time_it(function<void(void)> f, double min, double max){
+  time_point<system_clock> start, end;
+  start = system_clock::now();
+  BOOST_TEST_MESSAGE("Before timing");
+
+  f();
+
+  end = system_clock::now();
+  duration<double> elapsed_seconds = end - start;
+  double s = elapsed_seconds.count();
+  BOOST_TEST_MESSAGE((format("Duration %d secs") % s).str()
+                     );
+  BOOST_CHECK(s > min && s < max);  // slept for 3sec
+}
+
+BOOST_AUTO_TEST_CASE(test_basic_sleep){
+  boost::asio::io_context io;
+
+  /*
+    🐢 : The important thing about asio is the `async_sleep` which will give
+    controls to other coroutine.
+
+    🦜 :
+   */
+  time_it([&](){
+    boost::asio::steady_timer(io, boost::asio::chrono::seconds(3)).wait();
+  }, 2, 4);
+}
+
+/*
+  🦜 : Okay, well then, how do we 'run' two tasks in parallel?
+
+  🐢 : You use post() or dispatch(). Which is kinda like saying "hey, execute
+  this". The difference is that post(f) must be wait for the current handler to
+  finish, while the dispatch will just start the job.
+
+  🦜 : So which should I use.
+
+  🐢 : Let's try post() because it's shorter
+ */
+using boost::asio::io_context;
+void asio_sleep(int x=2){
+  boost::asio::io_context io;
+  boost::asio::steady_timer(io, boost::asio::chrono::seconds(x)).wait();
+}
+
+BOOST_AUTO_TEST_CASE(test_post){
+  auto f1 = [](){
+    BOOST_TEST_MESSAGE("111");
+    asio_sleep(3);
+    BOOST_TEST_MESSAGE("111");
+  };
+
+  auto f2 = [](){
+    BOOST_TEST_MESSAGE("222");
+    asio_sleep(3);
+    BOOST_TEST_MESSAGE("222");
+  };
+  // boost::asio::io_context io_context;
+  boost::asio::dispatch(f1);
+  boost::asio::dispatch(f2);
+  BOOST_TEST_MESSAGE("Finished");
+
+  /* 🦜 : They run in series, it looks like.*/
+  }
+
+#+end_src
+*** format
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/format.hpp>
+  #include <string>
+
+  using std::string;
+  using boost::format;
+
+
+  BOOST_AUTO_TEST_CASE(test_2) {
+    string s = (format("%2% %1%") % 22 % 11 ).str();
+
+    // printf-style:min length=5, with sign
+    string s2 = (format("%1$+5d %2$+5d") % -10 % 30 ).str();
+    // printf-style,No reordering
+    string s3 = (format("%+5d %+5d") % -10 % 30 ).str();
+    string s4 = (format("0x%020x") % 0xff).str();
+
+    BOOST_CHECK_EQUAL(s,"11 22");
+    BOOST_CHECK_EQUAL(s2,"  -10   +30");
+    BOOST_CHECK_EQUAL(s2,s3);
+    BOOST_CHECK_EQUAL(s4,"0x000000000000000000ff");
+    //                      11223344551122334455
+  }
+
+// See absolute tabulations:
+// for(unsigned int i=0; i < names.size(); ++i)
+//   cout << format("%1%, %2%, %|40t|%3%\n") % names[i] % surname[i] % tel[i];
+
+// Marc-François Michel, Durand,           +33 (0) 123 456 789
+// Jean, de Lattre de Tassigny,            +33 (0) 987 654 321
+#+end_src
+*** start on linux
+**** install
+#+begin_src bash
+  sudo apt search libboost
+  sudo apt install libboost-all-dev
+#+end_src
+**** cpp
+#+begin_src c++
+  #include <iostream>
+  #include <boost/array.hpp>
+  using std::cout;
+
+  int main ()
+  {
+    boost::array<int,4> a = {{10, 20, 30, 30}};
+    cout << "a[0]=" << a[0];
+
+    return 0;
+  }
+  // Output:
+  // a[0]=10
+  #+end_src
+**** CMakeLists.txt
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+# set the project name and version
+project(Hi VERSION 1.0)
+
+# find_package(Boost CONFIG REQUIRED)
+# add the executable
+
+add_executable(myexe test.cpp)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
+#+end_src
+*** smart pointer
+**** sole ownership
+***** unique pointer
+#+begin_src c++
+#include <iostream>
+#include <boost/scoped_ptr.hpp>
+using std::cout;
+
+int main ()
+{
+  boost::scoped_ptr<int> p{new int{1}}; // cannot be copied or moved.
+  cout << *p << '\n';
+
+  p.reset(new int{2});          // release the old, point to new addr
+  cout << *p.get() << '\n';
+
+  p.reset();                    // release the allocated obj
+
+  // cast to false if point to nothing.
+  cout << std::boolalpha << static_cast<bool>(p) << '\n';
+
+  return 0;
+}
+
+// Output:
+// 1
+// 2
+// false
+
+#+end_src
+The destructor of this call ~delete~. To call ~delete[]~ use ~scoped_array~
+****** what if we try to copy the addr
+#+begin_src c++
+#include <cstdio>
+#include <boost/scoped_ptr.hpp>
+
+int main ()
+{
+  boost::scoped_ptr<int> p{new int{1}}; // cannot be copied or moved.
+  boost::scoped_ptr<int> p2{p};
+  return 0;
+}
+
+// Output:
+// error: ‘boost::scoped_ptr<T>::scoped_ptr(const boost::scoped_ptr<T>&) [with T = int]’ is private within this context
+
+#+end_src
+***** unique array
+#+begin_src c++
+#include <iostream>
+#include <boost/scoped_array.hpp>
+using std::cout;
+
+int main ()
+{
+  boost::scoped_array<int> p{new int[2]};
+  *p.get() = 10;
+  p[1] = 20;
+  cout << *p.get() << '\n';
+  cout << p[1] << '\n';
+
+  p.reset();                    // release the allocated obj
+  // cast to false if point to nothing.
+  cout << std::boolalpha << static_cast<bool>(p) << '\n';
+
+  return 0;
+}
+
+// Output:
+// 10
+// 20
+// false
+
+#+end_src
+**** shared ownership
+#+begin_src c++
+#include <boost/shared_ptr.hpp>
+#include <cstdio>
+#include <iostream>
+using std::cout;
+#define P(...) printf(__VA_ARGS__)
+
+
+int main ()
+{
+  boost::shared_ptr<int> p1{new int{1}};
+  boost::shared_ptr<int> p2{p1};
+
+  P("*p1=%d, *p2=%d\nAfter reseting p1, p2 got ",*p1,*p2);
+  p1.reset();                    // release the allocated obj
+  // cast to false if point to nothing.
+  cout << std::boolalpha << static_cast<bool>(p2) << '\n';
+
+  return 0;
+}
+// Output
+// *p1=1, *p2=1
+//  After reseting p1, p2 got true
+
+
+#+end_src
+***** custom deleter
+#+begin_src c++
+#include <boost/shared_ptr.hpp>
+#include <cstdio>
+#include <iostream>
+using std::cout;
+#define P(...) printf(__VA_ARGS__)
+
+void my_delete(int *p){
+  P("Calling my own delete.\n");
+  delete p;
+}
+
+
+int main ()
+{
+  boost::shared_ptr<int> p1(new int{1},my_delete);
+  P("*p1 = %d\n",*p1);
+  return 0;
+}
+// Output
+// *p1 = 1
+// Calling my own delete.
+
+#+end_src
+***** make_shared
+more efficient than calling ~new~ to create a dynamically allocated obj and
+calling ~new~ again in the constructor of ~boost::shared_ptr~ to allocate memory
+for the reference counter.
+#+begin_src c++
+#include <boost/make_shared.hpp>
+#include <cstdio>
+#include <iostream>
+using std::cout;
+#define P(...) printf(__VA_ARGS__)
+
+using boost::make_shared;
+
+int main ()
+{
+  auto p1 = make_shared<int>(1);
+  auto p2 = make_shared<int[]>(10);
+  P("p1 has type %s, p2 has type %s\n",
+    typeid(p1).name(),
+    typeid(p2).name()
+    );
+}
+// Output
+// p1 has type N5boost10shared_ptrIiEE, p2 has type N5boost10shared_ptrIA_iEE
+
+
+#+end_src
+***** shared array
+#+begin_src c++
+#include <boost/shared_array.hpp>
+#include <cstdio>
+#include <iostream>
+using std::cout;
+#define P(...) printf(__VA_ARGS__)
+
+using boost::shared_array;
+
+int main ()
+{
+  shared_array<int> p1{new int[1]};
+  {
+    shared_array<int> p2{p1};
+    p2[0] = 1;
+  }
+
+  P("p2 is gone, p1[0]=%d\n",p1[0]);
+}
+// Output
+// p2 is gone, p1[0]=1
+
+
+
+#+end_src
+***** How to time it 
+#+begin_src c++
+// #define BOOST_SP_USE_QUICK_ALLOCATOR
+#include <boost/shared_ptr.hpp>
+#include <ctime>
+
+#include <cstdio>
+#include <iostream>
+using std::cout;
+
+using std::time_t;
+using std::time;
+
+#define P(...) printf(__VA_ARGS__)
+
+
+#define N 20000000
+int main ()
+{
+  boost::shared_ptr<int> p;
+  std::time_t then = time(nullptr);
+
+  for (int i = 0;i < (N); ++i)
+    p.reset(new int{i});
+
+  std::time_t now = time(nullptr);
+  P("time taken %ld\n", now - then);
+  // --------------------------------------------------
+  int* p1;
+  then = time(nullptr);
+
+  for (int i = 0;i < (N); ++i){
+    delete p1;
+    p1 = new int{i};
+  }
+  delete p1;
+
+  now = time(nullptr);
+  P("time taken for built-in pointer %ld\n", now - then);
+
+}
+// Output? 不define更快？
+// while defining QUICK
+// time taken 2
+// time taken for built-in pointer 0
+
+// while not defining QUICK
+// time taken 1
+// time taken for built-in pointer 0
+
+#+end_src
+
+*** unit-test
+**** hi
+***** cmdline options
+#+begin_src c++
+The program 'myexe' is a Boost.Test module containing unit tests.
+
+  Usage
+    myexe [Boost.Test argument]... [-- [custom test module argument]...]
+
+  Use
+      myexe --help
+  or  myexe --help=<parameter name>
+  for detailed help on Boost.Test parameters.
+
+
+  Command line flags:
+   The command line flags of Boost.Test are listed below. All parameters are
+   optional. You can specify parameter value either as a command line argument or
+   as a value of its corresponding environment variable. If a flag is specified as
+   a command line argument and an environment variable at the same time, the
+   command line takes precedence. The command line argument support name guessing,
+   and works with shorter names as long as those are not ambiguous.
+
+   All the arguments after the '--' are ignored by Boost.Test.
+
+  Environment variables:
+   Every argument listed below may also be set by a corresponding
+   environmentvariable. For an argument '--argument_x=<value>', the corresponding
+   environment variable is 'BOOST_TEST_ARGUMENT_X=value
+
+  The following parameters are supported:
+
+  auto_start_dbg
+    Automatically attaches debugger in case of system level failure (signal).
+    --auto_start_dbg[=<boolean value>]
+    -d[ <boolean value>]
+
+  break_exec_path
+    For the exception safety testing allows to break at specific execution path.
+    --break_exec_path=<value>
+
+  build_info
+    Displays library build information.
+    --build_info[=<boolean value>]
+    -i[ <boolean value>]
+
+  catch_system_errors
+    Allows to switch between catching and ignoring system errors (signals).
+    --[no_]catch_system_errors[=<boolean value>]
+    -s[ <boolean value>]
+
+  color_output
+    Enables color output of the framework log and report messages.
+    --[no_]color_output[=<boolean value>]
+    -x[ <boolean value>]
+
+  detect_fp_exceptions
+    Enables/disables floating point exceptions traps.
+    --[no_]detect_fp_exceptions[=<boolean value>]
+
+  detect_memory_leaks
+    Turns on/off memory leaks detection (optionally breaking on specified alloc
+    order number).
+    --detect_memory_leaks[=<alloc order number>]
+
+  help
+    Help for framework parameters.
+    --help[=<parameter name>]
+
+  list_content
+    Lists the content of test tree - names of all test suites and test cases.
+    --list_content[=<HRF|DOT>]
+
+  list_labels
+    Lists all available labels.
+    --list_labels[=<boolean value>]
+
+  log_format
+    Specifies log format.
+    --log_format=<HRF|CLF|XML|JUNIT>
+    -f <HRF|CLF|XML|JUNIT>
+
+  log_level
+    Specifies the logging level of the test execution.
+    --log_level=<all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
+    -l <all|success|test_suite|unit_scope|message|warning|error|cpp_exception|system_error|fatal_error|nothing>
+
+  log_sink
+    Specifies log sink: stdout (default), stderr or file name.
+    --log_sink=<stderr|stdout|file name>
+    -k <stderr|stdout|file name>
+
+  logger
+    Specifies log level and sink for one or several log format
+    --logger=log_format,log_level,log_sink[:log_format,log_level,log_sink]
+
+  output_format
+    Specifies output format (both log and report).
+    --output_format=<HRF|CLF|XML>
+    -o <HRF|CLF|XML>
+
+  random
+    Allows to switch between sequential and random order of test units execution.
+    Optionally allows to specify concrete seed for random number generator.
+    --random[=<seed>]
+
+  report_format
+    Specifies the test report format.
+    --report_format=<HRF|CLF|XML>
+    -m <HRF|CLF|XML>
+
+  report_level
+    Specifies test report level.
+    --report_level=<confirm|short|detailed|no>
+    -r <confirm|short|detailed|no>
+
+  report_memory_leaks_to
+    File where to report memory leaks to.
+    --report_memory_leaks_to=<file name>
+
+  report_sink
+    Specifies report sink: stderr(default), stdout or file name.
+    --report_sink=<stderr|stdout|file name>
+    -e <stderr|stdout|file name>
+
+  result_code
+    Disables test modules's result code generation.
+    --[no_]result_code[=<boolean value>]
+    -c[ <boolean value>]
+
+  run_test
+    Filters which tests to execute.
+    --run_test=<test unit filter>
+    -t <test unit filter>
+
+  save_pattern
+    Allows to switch between saving or matching test pattern file.
+    --save_pattern[=<boolean value>]
+
+  show_progress
+    Turns on progress display.
+    --show_progress[=<boolean value>]
+    -p[ <boolean value>]
+
+  usage
+    Short message explaining usage of Boost.Test parameters.
+    -?[ <boolean value>]
+
+  use_alt_stack
+    Turns on/off usage of an alternative stack for signal handling.
+    --[no_]use_alt_stack[=<boolean value>]
+
+  version
+    Prints Boost.Test version and exits.
+    --version[ <boolean value>]
+
+  wait_for_debugger
+    Forces test module to wait for button to be pressed before starting test run.
+    --wait_for_debugger[=<boolean value>]
+    -w[ <boolean value>]
+
+    #+end_src
+***** CMake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+find_package(Boost CONFIG REQUIRED
+  unit_test_framework)
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+***** cpp
+#+begin_src c++
+// #define BOOST_TEST_MODULE test_module_name
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  BOOST_CHECK(1 == 1);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  BOOST_CHECK(2 == 1);
+}
+
+
+#+end_src
+**** test-not-equal, throw, error,...
+***** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+
+# set the project name and version
+project(Hi VERSION 1.0)
+
+find_package(Boost CONFIG REQUIRED
+  unit_test_framework)
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC
+  Boost::unit_test_framework)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+***** cpp
+#+begin_src c++
+// #define BOOST_TEST_MAIN
+#define BOOST_TEST_MODULE MyTest
+#include <boost/test/unit_test.hpp>
+#include <stdexcept>
+
+
+BOOST_AUTO_TEST_CASE(test_1) {
+  BOOST_CHECK_NE(2,1);          // 2 != 1
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+void f(){
+  throw std::runtime_error("hi");
+}
+
+BOOST_AUTO_TEST_CASE(test_2) {
+  BOOST_CHECK_THROW(f(), std::runtime_error);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_equal) {
+  BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_error) {
+  BOOST_ERROR("this should give error ❄");
+}
+
+
+BOOST_AUTO_TEST_CASE(test_fail) {
+  BOOST_FAIL("this should give fatal error ❄");
+}
+
+#+end_src
+**** filter
+***** based on decorator (also works on individual case)
+****** c++
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_SUITE(test_suite_1, *boost::unit_test::label("aaa"));
+BOOST_AUTO_TEST_CASE(test_2) {BOOST_CHECK(true);}
+BOOST_AUTO_TEST_CASE(test_1) {BOOST_CHECK_EQUAL(1,1);}
+BOOST_AUTO_TEST_SUITE_END();
+
+BOOST_AUTO_TEST_SUITE(test_suite_2);
+BOOST_AUTO_TEST_CASE(test_2) {BOOST_CHECK_EQUAL(3,3);}
+BOOST_AUTO_TEST_SUITE_END();
+
+#+end_src
+****** cmake
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.21)
+
+project(hi VERSION 1.1)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# add the executable
+add_executable(main test.cpp)
+target_link_libraries(main PUBLIC Boost::unit_test_framework)
+# add_custom_target(run ALL main --log_level=all COMMENT "Runing App 🐸")
+add_custom_target(run ALL main --run_test=@aaa --log_level=all COMMENT "Runing App 🐸")
+
+#+end_src
+***** based on names
+run_test=suite_1/suite_1/test_1
+run_test=suite_1/suite_2/*
+run_test=suite_1/suite_2/
+**** fixture
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+
+struct F {
+  F() : i( 0 ) { BOOST_TEST_MESSAGE( "setup fixture" ); }
+  ~F()         { BOOST_TEST_MESSAGE( "teardown fixture" ); }
+
+  int i;
+};
+
+BOOST_FIXTURE_TEST_CASE( test_case1, F ){
+  BOOST_CHECK_NE(i,1);
+  ++i;
+}
+
+BOOST_FIXTURE_TEST_CASE( test_case2, F )
+{
+  BOOST_CHECK_EQUAL( i, 0 );
+}
+
+BOOST_AUTO_TEST_CASE( test_case3 )
+{
+  BOOST_TEST( true );
+}
+
+// A suite level fixture still runs for each test case (no state share)
+// --------------------------------------------------
+BOOST_FIXTURE_TEST_SUITE(s, F)
+
+BOOST_AUTO_TEST_CASE(test_case1)
+{
+  BOOST_TEST_MESSAGE("running test_case1");
+  BOOST_TEST(i == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_case2)
+{
+  BOOST_TEST_MESSAGE("running test_case2");
+  BOOST_TEST(i == 0);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+#+end_src
+
+*** log
+
++ Backend :: decide where the data is written.
+  ~boost::log::sinks::text_ostream_backend~ is initialized with a stream of type
+  ~std::ostream~ and writes log entries to it.
++ Frontend :: connection between core and a backend. (Filters are here)
++ core :: the core is the central component that all log entries are routed
+  through. It is implemented as a singleton. To get a pointer to the core, call
+  ~boost::log::core::get()~.
+**** trivial logging with filter
+Trivial logging For those who don't want to read tons of clever manuals and just
+need a simple tool for logging, here you go:
+#+begin_src c++
+  #include <boost/log/trivial.hpp> // For BOOST_LOG_TRIVIAL, trace, debug,..,fatal
+  #include <boost/log/core.hpp>
+  #include <boost/log/expressions.hpp>
+
+  int main(int argc, char* argv[])
+  {
+      // Trivial logging: all log records are written into a file
+      BOOST_LOG_TRIVIAL(trace) << "A trace severity message[1]";
+      BOOST_LOG_TRIVIAL(debug) << "A debug severity message[2]";
+      BOOST_LOG_TRIVIAL(info) << "An informational severity message[3]";
+      BOOST_LOG_TRIVIAL(warning) << "A warning severity message[4]";
+      BOOST_LOG_TRIVIAL(error) << "An error severity message[5]";
+      BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message[6]";
+
+      // Filtering can also be applied
+      using namespace boost::log;
+
+      // The global singleton core
+      core::get()->set_filter
+      (
+       // A Boost.Phoenix lambda
+          trivial::severity >= trivial::info
+          // LHS: placeholder var; RHS: value of type severity_level
+      );
+
+      // Now the first two lines will not pass the filter
+      BOOST_LOG_TRIVIAL(trace) << "A trace severity message";
+      BOOST_LOG_TRIVIAL(debug) << "A debug severity message";
+      BOOST_LOG_TRIVIAL(info) << "An informational severity message[1]";
+      BOOST_LOG_TRIVIAL(warning) << "A warning severity message[2]";
+      BOOST_LOG_TRIVIAL(error) << "An error severity message[3]";
+      BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message[4]";
+
+      return 0;
+  }
+#+end_src
+**** a test for log
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.10)
+# set the project name and version
+project(Hi VERSION 1.0)
+
+find_package(Boost CONFIG REQUIRED log)
+# boost library by their canonical name:: "date_time" for "libboost_date_time"
+# ls /lib/x86_64-linux-gnu/libboost_*.a
+# add the executable
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC Boost::log)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe 1 COMMENT "Runing App 🐸")
+
+#+end_src
+
+#+begin_src c++
+  #include <boost/log/common.hpp>
+#include <boost/log/sinks.hpp>
+#include <boost/log/sources/logger.hpp>
+// #include <boost/utility/empty_deleter.hpp>
+#include <boost/shared_ptr.hpp>
+#include <iostream>
+
+using namespace boost::log;
+int main(){
+  typedef sinks::asynchronous_sink<sinks::text_ostream_backend>
+    text_sink;
+  boost::shared_ptr<text_sink> sink =
+    boost::make_shared<text_sink>();
+
+  boost::shared_ptr<std::ostream> stream {
+    &std::clog                 // standard output stream for logging
+    ,boost::null_deleter()
+    // ,boost::empty_deleter
+  };
+
+  // access the backend through locked_backend()
+  sink->locked_backend()->add_stream(stream);
+
+  core::get()->add_sink(sink);
+  // default log connects it self to core.
+  sources::logger lg;
+  BOOST_LOG(lg) << "aaa";
+
+  sink->flush();
+}
+
+#+end_src
+**** sinks that rotate the file
+#+begin_src c++
+  void init()
+  {
+    logging::add_file_log
+      (
+       keywords::file_name = "sample_%N.log",                                        /*< file name pattern >*/
+       keywords::rotation_size = 10 * 1024 * 1024,                                   /*< rotate files every 10 MiB... >*/
+       keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0), /*< ...or at midnight >*/
+       keywords::format = "[%TimeStamp%]: %Message%"                                 /*< log record format >*/
+       );
+
+    logging::core::get()->set_filter
+      (
+       logging::trivial::severity >= logging::trivial::info
+       );
+  }
+#+end_src
+**** ~add_file_log~ Bedind The Scene
+之前的init大概可以翻译成如下：
+#+begin_src c++
+void init()
+{
+    // Construct the sink
+    typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
+    boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+    // Add a stream to write log to
+    sink->locked_backend()->add_stream(
+        boost::make_shared< std::ofstream >("sample.log"));
+
+    // Register the sink in the logging core
+    logging::core::get()->add_sink(sink);
+}
+#+end_src
+每个sink有一个frontend和一个backend.在以上种类为:
++ frontend :: synchronous_sink （for multithreading,filtering, formatting）
++ backend :: text_ostream_backend (specific task for this sink)
+以上的backend也可以加一个往console写的。
+#+begin_src c++
+#include <boost/core/null_deleter.hpp>
+
+// We have to provide an empty deleter to avoid destroying the global stream object
+boost::shared_ptr< std::ostream > stream(&std::clog, boost::null_deleter());
+sink->locked_backend()->add_stream(stream);
+#+end_src
+你可以给 ~text_ostream_backend~ 加很多 ~stream~ ，比如说文件又或是到console。这
+样的话filter只用一次，但我们可以同时往文件和console两个地方写。
+**** logger
+***** sink 和 source的区别？
+sink 需要被register到core。source不用。
+***** non-thread-safe logger 有啥用？
+如果你每个线程都用不同的logger的话，那就没必要thread-safe.
+***** thread-safe logger 有啥不一样
+有 _mt 后缀，会慢。
+***** Global logger
+Define a global logger
+#+begin_src c++
+BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
+
+#+end_src
+Get the global logger
+#+begin_src c++
+src::logger_mt& lg = my_logger::get();
+
+#+end_src
+***** write to logger
+#+begin_src c++
+  BOOST_LOG(lg) << "Hello, World!";
+#+end_src
+背后原理：
+#+begin_src c++
+  logging::record rec = lg.open_record(); // 给我个record对象如果有sink在接着的
+                                          // 话,filter用上在这。
+  if (rec)                                // 如果有record，开写
+  {
+      logging::record_ostream strm(rec); // 在record上开个stream
+      strm << "Hello, World!";
+      strm.flush();               // stream到record
+      lg.push_record(boost::move(rec)); // record到logger
+   }
+#+end_src
+***** Full example
+Need Boost::log, Boost::log_setup
+#+begin_src c++
+#include <boost/move/utility_core.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/sources/global_logger_storage.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace keywords = boost::log::keywords;
+
+BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
+
+void logging_function1()
+{
+    src::logger lg;
+    logging::record rec = lg.open_record();
+    if (rec)
+    {
+        logging::record_ostream strm(rec);
+        strm << "AAA from local logger";
+        strm.flush();
+        lg.push_record(boost::move(rec));
+    }
+}
+
+void logging_function2()
+{
+    src::logger_mt& lg = my_logger::get();
+    BOOST_LOG(lg) << "AAA from global logger";
+}
+
+int main(int, char*[])
+{
+    logging::add_file_log("sample.log");
+    logging::add_common_attributes();
+
+    logging_function1();
+    logging_function2();
+
+    return 0;
+}
+
+#+end_src
+
+**** TODO learn value?
+#+begin_src c++
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/log/sources/basic_logger.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <string>
+using std::string;
+
+#include <boost/mpl/vector.hpp>
+#include <boost/log/attributes/value_extraction.hpp>
+#include <boost/log/attributes/attribute_value_impl.hpp>
+#include <boost/log/utility/value_ref.hpp>
+
+#include <boost/log/attributes.hpp> //include all in attributes
+using boost::log::attribute_name;
+using boost::log::attribute_set;
+using boost::log::attribute_value;
+using boost::log::attribute_value_set;
+BOOST_AUTO_TEST_CASE(test_attr_name){
+  // Just a string
+  attribute_name n{"abc"};
+  BOOST_CHECK_EQUAL(n.string(),"abc");
+  // == operator is supported
+  BOOST_CHECK_EQUAL(n,"abc");
+  BOOST_CHECK_NE(n,"cba");
+}
+
+/*
+  🦜: the attribute value is very complex
+ */
+// #include <boost/log/attributes/constant.hpp>
+// using boost::log::attribute_value;
+// BOOST_AUTO_TEST_CASE(test_attr_value){
+//   attribute_value v(&boost::log::attributes::make_constant(10));
+// }
+
+// namespace log = boost::log;
+BOOST_AUTO_TEST_CASE(test_attribute_set) {
+  boost::log::sources::logger lg;
+  lg.add_attribute("aaa", boost::log::attributes::make_constant(10));
+  lg.add_attribute("bbb", boost::log::attributes::constant<string>("abc"));
+
+  attribute_set s = lg.get_attributes();
+  BOOST_CHECK(not s.empty());
+  BOOST_CHECK_EQUAL(s.count("aaa"),1);
+  BOOST_CHECK_EQUAL(s.count("ccc"),0);
+
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+BOOST_AUTO_TEST_CASE(test_attribute_value_set) {
+  boost::log::sources::logger lg;
+  lg.add_attribute("aaa", boost::log::attributes::make_constant(10));
+  lg.add_attribute("bbb", boost::log::attributes::constant<string>("abc"));
+
+  attribute_set s = lg.get_attributes();
+  attribute_value_set v{s,{},{}};
+  attribute_value a = v["abc"];
+  BOOST_CHECK_EQUAL(v.size(),2);
+
+  boost::log::value_ref< string > o = boost::log::extract< string >(a);
+  BOOST_CHECK(o);               // 🦜 : ???
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+BOOST_AUTO_TEST_CASE(test_extract) {
+  attribute_value a = boost::log::attributes::make_attribute_value(10);
+  boost::log::value_ref< int > o = boost::log::extract< int >(a);
+  BOOST_CHECK(o);
+  BOOST_CHECK_EQUAL(o.get(),10);
+} // BOOST_AUTO_TEST_CASE(test_no_1)
+
+// ?? Cannot extract the value in v?
+
+#+end_src
+*** Install on Windows
+**** install location
+Usually C:\Program Files\boost\boost_1_82_0,
+(But by default, the install prefix for ~b2.exe~ is set to C:\Boost.)
+After build I got the message
+#+begin_src powershell
+  # b2 --prefix C:\Users\congj\Downloads\install-boost_1_82_0   --build-dir=C:\Users\congj\Downloads\build-boost_1_82_0
+  # b2 --build-dir=C:\Users\congj\Downloads\build-boost_1_82_0
+  # 🦜 : It looks like both the above two won't work
+  .\b2.exe
+
+#+end_src
+
+After building
+#+begin_src comment
+  The following directory should be added to compiler include paths:
+
+    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0
+
+The following directory should be added to linker library paths:
+
+    C:\Users\congj\Downloads\boost_1_82_0\boost_1_82_0\stage\lib
+#+end_src
+
+**** HelloWorld
+***** CMakeLists.txt
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.20)
+  # set the project name and version
+  project(Hi VERSION 1.0)
+
+
+  # Version 1.82 is too high for findBoost
+  # set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
+
+  # So we must use the shipped BoostConfig.cmake
+  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  # The above dir contains the BoostConfig.cmake
+  find_package(Boost CONFIG REQUIRED COMPONENTS log)
+
+  add_executable(myexe test.cpp)
+  target_link_libraries(myexe PUBLIC Boost::log)
+
+  # cmake .. && cmake --build .
+  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
+
+#+end_src
+***** test.cpp
+#+begin_src c++
+  #include <boost/log/trivial.hpp>
+
+int main(int, char*[])
+{
+  BOOST_LOG_TRIVIAL(trace) << "A trace severity message";
+  BOOST_LOG_TRIVIAL(debug) << "A debug severity message";
+  BOOST_LOG_TRIVIAL(info) << "An informational severity message";
+  BOOST_LOG_TRIVIAL(warning) << "A warning severity message";
+  BOOST_LOG_TRIVIAL(error) << "An error severity message";
+  BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message";
+
+  return 0;
+}
+#+end_src
+
+*** TroubleShoot
+**** LINK : fatal error LNK1104: cannot open file 'libboost_log_setup-vc143-mt-gd-x64-1_82.lib'
+Original CMake and C++:
+
+Here we add a sink to the Boost::log core. This will link to the
+~libboost_log_setsup~, which should be compiled seperately, and it's another
+target.
+#+begin_src cmake
+  cmake_minimum_required(VERSION 3.20)
+  # set the project name and version
+  project(Hi VERSION 1.0)
+
+
+  set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+  # The above dir contains the BoostConfig.cmake
+  find_package(Boost REQUIRED COMPONENTS log)
+  # find_package(Boost CONFIG REQUIRED COMPONENTS log)
+
+  add_executable(myexe test.cpp)
+  target_link_libraries(myexe PUBLIC Boost::log)
+
+  # cmake .. && cmake --build .
+  add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
+
+#+end_src
+#+begin_src c++
+/*
+ *          Copyright Andrey Semashev 2007 - 2015.
+ * Distributed under the Boost Software License, Version 1.0.
+ *    (See accompanying file LICENSE_1_0.txt or copy at
+ *          http://www.boost.org/LICENSE_1_0.txt)
+ */
+
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+
+void init()
+{
+    logging::add_file_log("sample.log");
+    logging::core::get()->set_filter
+    (
+        logging::trivial::severity >= logging::trivial::info
+    );
+}
+
+int main(int, char*[])
+{
+    init();
+    logging::add_common_attributes();
+
+    using namespace logging::trivial;
+    src::severity_logger< severity_level > lg;
+
+    BOOST_LOG_SEV(lg, trace) << "A trace severity message";
+    BOOST_LOG_SEV(lg, debug) << "A debug severity message";
+    BOOST_LOG_SEV(lg, info) << "An informational severity message";
+    BOOST_LOG_SEV(lg, warning) << "A warning severity message";
+    BOOST_LOG_SEV(lg, error) << "An error severity message";
+    BOOST_LOG_SEV(lg, fatal) << "A fatal severity message";
+
+    return 0;
+}
+
+#+end_src
+Solution: should add the component ~Boost::log_setup~ in addition to
+~Boost::log~. (This target should be built)
+#+begin_src cmake
+cmake_minimum_required(VERSION 3.20)
+# set the project name and version
+project(Hi VERSION 1.0)
+
+
+# Version 1.82 is too high for findBoost
+# set(BOOST_ROOT "C:\\Program Files\\boost_1_82_0")
+
+set(Boost_DIR "C:\\Program Files\\boost_1_82_0\\stage\\lib\\cmake\\Boost-1.82.0")
+# The above dir contains the BoostConfig.cmake
+find_package(Boost REQUIRED COMPONENTS log log_setup)
+# find_package(Boost CONFIG REQUIRED COMPONENTS log)
+
+add_executable(myexe test.cpp)
+target_link_libraries(myexe PUBLIC Boost::log Boost::log_setup)
+
+# cmake .. && cmake --build .
+add_custom_target(run ALL myexe 1 COMMENT "Running App ❄")
+
+#+end_src
+**** what cmake targets are available
+#+begin_src bash
+  ls /usr/lib/x86_64-linux-gnu/libboost*.so
+#+end_src
+*** algorithm
+**** hex/unhex
+#+begin_src c++
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  #include <boost/algorithm/hex.hpp>
+  #include <string>
+  #include <iostream>
+
+  using std::cout;
+  using std::string;
+  using boost::algorithm::unhex;
+  using boost::algorithm::hex;
+  BOOST_AUTO_TEST_CASE(test_1) {
+    string s{"abc"};
+    string s2 = hex(s);
+    BOOST_CHECK_EQUAL(s2,string("616263"));
+    BOOST_CHECK_EQUAL(unhex(s2),string("abc"));
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
+
+  BOOST_AUTO_TEST_CASE(test_2) {
+    string s{"123"};
+    string s2 = hex(s);
+    BOOST_CHECK_EQUAL(s2,string("313233"));
+    BOOST_CHECK_EQUAL(unhex(s2),string("123"));
+  } // BOOST_AUTO_TEST_CASE(test_no_1)
+#+end_src
+
+* End
+# Local Variables:
+# org-what-lang-is-for: "c++"
+# End:

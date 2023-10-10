@@ -1,20 +1,126 @@
+** color
+#+begin_src python
+class S:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    MAG = '\033[93m'
+    RED = '\033[91m'
+    NOR = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+    #+end_src
 ** sleep
 #+begin_src python
   import time
   time.sleep(4)                   # 4 sec
 #+end_src
 ** subprocess
+*** run() for simple one-shot command
 #+begin_src python
-import subprocess
-s = subprocess.check_output(['cat','/etc/issue'],stderr=subprocess.STDOUT)
-# s = subprocess.check_output(['echo','hi'],stderr=subprocess.STDOUT)
-print(s.decode().strip())
+  import subprocess
+
+def test_non_capture():
+    c = subprocess.run(['echo','hi'])
+    # c is the CompletedProcess class
+    assert c.args == ['echo','hi']
+    assert c.returncode == 0
+    assert c.stderr == None     # output not captured
+    assert c.stdout == None     # output not captured
+
+
+def test_capture():
+    c = subprocess.run(['echo','hi'],capture_output=True, text=True)
+    # c is the CompletedProcess class
+    assert c.args == ['echo','hi']
+    assert c.returncode == 0
+    assert c.stderr == ''
+    assert c.stdout == 'hi\n'
+
+def test_cwd():
+    c = subprocess.run(['pwd'],capture_output=True, text=True)
+    # c is the CompletedProcess class
+    assert c.returncode == 0
+    assert c.stderr == ''
+    assert c.stdout == '/home/me/work/lcode\n'
+
+
+def test_cwd_spec():
+    c = subprocess.run(['pwd'],capture_output=True, text=True, cwd='/home/me')
+    # c is the CompletedProcess class
+    assert c.returncode == 0
+    assert c.stderr == ''
+    assert c.stdout == '/home/me\n'
+
+#+end_src
+*** Popen(): if you need to send stdin to it later
+#+begin_src python
+  import shutil
+  import sys
+  from subprocess import Popen, PIPE
+
+  def test_shutil():
+      assert '/home/me/work/lcode/myenv/bin/python' == shutil.which('python')
+      assert sys.executable ==  shutil.which('python3')
+      assert '/usr/bin/cat' == shutil.which('cat')
+
+  def test_popen():
+      # open a process and send stdin
+      p = Popen([shutil.which('cat')],stdin=PIPE,stdout=PIPE,stderr=PIPE)
+      # PIPE has to be specified in order to get these to python
+      out, err = p.communicate(input=b'abc\nabc',timeout=15)
+      # this will send the input and wait for it to terminate, this set the returncode.
+      assert p.returncode == 0
+      assert out == b'abc\nabc'
+      assert err == b''
+
+  def test_popen_text():
+      # open a process and send stdin
+      p = Popen([shutil.which('cat')],stdin=PIPE,stdout=PIPE,stderr=PIPE,text=True)
+      out, err = p.communicate(input='abc\nabc',timeout=15)
+      # this will send the input and wait for it to terminate, this set the returncode.
+      assert p.returncode == 0
+      assert out == 'abc\nabc'
+      assert err == ''
+
+  def test_terminate():
+      # open a process and send stdin
+      p = Popen([shutil.which('cat')],stdin=PIPE,stdout=PIPE,stderr=PIPE)
+      p.terminate()
+      assert p.returncode != 0
+
 
 #+end_src
 ** function
 #+begin_src python
 x = lambda a : a + 10
 print(x(5))
+#+end_src
+** scope
+1. Name _assignment_ create or change _local variables_ by default.
+2. Name _references_ search at most four scopes
+   - local
+   - enclosing functions (if any)
+   - global
+   - built-in
+3. Names declared in ~global~ and ~nonlocal~ statements map names to enclosing
+   module and function scopes, respectively.
+
+🦜 : Functions can freely use names assigned in syntactically enclosing
+functions and the global scope,
+
+but they _must_ declare such ~nonlocal~ and ~global~ in order to *change* them.
+
+#+begin_src python
+x = 1
+def f():
+    global x
+    x += 1
+f()
+x# == 2
+
 #+end_src
 ** yaml
 #+begin_src yaml
@@ -276,6 +382,12 @@ against '<a> b <c>', it will match the entire string, and not just '<a>'. Adding
 ? after the quantifier makes it perform the match in non-greedy or minimal
 fashion; as few characters as possible will be matched. Using the RE <.*?> will
 match only '<a>'.
+
+*** split
+#+begin_src python
+  'a:b:c'.split(sep=':',maxsplit=1)  # ⇒ ['a', 'b:c']
+#+end_src
+
 ** collections
 *** dic
 #+begin_src python
@@ -444,13 +556,79 @@ print("String after reverse sorting : " + str(res))
 #+end_src
 
 ** work with file
-*** write to file
 #+begin_src python
-  f = open('myfile.txt', 'a')
-  f.write('\nThis sentence will be appended.')
-  f.write('\nPython is here!')
-  f.close()
-#+end_src
+  import pathlib
+  from pathlib import Path
+
+  def test_write():
+      f = 'test.txt'
+      # Remove file if exists
+      Path(f).unlink(missing_ok=True)
+
+      o = open(f,'w')
+      assert 3 == o.write('abc')
+      o.close()                   # flush and close
+      assert Path(f).exists()
+
+  def test_flush_read():
+      f = 'test.txt'
+      # Remove file if exists
+      Path(f).unlink(missing_ok=True)
+
+      o = open(f,'w')
+      i = open(f)                 # default to read
+      assert 3 == o.write('abc')
+      assert i.read() == ''       # not flushed yet
+      o.flush()
+      assert i.read() == 'abc'    # now can be read
+      o.close()                   # flush and close
+      assert Path(f).exists()
+
+  def test_read_writelines():
+      f = 'test.txt'
+      # Remove file if exists
+      Path(f).unlink(missing_ok=True)
+
+      o = open(f,'w')
+      i = open(f)                 # default to read
+      o.writelines(['aa','bb','cc'])
+      o.flush()
+      assert i.read() == 'aabbcc'    # writelines() dosen't add \n itself
+      o.close()                   # flush and close
+      assert Path(f).exists()
+
+  def test_readlines_write():
+      f = 'test.txt'
+      # Remove file if exists
+      Path(f).unlink(missing_ok=True)
+
+      o = open(f,'w')
+      i = open(f)                 # default to read
+      assert 5 == o.write('a\nb\nc')
+      o.flush()
+      assert i.readlines() == ['a\n','b\n','c']    # readlines doesn't remove \n
+      o.close()                   # flush and close
+      assert Path(f).exists()
+
+
+  def test_seek():
+      f = 'test.txt'
+      # Remove file if exists
+      Path(f).unlink(missing_ok=True)
+
+      o = open(f,'w')
+      i = open(f)                 # default to read
+      assert 3 == o.write('abc')
+      o.flush()
+      assert i.read() == 'abc'
+      # the pointer is reset
+      assert i.read() == ''
+      i.seek(0)                   # reset to 0
+      assert i.read() == 'abc'
+      o.close()                   # flush and close
+      assert Path(f).exists()
+      Path(f).unlink(missing_ok=True)
+    #+end_src
 ** try except
 *** raise and except
 #+begin_src python
@@ -519,6 +697,349 @@ viously listed in the try statement.
       print(f'... World! x={x}')
 
   asyncio.run(main())
+#+end_src
+** concurrent
+*** thread-pool
+#+begin_src python
+x = 1
+def f():
+    global x
+    x = 2
+
+def test_scope():
+    f()
+    assert  x == 2
+
+from time import sleep
+from concurrent.futures import ThreadPoolExecutor
+def get_one():
+    return 1
+
+def test_basic_executor():
+    e = ThreadPoolExecutor(max_workers=2)
+    a = e.submit(get_one)
+    assert a.result() == 1
+
+def test_with_basic_executor():
+    with ThreadPoolExecutor(max_workers=2) as e:
+        a = e.submit(get_one)
+        assert a.result() == 1
+
+def get_slow_one(t=2):
+    sleep(t)
+    return 1
+
+def test_basic_executor():
+    with ThreadPoolExecutor(max_workers=2) as e:
+        secToSleep = 2
+        a = e.submit(get_slow_one,secToSleep)
+        assert not a.done()
+        sleep(secToSleep + 1)
+        assert a.done()
+        assert a.result() == 1
+
+def test_change_non_local():
+    x = 0
+    def add_x():
+        nonlocal x
+        x += 1
+    assert x == 0
+    add_x()
+    assert x == 1
+# nonlocal restricts scope lookup to just enclosing defs, requires that the names al-
+# ready exist there, and allows them to be assigned. Scope lookup does not continue
+# on to the global or built-in scopes.
+
+def test_change_non_local_thread():
+    x = 0
+    def add_x():
+        nonlocal x
+        x += 1
+        return True
+
+    assert x == 0
+    e = ThreadPoolExecutor(max_workers=2)
+    a = e.submit(add_x)
+
+    assert a.result()           # wait until finished
+    assert x == 1
+
+
+    #+end_src
+*** threading
+#+begin_src python
+from threading import Thread
+def test_f():
+    def f():
+        nonlocal x
+        x += 1
+
+    x = 0
+    assert x == 0
+    t = Thread(target=f)
+    t.start()
+    assert x == 1
+
+from time import sleep
+# from threading import Thread
+# from threading import Event
+# e = Event()
+# def f1():
+#     e.wait()
+#     print(f'f1 is here')
+
+# def f2():
+#     e.wait()
+#     print(f'f2 is here')
+
+# def g():
+#     sleep(2)
+#     print(f'Trigger event')
+#     e.set()
+
+# t = Thread(target=f1)
+# t.start()
+
+# t2 = Thread(target=f2)
+# t2.start()
+
+# t3 = Thread(target=g)
+# t3.start()
+
+from random import randrange
+from time import sleep
+import threading
+from threading import Lock
+def test_lock():
+
+    lock_for_x = Lock()
+    x = 0
+    N = 5
+    def plus_1():
+        nonlocal x
+        for i in range(N):
+            # sleep(randrange(1,3))
+            lock_for_x.acquire()
+            x += 1
+            print(f'[{threading.get_ident()}] makes it {x}')
+            lock_for_x.release()
+
+    t1 = Thread(target=plus_1)
+    t2 = Thread(target=plus_1)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+    assert x == 2*N
+
+def test_lock_with():
+    lock_for_x = Lock()
+    x = 0
+    N = 5
+    def plus_1():
+        nonlocal x
+        for i in range(N):
+            # sleep(randrange(1,3))
+            with lock_for_x:    # acquire, ..., release
+                x += 1
+                print(f'[{threading.get_ident()}] makes it {x}')
+
+    t1 = Thread(target=plus_1)
+    t2 = Thread(target=plus_1)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+    assert x == 2*N
+
+from threading import Timer
+def test_timer_ok():
+    x = 0
+    def f():
+        nonlocal x
+        x = 1
+
+    t = Timer(3.0,f)
+    t.start()
+    sleep(4)                    # wait, it should have been finished.
+    assert t.finished
+    assert x == 1
+
+
+
+def test_timer_cancel():
+    x = 0
+    def f():
+        nonlocal x
+        x = 1
+
+    t = Timer(3.0,f)
+    t.start()
+    sleep(1)                    # wait
+    t.cancel()                  # stop it
+    assert t.finished
+    assert x == 0
+
+    #+end_src
+*** timer and triggered (simulate a Raft Consensus)
+🦜 [CAUTION]: If there's a exception, by default, it fails silently.
+
+🦜 : Here we assumed everything happens to x is thread safe.
+#+begin_src python
+import time
+from time import sleep
+from concurrent.futures import ThreadPoolExecutor
+from random import randrange
+def test_countdown():
+    x = 5
+    triggered = False
+
+    def trigger():
+        nonlocal triggered
+        print(f'🐸 Triggered')
+        triggered = True
+
+    def down_x():
+        nonlocal x
+        while x > 0:
+            print(f'❄ {x}')
+            sleep(1)
+            x -= 1
+            print(f'After: {x}')
+        print(f'❄ Trigger')
+        trigger()
+
+    def add_x():
+        nonlocal x
+        while x > 0:
+            t = randrange(0,8)  # coming in 0-7 secs
+            print(f'🐸 Comming in {t}')
+            sleep(t)
+            x = 5
+            if triggered:
+                break
+        print(f'🐸 : bye')
+
+    e = ThreadPoolExecutor(max_workers=3)
+    a = e.submit(add_x)
+    b = e.submit(down_x)
+test_countdown()
+#+end_src
+*** timer and triggered with lock
+#+begin_src python
+import time
+from time import sleep
+from concurrent.futures import ThreadPoolExecutor
+from random import randrange
+from threading import Lock
+def test_countdown():
+    x = 5
+    lock_for_x  = Lock()
+    triggered = False
+
+    def trigger():
+        nonlocal triggered
+        print(f'🐸 Triggered')
+        triggered = True
+
+    def down_x():
+        nonlocal x
+        while x > 0:
+            print(f'❄ {x}')
+            sleep(1)
+            with lock_for_x:
+                x -= 1
+            print(f'After: {x}')
+        print(f'❄ Trigger')
+        trigger()
+
+    def add_x():
+        nonlocal x
+        while x > 0:
+            t = randrange(0,8)  # coming in 0-7 secs
+            print(f'🐸 Comming in {t}')
+            sleep(t)
+            with lock_for_x:
+                x = 5
+            if triggered:
+                break
+        print(f'🐸 : bye')
+
+    e = ThreadPoolExecutor(max_workers=3)
+    a = e.submit(add_x)
+    b = e.submit(down_x)
+test_countdown()
+#+end_src
+*** simple deadlock
+#+begin_src python
+from threading import Thread, Timer, Lock
+
+lock_for_a = Lock()
+a = 2
+def f():
+    with lock_for_a:
+        print('Trigger a deadlock')
+        g()
+def g():
+    with lock_for_a:
+        print('Hi')
+#f() #Trigger a deadlock
+
+def f2():
+    with lock_for_a:
+        print('Won\'t trigger a deadlock')
+        Thread(target=g).start()
+f2()
+#Won't trigger a deadlock
+#Hi
+#+end_src
+** bytes
+#+begin_src python
+  # python code demonstrating
+  # int to bytes
+  str = "Welcome to Geeksforgeeks"
+  arr = bytes(str, 'utf-8')
+  print(arr)                      # b'Welcome to Geeksforgeeks'
+
+  # python code to demonstrate
+  # int to bytes
+  number = 12
+  result = bytes(number)          # b'\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00 \x00\x00'
+  print(bytes())                  # b''
+  l = [1,2,3,4,5]
+  bs = bytes(l)              # b'\x01\x02\x03\x04\x05'
+  bs.hex()
+  b'abc'.hex()               # '616263'
+
+
+  import codecs
+  codecs.decode(b'123')           # ⇒ '123' (utf-8 decoding)
+  # a = bytearray(bs)
+  # len(a)                          # 5
+  # hex_string = a.hex()
+  # for b in a:
+  #     print(b)
+#+end_src
+** json
+#+begin_src python
+  import json
+
+def test_dumps():
+    o =  {'x': ('b', None, 1.0, 2)}
+    s = json.dumps(o)
+    assert s == '{"x": ["b", null, 1.0, 2]}'
+
+    s = json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4)  # indent
+
+def test_loads():
+    s = '{"x": ["b", null, 1.0, 2]}'
+    o = json.loads(s)
+    assert o ==  {'x': ['b', None, 1.0, 2]}
+
 #+end_src
 * End
 

@@ -1,0 +1,357 @@
+** pathlib
+#+begin_src python
+  # ptw test_one.py -- -vv
+  from pathlib import Path
+  import pytest
+
+  def test_basic():
+      p = Path.home()
+      p1 = Path.cwd()
+
+      assert str(p) == '/home/me'
+      assert str(p.absolute()) == '/home/me'
+
+      assert p.exists()
+      assert p1.exists()
+      assert p.is_dir()
+      assert not p.is_file()
+      assert p.is_absolute()
+
+  def test_mkdir():
+      p = Path.cwd() / 'd1'
+      assert not p.exists()
+      assert not p.is_file()
+      assert not p.is_dir()
+
+      p.mkdir()
+
+      assert p.exists()
+      assert p.is_dir()
+
+      p.rmdir()                   # must be empty
+      assert not p.exists()
+
+      # 🦜 : If dir is not empty, we can't remove it. We need to resort to shutil
+
+  import shutil
+  def test_rmdir():
+      p = Path.cwd() / 'd1'
+      p1 = p / 'd1-1'
+      assert not p.exists()
+      assert not p1.exists()
+
+      p.mkdir()
+      p1.mkdir()
+      assert p.exists()
+      assert p1.exists()
+
+      with pytest.raises(OSError):
+          p.rmdir()
+
+      print(f'Removing dir: {str(p.absolute())}')
+      shutil.rmtree(str(p.absolute()))
+
+
+  def test_write_txt():
+      p = Path.cwd() / 'hi.txt'
+      assert not p.exists()
+      assert not p.is_file()
+      assert not p.is_dir()
+
+
+      assert 3 == p.write_text('abc')
+      assert p.exists()
+      assert p.is_file()
+      assert p.read_text() == 'abc'
+
+      p.unlink()                   # remove the file
+      assert not p.exists()
+    #+end_src
+
+** udp
+*** with asyncio
+**** official example: echo
+
+🦜 : The official example will send a datagram and wait for a response from the
+server.
+
+***** client
+#+begin_src python
+import asyncio
+
+
+class EchoClientProtocol:
+    def __init__(self, message, on_con_lost):
+        self.message = message
+        self.on_con_lost = on_con_lost
+        self.transport = None
+
+    def connection_made(self, transport):
+        self.transport = transport
+        print('Send:', self.message)
+        self.transport.sendto(self.message.encode())
+
+    def datagram_received(self, data, addr):
+        print("Received:", data.decode())
+
+        print("Close the socket")
+        self.transport.close()
+
+    def error_received(self, exc):
+        print('Error received:', exc)
+        self.transport.close()
+
+    def connection_lost(self, exc):
+        print("Connection closed")
+        self.on_con_lost.set_result(True)
+
+
+async def main():
+    # Get a reference to the event loop as we plan to use
+    # low-level APIs.
+    loop = asyncio.get_running_loop()
+
+    on_con_lost = loop.create_future()
+    message = "aaa"
+
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: EchoClientProtocol(message, on_con_lost),
+        remote_addr=('127.0.0.1', 7778))
+
+    try:
+        await on_con_lost
+    finally:
+        transport.close()
+
+
+asyncio.run(main())
+
+#+end_src
+
+***** server
+#+begin_src python
+import asyncio
+
+
+class EchoServerProtocol:
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def datagram_received(self, data, addr):
+        message = data.decode()
+        print('Received %r from %s' % (message, addr))
+        print('Send %r to %s' % (message, addr))
+        self.transport.sendto(data, addr)
+
+
+async def main():
+    print("Starting UDP server")
+
+    # Get a reference to the event loop as we plan to use
+    # low-level APIs.
+    loop = asyncio.get_running_loop()
+
+    # One protocol instance will be created to serve all
+    # client requests.
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: EchoServerProtocol(),
+        local_addr=('127.0.0.1', 7777))
+
+    try:
+        await asyncio.sleep(3600)  # Serve for 1 hour.
+    finally:
+        transport.close()
+
+
+asyncio.run(main())
+
+#+end_src
+
+**** my example: send and close()
+
+***** client
+#+begin_src python
+import asyncio
+
+
+class EchoClientProtocol:
+    def __init__(self, message, on_con_lost):
+        self.message = message
+        self.on_con_lost = on_con_lost
+        self.transport = None
+
+    def connection_made(self, transport):
+        self.transport = transport
+        print('Send:', self.message)
+        self.transport.sendto(self.message.encode())
+        # 🦜 : Here we just send a message and stop.
+        self.transport.close()
+        """
+
+        🦜 : Will this flush the buffer to be sent ?
+
+        🐢 : Yes. If the transport has a buffer for outgoing data, buffered
+        data will be flushed asynchronously.
+
+        No more data will be received. After all buffered data is flushed, the
+        protocol’s protocol.connection_lost() method will be called with None
+        as its argument.
+
+        The transport should not be used once it is closed. """
+
+    def error_received(self, exc):
+        print('Error received:', exc)
+        self.transport.close()
+
+    def connection_lost(self, exc):
+        print("Connection closed")
+        self.on_con_lost.set_result(True)
+
+
+async def main():
+    # Get a reference to the event loop as we plan to use
+    # low-level APIs.
+    loop = asyncio.get_running_loop()
+
+    on_con_lost = loop.create_future()
+    message = "aaa"
+
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: EchoClientProtocol(message, on_con_lost),
+        remote_addr=('127.0.0.1', 7777))
+
+    try:
+        await on_con_lost
+    finally:
+        transport.close()
+
+
+asyncio.run(main())
+
+#+end_src
+
+***** server
+#+begin_src python
+
+*** with socketserver
+**** example: one-way send and close
+server
+#+begin_src python
+import socketserver
+
+class MyUDPHandler(socketserver.BaseRequestHandler):
+    """
+    This class works similar to the TCP handler class, except that
+    self.request consists of a pair of data and client socket, and since
+    there is no connection the client address must be given explicitly
+    when sending data back via sendto().
+    """
+
+    def handle(self):
+        data = self.request[0].strip()
+        socket = self.request[1]
+        print("{} wrote:".format(self.client_address[0]))
+        print(data)
+        socket.sendto(data.upper(), self.client_address)
+
+if __name__ == "__main__":
+    HOST, PORT = "localhost", 7777
+    with socketserver.UDPServer((HOST, PORT), MyUDPHandler) as server:
+        server.serve_forever()
+
+#+end_src
+client
+#+begin_src python
+import socket
+import sys
+
+HOST, PORT = "localhost", 7777
+# data = " ".join(sys.argv[1:])
+data = "aaa"
+
+# SOCK_DGRAM is the socket type to use for UDP sockets
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# As you can see, there is no connect() call; UDP has no connections.
+# Instead, data is directly sent to the recipient via sendto().
+sock.sendto(bytes(data + "\n", "utf-8"), (HOST, PORT))
+# received = str(sock.recv(1024), "utf-8")
+
+print("Sent:     {}".format(data))
+# print("Received: {}".format(received))
+
+#+end_src
+**** q to quit server
+server
+#+begin_src python
+import socketserver
+import threading
+
+class MyUDPHandler(socketserver.BaseRequestHandler):
+    """
+    This class works similar to the TCP handler class, except that
+    self.request consists of a pair of data and client socket, and since
+    there is no connection the client address must be given explicitly
+    when sending data back via sendto().
+    """
+
+    def handle(self):
+        data = self.request[0].strip()
+        socket = self.request[1]
+        print("{} wrote:".format(self.client_address[0]))
+        print(data)
+        socket.sendto(data.upper(), self.client_address)
+
+
+if __name__ == "__main__":
+    HOST, PORT = "localhost", 7777
+    with socketserver.UDPServer((HOST, PORT), MyUDPHandler) as server:
+        # Start a thread with the server -- that thread will then start one
+        # more thread for each request
+        server_thread = threading.Thread(target=server.serve_forever)
+        # Exit the server thread when the main thread terminates
+        server_thread.daemon = True
+        server_thread.start()
+
+        s = input('Enter anything to quit\n')
+        server.shutdown()
+
+    print('👋 server closed')
+
+
+    #+end_src
+** v6
+
+server
+#+begin_src python
+# Echo server program
+import socket
+
+HOST = '::1'                 # ipv6 localhost
+PORT = 7777              # Arbitrary non-privileged port
+
+# create an IPv6 socket
+with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+    s.bind((HOST, PORT,0,1))    # the 0 and 1 are the flow info and scope id.
+    # 1 means the interface is the loopback interface
+    print('Listening on port', PORT)
+    s.listen(1)
+    conn, addr = s.accept()
+    with conn:
+        print('Connected by', addr)
+        while True:
+            data = conn.recv(1024)
+            if not data: break
+            conn.sendall(data)
+
+#+end_src
+
+call it
+#+begin_src bash
+  nc ::1 7777
+#+end_src
+* End
+
+# Local Variables:
+# org-what-lang-is-for: "python"
+# End:

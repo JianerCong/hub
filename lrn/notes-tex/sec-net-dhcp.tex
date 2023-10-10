@@ -1,0 +1,215 @@
+\section{DHCP}
+\label{sec:dhcp}
+
+DHCP uses UDP. The client uses a link-local address (obtained from whatever
+means) to send a DHCP message to a \cola{reserved multicast address}. Then the server will answer it.
+
+\subsection{Terminology}
+\label{sec:dhcp-term}
+
+\begin{enumerate}
+\item appropriate to the link: 
+  \colz{
+    An address is \cola{appropriate to the link} if
+    the address is consistent with the DHCP's server's knowledge of the
+    \begin{enumerate}
+    \item network topology
+    \item prefix assignment
+    \item address assignment policies
+    \end{enumerate}
+  }
+\item Identity association (IA) \colz{
+    A collection of addresses assigned to a client.
+
+    An interface can have one or more IAs, but each IA can only bind to one interface.
+
+    Each IA has an associated \texttt{IAID}, which is chosen by the client.
+    IAIDs should be unique within the client.
+  }
+\item IA for temporary addresses (IA-TA) \colz{
+    A type of IA, self-explanatory.
+  }
+\item IA for non-temporary addresses (IA-NA) \colz{
+    Another type of IA.
+  }
+\item \texttt{DUID} \colz{
+    DHCP Unique Identifier. It's unique for both DHCP client and server.
+
+\colZ{So it's not one per interface, but one per client.}
+  }
+\item binding \colz{
+
+    A \cola{binding} is a set of some server data the server knows about the
+    addresses in
+    \begin{enumerate}
+    \item an IA
+    \item configuration explicitly assigned to the client
+    \end{enumerate} .
+    \colZ{
+      So you can bind configuration to an IA, or explicitly to a client.
+    }
+
+    In the first case, binding is indexed by the tuple:
+    \begin{center}
+      \ttfamily
+      (\cola{DUID}, \colb{IA\_Type}, \colc{IAID})
+    \end{center}
+    In the second case, binding is indexed just by \cola{\texttt{DUID}}.
+
+    Some congifuration info do not need a binding. They are sent through a
+    policy, such as info boardcast to all clients on the link.
+  }
+\item configuration parameter \colz{data to kept by server and to be
+    sent to client.}
+\item DHCP client \colz{a host using DHCP to obtain \colZ{configuration
+      parameters}.}
+\item DHCP server \colz{a node that responds to requests from DHCP clients.}
+\item DHCP relay agent \colz{
+    a node that acts as an intermediary to deliver DHCP messages between clients
+    and servers. It's on the same link as the client, but not necessarily same
+    as the server.
+  }
+\item DHCP domain \colz{
+    a set of links managed by DHCP and operated by a single administrative entity.
+  }
+\item DHCP realm \colz{a name used to identify a DHCP domain.}
+\item Reconfigure key \colz{
+    A key supplied to a client by a server used to provide security for
+    Reconfigure messages.
+  }
+\item transaction ID \colz{
+    An opaque value used to match responses with requests.
+  }
+\end{enumerate}
+
+\subsection{DHCP Constant}
+\label{sec:dhcp-const}
+
+Some constants used in DHCP are shown in \cref{tab:dhcp-const}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabularx}{\linewidth}{XsX}
+    Name & Value & Description \\[1ex]
+    \hline
+    \verb|All_DHCP_Relay_Agents_and_Servers| & \verb|ff02::1:2| & A link-scoped
+                                                                  multicast
+                                                                  address. \\
+    \verb|All_DHCP_Servers| & \verb|ff05::1:3| & A site-scoped multicast\\
+    client UDP port & 546 & \\
+    server UDP port & 547 & \\
+  \end{tabularx}
+  \caption{DHCP Constant}
+  \label{tab:dhcp-const}
+\end{table}
+
+DHCP also defines some message types, shown in \cref{tab:dhcp-msg-type}.
+
+\begin{longtblr}[caption = {DHCP Message Type.},
+  label = {tab:dhcp-msg-type}
+  ]%
+  {colspec={ssX},
+    rowhead = 1, % first row is shown on every page
+  }
+  \toprule
+  % A & B & C \\
+  \mbox{Name} & \mbox{Value} & \mbox{Description} \\
+  \midrule
+    \texttt{Solicit} & 1 & \colz{Sent by client to locate servers.} \\
+    \texttt{Advertise} & 2 & \colz{Sent by server to indicate its presence.Usually as a
+                           response to \texttt{Solicit}.} \\
+
+    \texttt{Request} & 3 & \colz{Sent by client to request configuration parameters
+                         (including addresses) from a server.} \\
+    \texttt{Confirm} & 4 & \colz{Sent by client to say whether the once assigned
+                         addresses are still \cola{appropriate to the link}.} \\
+    \texttt{Renew} & 5 & \colz{
+                       Sent by client to \colZ{the origin server} to extend the lifetimes of addresses and
+                       to update other configuration parameters. 
+                       }\\
+    \texttt{Rebind} & 6 & \colz{
+                        Similar to \texttt{Renew}, but sent to \colZ{any server}.
+                        This is sent when no response to \texttt{Renew} is received.
+                        } \\
+    \texttt{Reply} & 7 & Sent by server to respond to \cola{all kinds of message} sent
+                       by client.
+                       \colz{
+                       This more or less dumps the current configuration parameters that
+                       server knows to the client.
+                       } \\
+    \texttt{Release} & 8 & \colz{
+                         Sent by client to release some addresses assigned to it.
+                         } \\
+    \texttt{Decline} & 9 & \colz{
+                         Sent by client to complain that the addresses assigned
+                         to it are already in use.
+                         } \\
+    \texttt{Reconfigure} & 10 & \colz{
+                              Sent by server to inform clients that the server
+                              has new configuration parameters, so clients
+                              should request them.(i.e. start a new
+                              \texttt{Renew/Reply} transaction).
+                            }\\
+
+    \texttt{Information-Request} & 11 & \colz{
+                                       Sent by client to request configuration
+                                       parameters without assigning addresses.
+                                     } \\
+    \texttt{Relay-Forward} & 12 & \colz{ Sent by relay agent to forward messages
+      between client, server and probably other relay agents.} \\
+    \texttt{Relay-Reply} & 13 & \colz{ Sent by server to respond to relay agent.} \\
+                              \bottomrule
+\end{longtblr}
+
+There're also some constants such as the timeout and max-try, but let's move on.
+
+\subsection{DHCP Message Format}
+
+
+All DHCP messages exchanged between server and client have a fixed format shown
+in \cref{tab:dhcp-msg-format-server-client}.
+
+\begin{longtblr}[caption = {server-client DHCP message format.}, label = {tab:dhcp-msg-format-server-client}]%
+  {colspec={ssX},
+    rowhead = 1, % first row is shown on every page
+  }
+  \toprule
+  \mbox{Name} & \mbox{Size (bytes)} & \mbox{Description} \\
+  \midrule
+  \texttt{msg-type} & 1 & \colz{self-explanatory} \\
+  \texttt{transaction-id} & 3 & \colz{self-explanatory } \\
+  \texttt{options} & \colz{variable} & \colz{payloads} \\ 
+  \bottomrule
+\end{longtblr}
+
+However, the message format between relay agent and server is different, shown
+in \cref{tab:dhcp-msg-format-relay-server}.
+
+\begin{longtblr}[caption = {server-relay DHCP Message Format.}, label = {tab:dhcp-msg-format-relay-client}]%
+  {colspec={ssX},
+    rowhead = 1, % first row is shown on every page
+  }
+  \toprule
+  \mbox{Name} & \mbox{Size (bytes)} & \mbox{Description} \\
+  \midrule
+  \texttt{msg-type} & 1 & \colz{= \texttt{Relay-Forward | Relay-Reply}} \\
+  \texttt{hop-count} & 1 & \colz{number of relay agents that have relayed this
+                           message.} \\
+                         \texttt{link-address} & 16 & \colz{
+                           A global or site-local address that will be used by
+                           the server to identify the \colZ{link on which the client is located.}
+                         } \\
+                         \texttt{peer-address} & 16 & \colz{
+                           The address of the client or relay agent from which
+                           the message was received.
+                         } \\
+                         \texttt{options} & \colz{variable} &
+                         \cola{\texttt{<Relay Message option>} + }
+                         \colz{other options} \\ 
+  \bottomrule
+\end{longtblr}
+
+\subsection{DUID}
+
+A DUID consists of a two-octet \cola{type field} and a variable-length
+\cola{identifier field}. A DUID can be no more than 128 octets long. 

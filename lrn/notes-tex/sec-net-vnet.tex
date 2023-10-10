@@ -1,0 +1,65 @@
+
+\section{Network Virtualization}
+\label{sec:net-virt}
+
+\colz{
+  There are a lots of overlay and inline virtual network solutions, but only few
+  are deployed in production. 
+}
+
+\begin{itemize}
+\item \Cola{VLAN} : \colz{
+    is only deployed in the \cola{first-hop router}. It's limited to a single
+    hop, but it's simple to deploy.
+  }
+\item \Cola{VRF} : \colz{ is an inline solution. It carves a single physical
+    interface into multiple interfaces.
+  }
+\item \Cola{VXLAN} : \colz{ is an overlay solution. The probably most popular
+    one in the industry. It's a L2-over-L3 tunnel. It's usually coupled with VRF
+    to provide a \cola{full bridging and routing overlay solution.}
+  }
+\end{itemize}
+
+VXLAN \colz{uses UDP. The tunnel edges are called \cola{VXLAN Tunnel Endpoints (VTEPs)}. 
+} 
+
+\begin{tikzpicture}
+  \node[text width=0.8\linewidth,below left]{
+    \begin{tblr}{|X|X|X|X|X|X|X|X|}
+      \hline
+      % Alpha & Beta & Gamma & Delta & Epsilon & Zeta \\
+      \SetCell[c=4]{c} \texttt{16} UDP Source Port & 2-2 & 2-3 & 2-4 &
+      \SetCell[c=4]{c} \texttt{16} UDP Destination Port(=4789) & 2-6 & 2-7 & 2-8 \\
+      \hline
+      \SetCell[c=4]{c} \texttt{16} UDP Length & 3-2 & 3-3 & 3-4 &
+      \SetCell[c=4]{c} \texttt{16} UDP Checksum(=0) & 3-6 & 3-7 & 3-8 \\
+      \hline
+      \texttt{RRRR1} & \SetCell[c=7]{c} \texttt{27} Reserved & 4-3 & 4-4 & 4-5 & 4-6 & 4-7 & 4-8 \\
+      \hline
+      \SetCell[c=6]{c} \texttt{24} VXLAN Network Identifier(VNI) & 5-2 & 5-3 & 5-4 & 5-5 & 5-6 &
+      \SetCell[c=2]{c} \texttt{8} Reserved & 5-8 \\
+      \hline
+    \end{tblr}
+  };
+  \draw[very thick, stealth-stealth] (1em,0) -- ++(0,-4em)
+  node [midway, right] {UDP Header};
+\end{tikzpicture}
+
+
+\subsection{VLAN bridging and routing}
+\colz{
+  In bridging, packet forwarding works by looking up a packet's destination MAC
+  address in the MAC table. Every packet, whether it is routed or not, is
+  typically looked up in a \cola{MAC table,} if \cola{the receiving interface is
+    a bridged interface.} If not, (such as on interswitch links), the
+  destination MAC address must be owned by the receiving interface or else the
+  \colZ{packect is dropped.}
+
+  If the destination MAC address belongs to the router, the packet is \cola{flagged
+    for routing.} In case of a bridged interface, the MAC address of the local
+  router is \cola{flagged for delivery to a logical interface belonging to the
+    router on that bridge.} This is commonly called a \Cola{Switched VLAN
+    Interface (SVI).} If the destination MAC address belongs to the SVI, the
+  packacked is \cola{flagged for routing.}
+}

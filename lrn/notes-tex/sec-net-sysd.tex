@@ -1,0 +1,202 @@
+
+\section{systemd}
+\label{sec:sysd-network}
+
+\subsection{Description}
+
+The main network must have the extension \texttt{.network}.
+
+The \texttt{.network} files are read from
+
+\begin{enumerate}
+\item \cola{\texttt{/lib/systemd/network/}} : \colz{persistent}
+\item \cola{\texttt{/usr/local/lib/systemd/network/}} : \colz{persistent}
+\item \colb{\texttt{/run/systemd/network/}} : \colz{transient}
+\item \colc{\texttt{/etc/systemd/network/}} : \colz{local admin}
+\end{enumerate}
+
+All config files are sorted (folders flattened) and read.
+\colz{
+  However, files with same names replace each other. The order is:
+}
+
+\begin{center}
+  \ttfamily
+  \colc{/etc/} > \colb{/run/} > \cola{/usr/} > \cola{/lib/}
+  \rmfamily
+  % \hfill
+  \hspace{0.05\linewidth}
+  (i.e. user's override system's)
+\end{center}
+
+\colz{An exception is that, if a file is empty or a symlink pointing to
+  \texttt{/dev/null}, it will be disabled (masked).
+  
+  Along with the network file \texttt{aaa.network}, a ``drop-in'' directory
+  \texttt{aaa.network.d/} may exist. All \texttt{.conf} files in it will be
+  merged into \texttt{aaa.network}. Each of them must have appropriate section
+  headers.
+}
+
+\subsection{Sections}
+
+\newcommand{\secM}{\cola{\texttt{[Match]}}}
+\newcommand{\secN}{\colb{\texttt{[Network]}}}
+
+Each network file has two sections: \secM{} and \secN{}.
+
+\secM{} tells to whom the network config applies.
+\secN{} tells what to apply.
+
+\colb{The first matching network file is applied, and the rest are ignored.} If
+you just want to apply to all interface, do :
+\begin{simplecf}
+  [Match]
+  Name=*
+\end{simplecf}
+
+Some basic settings are shown below:
+\begin{simplecf}
+  [MATCH]
+
+# space-separated list of MAC address (Yes, forging the MAC is as simple as
+# this)
+MACAddress=01:23:45:67:89:ab 00-11-22-33-44-55 AABB.CCDD.EEFF
+
+# space-separated list of device type, try: networkctl list
+Type=ether wlan
+
+[NETWORK]
+
+Description=My wired network settings
+
+DHCP=yes                        # or ipv4, ipv6, no
+
+# For v6, usually, an RA will trigger the DHCPv6 client. But If you turn on
+# DHCPv6 here explicitly, the client will be started even if there is no RA.
+
+# systemd has built-in DHCPv4 server, but it is not enabled by default.
+# DHCPServer=no 
+
+# Enable link-local address autoconfiguration. Accepts yes, no, ipv4, and ipv6.
+# Defaults to "no" when Bridge=yes, else "ipv6"
+LinkLocalAddressing=ipv6
+# LinkLocalAddressing=no
+
+# Defaults to "stable-private" if IPv6StableSecret= is set, otherwise "eui64".
+IPv6LinkLocalAddressGenerationMode=stable-privacy
+# IPv6LinkLocalAddressGenerationMode=eui64
+# IPv6LinkLocalAddressGenerationMode=none
+# IPv6LinkLocalAddressGenerationMode=random
+
+# Takes an IPv6 address. If set, the address is used as the stable secret for
+# generating IPv6 link-local address. If
+# IPv6LinkLocalAddressGenerationMode=stable while this is not set, then an
+# address will be generated from the local machine ID and interface name.
+IPv6StableSecretAddress=fe80::1
+
+\end{simplecf}
+
+\subsubsection{\texttt{IPv6Token}}
+
+The \colb{\texttt{IPv6Token}} option specifies an optional address generation
+mode for SLAAC. Supported modes are \texttt{prefixstable} and \texttt{static}.
+
+\colz{
+
+  When set to \cola{\texttt{static}}, an IPv6 address must be specified after a colon
+  (\texttt{:}), and the \colZ{lower bits} of the supplied address are combined
+  with the upper bits of a prefix received in a \cola{Router Advertisement}
+  message to form a complete address.
+
+  If no mode is specified, \texttt{static} is assumed. For example:
+}
+\begin{simplecf}
+  IPv6Token=static:::1a:2b:3c:4d
+  #IPv6Token=::1a:2b:3c:4d
+\end{simplecf}
+\colz{
+  Note that if multiple prefixes are received in RA. Then addresses will be
+  formed from each of them using the supplied address.
+
+  This mode \colZ{implement SLAAC} but uses a static \cola{interface id} instead of one
+  from EUI-64. But because this is static, if \cola{Duplicate Address Detection}
+  detects that the address is already in use,this mode will fail.
+
+
+  When the mode is set to \cola{\texttt{prefixstable}}, the RFC 7217[1] algorithm is
+  used. This mode optionally takes an IPv6 address. In that case, only RA
+  prefixes that matches the supplied address can be used to generate \cola{interface id}.
+}
+
+\begin{simplecf}
+  IPv6Token=prefixstable
+  # IPv6Token=prefixstable:2002:da8:1::
+\end{simplecf}
+
+\subsection{\texttt{Address}}
+
+A static IPv4 or IPv6 address and its prefix length, separated by a slash
+(\texttt{/}). This is a short-hand for an \texttt{[Address]} section only
+containing an Address key.
+
+\dSay{
+  Can I just let the localhost to randomly choose one. 
+}
+
+\cSay{
+  Yes. If the specified address is
+  \begin{enumerate}
+  \item \cola{\texttt{0.0.0.0}} or
+  \item \cola{\texttt{::}}
+  \end{enumerate}
+  \colz{
+    a new address range of the required size if automatically selected from a
+    system-wide pool of unused ranges.
+  }
+  Note that the prefix length must be equal or larger than 8 for IPv4, and 64
+  for IPv6.
+
+  The default pool consists of just the ``private'' address ranges:
+  \begin{enumerate}
+  \item \cola{\texttt{192.168.0.0/16}}
+  \item \cola{\texttt{172.16.0.0/12}}
+  \item \cola{\texttt{10.0.0.0/8}}
+  \item \cola{\texttt{fd00::/8}}
+  \end{enumerate}
+}
+
+
+\subsection{\texttt{IPForward}}
+
+Can be \texttt{yes | no | ipv4 | ipv6}. Defaults to \texttt{no}. If enabled,
+incomming packets on any network interface will be forwarded to any other
+interfaces according to the \cola{routing table}. \colz{This controls the
+  \texttt{net.ipv4.ip\_forward} and \texttt{net.ipv6.conf.all.forwarding}
+  \texttt{sysctl} options.
+
+  This setting controls a \cola{global kernel option}: if a (network that has
+  this setting enabled) is set up, the global setting is turned on. However, it
+  is never turned off again, even if all (networks with this setting enabled)
+  are shut down afterwards.
+
+  To allow IP packet forwarding only between specific network interfaces, use a
+  \cola{firewall}. }
+
+\subsection{\texttt{IPMasquerade}}
+
+Can be \texttt{both | no | ipv4 | ipv6}. Defaults to \texttt{no}. If enabled,
+packets forwarded from the network interface will appear as coming from the
+localhost. If enabled, this sets the \texttt{IPForward} option accordingly.
+
+\subsection{IPv6 RA-related}
+
+Under the network section, there's a \texttt{IPV6AcceptRA= true | false} option.
+\colz{
+  The default \texttt{true}, unless the device is bridge or when IP forwarding is
+  enabled.
+}
+
+When enabled, you might want to configure the \texttt{[IPv6AcceptRA]} section:
+
+

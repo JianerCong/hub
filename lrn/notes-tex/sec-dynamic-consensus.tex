@@ -1,0 +1,805 @@
+
+\section{听一个共识}
+让我们来想一个共识。优先要求这几点：
+\begin{itemize}
+\item 单节点可跑
+\item 可（相对方便地）动态新增节点
+\end{itemize}
+\emoji{parrot} : 那么最简单的应该就是
+\begin{myBox}{听一个共识 Listen-to-one Consensus}
+  \label{cons-a}
+  \begin{itemize}
+  \item 第一个起的节点为Primary。
+  \item 新增的节点往Primary上连接。
+  \end{itemize}
+\end{myBox}
+
+\emoji{parrot} : 这个其实本质上就是在集群内部的一个 Server-Client 架构嘛。
+也就是所有人都只听Primary的。
+\begin{center}
+  \begin{tikzpicture}
+    % \tikzstyle{every node}=[inner sep=2pt]
+    \node[myNode,fill=\mycola,minimum height=4em] (a1) {primary};
+    \foreach \d in {0,60,...,300}{
+      \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray]{新增节点};
+      % \node[myNode,fill=gray]  at (\d:2cm) {};
+    }
+  \end{tikzpicture}
+\end{center}
+这个的缺点就是\cola{主机down了，集群就down了}。它的优点就是新增的节点只需要和主
+节点连接就行，而且非primary彼此不需要知道彼此。
+
+\begin{tikzpicture}
+  \emoji{parrot} 那么代码该怎么写呢？\\
+  \emoji{turtle} 在写代码之前我们先定义共识所需要的接口吧。
+\end{tikzpicture}
+\subsection{共识需要的接口}
+抽象一点讲，共识最少需要两组外部接口。
+\begin{enumerate}
+\item 网络，这个包括
+  \begin{itemize}
+  \item 接受外部的请求（监听）
+  \item P2P沟通 （监听 + 发送）
+  \end{itemize}
+\item 执行，把一个命令写到内部存储。
+\end{enumerate}
+网络的接口大概可以定义为：
+\begin{simplepy}
+class IEndpointBasedNetworkable(ABC):
+    def listen(self,
+               target: str,     # The target, e.g. "/"
+               handler: Callable[[str,str],Optional[str]]
+               # The handler, accepts
+               #  - endpoint, e.g. "localhost:8080"
+               #  - request data
+               # returns the result
+               ):
+        pass
+    def listened_endpoint(self) -> str:
+        pass
+    def send(self,endpoint: str, target: str, data: str) -> Optional[str]:
+        # endpoint: the target, e.g. "localhost:8080"
+        # target: e.g. "/hi"
+        pass
+    def clear(self):                # clears up all the listeners
+        pass
+\end{simplepy}
+而执行的接口，大概是这样的：
+\begin{simplepy}
+class IExecutable(ABC):
+    def execute(self,command: str) -> str:
+        pass
+\end{simplepy}
+
+\subsection{\textbf{听一个共识}，代码实现}
+那么现在我们可以开始码了,先从构建函数开始，除了执行和网络以外，构建函数还接受一
+个可选的\texttt{nodeToConnect}，如果没给，则说明这个是第一个起的节点（primary）。
+\begin{simplepy}
+class ListenToOneConsensus:
+    def __init__(self,
+                 n: IEndpointBasedNetworkable,
+                 e: IExecutable,
+                 nodeToConnect=''):
+        self.net = n
+        self.exe = e
+        if nodeToConnect:
+            self.primary = nodeToConnect
+            self.is_primary = False
+            self.ask_primary_for_entry()
+            self.start_listening_as_sub()
+            print_mt(f'{self.net.listened_endpoint()} started as sub 🐸')
+        else:
+            print_mt(f'{self.net.listened_endpoint()} started as primary 🐸')
+            self.is_primary = True
+            self.start_listening_as_primary()
+
+\end{simplepy}
+\emoji{parrot} ： 那么具体primary和非primary节点都要监听哪些事件呢？
+
+在介绍具体要监听哪些事件之前，我们最好先看一下在“时光静好”的情况下，集群是怎么
+工作的：
+\begin{center}
+  \begin{tikzpicture}
+    \node[myNode,fill=\mycola,minimum height=4em] (a1) {primary};
+    \foreach \d in {300,20}{
+      \draw[latex-, very thick] (a1) -- (\d:3cm) node[myNode,fill=gray,name=s-\d]{新增节点};
+      % \node[myNode,fill=gray]  at (\d:2cm) {};
+    }
+    \node (a1n) [text width=7cm,above left] at ([shift={(-2cm,0cm)}]a1.west){
+      \begin{tcolorbox}[tile,fontupper=\small,
+        left=0mm,
+        boxsep=0mm
+        ]
+        \begin{itemize}
+        \item 每收到一个\colc{请求}：
+          \begin{enumerate}
+          \item 先执行一下，
+          \item 然后添加到一个\cola{笔记本}里，
+          \item 然后发给所有\colb{已知下级}。
+          \end{enumerate}
+        \item 每当有\colb{新节点}要求加入时：
+          \begin{enumerate}
+          \item 先把\colb{它}加入\colb{已知下级}，
+          \item 然后把\cola{笔记本}发给\colc{它}一份。
+          \end{enumerate}
+        \end{itemize}
+      \end{tcolorbox}
+    };
+    \draw[help lines,-o] (a1n) -- (a1);
+
+    \node (s2n) [text width=7cm,above] at ([shift={(0cm,2cm)}] s-20.north){
+      \begin{tcolorbox}[tile,fontupper=\small,
+        left=0.5mm,
+        boxsep=0mm]
+        在刚开始的时候请求\cola{primary}加入。
+        \begin{itemize}
+        \item 每收到来自\cola{primary}的\colc{请求}： 执行
+        \item 每收到来自\colb{client}的\colc{请求}： 传给\cola{primary}
+        \end{itemize}
+      \end{tcolorbox}
+    };
+
+    \draw[help lines,o-] (s-20) -- (s2n);
+  \end{tikzpicture}
+\end{center}
+Emm,那么看来，primary和非主节点所要监听的（和发送的)也就很明显了。首先我们来看
+primary需要用到的方法。
+\begin{simplepy}
+    def start_listening_as_primary(self):
+        self.known_subs = []
+        self.command_history = []
+        self.net.listen('/pleaseAddMe',
+                        self.handle_add_new_node)
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_primary)
+
+    def handle_add_new_node(self,sub_endpoint: str,
+                            data: str) -> str:
+        """[For primary] to add new node"""
+        self.known_subs.append(sub_endpoint)
+        return f"""
+        Dear {sub_endpoint}
+            You are in. and here is what we have so far:
+            {','.join(self.command_history)}
+                   Sincerely
+                   {self.net.listened_endpoint()}, The primary.
+        """
+
+    def handle_execute_for_primary(self, endpoint: str,
+                                   data: str) -> str:
+        cmd = data
+        self.command_history.append(cmd)
+        self.exe.execute(cmd)
+        for sub in self.known_subs:
+            r = self.net.send(sub,'/pleaseExecuteThis',cmd)
+            if r == None:
+                print(f'❌️ Node-{sub} is down,kick it off the group.')
+                self.known_subs.remove(sub)
+
+        return f"""
+        Dear {endpoint}
+             Your request has been carried out by our group.
+             Members: {self.known_subs}
+                 Sincerely
+                 {self.net.listened_endpoint()}, The primary.
+        """
+\end{simplepy}
+然后是其他节点用到的方法:
+\begin{simplepy}
+    def ask_primary_for_entry(self):
+        r = self.net.send(self.primary,
+                    '/pleaseAddMe',f"""
+                    Hi primary {self.primary},
+                       please add me in the group
+                          Regards {self.net.listened_endpoint()}
+                    """
+                          )
+        if r == None:
+            raise Exception('Failed to join the group')
+        # In response, the primary should send you the history .
+        cmd = r.split('\n')[3]  # forth line is the command
+        if cmd:
+            self.exe.execute(cmd)
+
+    def start_listening_as_sub(self):
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_sub)
+    def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
+        cmd = data
+        if (endpoint == self.primary):
+            self.exe.execute(cmd)
+            return f"""
+            Dear boss {self.primary},
+                 Mission [{data}] is accomplished.
+                     Sincerely
+                     {self.net.listened_endpoint()}
+            """
+        else:
+            # forward
+            r = self.net.send(self.primary,
+                                 '/pleaseExecuteThis',data)
+            if r == None:
+                raise Exception('failed to forward message to primary')
+            return r
+\end{simplepy}
+所以最后总结起来应该就是：
+\begin{simplepy}
+class ListenToOneConsensus:
+    def __init__(self,
+                 n: IEndpointBasedNetworkable,
+                 e: IExecutable,
+                 nodeToConnect=''):
+        self.net = n
+        self.exe = e
+        if nodeToConnect:
+            self.primary = nodeToConnect
+            self.is_primary = False
+            self.ask_primary_for_entry()
+            self.start_listening_as_sub()
+            print_mt(f'{self.net.listened_endpoint()} started as sub 🐸')
+        else:
+            print_mt(f'{self.net.listened_endpoint()} started as primary 🐸')
+            self.is_primary = True
+            self.start_listening_as_primary()
+    def start_listening_as_primary(self):
+        self.known_subs = []
+        self.command_history = []
+        self.net.listen('/pleaseAddMe',
+                        self.handle_add_new_node)
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_primary)
+
+    def handle_add_new_node(self,sub_endpoint: str,
+                            data: str) -> str:
+        """[For primary] to add new node"""
+        self.known_subs.append(sub_endpoint)
+        return f"""
+        Dear {sub_endpoint}
+            You are in. and here is what we have so far:
+            {','.join(self.command_history)}
+                   Sincerely
+                   {self.net.listened_endpoint()}, The primary.
+        """
+
+    def handle_execute_for_primary(self, endpoint: str,
+                                   data: str) -> str:
+        cmd = data
+        self.command_history.append(cmd)
+        self.exe.execute(cmd)
+        for sub in self.known_subs:
+            r = self.net.send(sub,'/pleaseExecuteThis',cmd)
+            if r == None:
+                print(f'❌️ Node-{sub} is down,kick it off the group.')
+                self.known_subs.remove(sub)
+
+        return f"""
+        Dear {endpoint}
+             Your request has been carried out by our group.
+             Members: {self.known_subs}
+                 Sincerely
+                 {self.net.listened_endpoint()}, The primary.
+        """
+
+    # --------------------------------------------------
+    def ask_primary_for_entry(self):
+        r = self.net.send(self.primary,
+                    '/pleaseAddMe',f"""
+                    Hi primary {self.primary},
+                       please add me in the group
+                          Regards {self.net.listened_endpoint()}
+                    """
+                          )
+        if r == None:
+            raise Exception('Failed to join the group')
+        # In response, the primary should send you the history .
+        cmd = r.split('\n')[3]  # forth line is the command
+        if cmd:
+            self.exe.execute(cmd)
+
+    def start_listening_as_sub(self):
+        self.net.listen('/pleaseExecuteThis',
+                        self.handle_execute_for_sub)
+    def handle_execute_for_sub(self,endpoint: str,data: str) -> str:
+        cmd = data
+        if (endpoint == self.primary):
+            self.exe.execute(cmd)
+            return f"""
+            Dear boss {self.primary},
+                 Mission [{data}] is accomplished.
+                     Sincerely
+                     {self.net.listened_endpoint()}
+            """
+        else:
+            # forward
+            r = self.net.send(self.primary,
+                                 '/pleaseExecuteThis',data)
+            if r == None:
+                raise Exception('failed to forward message to primary')
+            return r
+
+\end{simplepy}
+那么让我写一下mocked方法然后测试一下吧,mocked网络和存储如下:
+\begin{simplepy}
+  
+\end{simplepy}
+而起集群的话则是要这样:
+\begin{simplepy}
+  
+\end{simplepy}
+
+这里我们可以同过命令行动态的向集群发送:
+\begin{itemize}
+\item \texttt{append} : 新增一个节点
+\item \texttt{kick} \cola{\texttt{<节点名>}} : 删除一个节点
+\item \cola{\texttt{<节点名>}} \texttt{<命令>} : 向某节点发起命令
+\end{itemize}
+
+示例：
+% \begin{tcolorbox}[breakable]
+\begin{verbatim}
+mark started as primary 🐸 节点【mark】加入了集群----------------------------
+Adding handler: mark-/pleaseAddMe
+Adding handler: mark-/pleaseExecuteThis
+ Calling handler: mark-/pleaseAddMe  with data:
+  
+                    Hi primary mark,
+                       please add me in the group
+                          Regards moai
+                     
+Got result: 
+        Dear moai
+            You are in. and here is what we have so far:
+            
+                   Sincerely
+                   mark, The primary.
+         
+🦜  [moai] Exec:              
+Adding handler: moai-/pleaseExecuteThis
+moai started as sub 🐸 节点【moai】加入了集群------------------------
+ Calling handler: mark-/pleaseAddMe  with data:
+  
+                    Hi primary mark,
+                       please add me in the group
+                          Regards lay
+                     
+Got result: 
+        Dear lay
+            You are in. and here is what we have so far:
+            
+                   Sincerely
+                   mark, The primary.
+         
+🦜  [lay] Exec:              
+Adding handler: lay-/pleaseExecuteThis
+lay started as sub 🐸 节点【lay】加入了集群-----------------------
+Enter: moai aaa 往【moai】发送命令“aaa”---------------------------
+ Sending aaa to moai 
+ Calling handler: moai-/pleaseExecuteThis  with data:
+  aaa 
+ Calling handler: mark-/pleaseExecuteThis  with data:
+  aaa 
+🦜  [mark] Exec: aaa 
+ Calling handler: moai-/pleaseExecuteThis  with data:
+  aaa 
+🦜  [moai] Exec: aaa 
+Got result: 
+            Dear boss mark,
+                 Mission [aaa] is accomplished.
+                     Sincerely
+                     moai
+             
+ Calling handler: lay-/pleaseExecuteThis  with data:
+  aaa 
+🦜  [lay] Exec: aaa 
+Got result: 
+            Dear boss mark,
+                 Mission [aaa] is accomplished.
+                     Sincerely
+                     lay
+             
+Got result: 
+        Dear moai
+             Your request has been carried out by our group.
+             Members: ['moai', 'lay']
+                 Sincerely
+                 mark, The primary.
+         
+Got result: 
+        Dear moai
+             Your request has been carried out by our group.
+             Members: ['moai', 'lay']
+                 Sincerely
+                 mark, The primary.
+         
+Enter: lay bbb 往【lay】发送命令“bbb”----------------------------
+ Sending bbb to lay 
+ Calling handler: lay-/pleaseExecuteThis  with data:
+  bbb 
+ Calling handler: mark-/pleaseExecuteThis  with data:
+  bbb 
+🦜  [mark] Exec: bbb 
+ Calling handler: moai-/pleaseExecuteThis  with data:
+  bbb 
+🦜  [moai] Exec: bbb 
+Got result: 
+            Dear boss mark,
+                 Mission [bbb] is accomplished.
+                     Sincerely
+                     moai
+             
+ Calling handler: lay-/pleaseExecuteThis  with data:
+  bbb 
+🦜  [lay] Exec: bbb 
+Got result: 
+            Dear boss mark,
+                 Mission [bbb] is accomplished.
+                     Sincerely
+                     lay
+             
+Got result: 
+        Dear lay
+             Your request has been carried out by our group.
+             Members: ['moai', 'lay']
+                 Sincerely
+                 mark, The primary.
+         
+Got result: 
+        Dear lay
+             Your request has been carried out by our group.
+             Members: ['moai', 'lay']
+                 Sincerely
+                 mark, The primary.
+         
+Enter: kick lay  把【lay】节点踢了-------------------------
+ Kicking node lay 
+Removing handler: lay-/pleaseExecuteThis
+Enter: moai ccc 往【moai】发送命令”ccc“--------------------------- 
+ Sending ccc to moai 
+ Calling handler: moai-/pleaseExecuteThis  with data:
+  ccc 
+ Calling handler: mark-/pleaseExecuteThis  with data:
+  ccc 
+🦜  [mark] Exec: ccc 
+ Calling handler: moai-/pleaseExecuteThis  with data:
+  ccc 
+🦜  [moai] Exec: ccc 
+Got result: 
+            Dear boss mark,
+                 Mission [ccc] is accomplished.
+                     Sincerely
+                     moai
+             
+ Calling handler: lay-/pleaseExecuteThis  with data:
+  ccc 
+Handler lay-/pleaseExecuteThis not found
+Got result: None 
+❌️ Node-lay is down,kick it off the group.
+Got result: 
+        Dear moai
+             Your request has been carried out by our group.
+             Members: ['moai']
+                 Sincerely
+                 mark, The primary.
+         
+Got result: 
+        Dear moai
+             Your request has been carried out by our group.
+             Members: ['moai']
+                 Sincerely
+                 mark, The primary.
+         
+Enter: append 新增节点【vest】----------------------------------
+ Appending node 
+ Calling handler: mark-/pleaseAddMe  with data:
+  
+                    Hi primary mark,
+                       please add me in the group
+                          Regards vest
+                     
+Got result: 
+        Dear vest
+            You are in. and here is what we have so far:
+            aaa,bbb,ccc
+                   Sincerely
+                   mark, The primary.
+         
+🦜  [vest] Exec:             aaa,bbb,ccc 
+Adding handler: vest-/pleaseExecuteThis
+vest started as sub 🐸
+Enter: vest ddd 往【vest】节点发送命令"ddd"------------------------
+ Sending ddd to vest 往vest发送命令ddd---------------------------
+ Calling handler: vest-/pleaseExecuteThis  with data:
+  ddd 
+ Calling handler: mark-/pleaseExecuteThis  with data:
+  ddd 
+🦜  [mark] Exec: ddd 
+ Calling handler: moai-/pleaseExecuteThis  with data:
+  ddd 
+🦜  [moai] Exec: ddd 
+Got result: 
+            Dear boss mark,
+                 Mission [ddd] is accomplished.
+                     Sincerely
+                     moai
+             
+ Calling handler: vest-/pleaseExecuteThis  with data:
+  ddd 
+🦜  [vest] Exec: ddd 
+Got result: 
+            Dear boss mark,
+                 Mission [ddd] is accomplished.
+                     Sincerely
+                     vest
+             
+Got result: 
+        Dear vest
+             Your request has been carried out by our group.
+             Members: ['moai', 'vest']
+                 Sincerely
+                 mark, The primary.
+         
+Got result: 
+        Dear vest
+             Your request has been carried out by our group.
+             Members: ['moai', 'vest']
+                 Sincerely
+                 mark, The primary.
+
+\end{verbatim}
+% \end{tcolorbox}
+\section{听一个共识-留一手版}
+
+让我们稍微再复杂复杂一点，看看能不能新增这两个功能：
+\begin{enumerate}
+\item 在\cola{primary}死的时候希望可以有接班的。
+\item 我们希望新增节点的时候可以连接到任何一个节点。
+\end{enumerate}
+\emoji{parrot} : 既然\cola{primary}可以给命令编号，那么自然也可以给新加的节点编号
+不是吗？ 而我们也就可以用这个编号来决定\cola{谁是下一任primary}。
+
+是的那么这样以来我们的集群就变成了一个有序号的了:
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node[myNode,fill=\mycola,minimum height=4em] (a0) {primary};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=gray,name=a2]{...};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=gray,name=a4]{...};
+
+      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycolc,name=a1]{1};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=gray,name=a3]{...};
+
+      \node[text width=6cm,below] at ([shift={(0,-3cm)}]a0.south) {
+        \begin{noteBox}
+          1.新增的节点可以通过\textbf{任意现
+            有集群节点}连接，之后会管\cola{primary}要一个序号。
+        \end{noteBox}
+      };
+      \node[left,text width=2cm] at ([xshift=-0.5cm]a3.west) {
+        \begin{leftDialogBox}
+          求加入
+        \end{leftDialogBox}
+      };
+
+      \foreach \n in {a2}{
+        \node[right,text width=2cm] at ([xshift=0.5cm,yshift=0.5cm]\n.east) {
+          \begin{rightDialogBox}
+            求加入
+          \end{rightDialogBox}
+        };
+      }
+
+    \end{scope}
+
+
+    \begin{scope}[shift={(9.5cm,0)}]
+      \node[myNode,fill=\mycola,minimum height=4em] (a0) {primary};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=\mycolaa,name=a2]{2};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=\mycolaa,name=a4]{4};
+
+      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycolc,name=a1]{1};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=\mycolaa,name=a3]{3};
+
+      \draw[-latex,very thick] (a4) -- (a1);
+      \draw[-latex,very thick] (a2) -- (a1);
+      \draw[-latex,very thick] (a3) -- (a0);
+
+      \node[text width=6cm,below] at ([shift={(0,-3cm)}]a0.south) {
+        \begin{noteBox}
+          2.在完成以下两个步骤后，新增的节点就算加入集群了：
+          \begin{enumerate}
+          \item 记住\cola{primary}和下任\cola{primary}的地址
+          \item 获得自己的序列号。
+          \item 同步命令历史记录
+          \end{enumerate}
+        \end{noteBox}
+      };
+
+      \node[left,text width=4cm] at ([xshift=-0.5cm]a0.west) {
+        \begin{leftDialogBox}
+          \small
+          来吧，给你们\textbf{过往我们执行的记录}，如果我没了就找下一任\colc{节点1}吧。
+        \end{leftDialogBox}
+      };
+    \end{scope}
+      \end{tikzpicture}
+\end{center}
+
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node[myNode,fill=red!40!black,minimum height=4em] (a0) {primary};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=\mycolaa,name=a2]{2};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=\mycolaa,name=a4]{4};
+
+      \draw[latex-, very thick] (a0) -- (300:3cm) node[myNode,fill=\mycolc,name=a1]{1};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=\mycolaa,name=a3]{3};
+
+      \draw[-latex,very thick] (a4) -- (a1);
+      \draw[-latex,very thick] (a2) -- (a1);
+      \draw[-latex,very thick, red] (a3) -- node[midway] {\emoji{cross-mark}}(a0);
+
+      \node[left,text width=4cm] at ([xshift=-0.5cm]a3.west) {
+        \begin{leftDialogBox}
+          ？ \cola{primary}老不回我，它应该没了，\colc{你}上呗？
+        \end{leftDialogBox}
+      };
+
+      \node[right,text width=4cm] at ([xshift=0.5cm,yshift=0.5cm]a1.east) {
+        \begin{rightDialogBox}
+          是吗？ 让我确认一下....喂喂喂？ \cola{primary}在吗？
+        \end{rightDialogBox}
+      };
+
+      \node[text width=8cm,below] at ([shift={(0,-4cm)}]a0.south) {
+        \begin{noteBox}
+          3. 当有人往\cola{primary}发消息失败后就会和\colc{接班人}说，请求\textbf{view-change}。
+          然后，\colc{接班人}会：
+          \begin{enumerate}
+          \item 确认一下\cola{primary}是不是真的没了
+          \item 如果不是，那说明是这个小节点自己的问题
+          \end{enumerate}
+        \end{noteBox}
+      };
+    \end{scope}
+
+    \begin{scope}[shift={(6cm,-6cm)}]
+      \node[myNode,fill=red!40!black,minimum height=4em] (a0) {dead};
+      \draw[latex-, very thick] (a0) -- (30:3cm) node[myNode,fill=\mycolc,name=a2]{2};
+      \draw[latex-, very thick] (a0) -- (0:3cm) node[myNode,fill=\mycolaa,name=a4]{4};
+
+      \draw[latex-, very thick,red] (a0) -- node[midway] {\emoji{cross-mark}}
+      (300:3cm) node[myNode,fill=\mycola,
+      name=a1,minimum height=4em]{primary};
+      \draw[latex-, very thick] (a1) -- (270:3cm) node[myNode,fill=\mycolaa,name=a3]{3};
+
+      \draw[-latex,very thick] (a4) -- (a1);
+      \draw[-latex,very thick] (a2) -- (a1);
+      \draw[-latex,very thick, red] (a3) -- node[midway,sloped] {\emoji{cross-mark}}(a0);
+
+      % \node[left,text width=4cm] at ([xshift=-0.5cm]a3.west) {
+      %   \begin{leftDialogBox}
+      %     欸？ \cola{primary}老不回我，它应该没了，\colc{你}上呗？
+      %   \end{leftDialogBox}
+      % };
+
+      \node[right,text width=4cm] at ([xshift=0.5cm,yshift=0.5cm]a1.east) {
+        \begin{rightDialogBox}
+          诶呦，还真没了...那好吧。\textbf{大家听好了}，\cola{primary}该换我
+          了，\colc{下一个是节点\textbf{2}}，你们都记住啊。
+        \end{rightDialogBox}
+      };
+
+      \node[text width=6cm,below] at ([shift={(0,-3cm)}]a0.south) {
+        \begin{noteBox}
+          4.如果确实\colc{接班人自己}也没有连上\cola{主节点}，则广播\textbf{view-change},并让大家了
+          解下一任\colc{接班人}。
+        \end{noteBox}
+      };
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+\begin{myBox}{听一个共识-留一手版 （Follow-me Consensus）}
+  \begin{itemize}
+  \item 每个新加的的节点会管主节点要一个序号
+  \item 之后所有的节点都会记住两个地址： \cola{主节点}和\colb{下一任主节点}。(存
+    在一个列表里）
+  \item 当节点们受到来自\colb{下一任主节点}的\textbf{上任通知时}，切换主节点。
+  \end{itemize}
+\end{myBox}
+
+\begin{tcolorbox}
+  \emoji{parrot} : 那如果一个节点同时收到两个\cola{primary}的消息怎么办呢？\\
+  \emoji{turtle} : 那么就和其他的共识算法一样（Raft，PBFT）， 节点只需要接受最新的命令就行了。
+\end{tcolorbox}
+
+那么其实我们可以再往前走一步。直接让所有的节点都记住所有的节点，
+这样其实就相当一有一个\textbf{队列}（节点们排队想当primary）:
+\begin{center}
+  \begin{tikzpicture}
+    % \draw[style=help lines] (-5cm,5cm) grid +(15cm,-10cm);
+    \begin{scope}
+      \matrix[left,matrix of nodes,nodes={draw=black,fill=\mycola!20,minimum size=1.2cm,anchor=center}] (M1){
+        节点1 & 节点2 & ...
+        \\
+      };
+      \fill[black] ([shift={(0,1.5cm)}]M1-1-1) circle (3pt) coordinate (a1);
+      \draw[-latex,thick] (a1) -- ([yshift=2pt]M1-1-1.north);
+      \node[above,text width=3cm,text badly centered] at ([yshift=0.5cm]a1){
+        节点眼里当前的\cola{primary}
+      };
+    \end{scope}
+    \node[fill=\mycolb!80,circle,text=white,minimum size=1.2cm,name=N2] at (3cm,4cm) {
+      节点2
+    };
+    \begin{scope}[xshift=6cm]
+      \matrix[right,matrix of nodes,nodes={draw=black,fill=\mycola!20,minimum size=1.2cm,anchor=center}] (M11){
+        节点1 & 节点2 & ...
+        \\
+      };
+      \fill[black] ([shift={(0,1.5cm)}]M11-1-2) circle (3pt) coordinate (a1);
+      \draw[-latex,thick] (a1) -- ([yshift=2pt]M11-1-2.north);
+      \node[above,text width=3cm,text badly centered] at ([yshift=0.5cm]a1){
+        节点眼里当前的\cola{primary}
+      };
+      \draw[-latex,thick] (M1.east) -- (M11.west) node[pos=0.5,above,text width=4cm,name=trigger]{
+        节点2触发\textbf{view-change}（它想换人）
+      };
+      \draw[snake=expanding waves,segment angle=15] (N2)-- (trigger);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+\begin{tcolorbox}
+\emoji{parrot} : 但是我觉得这一步还是有点太远了，暂时先每个节点记住两个吧。
+\end{tcolorbox}
+那么其实我们节点之间的架构就变成了这样的：
+\begin{center}
+  \begin{tikzpicture}
+    % \draw[style=help lines] (-2cm,5cm) grid +(15cm,-10cm);
+    \begin{scope}
+      \node[myNode,fill=\mycola,minimum height=4em] (a0) {primary};
+      \node[myNode,fill=\mycolc,minimum height=2em] (a1) at (4cm,0){1};
+
+      \tikzstyle{myArrow}=[latex-,draw=gray,opacity=0.5,thick]
+
+      \foreach \i / \j in {
+        2/120,
+        3/180,
+        4/240
+      }{
+        \path (a0) -- (\j:3cm) node[myNode,fill=\mycolaa,name=a\i]{\i};
+      }
+      
+      \foreach \i / \j in {
+        5/60,
+        6/0,
+        7/300
+      }{
+        \path (a1) -- +(\j:3cm) node[myNode,fill=\mycolaa,name=a\i]{\i};
+      }
+
+      % draw the arrows
+      \foreach \i in {2,3,4,5,7}{
+        % \draw[myArrow] (a1) -- (a\i);
+        \draw[myArrow] (a0) -- (a\i);
+      }
+
+      \foreach \i in {2,4,5,6,7}{
+        \draw[myArrow] (a1) -- (a\i);
+        % \draw[myArrow] (a0) -- (a\i);
+      }
+      \draw[myArrow] (a0.south east) parabola bend (2cm,-1cm) (a6.south west);
+      \draw[myArrow] (a1.north west) parabola bend (2cm,1cm) (a3.north east);
+    \end{scope}
+
+
+    
+  \end{tikzpicture}
+\end{center}
+还是中心化的，只不过没有中心变成了两个。
+
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% TeX-master: "m.tex"
+% End:

@@ -1,0 +1,6 @@
+---
+- hosts: all
+  roles:
+    - './my-role1'
+  vars:
+    x : 'x-in-play'

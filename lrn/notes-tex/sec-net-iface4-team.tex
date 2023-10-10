@@ -1,0 +1,102 @@
+
+\section{team (deprecated in favor of bond)}
+\label{sec:team}
+
+
+Network teaming is a feature that combines or aggregates network interfaces to
+provide a logical interface with higher throughput or redundancy.
+
+\dSay{
+  What's the difference between teaming and bonding?
+}
+
+\cSay{
+  \colb{
+    \emoji{warning}
+    Network teaming is deprecated in Red Hat Enterprise Linux 9. Use bonding.
+  }
+}
+
+Similar to bonding, you usually wanna plug teamed cables into a switch.
+
+\subsection{\texttt{teamd} service, runners, and link-watcher}
+
+\colz{ The team service, \colZt{teamd}, controls one instance of the \Cola{team
+  driver}. This instance of the driver adds instances of a \Cola{hardware device driver}
+  to form a team of network interfaces. The team driver presents a network
+  interface, for example \colZt{team0}, to the kernel.
+
+}
+
+\dSay{
+  Oh.. So each instance of \texttt{teamd} corresponds to a team
+  , and each team corresponds to a network interface?
+}
+
+\cSay{
+  Yes.
+}
+
+Bonding has \Cola{modes}, and teaming has \Cola{runners} as shown in \cref{tab:runners}
+
+\begin{longtblr}[caption={Available runners}, label={tab:runners}]
+  { colspec=XX[4], width = {0.9\linewidth} } \toprule
+  Runner & Description \\
+  \midrule
+  \texttt{boardcast} & Transmits data over all ports.\\
+  \texttt{roundrobin} & Transmits data over all ports in turn. \\
+  \texttt{activebackup} & Transmits data over one port while the others are kept
+  as a backup.\\
+  \texttt{loadbalance} & Transmits data over all ports with active Tx load
+  balancing and Berkeley Packet Filter (BPF)-based Tx port selectors.
+  (\emoji{parrot} : ?? \emoji{see-no-evil-monkey} \emoji{hear-no-evil-monkey} \emoji{speak-no-evil-monkey}
+  )\\
+  \texttt{random} & Transmits data on a randomly selected port.\\
+  \texttt{lacp} &  Implements the 802.3ad Link Aggregation Control Protocol (LACP).\\
+  \bottomrule
+\end{longtblr}
+
+\colz{
+  Administrators specify runners in JavaScript Object Notation (JSON) format,
+  and the JSON code is compiled into an instance of \texttt{teamd} when the instance is
+  created. Alternatively, when using NetworkManager, you can set the runner in
+  the \texttt{team.runner} parameter, and NetworkManager auto-creates the corresponding
+  JSON code.
+}
+
+\dSay{
+  I like JSON, compared to config files....
+}
+
+\cSay{
+  Yeah, me too.
+}
+
+
+Unlike bond, \texttt{teamd} uses a \Cola{link watcher} to monitor the state of
+subordinate devices
+\begin{longtblr}[caption={link watcher}, label={tab:link-watchers}]
+  { colspec=XX[4], width = {0.9\linewidth} } \toprule
+  link watcher & Description \\
+  \midrule
+
+  \texttt{ethtool} & The \texttt{libteam} library uses the \texttt{ethtool} utility to
+  watch for link state changes. This is the \colb{default} link-watcher.\\
+
+  \texttt{arp\_ping} & The \texttt{libteam} library uses the \texttt{arp\_ping}
+  utility to monitor the presence of a far-end hardware address using Address
+  Resolution Protocol (ARP).\\
+
+  \texttt{nsna\_ping} & On IPv6 connections, the \texttt{libteam} library uses the
+  \cola{Neighbor Advertisement} and \cola{Neighbor Solicitation} features from the IPv6
+  \cola{Neighbor Discovery} protocol to monitor the presence of a neighbor’s interface.\\
+
+  \bottomrule
+\end{longtblr}
+
+\colz{
+
+  Each runner can use any link watcher, with the exception of \texttt{lacp}. This
+  runner can only use the \texttt{ethtool} link watcher.
+
+}

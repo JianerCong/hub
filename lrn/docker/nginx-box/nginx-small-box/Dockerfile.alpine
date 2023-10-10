@@ -1,0 +1,22 @@
+FROM alpine
+ENV ALL_PROXY=host.docker.internal:7890
+ENV all_proxy=host.docker.internal:7890
+ENV http_proxy=host.docker.internal:7890
+ENV HTTP_PROXY=host.docker.internal:7890
+ENV https_proxy=host.docker.internal:7890
+ENV HTTPS_PROXY=host.docker.internal:7890
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./serv.py /etc/serv.py
+CMD ["sh","-c"," \
+    echo \"the proxy is ${ALL_PROXY}\"  && \
+    apk add nginx && \
+    apk add python3 && \
+    pip3 install web.py &&\
+    nginx && \
+    python3 /etc/serv.py 7777
+    "]
+
+# FROM alpine
+# ENV ALL_PROXY=host.docker.internal:7890
+# CMD ["sh","-c","echo \"Proxy is ${ALL_PROXY}\" && echo another echo"]
+# docker run --rm --name my-nginx-container my-nginx

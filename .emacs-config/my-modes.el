@@ -10,8 +10,5 @@
 (global-linum-mode 1)
 
 
-
-
-
 (provide 'my-modes)
 

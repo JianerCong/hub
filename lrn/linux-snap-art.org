@@ -122,7 +122,17 @@ in edit mode, select the vertices and then ctl-H
     sudo apt-get install ibus-pinyin
     ibus restart
   #+end_src
-  
+** sp
+#+begin_src bash
+  sudo apt install supercollider
+#+end_src
+
+Come here and get emacs 
+https://github.com/supercollider/scel
+
++ Execute :: Sh + Enter
++ start engine :: ctrl-B
++ stop :: ctrl-.
 * End
 # Local Variables:
 # org-what-lang-is-for: "bash"

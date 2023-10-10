@@ -1,5 +1,5 @@
 ;; -*- mode: emacs-lisp; lexical-binding: t -*-
-;; This file is loaded by Spacemacs at startup.
+;; This file is loaded by Spacemacs at startup. Oh
 ;; It must be stored in your home directory.
 
 (defun dotspacemacs/layers ()
@@ -32,40 +32,40 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(go
-     markdown
-     windows-scripts
-     tern
-     yaml
-     cmake
+   '(python
      html
-     javascript
-     python
-     ;; I have manually installed auctex on linux
-
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
      ;; `M-m f e R' (Emacs style) to install them.
      ;; ----------------------------------------------------------------
      auto-completion
+     (latex :variables latex-enable-auto-fill nil)
+     ess
+     markdown
      ;; better-defaults
      emacs-lisp
      ;; git
      helm
      ;; lsp
-     ;; markdown
-     ;multiple-cursors
+     ;; multiple-cursors
      ;; org
      ;; (shell :variables
      ;;        shell-default-height 30
      ;;        shell-default-position 'bottom)
      ;; spell-checking
-     ;; syntax-checking
+     syntax-checking
+     csharp
+     cmake
      ;; version-control
-     treemacs
+     ;; treemacs
      )
 
+   ;; Add the windows-scripts if this is windows
+   dotspacemacs-configuration-layers
+   (if (string-equal system-type "windows-nt")
+       (push 'windows-scripts dotspacemacs-configuration-layers)
+     dotspacemacs-configuration-layers)
 
    ;; List of additional packages that will be installed without being wrapped
    ;; in a layer (generally the packages are installed only and should still be
@@ -75,7 +75,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '(rainbow-delimiters cdlatex hungry-delete)
+   dotspacemacs-additional-packages '(hungry-delete)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -100,13 +100,9 @@ It should only modify the values of Spacemacs settings."
   ;; This setq-default sexp is an exhaustive list of all the supported
   ;; spacemacs settings.
   (setq-default
-   ;; If non-nil then enable support for the portable dumper. You'll need to
-   ;; compile Emacs 27 from source following the instructions in file
+   ;; If non-nil then enable support for the portable dumper. You'll need
+   ;; to compile Emacs 27 from source following the instructions in file
    ;; EXPERIMENTAL.org at to root of the git repository.
-   ;;
-   ;; WARNING: pdumper does not work with Native Compilation, so it's disabled
-   ;; regardless of the following setting when native compilation is in effect.
-   ;;
    ;; (default nil)
    dotspacemacs-enable-emacs-pdumper nil
 
@@ -122,7 +118,6 @@ It should only modify the values of Spacemacs settings."
    ;;   ./emacs --dump-file=$HOME/.emacs.d/.cache/dumps/spacemacs-27.1.pdmp
    ;; (default (format "spacemacs-%s.pdmp" emacs-version))
    dotspacemacs-emacs-dumper-dump-file (format "spacemacs-%s.pdmp" emacs-version)
-
    ;; If non-nil ELPA repositories are contacted via HTTPS whenever it's
    ;; possible. Set it to nil if you have no way to use HTTPS in your
    ;; environment, otherwise it is strongly recommended to let it set to t.
@@ -191,13 +186,6 @@ It should only modify the values of Spacemacs settings."
    ;; If the value is nil then no banner is displayed. (default 'official)
    dotspacemacs-startup-banner 'official
 
-   ;; Scale factor controls the scaling (size) of the startup banner. Default
-   ;; value is `auto' for scaling the logo automatically to fit all buffer
-   ;; contents, to a maximum of the full image height and a minimum of 3 line
-   ;; heights. If set to a number (int or float) it is used as a constant
-   ;; scaling factor for the default logo size.
-   dotspacemacs-startup-banner-scale 'auto
-
    ;; List of items to show in startup buffer or an association list of
    ;; the form `(list-type . list-size)`. If nil then it is disabled.
    ;; Possible values for list-type are:
@@ -220,18 +208,13 @@ It should only modify the values of Spacemacs settings."
    ;; The minimum delay in seconds between number key presses. (default 0.4)
    dotspacemacs-startup-buffer-multi-digit-delay 0.4
 
-   ;; If non-nil, show file icons for entries and headings on Spacemacs home buffer.
-   ;; This has no effect in terminal or if "all-the-icons" package or the font
-   ;; is not installed. (default nil)
-   dotspacemacs-startup-buffer-show-icons nil
-
    ;; Default major mode for a new empty buffer. Possible values are mode
    ;; names such as `text-mode'; and `nil' to use Fundamental mode.
    ;; (default `text-mode')
    dotspacemacs-new-empty-buffer-major-mode 'text-mode
 
    ;; Default major mode of the scratch buffer (default `text-mode')
-   dotspacemacs-scratch-mode 'text-mode
+   dotspacemacs-scratch-mode 'emacs-lisp-mode
 
    ;; If non-nil, *scratch* buffer will be persistent. Things you write down in
    ;; *scratch* buffer will be saved and restored automatically.
@@ -249,8 +232,8 @@ It should only modify the values of Spacemacs settings."
    ;; Press `SPC T n' to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
    dotspacemacs-themes '(
-                         spacemacs-light
                          monokai
+                         spacemacs-light
                          spacemacs-dark
                          )
 
@@ -270,9 +253,8 @@ It should only modify the values of Spacemacs settings."
    ;; Default font or prioritized list of fonts. The `:size' can be specified as
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
-
    dotspacemacs-default-font '("Cascadia Code:"
-                               :size 20.0
+                               :size 10.0
                                :weight normal
                                :width normal)
 
@@ -314,6 +296,7 @@ It should only modify the values of Spacemacs settings."
    ;; If non-nil the default layout name is displayed in the mode-line.
    ;; (default nil)
    dotspacemacs-display-default-layout nil
+
    ;; If non-nil then the last auto saved layouts are resumed automatically upon
    ;; start. (default nil)
    dotspacemacs-auto-resume-layouts nil
@@ -541,7 +524,10 @@ It should only modify the values of Spacemacs settings."
    dotspacemacs-home-shorten-agenda-source nil
 
    ;; If non-nil then byte-compile some of Spacemacs files.
-   dotspacemacs-byte-compile nil))
+   dotspacemacs-byte-compile nil
+
+   )
+  )
 
 (defun dotspacemacs/user-env ()
   "Environment variables setup.
@@ -549,8 +535,7 @@ This function defines the environment variables for your Emacs session. By
 default it calls `spacemacs/load-spacemacs-env' which loads the environment
 variables declared in `~/.spacemacs.env' or `~/.spacemacs.d/.spacemacs.env'.
 See the header of this file for more information."
-  (spacemacs/load-spacemacs-env)
-)
+  (spacemacs/load-spacemacs-env))
 
 (defun dotspacemacs/user-init ()
   "Initialization for user code:
@@ -558,24 +543,23 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
-
   (add-to-list 'load-path "~/Templates/.emacs-config")
   (require 'my-hooks)
-  ;; melpa is the only site that is not slow to contact (in Woodgreen)
-  (setq package-archives '(("melpa" . "https://melpa.org/packages/")))
-
-  ;(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-  ;(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+  (setq package-archives '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                           ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+  (setq configuration-layer--elpa-archives
+        '(("melpa-cn" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+          ("org-cn"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/org/")
+          ("gnu-cn"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")))
   (package-initialize);; you might already have this ine
-)
+  )
 
 
 (defun dotspacemacs/user-load ()
   "Library to load while dumping.
 This function is called only while dumping Spacemacs configuration. You can
 `require' or `load' the libraries of your choice that will be included in the
-dump."
-)
+dump.")
 
 
 (defun dotspacemacs/user-config ()
@@ -584,12 +568,12 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
-
   (require 'my-default)
   (require 'my-buffer-init)
   (require 'my-modes)
   (require 'my-abbrev-and-expand)
-)
+  )
+
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -603,22 +587,54 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(TeX-engine 'xetex)
- '(js-indent-level 2)
- '(org-confirm-babel-evaluate nil)
+ '(compilation-message-face 'default)
+ '(custom-safe-themes
+   '("d9646b131c4aa37f01f909fbdd5a9099389518eb68f25277ed19ba99adeb7279" "fa2b58bb98b62c3b8cf3b6f02f058ef7827a8e497125de0254f56e373abee088" default))
+ '(evil-want-Y-yank-to-eol nil)
+ '(fci-rule-color "#3C3D37")
+ '(highlight-changes-colors '("#FD5FF0" "#AE81FF"))
+ '(highlight-tail-colors
+   '(("#3C3D37" . 0)
+     ("#679A01" . 20)
+     ("#4BBEAE" . 30)
+     ("#1DB4D0" . 50)
+     ("#9A8F21" . 60)
+     ("#A75B00" . 70)
+     ("#F309DF" . 85)
+     ("#3C3D37" . 100)))
+ '(magit-diff-use-overlays nil)
  '(package-selected-packages
-   '(popwin godoctor go-tag go-rename go-impl go-guru go-gen-test go-fill-struct go-eldoc flycheck-golangci-lint company-go go-mode vmd-mode markdown-toc gh-md emoji-cheat-sheet-plus company-emoji auctex-latexmk auctex toml-mode ron-mode racer rust-mode helm-gtags ggtags flycheck-rust counsel-gtags counsel swiper ivy cargo typescript-mode smartparens import-js grizzl add-node-modules-path origami lsp-mode markdown-mode flycheck-pos-tip pos-tip vue-mode edit-indirect ssass-mode vue-html-mode mmm-mode helm-ctest cmake-mode evil-tex company-reftex company-math math-symbol-lists company-auctex hungry-delete yasnippet-snippets tern helm-company helm-c-yasnippet fuzzy company-anaconda company auto-yasnippet ac-ispell auto-complete rainbow-delimiters transient cdlatex yapfify which-key use-package treemacs-projectile treemacs-icons-dired treemacs-evil sphinx-doc quickrun pytest pylookup pyenv-mode pydoc py-isort pippel pipenv pip-requirements pcre2el overseer nose nameless monokai-theme macrostep live-py-mode inspector importmagic hybrid-mode holy-mode help-fns+ helm-xref helm-themes helm-swoop helm-pydoc helm-projectile helm-org helm-mode-manager helm-make helm-flx helm-descbinds helm-ag flycheck-package flycheck-elsa evil-evilified-state emr elisp-slime-nav elisp-def dotenv-mode diminish cython-mode code-cells blacken bind-map anaconda-mode ace-jump-helm-line))
+   '(helm-ctest cmake-mode omnisharp csharp-mode ess-R-data-view ctable ess company-reftex company-math math-symbol-lists company-auctex auctex-latexmk auctex powershell bmx-mode yasnippet-snippets which-key use-package quickrun pcre2el overseer nameless monokai-theme macrostep hydra hybrid-mode hungry-delete helm-xref helm-themes helm-swoop helm-projectile helm-org helm-mode-manager helm-make helm-ls-git helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag fuzzy flycheck-pos-tip flycheck-package flycheck-elsa emr elisp-slime-nav dotenv-mode diminish bind-map auto-yasnippet auto-compile ace-jump-helm-line ac-ispell))
+ '(pos-tip-background-color "#FFFACE")
+ '(pos-tip-foreground-color "#272822")
  '(safe-local-variable-values
-   '((org-what-lang-is-for . "powershell")
-     (org-what-lang-is-for . "go")
-     (org-what-lang-is-for . "css")
-     (org-what-lang-is-for . "plain-tex")
-     (org-what-lang-is-for . "c++")
+   '((org-what-lang-is-for . "python")
      (org-what-lang-is-for . "cmake")
-     (org-what-lang-is-for . "latex")
-     (TeX-master . "auctex")
-     (org-what-lang-is-for . "bash")
-     (org-what-lang-is-for . "python"))))
+     (org-what-lang-is-for . "c++")
+     (org-what-lang-is-for . "bash")))
+ '(vc-annotate-background nil)
+ '(vc-annotate-color-map
+   '((20 . "#F92672")
+     (40 . "#CF4F1F")
+     (60 . "#C26C0F")
+     (80 . "#E6DB74")
+     (100 . "#AB8C00")
+     (120 . "#A18F00")
+     (140 . "#989200")
+     (160 . "#8E9500")
+     (180 . "#A6E22E")
+     (200 . "#729A1E")
+     (220 . "#609C3C")
+     (240 . "#4E9D5B")
+     (260 . "#3C9F79")
+     (280 . "#A1EFE4")
+     (300 . "#299BA6")
+     (320 . "#2896B5")
+     (340 . "#2790C3")
+     (360 . "#66D9EF")))
+ '(vc-annotate-very-old-color nil)
+ '(weechat-color-list
+   '(unspecified "#272822" "#3C3D37" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0")))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

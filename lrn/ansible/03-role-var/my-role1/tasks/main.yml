@@ -1,0 +1,6 @@
+- name: Just ping
+  ansible.builtin.ping:
+
+- name: Print the variable x 
+  ansible.builtin.debug:
+    msg: "{{ x }}"

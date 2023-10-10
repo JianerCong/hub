@@ -1,0 +1,69 @@
+\section{dig}
+\label{sec:dig}
+
+\newcommand{\dg}{\texttt{dig}}
+
+Unless specified otherwise, \dg{} tries each of the servers listed in
+\texttt{/etc/resolv.conf}. Finally, it resorts to \texttt{localhost}.
+
+When no serve is specified, \dg{} performs the \texttt{NS} query for \texttt{.}.
+
+It is possible to set per-user defaults in \texttt{\$HOME/.digrc}. Option
+\texttt{-r} disables this feature.
+
+\subsection{simple usage}
+
+A typical usage of \dg{} looks like:
+
+\begin{center}
+  \ttfamily
+  dig \cola{@server} \colc{name} \colb{type}
+\end{center}
+
+Where:
+
+\begin{itemize}
+\item \texttt{\cola{server}}: \colz{ is the name or IP address of the name
+    server to query, can be either IPv4 or IPv6.
+
+    If unspecified, \dg{} tries those in \texttt{/etc/resolv.conf}.
+  }
+\item \texttt{\colc{name}} \colz{the name of RR to be looked up}
+\item \texttt{\colb{type}} \colz{the type of RR to be looked up, such as
+    \begin{itemize}
+    \item \texttt{A}: IPv4 address
+    \item \texttt{AAAA}: IPv6 address
+    \item \texttt{CNAME}: canonical name
+      ...
+    \end{itemize}
+  }
+\end{itemize}
+
+\dSay{
+  Why my \texttt{/etc/resolv.conf} point to \texttt{127.0.0.53} ?
+}
+
+\cSay{
+  Because you are using \texttt{systemd-resolved} as your DNS resolver, and it
+  listens on does some caching and altered the \texttt{/etc/resolv.conf} to
+  accomplish that.
+}
+
+\subsection{options}
+Some useful options are:
+
+\begin{itemize}
+\item \texttt{-4,-6}: \colz{ force \dg{} to use IPv4/6 only.}
+\item \texttt{-b addr[\#port]} \colz{ set the source IP address of the query.
+    \texttt{address must be a valid address on one of the host's interfaces, or
+      \texttt{0.0.0.0} or \texttt{::}.
+    }}
+\item \texttt{-c class} \colz{ set the query class, default to \texttt{IN}. }
+\item \texttt{-p port} \colz{ set the port number to query, default to 53.}
+\end{itemize}
+
+\subsection{quiz}
+
+\begin{enumerate}
+\item 
+\end{enumerate}

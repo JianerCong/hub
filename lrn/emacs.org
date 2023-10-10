@@ -1,4 +1,22 @@
 * Emac
+** start as a server:
+🦜 : I defined a helper function called (start-my-emacs-server), which will
+start listening on port 1234
+
+Now to invoke it, do :
+#+begin_src bash
+  server_file= ~/.emacs.d/server/server
+  emacsclient hi.txt -f $server_file -c
+  # -c,--create-frame : create a new frame
+  # -f : use the server file, which contains info like the port number
+#+end_src
+
+** useful keys
++ C-M-S-v :: scroll other window up
++ C-M-v :: scroll other window down
++ C-k :: kill line (easier than dd)
++ C-M-k :: kill s-exp
++ M-d :: kill word
 ** regex
 *** useful query replace
 in: #print(f'\(.*\)')
@@ -9,7 +27,7 @@ out: printf("\1\\n");
   +        previous character or group, repeated 1 or more time
   ?        previous character or group, repeated 0 or 1 time
 
-  *?,+?,?? Non-greedy version
+*?,+?,?? Non-greedy version
   
   ^        start of line
   $        end of line
@@ -59,6 +77,10 @@ out: printf("\1\\n");
   \s)   close delimiter character   \s!   generic comment delimiter
   \s"   string quote character      \s|   generic string delimiter
   \s\   escape character
+*** cheat sheet
++ \d :: [0-9]
++ \D :: [^0-9]
++ \w :: [A-Za-z0-9]
 
 ** emoji
 Add _emoji_ to your dotspacemacs-configuration-layers.
@@ -225,4 +247,70 @@ C-x C-k C-f
 + C-x C-x :: exchange-point-and-mark
 ** expand
 + M-/ :: expand at point
+** encoding
++ C-x RET f coding RET
+Use coding system coding to save or revisit the file in the current buffer (set-buffer-file-coding-system).
 
++ C-x RET c coding RET
+Specify coding system coding for the immediately following command (universal-coding-system-argument).
+
++ C-x RET r coding RET
+Revisit the current file using the coding system coding (revert-buffer-with-coding-system).
+
++ M-x recode-region RET right RET wrong RET
+Convert a region that was decoded using coding system wrong, decoding it using coding system right instead.
+** local var eval
+#+begin_src csharp
+// Local Variables:
+// eval: (setq flycheck-gcc-include-path (list ".."))
+// org-what-lang-is-for: "emacs-lisp"
+// End:
+#+end_src
+** dir local var
+*** basic
+in ~.dir-locals.el~
+#+begin_src emacs-lisp
+(
+ (nil . ((indent-tabs-mode . t)
+         (fill-column . 80)
+         (mode . auto-fill))            ;special element `mode': enable auto-fill mode
+      )
+
+ ;; major mode name ⇒ alist
+ (c-mode . (
+            (c-file-style . "BSD")
+            (subdirs . nil)             ;special keyword `subdirs' : settings not applied
+                                        ;recursively.
+            )
+         )
+
+ ("src/imported"
+  . (
+     (nil . ((change-log-default-name
+              . "ChangeLog.local")))
+     )
+  )                                     ;applied only to src/imported
+ )
+
+ #+end_src
+*** use command
+M-x add-dir-local-variable.
+
+M-x delete-dir-local-variable
+*** set dir local-var without creating a file
+#+begin_src lisp
+(dir-locals-set-class-variables 'unwritable-directory
+   '((nil . ((some-useful-setting . value)))))
+
+(dir-locals-set-directory-class
+   "/usr/include/" 'unwritable-directory)
+#+end_src
+* Spacemacs Q/A
+** problem with python import magic?
+pip install epc
+pip install importmagic
+
+
+
+
+* End

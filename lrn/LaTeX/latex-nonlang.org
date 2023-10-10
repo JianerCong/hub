@@ -7,7 +7,78 @@
 
      # ^^^ this will increase your RAM usage from 3000k (3M) to 5M
    #+end_src
+*** I don't have program initexmf on linux?
+1. open file /usr/local/texlive/2022/texmf-dest/web2c/texmf.cnf
+2. copy k,v in it
+3. change them and add them back in /usr/local/texlive/2022/texmf.cnf
 
+** install info
+  TEXDIR (the main TeX directory):
+     /usr/local/texlive/2023
+   TEXMFLOCAL (directory for site-wide local files):
+     /usr/local/texlive/texmf-local
+   TEXMFSYSVAR (directory for variable and automatically generated data):
+     /usr/local/texlive/2023/texmf-var
+   TEXMFSYSCONFIG (directory for local config):
+     /usr/local/texlive/2023/texmf-config
+   TEXMFVAR (personal directory for variable and automatically generated data):
+     ~/.texlive2023/texmf-var
+   TEXMFCONFIG (personal directory for local config):
+     ~/.texlive2023/texmf-config
+   TEXMFHOME (directory for user-specific files):
+     ~/texmf
+
+** install package
+#+begin_src bash
+  sudo /usr/local/texlive/2023/bin/x86_64-linux/tlmgr update --all
+
+#+end_src
+** install manually the simpsons
+#+begin_src bash
+  # the mp files
+  for s in bart lisa homer marge maggie burns snpp; do
+      echo $s
+      wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/$s.mf
+  done
+  wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/simpsons.mf
+  sudo mkdir /usr/local/texlive/texmf-local/fonts/source/simpsons
+  sudo mv *.mf /usr/local/texlive/texmf-local/fonts/source/simpsons
+
+  # the style file
+  wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/simpsons.sty
+  ls /usr/local/texlive/texmf-local/tex/latex/
+  sudo mv simpsons.sty /usr/local/texlive/texmf-local/tex/latex/ -v
+
+  # the tfm file
+  wget https://www.ctan.org/tex-archive/usergrps/uktug/baskervi/4_4/simpsons.tfm
+  # sudo rmdir /usr/local/texlive/texmf-local/fonts/tfm/public
+  sudo mkdir /usr/local/texlive/texmf-local/fonts/tfm/public
+  sudo mkdir /usr/local/texlive/texmf-local/fonts/tfm/public/simpsons
+  sudo mv simpsons.tfm /usr/local/texlive/texmf-local/fonts/tfm/public/simpsons
+  ls /usr/local/texlive/texmf-local/fonts/tfm/public/simpsons
+
+
+  # re hash
+  sudo /usr/local/texlive/2023/bin/x86_64-linux/texhash
+
+  # check the simpsons
+  kpsewhich simpsons.tfm
+  
+#+end_src
+#+begin_src latex
+\documentclass{article}
+\usepackage{simpsons}
+
+\begin{document} 
+\Lisa
+\Homer
+\Bart
+\Marge
+\Maggie
+\Burns
+\SNPP
+\end{document}
+#+end_src
 ** emacs + auctex
 *** basic
 C-c C-o C-f : Enter folding mode
@@ -41,6 +112,20 @@ C-c . : mark env
 <a> C-e : fill env
 <a> C-s : fill sec
 <a> C-r : fill region 
+*** outline
++ C-c @ C-n/C-p :: Next/Previous visible heading
++ C-c @ C-d/C-s :: Hide/Show sub tree
+*** font specifier
+C-u prefix change the font of the selecting text
+https://tex.stackexchange.com/questions/523675/custom-font-specifiers-in-auctex/689941#689941
+*** parse the buffer
+#+begin_src latex
+%%% Local Variables:
+%%% TeX-parse-self: t
+%%% TeX-auto-save: t
+%%% End:
+#+end_src
+
 *** mupdf
 #+begin_src bash
   sudo apt install mupdf
@@ -50,7 +135,13 @@ C-c . : mark env
 + Then, in the custom-group for AucTeX.Edit the command list so that it does:
 latex -> view
 
-+ In the latex command section add -shell-escape if necessary.
+# Use file local variable to change settings
+#+begin_src latex
+% Local Variables:
+% TeX-engine: luatex
+% TeX-command-extra-options: "-shell-escape"
+% End:
+#+end_src
 *** cdlatex
 **** special fonts
 #+begin_src lisp

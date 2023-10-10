@@ -1,0 +1,5 @@
+my_hosts:
+  hosts:
+    host1:
+      ansible_host: fec0::2
+      ansible_user: me

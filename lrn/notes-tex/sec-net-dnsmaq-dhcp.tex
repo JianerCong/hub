@@ -1,0 +1,274 @@
+\subsection{How it does DHCP}
+
+\colz{
+  The tag system works as follows:
+
+  \begin{enumerate}
+  \item For each DHCP request, \dmq{} collects a set of valid tags from active
+    configuration lines which include \texttt{set:<tag>}, including
+    \begin{enumerate}
+    \item one from the \colZ{\texttt{--dhcp-range}} used to allocate the
+      address,
+    \item one from any matching \colZt{--dhcp-host}
+    \item and ``known'' or ``known-ethernet'' if a \texttt{--dhcp-host} matches.
+    \end{enumerate}
+  \item The tag ``bootp'' is set for BOOTP requests, 
+  \item a tag whose name is the name of the interface on which the request
+    arrived is also set.
+  \end{enumerate}
+
+  \subsubsection{dhcp-range}
+  \cSay{
+    Here are some details, first,
+
+    \texttt{-F,--dhcp-range=
+      \cola{tag1:<tag1>,tag2:<tag2>,...}\colb{, set:<tag>}
+      \colc{<start-addr>,[<end-addr>],}
+      [<many options>]
+    } Enable the DHCP server.
+
+    Addresses will be given out from the range \colZt{<start-addr>} to
+    \colZt{<end-addr>} and from statically defined addresses given in
+    \texttt{--dhcp-host} options.
+
+    \colz{
+
+      A lease time can be given. By default, it's one hour for IPv4 and
+      one day for IPv6.
+
+      For IPv6, there's an prefix length which must be equal to or larger then
+      the prefix length on the local interface. This defaults to 64. Unlike
+      the IPv4 case, the prefix length is not automatically derived from the
+      interface. confiugration. (minimum prefix length = 64.)
+
+    }
+  }
+
+  \cSay{
+    \colz{
+      IPv6 supports another type of range, In this, the start address and
+      optional end address \colZ{contain only the network part (ie
+        \texttt{::1})} and they are followed by
+      \texttt{constructor:<interface>}, for example,
+      \colZt{--dhcp-range=::1,::400,constructor:eth0}, will look for addresses
+      on \texttt{eth0} , and then create a range from \texttt{<network>::1} to
+      \texttt{<network>::400}.  Note that not just any address on
+      \texttt{eth0} will not do: it must not be an autoconfigured or privacy
+      address, or be deprecated.
+
+      If a \texttt{--dhcp-range} is only being used for stateless DHCP, then
+      it can simply be:
+      \colZt{--dhcp-range=::,constructor:eth0}
+    }
+  }
+
+  \dSay{
+    I remember for IPv6, there're different ways to do automatic address
+    configuration...Right? What's said about this in the manual?
+  }
+
+  \cSay{
+    For IPv6, the mode may be some combination of
+    \begin{enumerate}
+    \item \texttt{slaac} \colz{set the \texttt{A} bit in the RA (addresses
+        available via DHCP).When used with a DHCP range or static DHCP address
+        this results in the client having \cola{both a SLAAC and a
+          DHCP-assigned} address.},
+    \item \texttt{ra-only} \colz{router advertisement only, no DHCP},
+    \item \texttt{ra-names} \colz{router advertisement plus names from DNS}.
+    \item \texttt{ra-stateless} \colz{set \texttt{A,O} bits in RA. address from SLAAC and others from DHCP}.
+    \item \texttt{ra-advrouter} \colz{enables a mode where router address(es)rather
+        than prefix(es) are included in the advertisements.}
+    \item \texttt{off-link} \colz{
+        tells \dmq{} to advertise the prefix without the on-link bit set.
+      }
+    \end{enumerate}
+  }
+
+  \subsubsection{dhcp-host}
+
+  \dSay{\colz{What about \texttt{--dhcp-host} ?}}
+
+  \cSay{
+    {
+
+      \ttfamily
+      -G,--dhcp-host= \cola{[<hwaddr>]}
+      \colz{
+        [,id:<client\_id>|*]
+        [,set:<tag>] [,tag:<tag>] \colb{[,<ipaddr>]} \cola{[,<hostname>]} \colZ{[,<lease\_time>]} [,ignore]
+      }  
+    }
+    
+
+    Specify per host parameters for the DHCP server. This allows a machine with
+    a particular hardware address to be always allocated the same
+    \begin{enumerate}
+    \item hostname,
+    \item IP address and
+    \item lease time.
+    \end{enumerate}
+  }
+
+  \dSay{
+    Oh, this one is pretty important for those servers that need a static IP.
+  }
+
+  \cSay{
+    \colz{
+      A hostname specified like this overrides any supplied by the \colZ{DHCP
+        client on the host}.
+
+      It is also allowable to omit the hardware address and include the
+      hostname. In this case, the IP address and lease times will \colZ{applied
+        to any machine claiming that name}. For example
+      \colZt{--dhcp-host=00:11:22:33:44:55,myhost,infinite} tells \dmq{} to give
+      the machine with hardware address \texttt{00:11:22:33:44:55} the name
+      ``\texttt{myhost}'' and an infinite lease. For another example,
+      \colZt{--dhcp-host=myhost2,10.0.0.2} tells \dmq{} to give the machine
+      ``\texttt{myhost2}'' the IP address \texttt{10.0.0.2}
+    }
+  }
+
+  \dSay{
+    What ? Hosts can have names before they are assigned an IP address ?
+  }
+
+  \cSay{It just said so in the manual. It looks like in the DHCP client message,
+    the client can specify its hostname.
+
+  }
+
+  \dSay{
+    Okay...
+  }
+
+  \cSay{
+    \colz{
+      Addresses allocated like this are not constrained to be in the range
+      given in \texttt{--dhcp-range} options. For subnets which don't need a pool
+      of dynamically allocated addresses, you can use a ``\texttt{static}''
+      keyword in the \texttt{--dhcp-range} declaration.
+    }
+  }
+
+  \dSay{ Oh, so DHCP can also be used to assign static IP addresses?}
+
+  \cSay{Seem so.}
+
+
+  \dSay{What is \texttt{client\_id} ?}
+
+  \cSay{It's a unique identifier for the client. It's called \texttt{DUID} in
+    IPv6. \colz{(IPv6 abondoned the MAC address).} It's an alternative
+    to the MAC address.
+
+    \colz{
+      Thus:
+
+      \colZt{--dhcp-host=id:01:02:03:04,...} refers to the host with client
+      identifier \texttt{01:02:03:04}.
+    }
+  }
+
+  \cSay{
+    \colz{
+      A single \texttt{--dhcp-host} option may contain
+      \begin{enumerate}
+      \item an IPv4 address, or 
+      \item one or more IPv6 addresses, or
+      \item both
+      \end{enumerate}.
+
+      IPv6 addresses must be bracketed by square brackets thus:
+
+      \colZt{--dhcp-host=laptop,[2001:db8::1],[2001:db8::2]}
+
+      
+      IPv6 addresses may contain only the
+      host-identifier part: \colZt{--dhcp-host=aaa,[:56]} in which case they act
+      as \cola{wildcards} in constructed DHCP ranges, with the appropriate
+      network part inserted. For IPv6, an address may include a prefix length:
+      \texttt{--dhcp-host=laptop,[1234:50/126]} which (in this case) specifies
+      four addresses, \texttt{1234:50} to \texttt{1234:53}. 
+    }
+  }
+
+  \dSay{
+    What about the host file \texttt{/etc/hosts} ? Does \dmq{} care about it
+    when serving DHCP?
+  }
+
+  \cSay{
+    \colz{
+      Yes. If a name appears in \texttt{/etc/hosts}, the associated address can
+      be allocated to a DHCP lease, but \colZ{only if} a \texttt{--dhcp-host} option
+      specifying the name also exists.
+
+      Only one hostname can be given in a \texttt{--dhcp-host} option, but
+      aliases are possible by using \texttt{--cname}. \cola{\texttt{/etc/hosts}
+        is not used when the DNS side of \dmq{} is disabled.
+      }
+    }
+  } 
+
+  \subsubsection{host-file}
+
+  \dSay{
+    It feels like \texttt{--dhcp-host} is such an important option that it might
+    need a file to store all the information ?
+  }
+
+  \cSay{
+    \colz{
+      Yes. \texttt{--dhcp-hostfile = <file>} does it. Each line is a \texttt{--dhcp-host=<line>}. 
+      }
+  }
+
+  \subsubsection{dhcp-option}
+
+  \dSay{
+    What about \texttt{--dhcp-option} ?
+  }
+
+  \cSay{
+    {
+      \ttfamily
+      -O,--dhcp-option=
+      \colz{[tag:<tag>,]}
+      [encap:<opt>] \colz{[vi-encap:<enterprise>,]}
+      \cola{[vendor:<vendor-class>,]} <many more options>
+    }
+  }
+  
+  Any configuration lines which include one or more \texttt{tag:<tag>}
+  constructs will only be valid if all that tags are matched in the set derived
+  above. Typically this is \colZt{--dhcp-option}, tagged version of
+  \texttt{--dhcp-options} is prefered, provided that all the tags match
+  somewhere in the set collected as described above. The prefix \texttt{!} on a
+  tag means ``not'' so \colZt{--dhcp-option=tag:!purple,3,1.2.2.3.4} sends the
+  option when the taf \texttt{purple} is not in the set of valid tags.
+  (\emoji{turtle} : If using
+  this in a command line rather than a config file, be sure to escape
+  \texttt{!}, which is a shell metachar...)
+
+  When selecting \colZt{--dhcp-options}, a tag from \colZt{--dhcp-range} is
+  second class relative to other tags, to make it easy to override options for
+  individual hosts, so
+  \colZt{
+    \newline
+    --dhcp-range=set:interface1,....\newline
+    --dhcp-option=tag:interface1,\cola{option:nis-domain,domain1} \newline
+    --dhcp-option=tag:myhost,\cola{option:nis-domain,domain2 }
+  }
+
+  will set the NIS-domain to \colZt{domain1} for hosts in range, but override
+  that to \colZt{domain2} for \colZt{myhost}.
+
+  \colZ{
+    Note that for \texttt{--dhcp-range} both \texttt{tag:<tag>} and
+    \texttt{set:<tag>} are allowed, to both select the range in use based on
+    (eg) \texttt{--dhcp-host},and to affect the options sent, based on the range
+    selected.
+  }
+}

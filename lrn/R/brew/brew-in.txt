@@ -1,0 +1,9 @@
+You won't see this R output, but it will run. <% x <- 123 %>
+Now x is <%=x%> and today is <%=format(Sys.time(),'%B %d, %Y')%>.
+<%# Comment -- ignored -- useful in testing.
+Also notice the dash-percent-gt.
+It chops off the trailing newline.
+You can add it to any percent-gt. -%>
+How about generating a template from a template?
+<%% x <- 'fee fi fo fum' %%>
+x is still <%=x%>.

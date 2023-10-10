@@ -29,8 +29,8 @@ function Prompt {
     # write-host "`n----------------------------"
     # write-host "Now it's " (date).tostring()
     if($msg) {write-host "$msg"}
-    # write-host "$s AT [$env:COMPUTERNAME]  $(Get-Location)"
-    "> "
+    Write-Host "$(Get-Location)" -ForegroundColor Green -NoNewline
+    ' > '
 }
 
 function cppat {
@@ -47,10 +47,9 @@ function cpdir {($pwd).tostring() | set-clipboard}
 function got{
     write-host "Where to go ?"
     $h = @{
-           "l"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn'
            "t"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\h5\weapp\todo'
-           "w"  = 'C:\Users\congj\work\lcode\newcode'
-           "p"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\python\pymongo'
+           "l"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn'
+           "w"  = 'C:\Users\congj\AppData\Roaming\Templates\lrn\h5\weapp'
           }
     $h
     $x = read-host "enter your key"
@@ -161,5 +160,5 @@ function pspf{
 }
 
 function pyenv {
-    . C:\Users\congj\myGlobalEnvZ\Scripts\Activate.ps1
+    . C:\Users\congj\myGlobalEnv\Scripts\Activate.ps1
 }
