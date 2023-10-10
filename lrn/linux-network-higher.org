@@ -529,9 +529,14 @@ are:
 #+end_src
 *** rules
 Add the following in rules
+
+🦜 : Append these to the top 
 #+begin_src yaml
-    - 'DOMAIN-SUFFIX,gitee.com,DIRECT' # added by cccccje for gitee
-    - 'DOMAIN-SUFFIX,edu.cn,DIRECT' # added by cccccje for tuna mirror
+      - 'DOMAIN-SUFFIX,speech.microsoft.com,众筹加速器'
+      - 'DOMAIN-SUFFIX,data.microsoft.com,众筹加速器'
+      - 'DOMAIN-SUFFIX,cognitive.microsoft.com,众筹加速器'
+      - 'DOMAIN-SUFFIX,gitee.com,DIRECT' # added by cccccje for gitee
+
 #+end_src
 
 So the list becomes something like

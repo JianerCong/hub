@@ -1,0 +1,129 @@
+\section{VLAN tagging}
+
+\colz{
+
+  A \Cola{Virtual Local Area Network (VLAN)} is a logical network within a
+  physical network. The \Cola{VLAN interface} \colb{tags packets} with the
+  \colZt{VLAN ID} as they pass through the interface, and \colb{removes tags} of
+  returning packets. \colZ{You create VLAN interfaces on top of another
+    interface}, such as Ethernet, bond, team, or bridge devices. These
+  interfaces are called the \Cola{parent interface}.
+
+}
+
+\subsection{Configuring VLAN tagging by using \texttt{nmcli}}
+
+You can configure VLAN tagging by using \texttt{nmcli}.
+
+\subsubsection{Check if the interface supports it}
+
+First, check if the interface supports VLAN tagging:
+
+\colz{
+  \begin{enumerate}
+  \item If you configure the VLAN on top of a bond interface, check that:
+    \begin{enumerate}
+    \item The ports of the bond are up.
+    \item The bond is not configured with the \colZt{fail\_over\_mac=follow} option. A VLAN
+      virtual device cannot change its MAC address to match the parent’s new MAC
+      address. In such a case, the traffic would still be sent with the incorrect
+      source MAC address.
+    \item The bond is usually not expected to get IP addresses from a DHCP
+      server or IPv6 auto-configuration. Ensure it by setting the
+      \colZt{ipv4.method=disable} and \colZt{ipv6.method=ignore} options while
+      creating the bond. Otherwise, if DHCP or IPv6 auto-configuration fails
+      after some time, the interface might be brought down.
+    \end{enumerate}
+  \item \colZt{The switch}, the host is connected to, is configured to support VLAN
+    tags. For details, see the documentation of your switch.
+  \end{enumerate} 
+}
+
+\subsubsection{Do}
+
+\begin{enumerate}
+\item Display the network interfaces
+  \begin{simplesh}
+    sudo nmcli device status
+    # DEVICE   TYPE      STATE         CONNECTION
+    # enp1s0   ethernet  disconnected  enp1s0
+    # bridge0  bridge    connected     bridge0
+    # bond0    bond      connected     bond0
+  \end{simplesh}
+\item Create the VLAN interface. For example, to create a VLAN interface named
+  \texttt{vlan10} that uses \texttt{enp1s0} as its parent interface and that
+  tags packets with \texttt{VLAN ID} 10, enter:
+\begin{simplesh}
+n=vlan10
+id=10   # Note that the VLAN must be within the range from 0 to 4094.
+sudo nmcli connection add \
+     type vlan \
+     con-name $n \
+     ifname $n \
+     vlan.parent enp1s0 \
+     vlan.id $id                
+\end{simplesh}
+\item \colz{ By default, the VLAN connection inherits the maximum transmission
+    unit (MTU) from the parent interface. \cola{Optionally}, set a different MTU value:
+  }
+\begin{simplesh}
+     sudo nmcli connection modify $n ethernet.mtu 2000
+\end{simplesh}
+\end{enumerate}
+
+
+\subsection{Configure the VLAN device}
+
+\subsubsection{IPv4}
+For IPv4, we can either:
+\begin{enumerate}
+\item assign a static IP address:
+  \begin{simplesh}
+    sudo nmcli connection modify $n ipv4.addresses '192.0.2.1/24' \
+                ipv4.gateway '192.0.2.254' ipv4.dns '192.0.2.253' \
+                ipv4.method manual
+  \end{simplesh}
+\item use DHCP: then do nothing
+\item make this device a port of another devices....
+  \begin{simplesh}
+    sudo nmcli connection modify $n ipv4.method disabled
+  \end{simplesh}
+\end{enumerate}
+
+\subsubsection{IPv6}
+
+Same as IPv4, we also have three options:
+\begin{enumerate}
+\item assign a static IP address to the bond interface:
+  \begin{simplesh}
+     sudo nmcli connection modify $n ipv6.addresses '2001:db8:1::1/32' \
+          ipv6.gateway '2001:db8:1::fffe' \
+          ipv6.dns '2001:db8:1::fffd' \
+          ipv6.method manual
+\end{simplesh}
+\item use DHCP: then do nothing
+\item make this device a port of another devices....
+\begin{simplesh}
+    sudo nmcli connection modify $n ipv6.method disabled
+\end{simplesh}
+\end{enumerate}
+
+\subsection{Activate and verify the VLAN}
+
+\begin{simplesh}
+  sudo nmcli connection up $n
+  ip -d addr show $n
+  #4: vlan10@enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+  #    link/ether 52:54:00:72:2f:6e brd ff:ff:ff:ff:ff:ff promiscuity 0
+  #    vlan protocol 802.1Q id 10 <REORDER_HDR> numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535
+  #    inet 192.0.2.1/24 brd 192.0.2.255 scope global noprefixroute vlan10
+  #       valid_lft forever preferred_lft forever
+  #    inet6 2001:db8:1::1/32 scope global noprefixroute
+  #       valid_lft forever preferred_lft forever
+  #    inet6 fe80::8dd7:9030:6f8e:89e6/64 scope link noprefixroute
+  #       valid_lft forever preferred_lft forever
+\end{simplesh}
+
+\cSay{
+  We see that \texttt{vlan10}'s parent is \texttt{enp1s0}.
+}

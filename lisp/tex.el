@@ -153,6 +153,10 @@ s1 <prompt s2> s3 _ s4
       ("Et" "\\emoji{turtle}")
       ("Eh" "\\emoji{pinching-hand}")   ;pick
       ("Ec" "\\emoji{cross-mark}")      ;error
+      ("EnoSee" "\\emoji{see-no-evil-monkey}")
+      ("EnoHear" "\\emoji{hear-no-evil-monkey}")
+      ("EnoSpeak" "\\emoji{speak-no-evil-monkey")
+      ("Eno" "\\emoji{see-no-evil-monkey} \\emoji{hear-no-evil-monkey} \\emoji{speak-no-evil-monkey}")      ;
       ("mt" "" (lambda () (skeleton-insert '(nil "\\[" _ "\\]"))))
       ("Ca" "" (lambda () (skeleton-insert '(nil "\\Cola{" _ "}"))))
       ("ttt" "" (lambda () (skeleton-insert '(nil "[title=\\texttt{" _ "}]"))))

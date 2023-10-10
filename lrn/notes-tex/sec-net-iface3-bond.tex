@@ -41,6 +41,7 @@ There are several bonding modes. The most common modes are:
 
   4 & \texttt{802.3ad} & \colz{ 
     IEEE 802.3ad Dynamic link aggregation policy. Creates aggregation groups
+
     that share the same speed and duplex settings. Utilizes all slaves in the
     active aggregator according to the 802.3ad specification.}\\
 
@@ -56,7 +57,7 @@ There are several bonding modes. The most common modes are:
   Adaptive transmit load balancing.
 
   \colz{ Establishes channel bonding that does \cola{not require any special switch
-    support}. The outgoing traffic is distributed according to the current load
+      support}. The outgoing traffic is distributed according to the current load
     (computed relative to the speed) on each slave. Incoming traffic is
     received by the current slave. If the receiving slave fails, another slave
     takes over the MAC address of the failed receiving slave.
@@ -66,24 +67,35 @@ There are several bonding modes. The most common modes are:
   \bottomrule
 \end{longtblr}
 
+
+\colz{ Some bonding mode are ``plug-and-play'' (no configuration on the switch
+  is required.), for example, \texttt{balance-tlb (5)} and \texttt{active-backup
+  (1)}.
+
+  However, other bonding modes require configuring the switch to aggregate
+  the links. For example, \cola{Cisco} switches requires \texttt{EtherChannel}
+  for modes 0, 2, and 3, but for mode 4, the \Cola{Link Aggregation Control
+    Protocol (LACP)} and \texttt{EtherChannel} are required. For further
+  details, see the documentation of your switch.
+}
 \subsection{Create a bond}
 
 Here's how to create a bond named \texttt{mybond} with \texttt{active-backup}.
 \begin{simplesh}
-n=mybond
-sudo nmcli connection add type bond con-name $n ifname $n bond.options "mode=active-backup"
+  n=mybond
+  sudo nmcli connection add type bond con-name $n ifname $n bond.options "mode=active-backup"
 \end{simplesh}
 
 \subsection{Bind the devices}
 
 Now we display the interfaces:
 \begin{simplesh}
-sudo nmcli device status
-# DEVICE   TYPE      STATE         CONNECTION
-# enp7s0   ethernet  disconnected  --
-# enp8s0   ethernet  disconnected  --
-# bridge0  bridge    connected     bridge0
-# bridge1  bridge    connected     bridge1
+  sudo nmcli device status
+  # DEVICE   TYPE      STATE         CONNECTION
+  # enp7s0   ethernet  disconnected  --
+  # enp8s0   ethernet  disconnected  --
+  # bridge0  bridge    connected     bridge0
+  # bridge1  bridge    connected     bridge1
 \end{simplesh}
 These are the interfaces that we are going to bind together. In this example:
 
@@ -96,53 +108,70 @@ These are the interfaces that we are going to bind together. In this example:
 
 To assigns this to the bond:
 \begin{simplesh}
-sudo nmcli connection add type ethernet slave-type bond con-name my-bond-port1 ifname enp7s0 master $n
-sudo nmcli connection add type ethernet slave-type bond con-name my-bond-port2 ifname enp8s0 master $n
+  sudo nmcli connection add type ethernet slave-type bond con-name my-bond-port1 ifname enp7s0 master $n
+  sudo nmcli connection add type ethernet slave-type bond con-name my-bond-port2 ifname enp8s0 master $n
 \end{simplesh}
 This create profiles for \texttt{enp7s0} and \texttt{enp8s0} and assign them to
 the bond \texttt{mybond}.
 
 Next, we bind the bridges:
 \begin{simplesh}
-sudo nmcli connection modify bridge0 master $n #bind the bridge to the bond
-sudo nmcli connection modify bridge1 master $n
-sudo nmcli connection up bridge0 # reactive the connections
-sudo nmcli connection up bridge1
+  sudo nmcli connection modify bridge0 master $n #bind the bridge to the bond
+  sudo nmcli connection modify bridge1 master $n
+  sudo nmcli connection up bridge0 # reactive the connections
+  sudo nmcli connection up bridge1
 \end{simplesh}
 
 \subsection{Configure the bond}
 
+\subsubsection{IPv4}
 For IPv4, we can either:
-\begin{itemize}
+\begin{enumerate}
 \item assign a static IP address to the bond interface:
-\begin{simplesh}
-sudo nmcli connection modify bond0 ipv4.addresses '192.0.2.1/24' \
-     ipv4.gateway '192.0.2.254' ipv4.dns '192.0.2.253' \
-     ipv4.dns-search 'example.com' ipv4.method manual
+  \begin{simplesh}
+    sudo nmcli connection modify $n ipv4.addresses '192.0.2.1/24' \
+                ipv4.gateway '192.0.2.254' ipv4.dns '192.0.2.253' \
+                ipv4.dns-search 'example.com' ipv4.method manual
+  \end{simplesh}
+\item use DHCP: then do nothing
+\item make this bond a port of another bond....
+  \begin{simplesh}
+    sudo nmcli connection modify $n ipv4.method disabled
+  \end{simplesh}
+\end{enumerate}
+
+\subsubsection{IPv6}
+
+Same as IPv4, we also have three options:
+\begin{enumerate}
+\item assign a static IP address to the bond interface:
+  \begin{simplesh}
+    sudo nmcli connection modify $n ipv6.addresses '2001:db8::1/64' \
+            ipv6.gateway '2001:db8::fffe' ipv6.dns '2001:db8::fffd' \
+            ipv6.dns-search 'example.com' ipv6.method manual
 \end{simplesh}
 \item use DHCP: then do nothing
 \item make this bond a port of another bond....
 \begin{simplesh}
-sudo nmcli connection modify bond0 ipv4.method disabled
+    sudo nmcli connection modify $n ipv6.method disabled
 \end{simplesh}
-  \end{itemize}
-  
+\end{enumerate}
 
+\subsection{Activate and verify the bond}
 
+\begin{simplesh}
+  sudo nmcli connection up $n
+  sudo nmcli connection
+\end{simplesh}
 
-
-% \begin{enumerate}
-% \item \texttt{active-backup}: Only one slave in the bond is active. If this
-%   slave fails, another slave takes over the MAC address and IP address of the
-%   failed slave.
-% \item \texttt{balance-tlb}
-% \item \texttt{balance-alb}
-% \end{enumerate}
-% These do not require any special configuration of the switch.
-
-\colz{ However, other bonding modes require configuring the switch to aggregate
-  the links. For example, \cola{Cisco} switches requires \texttt{EtherChannel}
-  for modes 0, 2, and 3, but for mode 4, the \Cola{Link Aggregation Control
-    Protocol (LACP)} and \texttt{EtherChannel} are required. For further
-  details, see the documentation of your switch.
+\cSay{
+  \colz{
+    When you activate any port, NetworkManager also activates the bond.
+  }
 }
+
+To show the status of the bond:
+
+\begin{simplesh}
+cat /proc/net/bonding/$n
+\end{simplesh}
