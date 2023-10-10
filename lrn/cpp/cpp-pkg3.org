@@ -131,6 +131,19 @@ BOOST_AUTO_TEST_CASE(test_hash){
 
 
 #+end_src
+
+** protobuf
+*** compile it
+#+begin_src powershell
+  $SRC_DIR='.\hi'
+  $DST_DIR="$SRC_DIR\pb_generated"
+  md $DST_DIR
+  .\protoc-24.4-win64\bin\protoc.exe "-I=$SRC_DIR" "--cpp_out=$DST_DIR" "$SRC_DIR\hi.proto"
+
+  # -I: the directory in which to search for imports
+  # --cpp_out: the directory in which to output .pb.cc and .pb.h files
+#+end_src
+
 * End
 # Local Variables:
 # org-what-lang-is-for: "c++"

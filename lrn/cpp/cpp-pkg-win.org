@@ -13,9 +13,9 @@
 #+end_src
 
 #+begin_src cmake
-    # this is heuristically generated, and may not be correct
-    find_package(RocksDB CONFIG REQUIRED)
-    target_link_libraries(main PRIVATE RocksDB::rocksdb-shared)
+      # this is heuristically generated, and may not be correct
+      find_package(RocksDB CONFIG REQUIRED)
+      target_link_libraries(main PRIVATE RocksDB::rocksdb-static)
 #+end_src
 
 #+begin_src powershell
@@ -30,6 +30,13 @@
     -A Win32 `
     -T v143 `
     -S try-rdb -B build-try-rdb "-DCMAKE_TOOLCHAIN_FILE=C:\Users\congj\source\vcpkg\scripts\buildsystems\vcpkg.cmake"
+#+end_src
+** set proxy
+#+begin_src powershell
+  $env:http_proxy="http://localhost:7890"
+  $env:https_proxy="http://localhost:7890"
+
+  git config --global http.proxy http://localhost:7890
 #+end_src
 * End
 # Local Variables:

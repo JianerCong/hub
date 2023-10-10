@@ -1,6 +1,6 @@
 ;; the hooks
 
-(autoload 'folding-mode          "folding" "Folding mode" t)
+;; (autoload 'folding-mode          "folding" "Folding mode" t)
 (autoload 'wat-mode          "wat-mode" "Wasm Text mode" t)
 ;; (message "my hooks loaded")
 ;; load folding.el when 'folding-mode is required
@@ -65,13 +65,13 @@
 )
 
 ;; Implementation to be defined in my-default.el
-(add-hook 'prog-mode-hook
-          (lambda ()
-            (define-key evil-normal-state-local-map (kbd "TAB") 'folding-toggle-show-hide)
-            (define-key evil-normal-state-local-map (kbd "<backtab>") 'my-folding-toggle-global)
-            (define-key evil-visual-state-map (kbd "TAB") 'folding-fold-region)
-            )
-          )
+;; (add-hook 'prog-mode-hook
+;;           (lambda ()
+;;             (define-key evil-normal-state-local-map (kbd "TAB") 'folding-toggle-show-hide)
+;;             (define-key evil-normal-state-local-map (kbd "<backtab>") 'my-folding-toggle-global)
+;;             (define-key evil-visual-state-map (kbd "TAB") 'folding-fold-region)
+;;             )
+;;           )
 
 ;; 🦜 : I feel like it's just better to use [SPC]-z-c for folding
 (add-hook 'sclang-mode-hook 'sclang-extensions-mode)
@@ -96,5 +96,22 @@
        auto-mode-alist))
 (message "my-hook loaded")
 
+;; ========================
+;; dotspacemacs/user-config
+;; ========================
+
+;; accept completion from copilot and fallback to company
+
+(with-eval-after-load 'company
+  ;; disable inline previews
+  (delq 'company-preview-if-just-one-frontend company-frontends))
+
+(with-eval-after-load 'copilot
+  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion)
+  (define-key copilot-completion-map (kbd "C-TAB") 'copilot-accept-completion-by-word)
+  (define-key copilot-completion-map (kbd "C-<tab>") 'copilot-accept-completion-by-word))
+
+(add-hook 'prog-mode-hook 'copilot-mode)
 
 (provide 'my-hooks)
