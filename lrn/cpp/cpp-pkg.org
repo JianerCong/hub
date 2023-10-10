@@ -267,6 +267,38 @@ int main ()
 #+end_src
 
 *** unit-test
+**** no cmake hi
+
+g++ m.cpp -lboost_unit_test_framework
+***** cpp
+#+begin_src c++
+#define BOOST_TEST_DYN_LINK
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
+  BOOST_AUTO_TEST_CASE(test_equal) {
+    BOOST_CHECK_EQUAL(1, 1);
+  }
+
+  #include <stdexcept>
+  BOOST_AUTO_TEST_CASE(test_1) {
+    BOOST_CHECK_NE(2,1);          // 2 != 1
+  }
+  void f(){
+    throw std::runtime_error("hi");
+  }
+  BOOST_AUTO_TEST_CASE(test_2) {
+    BOOST_CHECK_THROW(f(), std::runtime_error);
+  }
+  BOOST_AUTO_TEST_CASE(test_equal) {
+    BOOST_CHECK_EQUAL(1, 1);
+  }
+
+
+  BOOST_AUTO_TEST_CASE(test_fail) {
+    BOOST_FAIL("this should give fatal error ‚ùÑ");
+  }
+
+#+end_src
 **** hi
 ***** cmdline options
 #+begin_src c++
@@ -449,17 +481,18 @@ add_custom_target(run ALL myexe --random --log_level=all COMMENT "Runing App üê
 #+end_src
 ***** cpp
 #+begin_src c++
-// #define BOOST_TEST_MODULE test_module_name
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
+#define BOOST_TEST_DYN_LINK
+  // #define BOOST_TEST_MODULE test_module_name
+  #define BOOST_TEST_MAIN
+  #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE(test_1) {
-  BOOST_CHECK(1 == 1);
-} // BOOST_AUTO_TEST_CASE(test_no_1)
+  BOOST_AUTO_TEST_CASE(test_1) {
+    BOOST_CHECK(1 == 1);
+  }
 
-BOOST_AUTO_TEST_CASE(test_2) {
-  BOOST_CHECK(2 == 1);
-}
+  BOOST_AUTO_TEST_CASE(test_2) {
+    BOOST_CHECK(2 == 1);
+  }
 
 
 #+end_src
@@ -518,6 +551,7 @@ BOOST_AUTO_TEST_CASE(test_fail) {
 }
 
 #+end_src
+**** require
 *** log
 + Backend :: decide where the data is written.
   ~boost::log::sinks::text_ostream_backend~ is initialized with a stream of type
